@@ -324,8 +324,11 @@ h4 {
 /* ---------- Pantallas pequeñas: el menú pasa arriba ---------- */
 
 @media (max-width: 720px) {
+  /* minmax(0, 1fr): la columna no crece con la tabla; así la tabla se desplaza sola */
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    /* El menú ocupa solo lo que necesita; el resto de la altura es del contenido */
+    grid-template-rows: auto 1fr;
   }
 
   .sidebar {
@@ -333,7 +336,27 @@ h4 {
     border-bottom: 2px solid var(--ink);
   }
 
+  .brand-sub {
+    margin-bottom: 8px;
+  }
+
+  /* El menú pasa a una fila que se parte en varias líneas; lo que aún no existe se oculta */
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .nav a {
+    margin-bottom: 0;
+  }
+
+  .nav li:has(.nav-disabled) {
+    display: none;
+  }
+
   .content {
+    min-width: 0;
     padding: var(--space);
   }
 
