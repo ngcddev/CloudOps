@@ -27,6 +27,8 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 - Textos para el cliente: usar el [glosario](docs/glosario.md).
 - Commits con Conventional Commits en español: `feat(001): …`, `docs(004): …`.
 - Ramas: `feat/<spec>-t<NN>-<slug>`, `fix/<spec>-<slug>`, `docs/<slug>`.
+- Commits y PR sin atribución al asistente: nada de `Co-Authored-By` de Claude ni "Generated with
+  Claude Code". El autor es la persona que hace el commit. Lo aplica `.claude/settings.json`.
 
 ## Prohibido
 
