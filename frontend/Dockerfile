@@ -6,6 +6,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# seed/ viene del contexto adicional "seed" de docker-compose.yml (api.ts la importa como ../seed)
+COPY --from=seed . /seed
 RUN npm run build
 
 # ---------- Etapa 2: servir con nginx (usuario no root) ----------
