@@ -6,7 +6,7 @@ CloudOps Client Hub **no es otro Vercel**. Ayuda a una agencia digital a gestion
 
 Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep – 30 nov 2026. Equipo de 5: 4 ingenieros de sistemas y 1 ingeniero industrial.
 
-**Documentos de referencia:** [constitución](constitution.md) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [calendario](docs/calendario.md) · [tech stack](docs/tech-stack.md) · [glosario](docs/glosario.md)
+**Documentos de referencia:** [constitución](constitution/README.md) ([misión](constitution/mission.md) · [principios](constitution/principles.md) · [roadmap](constitution/roadmap.md) · [tech stack](constitution/tech-stack.md) · [convenciones](constitution/conventions.md) · [nombres canónicos](constitution/canonical-names.md)) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [glosario](docs/glosario.md)
 
 ## Tabla de contenidos
 
@@ -210,7 +210,7 @@ Cada herramienta de plataforma se instala cuando el diplomado cubre su módulo. 
 | MLOps | **MLflow** (Docker Compose) | 5 | Versiones de prompt y modelo con sus evaluaciones |
 | Multimodal | **Stability Matrix + ComfyUI** | 6 | SD 1.5 (SDXL Turbo solo si cabe en 6 GB); ilustración de la infografía |
 
-Detalle y justificación de cada elección en [docs/tech-stack.md](docs/tech-stack.md).
+Detalle y justificación de cada elección en [constitution/tech-stack.md](constitution/tech-stack.md).
 
 ## Hardware
 
@@ -300,7 +300,7 @@ Dos plantillas estándar de servicio; no se acepta "cualquier repositorio":
 
 El proyecto usa **Spec-Driven Development**. Cada spec pasa por el mismo ciclo y se cierra con una demo:
 
-1. **Constitución:** los [10 principios](constitution.md#los-10-principios) que ninguna spec puede romper.
+1. **Constitución:** los [10 principios](constitution/principles.md#los-10-principios) que ninguna spec puede romper.
 2. **Spec (`spec.md`):** qué se construye y por qué, en lenguaje de negocio, con criterios de aceptación medibles. Sin tecnología.
 3. **Plan (`plan.md`):** cómo se construye con el stack: modelo de datos, endpoints, manifiestos, pantallas.
 4. **Tareas (`tasks.md`):** pasos ordenados de menos de un día, cada uno verificable en minutos. Se escribe al empezar la spec.
@@ -353,7 +353,7 @@ Requerimientos completos (RF/RNF con prioridad MoSCoW y trazabilidad): [docs/req
 
 **Hitos:** 2 oct matriz P1–P4 cerrada · 13 oct GitOps funcionando · 24 oct puerta de seguridad · 31 oct caso del restaurante sin IA · **3 nov sustentación del módulo 4** · 12 nov asistente IA y reportes · 20 nov infografía · 21–23 nov colchón · **30 nov sustentación final**.
 
-Detalle en [docs/calendario.md](docs/calendario.md).
+Detalle en [constitution/roadmap.md](constitution/roadmap.md).
 
 ## Alcance de la demo
 
@@ -408,13 +408,18 @@ Los ingenieros de sistemas construyen la plataforma que publica, monitorea y rec
 ```
 cloudops/
 ├── README.md
-├── constitution.md                  # principios, stack por módulo y nombres canónicos
+├── constitution/
+│   ├── README.md                    # índice y cómo se usa
+│   ├── mission.md                   # qué construimos, para quién y caso demo
+│   ├── principles.md                # los 10 principios y reglas derivadas
+│   ├── roadmap.md                   # módulos, hitos, dependencias y riesgos
+│   ├── tech-stack.md                # stack por módulo, hardware y flujo de despliegue
+│   ├── conventions.md               # estructura, dónde va cada cosa, idioma, Git
+│   └── canonical-names.md           # clientes, planes, prioridades, estados, roles
 ├── CLAUDE.md                        # reglas para trabajar con asistentes de código
 ├── .github/pull_request_template.md # revisión de cada PR contra la constitución
 ├── docs/
 │   ├── requerimientos.md            # RF/RNF, MoSCoW y trazabilidad con la demo
-│   ├── calendario.md                # módulos, hitos, dependencias y riesgos
-│   ├── tech-stack.md                # stack, hardware y flujo de despliegue
 │   ├── sdd.md                       # cómo trabajamos y plantillas recomendadas
 │   └── glosario.md                  # términos técnicos → lenguaje del cliente
 └── specs/
@@ -448,7 +453,7 @@ cloudops/
 
 ## Cómo contribuir
 
-1. Leer la [constitución](constitution.md) y la spec en curso (`spec.md`, `plan.md`, `tasks.md`).
+1. Leer la [constitución](constitution/README.md) y la spec en curso (`spec.md`, `plan.md`, `tasks.md`).
 2. Tomar la siguiente tarea libre de `tasks.md` y poner tu nombre al lado.
 3. Crear la rama `feat/<spec>-t<NN>-<slug>` desde `main`.
 4. Commits con Conventional Commits; marcar la casilla de la tarea en `tasks.md` en el mismo PR.

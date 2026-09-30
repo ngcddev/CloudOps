@@ -1,7 +1,7 @@
 # Plan 002 · Plantillas de sitio y apps demo
 
 > Cómo se construye [la spec](spec.md). Base: sección "Sitios de cliente" de
-> [docs/tech-stack.md](../../docs/tech-stack.md).
+> [constitution/tech-stack.md](../../constitution/tech-stack.md).
 
 ## Stack (módulo 1)
 

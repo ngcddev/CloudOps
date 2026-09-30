@@ -1,4 +1,4 @@
-# Calendario, hardware y riesgos
+# Roadmap: calendario, specs y riesgos
 
 > 120 horas en 9 semanas, del **28 sep** al **30 nov 2026**.
 > Hitos: **sustentación del módulo 4 (3 nov)** y **sustentación final (30 nov)**.
@@ -59,13 +59,7 @@ Todas ──> 015
 
 ## Hardware
 
-| Equipo | Qué corre | Por qué |
-|---|---|---|
-| **PC A** (16 GB) · plataforma | k3s con el Hub, PostgreSQL, Gitea, Argo CD, Prometheus, Grafana, Loki, Alertmanager y los 3 sitios | Todo lo que debe estar siempre arriba vive en un nodo; la GPU no se usa |
-| **PC B** (16 GB, GPU 6 GB) · IA | Ollama, AnythingLLM, MLflow, ComfyUI | 6 GB de VRAM no alcanzan para LLM e imágenes a la vez: se usan por turnos |
-| Equipos de desarrollo | docker compose (backend + frontend) y edición de manifiestos | No necesitan el clúster completo |
-
-Cifras: un modelo de 7–8B en Q4 ocupa ≈ 5 GB de VRAM; uno de 14B ≈ 9 GB (no cabe).
+Qué corre en cada equipo: [tech-stack.md](tech-stack.md#distribución-del-hardware).
 
 ## Riesgos
 

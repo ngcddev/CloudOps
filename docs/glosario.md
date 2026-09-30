@@ -35,7 +35,7 @@
 | **Plan** | Básico, Estándar o Premium: define SLO, horario de atención, SLA y cuota de recursos. |
 | **SLA** | Acuerdo de nivel de servicio: tiempos máximos de respuesta y solución por prioridad. |
 | **SLO** | Objetivo de disponibilidad mensual del plan (ej. 99,5 %). |
-| **Prioridad P1–P4** | Clasificación por impacto × urgencia (ver [constitución](../constitution.md#prioridades-y-sla-base-propuesta-la-spec-000-los-confirma)). |
+| **Prioridad P1–P4** | Clasificación por impacto × urgencia (ver [constitución](../constitution/canonical-names.md#prioridades-y-sla-base-propuesta-la-spec-000-los-confirma)). |
 | **Tiempo de respuesta** | Desde que se abre el caso hasta que un técnico lo toma (`en_progreso`). |
 | **Tiempo de solución** | Desde que se abre el caso hasta que queda `resuelto` (ticket) o `mitigado` (incidente). |
 | **MTTR** | Tiempo medio de recuperación: promedio de (hora de mitigación − hora de inicio) de los incidentes. |

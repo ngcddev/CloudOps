@@ -16,7 +16,7 @@ que cambiar un campo, se cambia aquí en un PR que revisan el industrial y el ba
 
 ## Estado actual: propuesta
 
-Los valores vienen de la propuesta de la [constitución](../constitution.md#planes-propuesta-la-spec-000-los-confirma).
+Los valores vienen de la propuesta de la [constitución](../constitution/canonical-names.md#planes-propuesta-la-spec-000-los-confirma).
 El industrial los confirma o ajusta en las tareas de la spec 000. Mientras tanto:
 
 - `monthly_price` e `included_hours` valen `null`, que significa **a definir**. El backend los acepta
