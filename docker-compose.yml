@@ -20,9 +20,26 @@ services:
       timeout: 3s
       retries: 10
 
+  # API del Hub (spec 001): FastAPI en :8000, espera a que la base esté sana
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Falta .env; copia .env.example a .env}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Consola de agencia (spec 001): nginx en :5173 (dentro del contenedor, 8080)
+  web:
+    build: ./frontend
+    ports:
+      - "${WEB_PORT:-5173}:8080"
+    depends_on:
+      - api
+
   # Pendientes del módulo 1:
-  # api              → spec 001-T02/T03 (FastAPI en :8000, depende de db sano)
-  # web              → spec 001-T02/T09 (React en :5173)
   # restaurante      → spec 002-T10 (:8081)
   # ferreteria       → spec 002-T10 (:8082)
   # consultorio-web  → spec 002-T10 (:8083) y consultorio-api
