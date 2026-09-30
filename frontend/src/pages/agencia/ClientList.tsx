@@ -1,6 +1,6 @@
 // Pantalla "Clientes" de la consola de agencia: tabla con servicio, plan y estado de cada cliente.
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { listClients, type ClientSummary } from "../../api";
 import StatusBadge from "../../components/StatusBadge";
@@ -8,6 +8,8 @@ import StatusBadge from "../../components/StatusBadge";
 export default function ClientList() {
   const [clients, setClients] = useState<ClientSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Nombre del cliente recién registrado (lo envía el formulario al volver)
+  const created = (useLocation().state as { created?: string } | null)?.created;
 
   useEffect(() => {
     listClients()
@@ -24,6 +26,11 @@ export default function ClientList() {
         </Link>
       </div>
 
+      {created && (
+        <p className="notice" role="status">
+          ✓ Se registró el cliente <strong>{created}</strong>.
+        </p>
+      )}
       {error && (
         <p className="error" role="alert">
           ✕ No se pudo cargar la lista: {error}

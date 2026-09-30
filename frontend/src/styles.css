@@ -202,6 +202,68 @@ h3 {
   text-decoration: underline;
 }
 
+/* ---------- Formularios ---------- */
+
+.form {
+  max-width: 640px;
+}
+
+.form fieldset {
+  border: 1px solid var(--ink);
+  margin: 0 0 calc(var(--space) * 1.5);
+  padding: var(--space);
+}
+
+.form legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--space);
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  width: 100%;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* Un campo con error se marca con borde grueso y mensaje con ícono */
+.field [aria-invalid="true"] {
+  border-width: 3px;
+}
+
+.field-error {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+}
+
 /* ---------- Pantallas pequeñas: el menú pasa arriba ---------- */
 
 @media (max-width: 720px) {
