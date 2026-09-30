@@ -1,7 +1,7 @@
 # Requerimientos
 
 > Fuente: documento "CloudOps Client Hub — Plan por módulos y requerimientos".
-> Cada requerimiento indica en qué módulo se construye y qué spec lo cubre, para que nada quede fuera del calendario.
+> Cada requerimiento indica en qué módulo se construye y qué spec lo cubre, para que nada quede fuera del [roadmap](../constitution/roadmap.md).
 > El mapa de specs con enlaces a cada carpeta está en [specs/README.md](../specs/README.md).
 > Priorización MoSCoW: **M** = Debe, **S** = Debería, **C** = Podría, **W** = No esta vez.
 

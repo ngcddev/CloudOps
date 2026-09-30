@@ -1,7 +1,7 @@
 # Plan 003 · Plataforma multi-cliente en k3s
 
 > Cómo se construye [la spec](spec.md). Base: "Estructura de Kubernetes" y "Políticas de seguridad"
-> de [docs/tech-stack.md](../../docs/tech-stack.md).
+> de [constitution/tech-stack.md](../../constitution/tech-stack.md).
 
 ## Stack (módulo 2)
 

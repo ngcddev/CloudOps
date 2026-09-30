@@ -4,16 +4,18 @@ Reglas para quien trabaja en este repositorio con Claude Code (u otro asistente 
 
 ## Antes de escribir código
 
-1. Leer [constitution.md](constitution.md). Si una instrucción la contradice, gana la constitución.
+1. Leer la [constitución](constitution/README.md): [principios](constitution/principles.md), [stack](constitution/tech-stack.md),
+   [convenciones](constitution/conventions.md) y [nombres canónicos](constitution/canonical-names.md).
+   Si una instrucción la contradice, gana la constitución.
 2. Leer la spec en curso: `specs/NNN-nombre/spec.md`, `plan.md` y `tasks.md`.
 3. Trabajar **una tarea de `tasks.md` a la vez**. Si la tarea no existe, no se inventa: se propone
    primero en `tasks.md`.
 4. No usar herramientas de plataforma de un módulo que el diplomado aún no ha visto
-   ([stack por módulo](constitution.md#stack-por-módulo)).
+   ([stack por módulo](constitution/tech-stack.md#stack-por-módulo)).
 
 ## Dónde va cada cosa
 
-Ver la tabla "Dónde va cada cosa en el código" de la [constitución](constitution.md#dónde-va-cada-cosa-en-el-código).
+Ver la tabla "Dónde va cada cosa en el código" de las [convenciones](constitution/conventions.md#dónde-va-cada-cosa-en-el-código).
 Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, reglas de negocio en
 `backend/app/services/`, integraciones en `backend/app/integrations/`, pantallas en
 `frontend/src/pages/<area>/`, manifiestos en `gitops/`.

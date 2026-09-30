@@ -1,6 +1,6 @@
 # Cómo trabajamos: Spec-Driven Development (SDD)
 
-> El proyecto se construye con una [constitución](../constitution.md) y 16 especificaciones
+> El proyecto se construye con una [constitución](../constitution/README.md) y 16 especificaciones
 > derivadas de los [requerimientos](requerimientos.md). Ninguna línea de código se escribe sin
 > una spec que la pida.
 
@@ -22,8 +22,8 @@ criterios de aceptación.
 
 ```
 cloudops/
-├── constitution.md
-├── docs/                         # requerimientos, calendario, glosario, stack, esta guía
+├── constitution/                 # misión, principios, roadmap, stack, convenciones, nombres
+├── docs/                         # requerimientos, glosario, esta guía
 └── specs/
     ├── README.md                 # mapa de las 16 specs y sus dependencias
     ├── _plantilla/               # copiar esta carpeta para abrir una spec nueva

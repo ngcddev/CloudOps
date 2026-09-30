@@ -18,7 +18,31 @@ de 7–8B en lugar de 14B, y la carga repartida entre dos máquinas (ver "Distri
 **Regla del diplomado:** el proyecto avanza módulo a módulo; cada herramienta de plataforma se
 implementa cuando el módulo correspondiente ya la cubrió.
 
-## Stack elegido
+## Stack por módulo
+
+Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([principio 9](principles.md)).
+
+| Módulo | Fechas | Herramientas que entran |
+|---|---|---|
+| 1 · Cloud Native, Linux, Git, contenedores | 28 sep – 1 oct | Linux, Git, Docker, docker compose, Nginx, FastAPI + PostgreSQL, React + Vite |
+| 2 · Kubernetes, GitOps, Platform Engineering | 2 – 13 oct | k3s (Traefik), Gitea (Git + registro), Argo CD, Backstage |
+| 3 · DevSecOps y cadena de suministro | 16 – 24 oct | Gitea Actions, Gitleaks, Trivy, Syft, Cosign, Pod Security Admission |
+| 4 · IaC, observabilidad, SRE | 24 oct – 3 nov | OpenTofu/Terraform, Ansible (opcional), Prometheus, Grafana, Alertmanager, Loki, Blackbox Exporter, OpenTelemetry |
+| 5 · MLOps, LLMOps, IA local | 3 – 12 nov | Ollama (Qwen2.5 7B o Llama 3.1 8B Q4; respaldo Qwen2.5 3B), AnythingLLM + nomic-embed-text, MLflow |
+| 6 · IA local multimodal | 13 – 20 nov | Stability Matrix + ComfyUI (SD 1.5; SDXL Turbo solo si cabe en 6 GB) |
+| 7 · Integrador | 24 – 30 nov | Sin herramientas nuevas: integración, ensayo y documentación |
+
+## Stack de producto (fijo desde el módulo 1)
+
+| Capa | Tecnología | Notas |
+|---|---|---|
+| Backend | Python 3.12 + FastAPI | SQLAlchemy 2, Alembic (migraciones), Pydantic, pytest |
+| Base de datos | PostgreSQL 16 | Fechas en UTC (`timestamptz`) |
+| Frontend | React + Vite + TypeScript | react-router-dom; CSS propio en blanco y negro, sin librerías de UI |
+| Contenedores | Docker, docker compose (desarrollo) | Imágenes multi-stage, usuario no root |
+| Dependencias | `pip` + `requirements.txt` / `npm` | |
+
+## Stack de plataforma
 
 | Capa | Herramienta | Notas |
 |---|---|---|

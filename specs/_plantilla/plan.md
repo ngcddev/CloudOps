@@ -1,6 +1,6 @@
 # Plan NNN · Nombre de la spec
 
-> Cómo se construye [la spec](spec.md) con el stack de la [constitución](../../constitution.md).
+> Cómo se construye [la spec](spec.md) con el stack de la [constitución](../../constitution/tech-stack.md).
 > Solo usa herramientas de módulos que el diplomado ya cubrió.
 
 ## Stack

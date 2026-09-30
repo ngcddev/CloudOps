@@ -1,7 +1,7 @@
 # Plan 006 · Puerta de calidad y seguridad
 
 > Cómo se construye [la spec](spec.md). Base: "Políticas de seguridad" y "Flujo de despliegue" de
-> [docs/tech-stack.md](../../docs/tech-stack.md). Sin Kyverno.
+> [constitution/tech-stack.md](../../constitution/tech-stack.md). Sin Kyverno.
 
 ## Stack (módulo 3)
 
