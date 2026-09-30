@@ -5,7 +5,7 @@
 
 ## Base del proyecto
 
-- [ ] T01 · Crear las carpetas `backend/`, `frontend/` y `seed/` con su README — **Verifica:** estructura igual a la del [plan](plan.md#esqueleto-del-hub). [ ]
+- [x] T01 · Crear las carpetas `backend/`, `frontend/` y `seed/` con su README — **Verifica:** estructura igual a la del [plan](plan.md#esqueleto-del-hub). [ngcddev]
 - [ ] T02 · Escribir `docker-compose.yml` con PostgreSQL, API y frontend, y `.env.example` — **Verifica:** `docker compose up` levanta los tres. [ ]
 - [ ] T03 · Crear el esqueleto de FastAPI con `/health` y conexión a PostgreSQL — **Verifica:** `curl localhost:8000/health` → `{"status":"ok"}`. [ ]
 
