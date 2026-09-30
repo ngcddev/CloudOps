@@ -33,7 +33,11 @@ services:
 
   # Consola de agencia (spec 001): nginx en :5173 (dentro del contenedor, 8080)
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # seed/ entra a la imagen como datos de prueba mientras la API no responde
+      additional_contexts:
+        seed: ./seed
     ports:
       - "${WEB_PORT:-5173}:8080"
     depends_on:

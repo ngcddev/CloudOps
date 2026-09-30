@@ -99,6 +99,171 @@ h3 {
   max-width: 1100px;
 }
 
+/* ---------- Elementos comunes ---------- */
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  margin-bottom: var(--space);
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.button {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 2px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.button:disabled {
+  border-color: var(--line);
+  background: var(--line);
+  color: var(--paper);
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.button-secondary:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Avisos: se distinguen por ícono, texto y borde, no por color */
+.notice,
+.error {
+  padding: 10px 14px;
+  margin: 0 0 var(--space);
+}
+
+.notice {
+  border: 1px dashed var(--ink);
+}
+
+.error {
+  border: 2px solid var(--ink);
+  font-weight: 600;
+}
+
+/* ---------- Tablas ---------- */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.table th {
+  border-bottom: 2px solid var(--ink);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.status {
+  white-space: nowrap;
+}
+
+/* Un estado con problemas se resalta con peso y subrayado, no con color */
+.status-degradado,
+.status-caido {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* ---------- Formularios ---------- */
+
+.form {
+  max-width: 640px;
+}
+
+.form fieldset {
+  border: 1px solid var(--ink);
+  margin: 0 0 calc(var(--space) * 1.5);
+  padding: var(--space);
+}
+
+.form legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--space);
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  width: 100%;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* Un campo con error se marca con borde grueso y mensaje con ícono */
+.field [aria-invalid="true"] {
+  border-width: 3px;
+}
+
+.field-error {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+}
+
 /* ---------- Pantallas pequeñas: el menú pasa arriba ---------- */
 
 @media (max-width: 720px) {
@@ -113,5 +278,11 @@ h3 {
 
   .content {
     padding: var(--space);
+  }
+
+  /* La tabla se desplaza sola, no la página */
+  .table {
+    display: block;
+    overflow-x: auto;
   }
 }
