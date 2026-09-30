@@ -202,6 +202,63 @@ h3 {
   text-decoration: underline;
 }
 
+/* ---------- Detalle ---------- */
+
+section {
+  margin-bottom: calc(var(--space) * 2);
+}
+
+h4 {
+  margin: var(--space) 0 8px;
+}
+
+/* Lista de datos en dos columnas: etiqueta y valor */
+.data {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px var(--space);
+  margin: 0;
+}
+
+.data dt {
+  font-weight: 600;
+}
+
+.data dd {
+  margin: 0;
+}
+
+.project {
+  margin-bottom: var(--space);
+}
+
+.card {
+  border: 1px solid var(--ink);
+  padding: var(--space);
+  margin-bottom: var(--space);
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.card-header h3 {
+  margin: 0;
+}
+
+/* El nombre del plan se resalta invertido, sin color */
+.plan-name {
+  display: inline-block;
+  padding: 0 8px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
 /* ---------- Formularios ---------- */
 
 .form {
@@ -267,8 +324,11 @@ h3 {
 /* ---------- Pantallas pequeñas: el menú pasa arriba ---------- */
 
 @media (max-width: 720px) {
+  /* minmax(0, 1fr): la columna no crece con la tabla; así la tabla se desplaza sola */
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    /* El menú ocupa solo lo que necesita; el resto de la altura es del contenido */
+    grid-template-rows: auto 1fr;
   }
 
   .sidebar {
@@ -276,8 +336,36 @@ h3 {
     border-bottom: 2px solid var(--ink);
   }
 
+  .brand-sub {
+    margin-bottom: 8px;
+  }
+
+  /* El menú pasa a una fila que se parte en varias líneas; lo que aún no existe se oculta */
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .nav a {
+    margin-bottom: 0;
+  }
+
+  .nav li:has(.nav-disabled) {
+    display: none;
+  }
+
   .content {
+    min-width: 0;
     padding: var(--space);
+  }
+
+  .data {
+    grid-template-columns: 1fr;
+  }
+
+  .data dd {
+    margin-bottom: 6px;
   }
 
   /* La tabla se desplaza sola, no la página */
