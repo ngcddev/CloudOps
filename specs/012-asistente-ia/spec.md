@@ -1,5 +1,7 @@
 # 012 · Asistente de incidentes con IA local
 
+> **Acciona:** Sistemas (Backend) · Industrial revisa que los mensajes al cliente no tengan jerga
+>
 > **Módulo:** 5 · **Requerimientos:** RF-18, RF-19, RNF-09 · **Depende de:** 008 · **Estado:** Spec y plan
 
 ## Qué y por qué

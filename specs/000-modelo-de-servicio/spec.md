@@ -1,7 +1,10 @@
 # 000 · Modelo de servicio (industrial)
 
+> **Acciona:** Industrial · Sistemas apoya validando que cada regla y KPI se pueda medir en el Hub
+>
 > **Módulo:** 1–2 · **Requerimientos:** planes, P1–P4, SLA y KPI (insumo de RF-02, RF-05, RF-13, RF-17, RF-20) · **Depende de:** — · **Estado:** Tareas listas
-> Responsable principal: Ingeniería Industrial. Fecha límite de la matriz P1–P4: **2 oct**.
+>
+> Fecha límite de la matriz P1–P4: **2 oct**.
 
 ## Qué y por qué
 

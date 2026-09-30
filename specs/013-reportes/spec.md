@@ -1,5 +1,7 @@
 # 013 · Reportes operativo y ejecutivo
 
+> **Acciona:** Industrial (contenido y formato) y Sistemas (Backend, Frontend)
+>
 > **Módulo:** 5 (puede adelantarse con datos del Hub) · **Requerimientos:** RF-20 · **Depende de:** 010 · **Estado:** Spec y plan
 
 ## Qué y por qué

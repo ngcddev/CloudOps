@@ -1,5 +1,7 @@
 # 001 · Clientes y planes
 
+> **Acciona:** Sistemas (Backend, Frontend) · Industrial valida planes y SLA
+>
 > **Módulo:** 1 · **Requerimientos:** RF-01, RF-02 · **Depende de:** 000 · **Estado:** Tareas listas
 
 ## Qué y por qué
