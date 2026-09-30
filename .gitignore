@@ -1,0 +1,166 @@
+# =====================================================================
+# CloudOps Client Hub — .gitignore
+# Regla: nada de secretos, datos locales, modelos ni artefactos de build
+# entra al repositorio. Si necesitas versionar un ejemplo, usa el sufijo
+# ".example" (p. ej. .env.example, terraform.tfvars.example).
+# =====================================================================
+
+# ---------- Secretos y credenciales (RNF-06) ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!*.pub
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+cosign.key
+cosign.password
+*.kubeconfig
+kubeconfig
+kubeconfig.yaml
+.kube/
+secrets/
+*.secret.yaml
+*.secret.yml
+*-secret.yaml
+*.sops.yaml.dec
+.htpasswd
+.netrc
+.npmrc
+.pypirc
+credentials.json
+token.txt
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.egg-info/
+*.egg
+build/
+pip-wheel-metadata/
+
+# ---------- Node / Frontend ----------
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+coverage/
+.eslintcache
+*.local
+
+# ---------- OpenTofu / Terraform ----------
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# .terraform.lock.hcl SÍ se versiona
+
+# ---------- Ansible ----------
+*.retry
+.vault_pass
+vault_pass.txt
+
+# ---------- Kubernetes / Helm ----------
+charts/*.tgz
+*.tgz
+
+# ---------- IA local (modelos y experimentos) ----------
+*.gguf
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bin
+/models/
+ai/models/
+mlruns/
+mlartifacts/
+ai/outputs/
+comfyui/output/
+
+# ---------- Seguridad: reportes generados localmente ----------
+# La evidencia oficial se guarda en el Hub, no en el repo.
+trivy-report*.json
+gitleaks-report*.json
+sbom*.json
+*.sarif
+
+# ---------- Datos locales y bases de datos ----------
+/data/
+pgdata/
+postgres-data/
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+*.bak
+backups/
+
+# ---------- Sistema operativo y editores ----------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.obsidian/
+*.swp
+*.swo
+*~
+
+# ---------- Claude (configuración personal) ----------
+.claude/settings.local.json
+CLAUDE.local.md
+
+# ---------- Otros ----------
+*.rar
+*.zip
+*.7z
+*.log
+logs/
+tmp/
+temp/
+.cache/
+*.mp4
+*.mov
