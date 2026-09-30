@@ -1,5 +1,7 @@
 # 008 · Monitoreo e incidente automático
 
+> **Acciona:** Sistemas (DevSecOps / SRE, Backend) · Industrial valida el cálculo del SLA
+>
 > **Módulo:** 4 (incidentes manuales pueden adelantarse) · **Requerimientos:** RF-11, RF-12, RF-13, RNF-07 · **Depende de:** 000, 003, 004 · **Estado:** Spec y plan
 
 ## Qué y por qué

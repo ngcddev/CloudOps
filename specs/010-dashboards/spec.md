@@ -1,5 +1,7 @@
 # 010 · Dashboards y métricas del servicio
 
+> **Acciona:** Sistemas (Frontend, Backend) · Industrial define los KPI y hace la prueba con personas no técnicas
+>
 > **Módulo:** 4 (vistas pueden adelantarse con datos del Hub) · **Requerimientos:** RF-15, RF-16, RF-17, RNF-10 · **Depende de:** 008, 009 · **Estado:** Spec y plan
 
 ## Qué y por qué

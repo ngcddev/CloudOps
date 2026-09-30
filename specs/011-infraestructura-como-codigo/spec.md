@@ -1,5 +1,7 @@
 # 011 · Infraestructura como código
 
+> **Acciona:** Sistemas (Cloud / Platform)
+>
 > **Módulo:** 4 · **Requerimientos:** RNF-08 · **Depende de:** 003 · **Estado:** Spec y plan
 
 ## Qué y por qué

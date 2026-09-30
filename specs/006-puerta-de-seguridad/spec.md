@@ -1,5 +1,7 @@
 # 006 · Puerta de calidad y seguridad
 
+> **Acciona:** Sistemas (DevSecOps / SRE, Backend)
+>
 > **Módulo:** 3 · **Requerimientos:** RF-08, RF-09, RNF-05, RNF-06 · **Depende de:** 005 · **Estado:** Spec y plan
 
 ## Qué y por qué

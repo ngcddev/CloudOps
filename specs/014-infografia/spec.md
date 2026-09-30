@@ -1,5 +1,7 @@
 # 014 · Infografía mensual
 
+> **Acciona:** Sistemas (Frontend, Backend) · Industrial define el contenido de la infografía
+>
 > **Módulo:** 6 · **Requerimientos:** RF-21, RF-23 (opcional) · **Depende de:** 010, 013 · **Estado:** Spec y plan
 
 ## Qué y por qué

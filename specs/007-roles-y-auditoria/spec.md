@@ -1,5 +1,7 @@
 # 007 · Acceso por roles y auditoría
 
+> **Acciona:** Sistemas (Backend, Frontend)
+>
 > **Módulo:** 3 (backend/frontend pueden adelantarse) · **Requerimientos:** RF-01 (roles), RF-10 · **Depende de:** 001 · **Estado:** Spec y plan
 
 ## Qué y por qué

@@ -1,5 +1,7 @@
 # 015 · Demo integrada
 
+> **Acciona:** Todo el equipo (Sistemas e Industrial)
+>
 > **Módulo:** 7 · **Requerimientos:** RNF-11 · **Depende de:** todas · **Estado:** Spec y plan
 
 ## Qué y por qué

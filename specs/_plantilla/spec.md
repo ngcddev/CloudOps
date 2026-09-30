@@ -1,6 +1,9 @@
 # NNN · Nombre de la spec
 
+> **Acciona:** Sistemas (rol) · Industrial (qué aporta), o al revés
+>
 > **Módulo:** N · **Requerimientos:** RF-XX, RNF-XX · **Depende de:** NNN · **Estado:** Spec y plan
+>
 > Regla: este archivo no menciona tecnología. Dice qué y por qué, en lenguaje de negocio.
 
 ## Qué y por qué

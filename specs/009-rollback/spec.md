@@ -1,5 +1,7 @@
 # 009 · Recuperación por rollback
 
+> **Acciona:** Sistemas (Cloud / Platform, Backend)
+>
 > **Módulo:** 4 · **Requerimientos:** RF-14 · **Depende de:** 005, 008 · **Estado:** Spec y plan
 
 ## Qué y por qué
