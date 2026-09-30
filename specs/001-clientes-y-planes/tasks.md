@@ -22,7 +22,7 @@
 
 ## Pantallas
 
-- [ ] T09 · Crear el esqueleto de React + Vite con la navegación de la consola de agencia — **Verifica:** `localhost:5173` muestra el menú. [ ]
+- [x] T09 · Crear el esqueleto de React + Vite con la navegación de la consola de agencia — **Verifica:** `localhost:5173` muestra el menú. [sebastian-debug]
 - [ ] T10 · Crear la lista de clientes y el formulario de registro (blanco y negro) — **Verifica:** registrar un cliente lo muestra en la lista. [ ]
 - [ ] T11 · Crear el detalle del cliente con su proyecto, servicio, plan y SLA — **Verifica:** La Sazón muestra Premium y P1 15 min / 4 h. [ ]
 

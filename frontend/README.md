@@ -19,6 +19,14 @@ frontend/
     └── components/
 ```
 
+## Cómo se ejecuta
+
+| Qué | Comando |
+|---|---|
+| Desarrollo con recarga en caliente (`localhost:5173`, `/api` → `localhost:8000`) | `npm install` y `npm run dev` |
+| Compilar | `npm run build` |
+| Con todo el Hub | `docker compose up --build` (nginx sirve la SPA y reenvía `/api` al servicio `api`) |
+
 ## Trabajar antes de que exista la API
 
 La forma de los datos está en [`seed/`](../seed/README.md). Mientras el backend no responda, `api.ts`

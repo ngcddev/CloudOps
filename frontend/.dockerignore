@@ -1,0 +1,5 @@
+# Archivos que no entran al contexto de build de la imagen del frontend
+node_modules
+dist
+.vite
+*.log
