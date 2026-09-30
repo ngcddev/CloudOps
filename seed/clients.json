@@ -1,0 +1,70 @@
+{
+  "agency": {
+    "name": "Forja Digital"
+  },
+  "clients": [
+    {
+      "name": "Restaurante La Sazón",
+      "contact_name": "Marta Ríos",
+      "email": "contacto@lasazon.test",
+      "phone": "+57 300 000 0001",
+      "projects": [
+        {
+          "name": "Sitio web La Sazón",
+          "description": "Página del restaurante con menú y reservas.",
+          "services": [
+            {
+              "name": "Sitio web",
+              "host": "restaurante.hub.local",
+              "template": "landing",
+              "namespace": "cliente-restaurante",
+              "plan_code": "premium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ferretería El Tornillo",
+      "contact_name": "Jorge Muñoz",
+      "email": "contacto@eltornillo.test",
+      "phone": "+57 300 000 0002",
+      "projects": [
+        {
+          "name": "Sitio web El Tornillo",
+          "description": "Página de la ferretería con catálogo de productos.",
+          "services": [
+            {
+              "name": "Sitio web",
+              "host": "ferreteria.hub.local",
+              "template": "landing",
+              "namespace": "cliente-ferreteria",
+              "plan_code": "estandar"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Consultorio Dental Popayán",
+      "contact_name": "Laura Cifuentes",
+      "email": "contacto@dentalpopayan.test",
+      "phone": "+57 300 000 0003",
+      "projects": [
+        {
+          "name": "Sitio web Dental Popayán",
+          "description": "Página del consultorio con formulario de citas.",
+          "services": [
+            {
+              "name": "Sitio web",
+              "host": "consultorio.hub.local",
+              "template": "landing_form",
+              "namespace": "cliente-consultorio",
+              "plan_code": "basico"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

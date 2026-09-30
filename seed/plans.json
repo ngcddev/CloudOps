@@ -1,0 +1,32 @@
+[
+  {
+    "code": "basico",
+    "name": "Básico",
+    "slo_availability": 99.0,
+    "support_hours": "lun-vie 08:00-18:00",
+    "cpu_quota": "250m",
+    "memory_quota": "256Mi",
+    "monthly_price": null,
+    "included_hours": null
+  },
+  {
+    "code": "estandar",
+    "name": "Estándar",
+    "slo_availability": 99.5,
+    "support_hours": "lun-sab 07:00-20:00",
+    "cpu_quota": "500m",
+    "memory_quota": "512Mi",
+    "monthly_price": null,
+    "included_hours": null
+  },
+  {
+    "code": "premium",
+    "name": "Premium",
+    "slo_availability": 99.9,
+    "support_hours": "24x7",
+    "cpu_quota": "1000m",
+    "memory_quota": "1Gi",
+    "monthly_price": null,
+    "included_hours": null
+  }
+]

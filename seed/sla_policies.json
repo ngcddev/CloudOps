@@ -1,0 +1,6 @@
+[
+  { "priority": "P1", "response_minutes": 15, "resolution_minutes": 240, "clock": "24x7" },
+  { "priority": "P2", "response_minutes": 60, "resolution_minutes": 480, "clock": "horario_plan" },
+  { "priority": "P3", "response_minutes": 240, "resolution_minutes": 1440, "clock": "horario_plan" },
+  { "priority": "P4", "response_minutes": 480, "resolution_minutes": 4320, "clock": "horario_plan" }
+]

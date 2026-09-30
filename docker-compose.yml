@@ -1,0 +1,31 @@
+# Entorno de desarrollo del Hub: un solo comando levanta todo (docker compose up --build).
+# Responsable: Sistemas 3 (DevSecOps). Cada servicio lo agrega quien tiene su Dockerfile listo.
+# Antes de la primera vez:  cp .env.example .env
+
+services:
+  # Base de datos del Hub (spec 001)
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Falta .env; copia .env.example a .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta .env; copia .env.example a .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Falta .env; copia .env.example a .env}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Pendientes del módulo 1:
+  # api              → spec 001-T02/T03 (FastAPI en :8000, depende de db sano)
+  # web              → spec 001-T02/T09 (React en :5173)
+  # restaurante      → spec 002-T10 (:8081)
+  # ferreteria       → spec 002-T10 (:8082)
+  # consultorio-web  → spec 002-T10 (:8083) y consultorio-api
+
+volumes:
+  db_data:
