@@ -14,7 +14,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+    // Alias de la carpeta seed/ del repo (igual que en vite.config.ts)
+    "paths": { "@seed/*": ["../seed/*"] }
   },
   "include": ["src", "vite.config.ts"]
 }
