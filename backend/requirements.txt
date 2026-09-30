@@ -1,3 +1,6 @@
 # Dependencias de la API del Hub (se agregan por tarea, con versión fija).
 fastapi==0.142.2
 uvicorn[standard]==0.54.0
+sqlalchemy==2.1.1
+psycopg[binary]==3.3.6
+pydantic-settings==2.15.0
