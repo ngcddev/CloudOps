@@ -1,0 +1,3 @@
+# Dependencias de la API del Hub (se agregan por tarea, con versión fija).
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
