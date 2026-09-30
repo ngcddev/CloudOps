@@ -53,7 +53,9 @@ export default function ClientList() {
             {clients.map((client) => (
               <tr key={client.id}>
                 <td>
-                  <strong>{client.name}</strong>
+                  <Link to={`/agencia/clientes/${client.id}`}>
+                    <strong>{client.name}</strong>
+                  </Link>
                   {client.contact_name && <div className="muted">{client.contact_name}</div>}
                 </td>
                 <td>
