@@ -4,6 +4,10 @@
 
 CloudOps Client Hub **no es otro Vercel**. Ayuda a una agencia digital a gestionar el servicio completo que presta a sus clientes: solicitudes, cambios, despliegues, monitoreo, incidentes, recuperación, calidad y reportes.
 
+Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep – 30 nov 2026.
+
+**Empieza por aquí:** [constitución](constitution.md) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [calendario](docs/calendario.md) · [stack](docs/tech-stack.md) · [glosario](docs/glosario.md)
+
 ## Tabla de contenidos
 
 - [El problema](#el-problema)
@@ -14,6 +18,8 @@ CloudOps Client Hub **no es otro Vercel**. Ayuda a una agencia digital a gestion
 - [Aporte del ingeniero industrial](#aporte-del-ingeniero-industrial)
 - [Alcance de la demo](#alcance-de-la-demo)
 - [Arquitectura del laboratorio](#arquitectura-del-laboratorio)
+- [Cómo trabajamos (SDD)](#cómo-trabajamos-sdd)
+- [Estructura del repositorio](#estructura-del-repositorio)
 - [Equipo y roles](#equipo-y-roles)
 
 ## El problema
@@ -110,22 +116,85 @@ Los ingenieros de sistemas construyen la plataforma que publica, monitorea y rec
 
 ## Alcance de la demo
 
-- [ ] Registrar una agencia y tres clientes ficticios
-- [ ] Crear un proyecto o servicio por cliente
-- [ ] Desplegar aplicaciones demo con contenedores y Kubernetes
-- [ ] Ejecutar validación automática antes de publicar
-- [ ] Dashboard técnico para la agencia y uno simplificado para el cliente
-- [ ] Simular una falla controlada
-- [ ] Detectarla por monitoreo y abrir un incidente
-- [ ] Clasificar prioridad, asignar responsable y medir SLA
-- [ ] Recuperar el servicio mediante rollback
-- [ ] Generar un reporte operativo y ejecutivo
-- [ ] Usar un asistente local para resumir el incidente, con verificación humana
-- [ ] Generar una infografía operativa como componente visual o multimodal
+Clientes demo (ficticios): Restaurante **La Sazón** (Premium), Ferretería **El Tornillo** (Estándar) y Consultorio **Dental Popayán** (Básico), atendidos por la agencia **Forja Digital**.
+
+- [ ] Registrar una agencia y tres clientes ficticios — [001](specs/001-clientes-y-planes/spec.md)
+- [ ] Crear un proyecto o servicio por cliente — [001](specs/001-clientes-y-planes/spec.md)
+- [ ] Desplegar aplicaciones demo con contenedores y Kubernetes — [002](specs/002-plantillas-de-sitio/spec.md), [003](specs/003-plataforma-k3s/spec.md)
+- [ ] Ejecutar validación automática antes de publicar — [006](specs/006-puerta-de-seguridad/spec.md)
+- [ ] Dashboard técnico para la agencia y uno simplificado para el cliente — [010](specs/010-dashboards/spec.md)
+- [ ] Simular una falla controlada — [002](specs/002-plantillas-de-sitio/spec.md)
+- [ ] Detectarla por monitoreo y abrir un incidente — [008](specs/008-monitoreo-e-incidentes/spec.md)
+- [ ] Clasificar prioridad, asignar responsable y medir SLA — [000](specs/000-modelo-de-servicio/spec.md), [004](specs/004-mesa-de-servicio/spec.md), [008](specs/008-monitoreo-e-incidentes/spec.md)
+- [ ] Recuperar el servicio mediante rollback — [009](specs/009-rollback/spec.md)
+- [ ] Generar un reporte operativo y ejecutivo — [013](specs/013-reportes/spec.md)
+- [ ] Usar un asistente local para resumir el incidente, con verificación humana — [012](specs/012-asistente-ia/spec.md)
+- [ ] Generar una infografía operativa como componente visual o multimodal — [014](specs/014-infografia/spec.md)
 
 ## Arquitectura del laboratorio
 
 Contenedores · Kubernetes · GitOps · Pipelines con validaciones de seguridad · Observabilidad (métricas, logs, alertas) · Modelo de IA local
+
+| Capa | Herramienta |
+|---|---|
+| Hub | FastAPI + PostgreSQL · React + Vite + TypeScript |
+| Kubernetes | k3s (Traefik) |
+| Git, CI y registro | Gitea + Gitea Actions |
+| GitOps | Argo CD · catálogo en Backstage |
+| Seguridad | Gitleaks, Trivy, Syft, Cosign, Pod Security Admission |
+| Observabilidad | Prometheus, Grafana, Alertmanager, Loki, Blackbox Exporter, OpenTelemetry |
+| IaC | OpenTofu (compatible con Terraform), Ansible opcional |
+| IA local | Ollama (7–8B), AnythingLLM, MLflow, ComfyUI (SD 1.5) |
+
+Dos equipos: **PC A** (plataforma: k3s, Hub, Gitea, Argo CD, observabilidad y sitios) y **PC B** (IA: Ollama, AnythingLLM, MLflow, ComfyUI). Detalle en [docs/tech-stack.md](docs/tech-stack.md).
+
+```
+Push a Gitea → Gitea Actions (Gitleaks → build → Trivy → Syft → Cosign → verify)
+  → tag en hub-gitops → Argo CD sincroniza el namespace del cliente
+  → Blackbox Exporter vigila → Alertmanager avisa al Hub → incidente P1 + SLA
+  → rollback (git revert) → métrica verde → MTTR → resumen con IA local aprobado por un humano
+```
+
+## Cómo trabajamos (SDD)
+
+El proyecto usa **Spec-Driven Development**: una [constitución](constitution.md) con 10 principios y
+[16 specs](specs/README.md) derivadas de los [requerimientos](docs/requerimientos.md). Cada spec
+pasa por `spec.md` (qué y por qué) → `plan.md` (cómo) → `tasks.md` (pasos de menos de un día) →
+implementación, y se cierra con una demo. Las herramientas de plataforma entran solo cuando el
+diplomado ya cubrió su módulo. Detalle en [docs/sdd.md](docs/sdd.md).
+
+| Módulo | Fechas | Specs |
+|---|---|---|
+| 1 · Contenedores | 28 sep – 1 oct | 000, 001, 002 |
+| 2 · Kubernetes y GitOps | 2 – 13 oct | 003, 004, 005 |
+| 3 · DevSecOps | 16 – 24 oct | 006, 007 |
+| 4 · IaC y observabilidad | 24 oct – 3 nov | 008, 009, 010, 011 |
+| 5 · IA local | 3 – 12 nov | 012, 013 |
+| 6 · IA multimodal | 13 – 20 nov | 014 |
+| 7 · Integrador | 24 – 30 nov | 015 |
+
+## Estructura del repositorio
+
+```
+cloudops/
+├── constitution.md    # principios, stack por módulo y nombres canónicos
+├── CLAUDE.md          # reglas para trabajar con asistentes de código
+├── docs/              # requerimientos, calendario, stack, glosario, guía SDD
+├── specs/             # mapa, plantilla y las 16 specs (000–015)
+├── backend/           # API FastAPI (desde la spec 001)
+├── frontend/          # consola de agencia y portal del cliente (desde la spec 001)
+├── apps/              # plantillas y sitios demo de clientes (spec 002)
+├── gitops/            # manifiestos Kubernetes → repo hub-gitops en Gitea (spec 003)
+├── pipelines/         # Gitea Actions (spec 006)
+├── observability/     # Prometheus, Alertmanager, Grafana, Loki (spec 008)
+├── infra/             # OpenTofu y Ansible (spec 011)
+├── ai/                # prompts, evaluación, integración con Ollama/MLflow/ComfyUI (specs 012, 014)
+├── seed/              # datos semilla (specs 000, 001, 015)
+└── demo/              # guion y reinicio de la demo (spec 015)
+```
+
+Las carpetas de código aparecen cuando su spec empieza. Para contribuir: tomar una tarea de
+`tasks.md`, crear la rama `feat/<spec>-t<NN>-<slug>` y abrir un PR con la plantilla.
 
 ## Equipo y roles
 
