@@ -1,0 +1,15 @@
+# Finales de línea LF en el repo (los scripts y Dockerfiles fallan con CRLF)
+* text=auto eol=lf
+
+*.sh     text eol=lf
+*.ps1    text eol=crlf
+*.bat    text eol=crlf
+
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.woff   binary
+*.woff2  binary
