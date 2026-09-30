@@ -1,5 +1,7 @@
 # 003 · Plataforma multi-cliente en k3s
 
+> **Acciona:** Sistemas (Cloud / Platform) · Industrial aporta las cuotas por plan
+>
 > **Módulo:** 2 · **Requerimientos:** RF-03, RNF-03 · **Depende de:** 002 · **Estado:** Spec y plan
 
 ## Qué y por qué

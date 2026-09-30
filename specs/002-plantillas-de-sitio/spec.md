@@ -1,5 +1,7 @@
 # 002 · Plantillas de sitio y apps demo
 
+> **Acciona:** Sistemas (Cloud / Platform, Frontend)
+>
 > **Módulo:** 1 · **Requerimientos:** RNF-01, RNF-02 · **Depende de:** — · **Estado:** Tareas listas
 
 ## Qué y por qué
