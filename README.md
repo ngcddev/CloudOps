@@ -8,8 +8,27 @@ Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep 
 
 **Empieza por aquí:** [constitución](constitution.md) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [calendario](docs/calendario.md) · [stack](docs/tech-stack.md) · [glosario](docs/glosario.md)
 
+## Estado actual
+
+> Módulo 1 (28 sep – 1 oct). El repositorio contiene **solo documentación**: todavía no hay código,
+> contenedores ni plataforma instalada.
+
+| Qué | Estado |
+|---|---|
+| Constitución, requerimientos, calendario, stack, glosario y guía SDD | Listos |
+| 16 specs (`spec.md` + `plan.md`, de 000 a 015) | Listas |
+| `tasks.md` de 000, 001 y 002 (módulo 1) | Listos, sin tareas tomadas |
+| `tasks.md` de 003 a 015 | Se escriben al empezar su módulo |
+| Código del Hub, sitios demo, manifiestos, pipelines | Aún no existen |
+
+**Siguiente paso:** el Industrial arranca la [spec 000](specs/000-modelo-de-servicio/tasks.md)
+(matriz P1–P4 antes del 2 oct), y Sistemas arranca las [specs 001](specs/001-clientes-y-planes/tasks.md)
+y [002](specs/002-plantillas-de-sitio/tasks.md). Quién acciona cada spec está en el
+[mapa de specs](specs/README.md).
+
 ## Tabla de contenidos
 
+- [Estado actual](#estado-actual)
 - [El problema](#el-problema)
 - [Diferencia frente a Vercel](#diferencia-frente-a-vercel)
 - [Flujo de operación](#flujo-de-operación)
@@ -116,6 +135,8 @@ Los ingenieros de sistemas construyen la plataforma que publica, monitorea y rec
 
 ## Alcance de la demo
 
+Meta para la sustentación final (30 nov). Ningún punto está hecho todavía.
+
 Clientes demo (ficticios): Restaurante **La Sazón** (Premium), Ferretería **El Tornillo** (Estándar) y Consultorio **Dental Popayán** (Básico), atendidos por la agencia **Forja Digital**.
 
 - [ ] Registrar una agencia y tres clientes ficticios — [001](specs/001-clientes-y-planes/spec.md)
@@ -134,6 +155,8 @@ Clientes demo (ficticios): Restaurante **La Sazón** (Premium), Ferretería **El
 ## Arquitectura del laboratorio
 
 Contenedores · Kubernetes · GitOps · Pipelines con validaciones de seguridad · Observabilidad (métricas, logs, alertas) · Modelo de IA local
+
+Arquitectura planeada; cada herramienta se instala cuando el diplomado cubre su módulo.
 
 | Capa | Herramienta |
 |---|---|
@@ -175,36 +198,54 @@ diplomado ya cubrió su módulo. Detalle en [docs/sdd.md](docs/sdd.md).
 
 ## Estructura del repositorio
 
+**Lo que existe hoy:**
+
 ```
 cloudops/
-├── constitution.md    # principios, stack por módulo y nombres canónicos
-├── CLAUDE.md          # reglas para trabajar con asistentes de código
-├── docs/              # requerimientos, calendario, stack, glosario, guía SDD
-├── specs/             # mapa, plantilla y las 16 specs (000–015)
-├── backend/           # API FastAPI (desde la spec 001)
-├── frontend/          # consola de agencia y portal del cliente (desde la spec 001)
-├── apps/              # plantillas y sitios demo de clientes (spec 002)
-├── gitops/            # manifiestos Kubernetes → repo hub-gitops en Gitea (spec 003)
-├── pipelines/         # Gitea Actions (spec 006)
-├── observability/     # Prometheus, Alertmanager, Grafana, Loki (spec 008)
-├── infra/             # OpenTofu y Ansible (spec 011)
-├── ai/                # prompts, evaluación, integración con Ollama/MLflow/ComfyUI (specs 012, 014)
-├── seed/              # datos semilla (specs 000, 001, 015)
-└── demo/              # guion y reinicio de la demo (spec 015)
+├── README.md
+├── constitution.md                  # principios, stack por módulo y nombres canónicos
+├── CLAUDE.md                        # reglas para trabajar con asistentes de código
+├── .github/pull_request_template.md # revisión de cada PR contra la constitución
+├── docs/
+│   ├── requerimientos.md            # RF/RNF, MoSCoW y trazabilidad con la demo
+│   ├── calendario.md                # módulos, hitos, dependencias y riesgos
+│   ├── tech-stack.md                # stack, hardware y flujo de despliegue
+│   ├── sdd.md                       # cómo trabajamos y plantillas recomendadas
+│   └── glosario.md                  # términos técnicos → lenguaje del cliente
+└── specs/
+    ├── README.md                    # mapa: quién acciona, módulo, dependencias, estado
+    ├── _plantilla/                  # spec.md · plan.md · tasks.md para specs nuevas
+    └── 000-… a 015-…/               # spec.md + plan.md (tasks.md en 000, 001 y 002)
 ```
 
-Las carpetas de código aparecen cuando su spec empieza. Para contribuir: tomar una tarea de
-`tasks.md`, crear la rama `feat/<spec>-t<NN>-<slug>` y abrir un PR con la plantilla.
+**Lo que se agregará**, cada carpeta cuando empiece su spec:
+
+| Carpeta | Contenido | Spec |
+|---|---|---|
+| `backend/`, `frontend/`, `docker-compose.yml` | Hub: API FastAPI y consola/portal en React | 001 |
+| `seed/` | Datos semilla (planes, SLA, clientes, usuarios) | 000, 001, 015 |
+| `apps/` | Plantillas y sitios demo de clientes | 002 |
+| `gitops/` | Manifiestos Kubernetes → repo `hub-gitops` en Gitea | 003 |
+| `pipelines/` | Gitea Actions | 006 |
+| `observability/` | Prometheus, Alertmanager, Grafana, Loki | 008 |
+| `infra/` | OpenTofu y Ansible | 011 |
+| `ai/` | Prompts, evaluación, Ollama, MLflow, ComfyUI | 012, 014 |
+| `demo/` | Guion y reinicio de la demo | 015 |
+
+Para contribuir: tomar una tarea de `tasks.md`, crear la rama `feat/<spec>-t<NN>-<slug>` y abrir
+un PR con la plantilla.
 
 ## Equipo y roles
 
-| Integrante | Rol | Aporta |
-|---|---|---|
-| Sistemas 1 | Cloud / Platform | Kubernetes, GitOps, manifiestos, infraestructura y despliegue |
-| Sistemas 2 | Backend | API, usuarios, roles, clientes, tickets, SLA y base de datos |
-| Sistemas 3 | DevSecOps / SRE | Pipelines, seguridad, observabilidad, alertas, logs y recuperación |
-| Sistemas 4 | Frontend / Producto | Portal de cliente, consola de agencia, UX y dashboards |
-| Industrial | Operación de servicios | Procesos, prioridades, SLA, KPI, capacidad, costos y mejora continua |
+| Integrante | Rol | Aporta | Acciona en las specs |
+|---|---|---|---|
+| Sistemas 1 | Cloud / Platform | Kubernetes, GitOps, manifiestos, infraestructura y despliegue | 002, 003, 005, 009, 011 |
+| Sistemas 2 | Backend | API, usuarios, roles, clientes, tickets, SLA y base de datos | 001, 004–010, 012–014 |
+| Sistemas 3 | DevSecOps / SRE | Pipelines, seguridad, observabilidad, alertas, logs y recuperación | 006, 008 |
+| Sistemas 4 | Frontend / Producto | Portal de cliente, consola de agencia, UX y dashboards | 001, 002, 004, 007, 010, 013, 014 |
+| Industrial | Operación de servicios | Procesos, prioridades, SLA, KPI, capacidad, costos y mejora continua | 000, 013 · apoya en 001, 003, 004, 008, 010, 012, 014 |
+
+Todo el equipo acciona la 015 (demo integrada).
 
 ## Conclusión
 
