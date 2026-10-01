@@ -28,4 +28,4 @@
 
 ## Cierre
 
-- [ ] T12 · Demo: desde cero con `docker compose up` se registran los 3 clientes y se ve su plan y SLA — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [x] T12 · Demo: desde cero con `docker compose up` se registran los 3 clientes y se ve su plan y SLA — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ngcddev]
