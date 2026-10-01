@@ -21,6 +21,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
 app.include_router(clients.router)
+app.include_router(clients.projects_router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
 _CAMPOS = {"name": "nombre", "contact_name": "contacto", "email": "correo", "phone": "teléfono"}
