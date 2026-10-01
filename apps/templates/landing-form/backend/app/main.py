@@ -3,11 +3,13 @@
 
 import os
 import sqlite3
+from contextlib import closing
 from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, StringConstraints
 
 # La versión se fija en build (--build-arg APP_VERSION) y llega como variable de entorno.
 # v1 = versión sana; v2 = versión rota a propósito para provocar una caída controlada en la demo.
@@ -24,9 +26,10 @@ app = FastAPI(title="Formulario de contacto", version=APP_VERSION)
 class ContactRequest(BaseModel):
     """Datos que envía el visitante desde el formulario."""
 
-    name: str = Field(min_length=1, max_length=120)
-    phone: str = Field(min_length=7, max_length=20)
-    reason: str = Field(min_length=1, max_length=500)
+    # Se quitan los espacios antes de validar: un texto de solo espacios cuenta como vacío.
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    phone: Annotated[str, StringConstraints(strip_whitespace=True, min_length=7, max_length=20)]
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 
 
 def get_connection() -> sqlite3.Connection:
@@ -57,15 +60,10 @@ def health() -> JSONResponse:
 @app.post("/api/contact")
 def create_contact(request: ContactRequest) -> dict:
     """Guarda la solicitud del visitante (fecha en UTC) y confirma la recepción."""
-    with get_connection() as connection:
+    # closing() cierra la conexión siempre; el with interno confirma o revierte la transacción.
+    with closing(get_connection()) as connection, connection:
         connection.execute(
             "INSERT INTO contact_requests (name, phone, reason, created_at) VALUES (?, ?, ?, ?)",
-            (
-                request.name.strip(),
-                request.phone.strip(),
-                request.reason.strip(),
-                datetime.now(timezone.utc).isoformat(),
-            ),
+            (request.name, request.phone, request.reason, datetime.now(timezone.utc).isoformat()),
         )
-    connection.close()
     return {"ok": True}
