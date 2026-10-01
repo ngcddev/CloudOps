@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Cloud / Platform, Frontend)
 >
-> **Módulo:** 1 · **Requerimientos:** RNF-01, RNF-02 · **Depende de:** — · **Estado:** Tareas listas
+> **Módulo:** 1 · **Requerimientos:** RNF-01, RNF-02 · **Depende de:** — · **Estado:** Terminada
 
 ## Qué y por qué
 
@@ -28,15 +28,15 @@ demo puede provocar una falla real y controlada, y un cliente nuevo se crea copi
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Existen 2 plantillas: **landing estática** y **landing + formulario**.
-- [ ] CA-2. Existen 3 sitios: La Sazón y El Tornillo (landing) y Dental Popayán (landing +
+- [x] CA-1. Existen 2 plantillas: **landing estática** y **landing + formulario**.
+- [x] CA-2. Existen 3 sitios: La Sazón y El Tornillo (landing) y Dental Popayán (landing +
   formulario), con contenido ficticio propio de cada negocio.
-- [ ] CA-3. Los 3 sitios corren en contenedores que **no usan el usuario root**.
-- [ ] CA-4. Cada sitio responde en `/health` con `{"status":"ok","version":"v1"}` y muestra su
+- [x] CA-3. Los 3 sitios corren en contenedores que **no usan el usuario root**.
+- [x] CA-4. Cada sitio responde en `/health` con `{"status":"ok","version":"v1"}` y muestra su
   versión en el pie de página.
-- [ ] CA-5. La versión **v2** de cada sitio responde HTTP 500 en `/` y en `/health`.
-- [ ] CA-6. El formulario del consultorio guarda la solicitud y responde un mensaje de confirmación.
-- [ ] CA-7. Los 3 sitios se levantan con un solo comando junto con el Hub.
+- [x] CA-5. La versión **v2** de cada sitio responde HTTP 500 en `/` y en `/health`.
+- [x] CA-6. El formulario del consultorio guarda la solicitud y responde un mensaje de confirmación.
+- [x] CA-7. Los 3 sitios se levantan con un solo comando junto con el Hub.
 
 ## Fuera de alcance
 

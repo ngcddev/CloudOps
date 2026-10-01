@@ -17,6 +17,8 @@
 
 ## Sitios de clientes
 
+- [x] T07 · Crear el sitio de La Sazón desde la plantilla 1 — **Verifica:** muestra menú y reservas ficticias. [sebastian-debug]
+- [x] T08 · Crear el sitio de El Tornillo desde la plantilla 1 — **Verifica:** muestra catálogo ficticio. [sebastian-debug]
 - [x] T07 · Crear el sitio de La Sazón desde la plantilla 1 — **Verifica:** muestra menú y reservas ficticias. [ ]
 - [x] T08 · Crear el sitio de El Tornillo desde la plantilla 1 — **Verifica:** muestra catálogo ficticio. [ ]
 - [x] T09 · Crear el sitio de Dental Popayán desde la plantilla 2 — **Verifica:** formulario de citas funciona. [sebastian-debug]
@@ -27,4 +29,4 @@
 
 ## Cierre
 
-- [ ] T11 · Demo: 3 sitios en v1, La Sazón en v2 con 500, formulario enviado, usuario no root — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [x] T11 · Demo: 3 sitios en v1, La Sazón en v2 con 500, formulario enviado, usuario no root — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [sebastian-debug]
