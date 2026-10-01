@@ -11,7 +11,7 @@
 
 ## Modelo de datos
 
-- [ ] T04 · Crear las tablas agencia, plan, SLA, cliente, proyecto y servicio con migración de Alembic — **Verifica:** `alembic upgrade head` sin errores. [ ]
+- [x] T04 · Crear las tablas agencia, plan, SLA, cliente, proyecto y servicio con migración de Alembic — **Verifica:** `alembic upgrade head` sin errores. [ngcddev]
 - [ ] T05 · Cargar datos semilla: la agencia, los 3 planes de la spec 000 y los 3 clientes — **Verifica:** `GET /api/clients` devuelve 3. [ ]
 
 ## API
