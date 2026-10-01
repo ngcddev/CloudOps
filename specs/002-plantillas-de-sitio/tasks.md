@@ -5,9 +5,9 @@
 
 ## Plantilla 1 · Landing estática
 
-- [ ] T01 · Crear la página base (HTML/CSS en blanco y negro) con pie de versión — **Verifica:** se abre en el navegador. [ ]
-- [ ] T02 · Escribir el Dockerfile con `nginx-unprivileged` y `APP_VERSION` — **Verifica:** `id -u` en el contenedor ≠ 0. [ ]
-- [ ] T03 · Configurar `/health` y el modo v2 (HTTP 500) en `nginx.conf` — **Verifica:** `curl -i` da 200 en v1 y 500 en v2. [ ]
+- [x] T01 · Crear la página base (HTML/CSS en blanco y negro) con pie de versión — **Verifica:** se abre en el navegador. [Mesiahs]
+- [x] T02 · Escribir el Dockerfile con `nginx-unprivileged` y `APP_VERSION` — **Verifica:** `id -u` en el contenedor ≠ 0. [Mesiahs]
+- [x] T03 · Configurar `/health` y el modo v2 (HTTP 500) en `nginx.conf` — **Verifica:** `curl -i` da 200 en v1 y 500 en v2. [Mesiahs]
 
 ## Plantilla 2 · Landing + formulario
 
