@@ -183,6 +183,34 @@ nav a {
   border-top: 1px solid var(--line);
 }
 
+/* Lista del menú: plato a la izquierda y precio a la derecha, separados por una línea gris. */
+.menu-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.menu-list li span:last-child {
+  font-weight: 700;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.note {
+  margin: 1.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .footer {
   display: flex;
   justify-content: space-between;
