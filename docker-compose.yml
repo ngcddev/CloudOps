@@ -22,7 +22,11 @@ services:
 
   # API del Hub (spec 001): FastAPI en :8000, espera a que la base esté sana
   api:
-    build: ./backend
+    build:
+      context: ./backend
+      # seed/ entra a la imagen: la API lo carga la primera vez que la base está vacía
+      additional_contexts:
+        seed: ./seed
     environment:
       DATABASE_URL: ${DATABASE_URL:?Falta .env; copia .env.example a .env}
     ports:
