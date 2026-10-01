@@ -71,8 +71,8 @@ class PlanOut(BaseModel):
 class ServiceCreate(BaseModel):
     name: str = Field(max_length=200)
     host: str = Field(max_length=255)
-    # Plantillas de sitio de la spec 002: carpetas de apps/templates/.
-    template: Literal["landing", "landing-form"]
+    # Plantillas de sitio de la spec 002; mismos valores que seed/ y el frontend.
+    template: Literal["landing", "landing_form"]
     namespace: str = Field(max_length=100)
     plan_id: int | None = Field(default=None, validate_default=True)
 
