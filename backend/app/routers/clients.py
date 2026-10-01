@@ -5,9 +5,23 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models.client import Client
-from app.schemas.client import ClientCreate, ClientDetail, ClientOut, ClientSummary, ClientUpdate
+from app.models.plan import Plan
+from app.models.project import Project
+from app.models.service import Service
+from app.schemas.client import (
+    ClientCreate,
+    ClientDetail,
+    ClientOut,
+    ClientSummary,
+    ClientUpdate,
+    ProjectCreate,
+    ProjectOut,
+    ServiceCreate,
+    ServiceOut,
+)
 
 router = APIRouter(prefix="/api/clients", tags=["clientes"])
+projects_router = APIRouter(prefix="/api", tags=["proyectos"])
 
 
 def _get_or_404(db: Session, client_id: int) -> Client:
@@ -48,3 +62,35 @@ def update_client(client_id: int, data: ClientUpdate, db: Session = Depends(get_
     db.commit()
     db.refresh(client)
     return client
+
+
+@router.post("/{client_id}/projects", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
+def create_project(client_id: int, data: ProjectCreate, db: Session = Depends(get_db)):
+    """Crea un proyecto perteneciente al cliente indicado."""
+    client = _get_or_404(db, client_id)
+    project = Project(client_id=client.id, **data.model_dump())
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+@projects_router.post("/projects/{project_id}/services", response_model=ServiceOut, status_code=status.HTTP_201_CREATED)
+def create_service(project_id: int, data: ServiceCreate, db: Session = Depends(get_db)):
+    """Crea un servicio y verifica que el plan exista."""
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="El proyecto no existe.")
+    plan = db.get(Plan, data.plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="El plan no existe.")
+    # Cada sitio tiene su propia dirección y su propio namespace: no se pueden repetir.
+    if db.scalar(select(Service).where(Service.host == data.host)) is not None:
+        raise HTTPException(status_code=409, detail="Ya existe un servicio con esa dirección (host).")
+    if db.scalar(select(Service).where(Service.namespace == data.namespace)) is not None:
+        raise HTTPException(status_code=409, detail="Ya existe un servicio con ese namespace.")
+    service = Service(project_id=project.id, plan_id=plan.id, **data.model_dump(exclude={"plan_id"}))
+    db.add(service)
+    db.commit()
+    db.refresh(service)
+    return service
