@@ -8,23 +8,36 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
-from app.db import Base, engine, get_db
-from app.routers import clients
+from app.db import SessionLocal, get_db
+from app.routers import catalog, clients
+from app.seed import seed_if_empty
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Provisional: crea las tablas al arrancar. T04 lo reemplaza por migraciones de Alembic.
-    Base.metadata.create_all(engine)
+    # Las tablas las crea Alembic (alembic upgrade head) al arrancar el contenedor;
+    # aquí solo se cargan los datos semilla si la base está vacía.
+    with SessionLocal() as db:
+        seed_if_empty(db)
     yield
 
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
+app.include_router(catalog.router)
 app.include_router(clients.router)
 app.include_router(clients.projects_router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
-_CAMPOS = {"name": "nombre", "contact_name": "contacto", "email": "correo", "phone": "teléfono"}
+_CAMPOS = {
+    "name": "nombre",
+    "contact_name": "contacto",
+    "email": "correo",
+    "phone": "teléfono",
+    "host": "dirección (host)",
+    "template": "plantilla",
+    "namespace": "namespace",
+    "plan_id": "plan",
+}
 
 
 @app.exception_handler(RequestValidationError)
@@ -37,6 +50,8 @@ async def validation_error_es(_: Request, exc: RequestValidationError) -> JSONRe
             msg = f"El campo «{campo}» es obligatorio."
         elif error["type"] == "string_too_long":
             msg = f"El campo «{campo}» es demasiado largo."
+        elif error["type"] == "literal_error":
+            msg = f"El campo «{campo}» tiene un valor no permitido: {error['ctx']['expected']}."
         else:
             msg = error["msg"].removeprefix("Value error, ")
         detail.append({"loc": error["loc"], "msg": msg})

@@ -1,13 +1,15 @@
 # Endpoints de clientes: crear, listar, ver y editar (spec 001, T06).
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
+from app.models.agency import Agency
 from app.models.client import Client
 from app.models.plan import Plan
 from app.models.project import Project
 from app.models.service import Service
+from app.models.sla_policy import SlaPolicy
 from app.schemas.client import (
     ClientCreate,
     ClientDetail,
@@ -19,6 +21,7 @@ from app.schemas.client import (
     ServiceCreate,
     ServiceOut,
 )
+from app.schemas.sla_policy import SlaPolicyOut
 
 router = APIRouter(prefix="/api/clients", tags=["clientes"])
 projects_router = APIRouter(prefix="/api", tags=["proyectos"])
@@ -34,13 +37,16 @@ def _get_or_404(db: Session, client_id: int) -> Client:
 @router.get("", response_model=list[ClientSummary])
 def list_clients(db: Session = Depends(get_db)):
     """Lista los clientes, del más antiguo al más reciente."""
-    return db.scalars(select(Client).order_by(Client.id)).all()
+    query = select(Client).options(
+        selectinload(Client.projects).selectinload(Project.services).selectinload(Service.plan)
+    )
+    return db.scalars(query.order_by(Client.id)).all()
 
 
 @router.post("", response_model=ClientOut, status_code=status.HTTP_201_CREATED)
 def create_client(data: ClientCreate, db: Session = Depends(get_db)):
-    """Crea un cliente; solo el nombre es obligatorio."""
-    client = Client(**data.model_dump())
+    """Crea un cliente de la agencia; solo el nombre es obligatorio."""
+    client = Client(agency_id=db.scalar(select(Agency.id).order_by(Agency.id)), **data.model_dump())
     db.add(client)
     db.commit()
     db.refresh(client)
@@ -49,8 +55,11 @@ def create_client(data: ClientCreate, db: Session = Depends(get_db)):
 
 @router.get("/{client_id}", response_model=ClientDetail)
 def get_client(client_id: int, db: Session = Depends(get_db)):
-    """Detalle de un cliente."""
-    return _get_or_404(db, client_id)
+    """Detalle de un cliente con sus proyectos, servicios, plan y los tiempos de SLA."""
+    detail = ClientDetail.model_validate(_get_or_404(db, client_id))
+    policies = db.scalars(select(SlaPolicy).order_by(SlaPolicy.priority)).all()
+    detail.sla_policies = [SlaPolicyOut.model_validate(policy) for policy in policies]
+    return detail
 
 
 @router.patch("/{client_id}", response_model=ClientOut)
