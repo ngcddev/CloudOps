@@ -183,6 +183,49 @@ nav a {
   border-top: 1px solid var(--line);
 }
 
+.contact-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 36rem;
+  margin-top: 2rem;
+}
+
+.contact-form label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.contact-form input,
+.contact-form textarea {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--fg);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+}
+
+.contact-form button {
+  justify-self: start;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.contact-form button:disabled {
+  border-color: var(--line);
+  background: var(--line);
+  color: var(--muted);
+  cursor: wait;
+}
+
+.form-message {
+  min-height: 1.5rem;
+  margin: 0;
+  font-weight: 700;
+}
+
 .footer {
   display: flex;
   justify-content: space-between;
