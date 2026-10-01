@@ -1,0 +1,7 @@
+# Archivos que no entran a las imágenes de la plantilla landing-form.
+**/__pycache__
+**/*.py[cod]
+**/.venv
+**/*.db
+**/*.sqlite3
+.git

@@ -1,0 +1,13 @@
+# Imagen del frontend de la plantilla landing-form: Nginx sin root (UID 101) en el puerto 8080.
+# Construir desde esta carpeta: docker build -f Dockerfile.frontend --build-arg APP_VERSION=v1 .
+# Al arrancar, la imagen reemplaza ${APP_VERSION} y ${API_UPSTREAM} en la plantilla de nginx.conf.
+
+FROM nginxinc/nginx-unprivileged:1.27-alpine
+ARG APP_VERSION=v1
+# API_UPSTREAM = host:puerto del backend; en docker compose se cambia por el servicio del cliente.
+ENV APP_VERSION=${APP_VERSION} \
+    API_UPSTREAM=backend:8000
+COPY frontend/nginx.conf /etc/nginx/templates/default.conf.template
+COPY frontend/index.html frontend/styles.css frontend/app.js /usr/share/nginx/html/
+USER 101
+EXPOSE 8080
