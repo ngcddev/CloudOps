@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!-- Sitio de Restaurante La Sazón (spec 002, T07): copia de la plantilla landing con menú y reservas ficticias. -->
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restaurante La Sazón · Popayán</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">La Sazón</div>
+      <nav>
+        <a href="#inicio">Inicio</a>
+        <a href="#menu">Menú</a>
+        <a href="#reservas">Reservas</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-copy">
+          <p class="eyebrow">Restaurante · Popayán</p>
+          <h1>Cocina caucana hecha en casa.</h1>
+          <p>
+            Recetas de la abuela, ingredientes de la plaza de mercado y una mesa lista para
+            usted y su familia. Almuerzos, cenas y celebraciones en el centro de Popayán.
+          </p>
+          <div class="actions">
+            <a href="#menu" class="button primary">Ver el menú</a>
+            <a href="#reservas" class="button secondary">Reservar mesa</a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <span class="label">Horario</span>
+          <strong>Mar–Dom</strong>
+          <strong>12:00–22:00</strong>
+          <span class="label">Lunes cerrado</span>
+        </div>
+      </section>
+
+      <section class="features" id="menu">
+        <div class="section-heading">
+          <p class="eyebrow">Menú</p>
+          <h2>Lo que sale de nuestra cocina.</h2>
+        </div>
+        <div class="cards">
+          <article>
+            <h3>Entradas</h3>
+            <ul class="menu-list">
+              <li><span>Empanadas de pipián (6)</span><span>$12.000</span></li>
+              <li><span>Carantanta con hogao</span><span>$9.000</span></li>
+              <li><span>Aborrajados de maduro</span><span>$10.000</span></li>
+            </ul>
+          </article>
+          <article>
+            <h3>Platos fuertes</h3>
+            <ul class="menu-list">
+              <li><span>Tamal de pipián</span><span>$16.000</span></li>
+              <li><span>Sancocho de gallina</span><span>$24.000</span></li>
+              <li><span>Sobrebarriga en salsa criolla</span><span>$29.000</span></li>
+            </ul>
+          </article>
+          <article>
+            <h3>Bebidas y postres</h3>
+            <ul class="menu-list">
+              <li><span>Salpicón payanés</span><span>$7.000</span></li>
+              <li><span>Champús</span><span>$6.000</span></li>
+              <li><span>Dulce de cidra con queso</span><span>$8.000</span></li>
+            </ul>
+          </article>
+        </div>
+        <p class="note">Precios en pesos colombianos. Menú y precios ficticios para la demostración.</p>
+      </section>
+
+      <section class="cta" id="reservas">
+        <h2>Reserve su mesa.</h2>
+        <p>Recibimos reservas para grupos de 2 a 20 personas, con un día de anticipación.</p>
+        <div class="cards">
+          <article>
+            <h3>Por teléfono</h3>
+            <p>+57 300 000 0001<br />Mar–Dom, 10:00–21:00</p>
+          </article>
+          <article>
+            <h3>Por correo</h3>
+            <p>contacto@lasazon.test<br />Indique fecha, hora y número de personas.</p>
+          </article>
+          <article>
+            <h3>Celebraciones</h3>
+            <p>Cumpleaños y reuniones de empresa con menú especial. Pregunte por el salón privado.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="version">Versión v1</span>
+      <span>Restaurante La Sazón · Popayán</span>
+    </footer>
+  </body>
+</html>
