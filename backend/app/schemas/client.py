@@ -52,6 +52,71 @@ class ClientOut(ClientBase):
     name: str
 
 
+class PlanOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    code: str
+    name: str
+    slo_availability: float
+    support_hours: str
+    cpu_quota: str
+    memory_quota: str
+    monthly_price: float | None
+    included_hours: float | None
+
+
+class ServiceCreate(BaseModel):
+    name: str = Field(max_length=200)
+    host: str = Field(max_length=255)
+    template: str = Field(max_length=30)
+    namespace: str = Field(max_length=100)
+    plan_id: int | None = Field(default=None, validate_default=True)
+
+    @field_validator("name", "host", "namespace")
+    @classmethod
+    def _texto_obligatorio(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Este campo es obligatorio.")
+        return value
+
+    @field_validator("plan_id")
+    @classmethod
+    def _plan_obligatorio(cls, value: int | None) -> int:
+        if value is None:
+            raise ValueError("El servicio necesita un plan.")
+        return value
+
+
+class ServiceOut(ServiceCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    status: str
+    plan: PlanOut
+
+
+class ProjectCreate(BaseModel):
+    name: str = Field(max_length=200)
+    description: str | None = Field(default=None)
+
+    @field_validator("name")
+    @classmethod
+    def _proyecto_obligatorio(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("El nombre del proyecto es obligatorio.")
+        return value
+
+
+class ProjectOut(ProjectCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    services: list[ServiceOut] = []
+
+
 class ClientSummary(ClientOut):
     """Fila de la lista. main_service queda en null hasta que existan servicios (T07)."""
 
@@ -59,7 +124,7 @@ class ClientSummary(ClientOut):
 
 
 class ClientDetail(ClientOut):
-    """Detalle del cliente. Proyectos y SLA se llenan con T04/T07."""
+    """Detalle del cliente con sus proyectos, servicios y SLA."""
 
-    projects: list = []
+    projects: list[ProjectOut] = []
     sla_policies: list = []
