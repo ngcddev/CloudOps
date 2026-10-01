@@ -18,7 +18,7 @@
 
 - [x] T06 · Crear el CRUD de clientes (crear, listar, ver, editar) — **Verifica:** prueba manual con `/docs`. [ngcddev]
 - [x] T07 · Crear proyecto y servicio de un cliente, asignando un plan — **Verifica:** el detalle muestra el servicio con su plan. [Andres-Duqu]
-- [ ] T08 · Agregar pruebas automáticas de los endpoints con pytest — **Verifica:** `pytest` en verde. [ ]
+- [x] T08 · Agregar pruebas automáticas de los endpoints con pytest — **Verifica:** `pytest` en verde. [ngcddev]
 
 ## Pantallas
 
