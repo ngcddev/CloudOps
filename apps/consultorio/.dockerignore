@@ -1,0 +1,7 @@
+# Archivos que no entran a las imágenes del sitio de Dental Popayán.
+**/__pycache__
+**/*.py[cod]
+**/.venv
+**/*.db
+**/*.sqlite3
+.git
