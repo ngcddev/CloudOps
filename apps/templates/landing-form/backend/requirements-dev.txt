@@ -1,0 +1,4 @@
+# Dependencias para correr las pruebas del backend del formulario (no entran a la imagen).
+-r requirements.txt
+pytest==9.1.1
+httpx2==2.13.1
