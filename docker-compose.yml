@@ -47,10 +47,41 @@ services:
     depends_on:
       - api
 
-  # Pendientes del módulo 1:
-  # restaurante      → spec 002-T10 (:8081)
-  # ferreteria       → spec 002-T10 (:8082)
-  # consultorio-web  → spec 002-T10 (:8083) y consultorio-api
+  # Plantilla 1 · Landing estática (spec 002): http://localhost:8081
+  # Cambiar APP_VERSION a v2 y reconstruir para ver el 500 de la demo.
+  plantilla-landing:
+    build:
+      context: ./apps/templates/landing
+      args:
+        APP_VERSION: v1
+    ports:
+      - "8081:8080"
+
+  # Plantilla 2 · Landing + formulario (spec 002): http://localhost:8083
+  plantilla-form-api:
+    build:
+      context: ./apps/templates/landing-form
+      dockerfile: Dockerfile.backend
+      args:
+        APP_VERSION: v1
+
+  plantilla-form-web:
+    build:
+      context: ./apps/templates/landing-form
+      dockerfile: Dockerfile.frontend
+      args:
+        APP_VERSION: v1
+    environment:
+      API_UPSTREAM: plantilla-form-api:8000
+    ports:
+      - "8083:8080"
+    depends_on:
+      - plantilla-form-api
+
+  # Pendientes del módulo 1 (spec 002-T07 a T10): los sitios de clientes reemplazan a las plantillas
+  # restaurante      → :8081
+  # ferreteria       → :8082
+  # consultorio-web  → :8083 y consultorio-api
 
 volumes:
   db_data:
