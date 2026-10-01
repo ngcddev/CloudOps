@@ -1,4 +1,6 @@
 # Esquemas de cliente: lo que entra en POST/PATCH y lo que sale en lista y detalle (plan 001#api).
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -69,7 +71,8 @@ class PlanOut(BaseModel):
 class ServiceCreate(BaseModel):
     name: str = Field(max_length=200)
     host: str = Field(max_length=255)
-    template: str = Field(max_length=30)
+    # Plantillas de sitio de la spec 002: carpetas de apps/templates/.
+    template: Literal["landing", "landing-form"]
     namespace: str = Field(max_length=100)
     plan_id: int | None = Field(default=None, validate_default=True)
 
@@ -89,10 +92,14 @@ class ServiceCreate(BaseModel):
         return value
 
 
-class ServiceOut(ServiceCreate):
+class ServiceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    name: str
+    host: str
+    template: str
+    namespace: str
     status: str
     plan: PlanOut
 
@@ -110,10 +117,12 @@ class ProjectCreate(BaseModel):
         return value
 
 
-class ProjectOut(ProjectCreate):
+class ProjectOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    name: str
+    description: str | None
     services: list[ServiceOut] = []
 
 

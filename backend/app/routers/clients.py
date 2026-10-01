@@ -84,6 +84,11 @@ def create_service(project_id: int, data: ServiceCreate, db: Session = Depends(g
     plan = db.get(Plan, data.plan_id)
     if plan is None:
         raise HTTPException(status_code=404, detail="El plan no existe.")
+    # Cada sitio tiene su propia dirección y su propio namespace: no se pueden repetir.
+    if db.scalar(select(Service).where(Service.host == data.host)) is not None:
+        raise HTTPException(status_code=409, detail="Ya existe un servicio con esa dirección (host).")
+    if db.scalar(select(Service).where(Service.namespace == data.namespace)) is not None:
+        raise HTTPException(status_code=409, detail="Ya existe un servicio con ese namespace.")
     service = Service(project_id=project.id, plan_id=plan.id, **data.model_dump(exclude={"plan_id"}))
     db.add(service)
     db.commit()
