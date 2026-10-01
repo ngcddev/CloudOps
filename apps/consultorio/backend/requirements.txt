@@ -1,0 +1,3 @@
+# Dependencias del backend del formulario de citas (copia de la plantilla landing-form), con versión fija.
+fastapi==0.142.2
+uvicorn==0.54.0
