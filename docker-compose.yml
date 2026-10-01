@@ -47,8 +47,21 @@ services:
     depends_on:
       - api
 
+  # ---------- Sitios de los clientes (spec 002) ----------
+  # La versión se fija en build (v1 = sana, v2 = rota con HTTP 500). Para pasar un sitio a v2:
+  #   RESTAURANTE_VERSION=v2 docker compose up --build -d restaurante
+
+  # Sitio de La Sazón (plantilla landing) en :8081
+  restaurante:
+    build:
+      context: ./apps/restaurante
+      args:
+        APP_VERSION: ${RESTAURANTE_VERSION:-v1}
+    image: hub/restaurante:${RESTAURANTE_VERSION:-v1}
+    ports:
+      - "${RESTAURANTE_PORT:-8081}:8080"
+
   # Pendientes del módulo 1:
-  # restaurante      → spec 002-T10 (:8081)
   # ferreteria       → spec 002-T10 (:8082)
   # consultorio-web  → spec 002-T10 (:8083) y consultorio-api
 
