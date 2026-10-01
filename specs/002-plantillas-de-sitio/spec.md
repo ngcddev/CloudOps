@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Cloud / Platform, Frontend)
 >
-> **Módulo:** 1 · **Requerimientos:** RNF-01, RNF-02 · **Depende de:** — · **Estado:** Tareas listas
+> **Módulo:** 1 · **Requerimientos:** RNF-01, RNF-02 · **Depende de:** — · **Estado:** Terminada
 
 ## Qué y por qué
 
