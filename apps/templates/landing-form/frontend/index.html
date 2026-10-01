@@ -63,6 +63,23 @@
       <section class="cta" id="contacto">
         <h2>Déjanos tus datos y te llamamos.</h2>
         <p>Contenido adaptable para comercio, salud o servicios profesionales.</p>
+
+        <form class="contact-form" id="contact-form" novalidate>
+          <label>
+            Nombre
+            <input type="text" name="name" maxlength="120" autocomplete="name" required />
+          </label>
+          <label>
+            Teléfono
+            <input type="tel" name="phone" minlength="7" maxlength="20" autocomplete="tel" required />
+          </label>
+          <label>
+            Motivo
+            <textarea name="reason" rows="4" maxlength="500" required></textarea>
+          </label>
+          <button type="submit" class="button primary">Enviar solicitud</button>
+          <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
+        </form>
       </section>
     </main>
 
@@ -70,5 +87,7 @@
       <span id="version">Versión v1</span>
       <span>CloudOps Client Hub</span>
     </footer>
+
+    <script src="app.js"></script>
   </body>
 </html>
