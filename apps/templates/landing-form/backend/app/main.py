@@ -6,10 +6,13 @@ import sqlite3
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 # La versión se fija en build (--build-arg APP_VERSION) y llega como variable de entorno.
+# v1 = versión sana; v2 = versión rota a propósito para provocar una caída controlada en la demo.
 APP_VERSION = os.getenv("APP_VERSION", "v1")
+BROKEN_VERSION = "v2"
 
 # SQLite dentro del contenedor: dato de demo que se pierde al reiniciar.
 # Va en /tmp porque es el único lugar con escritura para un usuario sin root.
@@ -44,9 +47,11 @@ def get_connection() -> sqlite3.Connection:
 
 
 @app.get("/health")
-def health() -> dict:
-    """Estado y versión del backend; lo usan el monitoreo y la readiness probe."""
-    return {"status": "ok", "version": APP_VERSION}
+def health() -> JSONResponse:
+    """Estado y versión del backend; lo usan el monitoreo y la readiness probe. En v2 responde 500."""
+    if APP_VERSION == BROKEN_VERSION:
+        return JSONResponse(status_code=500, content={"status": "error", "version": APP_VERSION})
+    return JSONResponse(content={"status": "ok", "version": APP_VERSION})
 
 
 @app.post("/api/contact")
