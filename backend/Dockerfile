@@ -12,9 +12,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 SEED_DIR=/app/seed
 RUN useradd --system --uid 10001 --no-create-home hub
 COPY --from=build /install /usr/local
 WORKDIR /app
-COPY alembic.ini ./
+COPY alembic.ini pytest.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY tests ./tests
 COPY --from=seed . ./seed
 USER 10001
 EXPOSE 8000
