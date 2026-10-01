@@ -24,3 +24,11 @@ class Client(Base):
 
     agency = relationship("Agency", back_populates="clients")
     projects = relationship("Project", back_populates="client", cascade="all, delete-orphan")
+
+    @property
+    def main_service(self):
+        """Servicio principal: el primero del primer proyecto (la lista de clientes lo muestra)."""
+        for project in sorted(self.projects, key=lambda p: p.id):
+            if project.services:
+                return min(project.services, key=lambda s: s.id)
+        return None

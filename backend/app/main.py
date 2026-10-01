@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.db import SessionLocal, get_db
-from app.routers import clients
+from app.routers import catalog, clients
 from app.seed import seed_if_empty
 
 
@@ -23,6 +23,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
+app.include_router(catalog.router)
 app.include_router(clients.router)
 app.include_router(clients.projects_router)
 

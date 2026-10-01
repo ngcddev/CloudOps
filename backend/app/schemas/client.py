@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.schemas.sla_policy import SlaPolicyOut
+
 
 def _limpiar(value: str | None) -> str | None:
     """Quita espacios; un texto vacío cuenta como dato ausente."""
@@ -126,14 +128,26 @@ class ProjectOut(BaseModel):
     services: list[ServiceOut] = []
 
 
-class ClientSummary(ClientOut):
-    """Fila de la lista. main_service queda en null hasta que existan servicios (T07)."""
+class MainServiceOut(BaseModel):
+    """Servicio principal de un cliente, con su plan, para la fila de la lista."""
 
-    main_service: None = None
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    host: str
+    status: str
+    plan: PlanOut
+
+
+class ClientSummary(ClientOut):
+    """Fila de la lista: el cliente con su servicio principal (null si aún no tiene)."""
+
+    main_service: MainServiceOut | None = None
 
 
 class ClientDetail(ClientOut):
     """Detalle del cliente con sus proyectos, servicios y SLA."""
 
     projects: list[ProjectOut] = []
-    sla_policies: list = []
+    sla_policies: list[SlaPolicyOut] = []
