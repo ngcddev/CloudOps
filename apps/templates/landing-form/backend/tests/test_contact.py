@@ -43,3 +43,10 @@ def test_contact_rejects_incomplete_body(client):
     response = client.post("/api/contact", json={"name": "Ana Ruiz"})
 
     assert response.status_code == 422
+
+
+def test_contact_rejects_whitespace_only_fields(client, db_path):
+    response = client.post("/api/contact", json={"name": "   ", "phone": "3001234567", "reason": "   "})
+
+    assert response.status_code == 422
+    assert not db_path.exists()
