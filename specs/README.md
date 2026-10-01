@@ -12,7 +12,7 @@
 |---|---|---|---|---|---|---|
 | [000](000-modelo-de-servicio/spec.md) | Modelo de servicio (industrial) | Industrial | 1–2 | Planes, P1–P4, SLA, KPI | — | Tareas listas |
 | [001](001-clientes-y-planes/spec.md) | Clientes y planes | Sistemas · apoya Industrial | 1 | RF-01, RF-02 | 000 | Terminada |
-| [002](002-plantillas-de-sitio/spec.md) | Plantillas de sitio y apps demo | Sistemas | 1 | RNF-01, RNF-02 | — | Tareas listas |
+| [002](002-plantillas-de-sitio/spec.md) | Plantillas de sitio y apps demo | Sistemas | 1 | RNF-01, RNF-02 | — | Terminada |
 | [003](003-plataforma-k3s/spec.md) | Plataforma multi-cliente en k3s | Sistemas · apoya Industrial | 2 | RF-03, RNF-03 | 002 | Spec y plan |
 | [004](004-mesa-de-servicio/spec.md) | Mesa de servicio: tickets y prioridad | Sistemas · apoya Industrial | 2 | RF-04, RF-05 | 000, 001 | Spec y plan |
 | [005](005-cambios-gitops/spec.md) | Cambios por GitOps | Sistemas | 2 | RF-06, RF-07, RF-22, RNF-04 | 003, 004 | Spec y plan |
