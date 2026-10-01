@@ -23,7 +23,7 @@
 
 ## Integración
 
-- [ ] T10 · Agregar los 3 sitios a `docker-compose.yml` con puertos 8081–8083 — **Verifica:** `docker compose up` los levanta con el Hub. [ ]
+- [x] T10 · Agregar los 3 sitios a `docker-compose.yml` con puertos 8081–8083 — **Verifica:** `docker compose up` los levanta con el Hub. [sebastian-debug]
 
 ## Cierre
 
