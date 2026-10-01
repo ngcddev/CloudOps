@@ -35,3 +35,14 @@ El industrial los confirma o ajusta en las tareas de la spec 000. Mientras tanto
 - `services[].template`: `landing` o `landing_form` (spec 002).
 - `services[].plan_code`: debe existir en `plans.json`.
 - Correos con dominio `.test` y teléfonos `+57 300 000 000N`: todo es ficticio.
+
+## Cómo se cargan y cómo cambiar un valor
+
+- La API los carga sola al arrancar (`backend/app/seed.py`), **solo si la base no tiene agencia**. Si ya hay datos, no los toca.
+- Para cambiar un valor (por ejemplo, el precio de un plan): editar el JSON en una rama `docs/...`, abrir PR y
+  revisarlo con el backend. No hay que tocar código.
+- Para que la base local use el valor nuevo hay que empezar de cero: `docker compose down -v` y luego
+  `docker compose up --build`. El `-v` borra la base y por eso la demo siempre arranca igual.
+- Las pruebas (`docker compose exec api pytest`) cargan estos mismos archivos: si un cambio rompe la forma
+  de los datos (falta un campo, un `plan_code` que no existe), fallan y lo avisan antes del merge.
+
