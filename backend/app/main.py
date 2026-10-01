@@ -1,4 +1,6 @@
 # Punto de entrada de la API del Hub: crea la app, registra routers y expone GET /health.
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -6,12 +8,21 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
-from app.db import get_db
+from app.db import SessionLocal, get_db
 from app.routers import clients
+from app.seed import seed_if_empty
 
 
-# Las tablas las crea Alembic (alembic upgrade head), que corre al arrancar el contenedor.
-app = FastAPI(title="CloudOps Client Hub")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Las tablas las crea Alembic (alembic upgrade head) al arrancar el contenedor;
+    # aquí solo se cargan los datos semilla si la base está vacía.
+    with SessionLocal() as db:
+        seed_if_empty(db)
+    yield
+
+
+app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
 app.include_router(clients.router)
 app.include_router(clients.projects_router)
 
