@@ -27,4 +27,4 @@
 
 ## Cierre
 
-- [ ] T11 · Demo: 3 sitios en v1, La Sazón en v2 con 500, formulario enviado, usuario no root — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [x] T11 · Demo: 3 sitios en v1, La Sazón en v2 con 500, formulario enviado, usuario no root — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [sebastian-debug]
