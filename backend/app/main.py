@@ -28,7 +28,16 @@ app.include_router(clients.router)
 app.include_router(clients.projects_router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
-_CAMPOS = {"name": "nombre", "contact_name": "contacto", "email": "correo", "phone": "teléfono"}
+_CAMPOS = {
+    "name": "nombre",
+    "contact_name": "contacto",
+    "email": "correo",
+    "phone": "teléfono",
+    "host": "dirección (host)",
+    "template": "plantilla",
+    "namespace": "namespace",
+    "plan_id": "plan",
+}
 
 
 @app.exception_handler(RequestValidationError)
@@ -41,6 +50,8 @@ async def validation_error_es(_: Request, exc: RequestValidationError) -> JSONRe
             msg = f"El campo «{campo}» es obligatorio."
         elif error["type"] == "string_too_long":
             msg = f"El campo «{campo}» es demasiado largo."
+        elif error["type"] == "literal_error":
+            msg = f"El campo «{campo}» tiene un valor no permitido: {error['ctx']['expected']}."
         else:
             msg = error["msg"].removeprefix("Value error, ")
         detail.append({"loc": error["loc"], "msg": msg})
