@@ -1,0 +1,5 @@
+# Dependencias para las pruebas de la API (pytest). La imagen de desarrollo las incluye para
+# poder correr: docker compose exec api pytest
+-r requirements.txt
+pytest==9.1.1
+httpx2==2.13.1
