@@ -63,6 +63,29 @@
       <section class="cta" id="citas">
         <h2>Pida su cita.</h2>
         <p>Déjenos sus datos y el motivo de la consulta; le llamamos en horario de atención para confirmar.</p>
+
+        <form class="contact-form" id="contact-form" novalidate>
+          <label>
+            Nombre del paciente
+            <input type="text" name="name" maxlength="120" autocomplete="name" required />
+          </label>
+          <label>
+            Teléfono
+            <input type="tel" name="phone" minlength="7" maxlength="20" autocomplete="tel" required />
+          </label>
+          <label>
+            Motivo de la cita
+            <textarea
+              name="reason"
+              rows="4"
+              maxlength="500"
+              placeholder="Por ejemplo: valoración, limpieza o dolor en una muela"
+              required
+            ></textarea>
+          </label>
+          <button type="submit" class="button primary">Solicitar cita</button>
+          <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
+        </form>
       </section>
     </main>
 
@@ -70,5 +93,7 @@
       <span id="version">Versión v1</span>
       <span>Consultorio Dental Popayán</span>
     </footer>
+
+    <script src="app.js"></script>
   </body>
 </html>
