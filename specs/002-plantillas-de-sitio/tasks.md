@@ -19,8 +19,6 @@
 
 - [x] T07 · Crear el sitio de La Sazón desde la plantilla 1 — **Verifica:** muestra menú y reservas ficticias. [sebastian-debug]
 - [x] T08 · Crear el sitio de El Tornillo desde la plantilla 1 — **Verifica:** muestra catálogo ficticio. [sebastian-debug]
-- [x] T07 · Crear el sitio de La Sazón desde la plantilla 1 — **Verifica:** muestra menú y reservas ficticias. [ ]
-- [x] T08 · Crear el sitio de El Tornillo desde la plantilla 1 — **Verifica:** muestra catálogo ficticio. [ ]
 - [x] T09 · Crear el sitio de Dental Popayán desde la plantilla 2 — **Verifica:** formulario de citas funciona. [sebastian-debug]
 
 ## Integración
