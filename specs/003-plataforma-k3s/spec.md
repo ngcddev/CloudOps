@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Cloud / Platform) · Industrial aporta las cuotas por plan
 >
-> **Módulo:** 2 · **Requerimientos:** RF-03, RNF-03 · **Depende de:** 002 · **Estado:** Spec y plan
+> **Módulo:** 2 · **Requerimientos:** RF-03, RNF-03 · **Depende de:** 002 · **Estado:** Tareas listas
 
 ## Qué y por qué
 

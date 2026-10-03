@@ -37,7 +37,8 @@
 Todas ──> 015
 ```
 
-- **Ya (módulo 1):** 000, 001, 002.
+- **Terminadas:** 001, 002 (la 000 sigue con tareas abiertas del industrial).
+- **Ahora (módulo 2):** 003, 004, 005.
 - **Pueden adelantarse (solo producto):** 004 y la parte de backend/frontend de 007, 008 (incidentes manuales), 010 y 013.
 - **Esperan su módulo:** todo lo que instala herramientas de plataforma (003, 005, 006, 008-monitoreo, 009, 011, 012, 014).
 
