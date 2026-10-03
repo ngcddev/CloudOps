@@ -61,6 +61,7 @@ gitops/
 | PC A sin RAM | Límites en todos los componentes; Backstage apagable |
 | Traefik no respeta NetworkPolicy entre namespaces | Probar con un Pod `busybox` en la demo |
 | `.local` resuelve por mDNS en algunos equipos | Entradas explícitas en `/etc/hosts` |
+| k3s no descarga imágenes de un registro HTTP sin configurarlo | `registries.yaml` de k3s apuntando al registro de Gitea (T05) |
 
 ## Cómo se verifica
 
