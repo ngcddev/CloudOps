@@ -87,3 +87,14 @@ Gitea queda como registro en `gitea.hub.local/forja-digital/<imagen>:<versión>`
 ```bash
 docker exec k3d-hub-server-0 crictl pull gitea.hub.local/forja-digital/<imagen>:v1
 ```
+
+### Publicar las imágenes de los sitios
+
+```bash
+REGISTRY_USER=forja-admin REGISTRY_PASSWORD='<contraseña>' bash apps/publicar-imagenes.sh
+```
+
+Construye `restaurante`, `ferreteria`, `consultorio-web` y `consultorio-api` en `v1` (sana) y `v2`
+(responde 500 en `/health`) y las sube a `gitea.hub.local/forja-digital/`. Se puede pasar el nombre de
+una o más apps para publicar solo esas. Se usa `skopeo` en un contenedor porque Docker solo acepta
+un registro HTTP si es `localhost`.
