@@ -1,0 +1,26 @@
+# Ingress del Hub: hub.local (spec 003 T17). `/` es la consola y `/api` la API.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hub
+  namespace: hub
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: hub.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  name: http

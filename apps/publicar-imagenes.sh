@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Construye y publica en el registro de Gitea las imágenes de los sitios de clientes (spec 003, T06):
 # restaurante, ferreteria, consultorio-web y consultorio-api, cada una en v1 (sana) y v2 (rota, 500).
+# También las del Hub (T17): hub-api y hub-web, solo en v1. Se piden por nombre; no se publican por defecto.
 # Uso:  REGISTRY_USER=forja-admin REGISTRY_PASSWORD='...' bash apps/publicar-imagenes.sh [app ...]
-# Sin argumentos publica las cuatro. La contraseña va en el entorno: nunca en el repo.
+# Sin argumentos publica las cuatro de los sitios. La contraseña va en el entorno: nunca en el repo.
 #
 # Se sube con skopeo en un contenedor (Docker no confía en un registro HTTP que no sea localhost) y
 # `--network k3d-hub`, la red del clúster de desarrollo, donde gitea.hub.local apunta al host.
@@ -17,8 +18,11 @@ NETWORK="${NETWORK:-k3d-hub}"
 : "${REGISTRY_PASSWORD:?Falta REGISTRY_PASSWORD}"
 
 # app -> carpeta de contexto y Dockerfile
-declare -A CONTEXT=( [restaurante]=restaurante [ferreteria]=ferreteria [consultorio-web]=consultorio [consultorio-api]=consultorio )
-declare -A DOCKERFILE=( [restaurante]=Dockerfile [ferreteria]=Dockerfile [consultorio-web]=Dockerfile.frontend [consultorio-api]=Dockerfile.backend )
+declare -A CONTEXT=( [restaurante]=restaurante [ferreteria]=ferreteria [consultorio-web]=consultorio [consultorio-api]=consultorio [hub-api]=../backend [hub-web]=../frontend )
+declare -A DOCKERFILE=( [restaurante]=Dockerfile [ferreteria]=Dockerfile [consultorio-web]=Dockerfile.frontend [consultorio-api]=Dockerfile.backend [hub-api]=Dockerfile [hub-web]=Dockerfile )
+# Versiones por app y opciones extra de build (el Hub necesita seed/ como contexto adicional)
+declare -A VERSIONS=( [hub-api]=v1 [hub-web]=v1 )
+declare -A EXTRA=( [hub-api]="--build-context seed=../seed" [hub-web]="--build-context seed=../seed" )
 
 APPS=("$@")
 [ ${#APPS[@]} -eq 0 ] && APPS=(restaurante ferreteria consultorio-web consultorio-api)
@@ -29,10 +33,10 @@ trap 'rm -rf "$TMP"' EXIT
 MOUNT="$(cd "$TMP" && (pwd -W 2>/dev/null || pwd))"
 
 for app in "${APPS[@]}"; do
-  for version in v1 v2; do
+  for version in ${VERSIONS[$app]:-v1 v2}; do
     local_tag="hub/${app}:${version}"
     echo ">> ${app}:${version}"
-    docker build -q --build-arg "APP_VERSION=${version}" \
+    docker build -q ${EXTRA[$app]:-} --build-arg "APP_VERSION=${version}" \
       -f "${CONTEXT[$app]}/${DOCKERFILE[$app]}" -t "$local_tag" "${CONTEXT[$app]}" >/dev/null
     docker save "$local_tag" -o "$TMP/${app}-${version}.tar"
     MSYS_NO_PATHCONV=1 docker run --rm --network "$NETWORK" --add-host "${REGISTRY}:${REGISTRY_IP}" \
@@ -42,4 +46,4 @@ for app in "${APPS[@]}"; do
     rm -f "$TMP/${app}-${version}.tar"
   done
 done
-echo "Listo: ${REGISTRY}/${ORG}/<app>:v1 y :v2"
+echo "Listo: imágenes publicadas en ${REGISTRY}/${ORG}/"
