@@ -1,0 +1,7 @@
+# Configuración de k3s para descargar imágenes del registro de Gitea por HTTP (spec 003, T05).
+# Va en /etc/rancher/k3s/registries.yaml del nodo (en k3d: `--registry-config`).
+# Sin TLS real (fuera de alcance de la spec): el registro se declara como HTTP.
+mirrors:
+  "gitea.hub.local":
+    endpoint:
+      - "http://gitea.hub.local"

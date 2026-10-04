@@ -23,9 +23,13 @@ En el PC A va k3s directamente. Para desarrollar en otro equipo con Docker se us
 mismo k3s (con Traefik) dentro de Docker:
 
 ```bash
-k3d cluster create hub --image rancher/k3s:v1.32.9-k3s1 \
-  -p "80:80@loadbalancer" -p "443:443@loadbalancer"
+bash gitops/platform/k3s/crear-cluster.sh
 ```
+
+El script crea la red con dirección fija, fija k3s en 1.32, publica los puertos 80/443, carga
+[`registries.yaml`](platform/k3s/registries.yaml) (registro de Gitea por HTTP) y hace que
+`gitea.hub.local` se resuelva desde dentro del nodo. Los alias de host y el registro solo se fijan al
+crear el clúster: para cambiarlos hay que recrearlo.
 
 - **Versión de k3s fijada en 1.32:** Docker Desktop con cgroup v1 no arranca k3s 1.35 en adelante
   (el kubelet se apaga con "cgroup v1 support is unsupported").
@@ -75,3 +79,11 @@ kubectl -n gitea exec deploy/gitea -- gitea admin user create --admin \
 ```
 
 La organización `forja-digital` se crea desde la web (`http://gitea.hub.local`) o por la API.
+
+Gitea queda como registro en `gitea.hub.local/forja-digital/<imagen>:<versión>`. La organización es
+**pública** para que el nodo descargue sin credenciales (k3s no guarda contraseñas en
+`registries.yaml`); subir imágenes sí pide usuario. Comprobación desde el nodo:
+
+```bash
+docker exec k3d-hub-server-0 crictl pull gitea.hub.local/forja-digital/<imagen>:v1
+```

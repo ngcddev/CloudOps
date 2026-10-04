@@ -16,7 +16,7 @@
 ## Registro de imágenes
 
 - [x] T04 · Instalar Gitea en el namespace `gitea` con límites de memoria y volumen persistente, expuesto en `gitea.hub.local` — **Verifica:** abre en el navegador y permite crear la organización `forja-digital`. [sebastian-debug]
-- [ ] T05 · Configurar `registries.yaml` de k3s para que descargue del registro de Gitea por HTTP — **Verifica:** `crictl pull gitea.hub.local/forja-digital/<imagen>:v1` baja la imagen. [ ]
+- [x] T05 · Configurar `registries.yaml` de k3s para que descargue del registro de Gitea por HTTP — **Verifica:** `crictl pull gitea.hub.local/forja-digital/<imagen>:v1` baja la imagen. [sebastian-debug]
 - [ ] T06 · Construir y publicar en el registro de Gitea las imágenes `restaurante`, `ferreteria`, `consultorio-web` y `consultorio-api` en `v1` y `v2` — **Verifica:** las 8 aparecen en la sección de paquetes de la organización. [ ]
 
 ## Plantilla base de cliente (`gitops/clients/_base/`)
