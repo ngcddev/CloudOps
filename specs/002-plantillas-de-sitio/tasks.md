@@ -13,7 +13,7 @@
 
 - [x] T04 · Crear el backend mínimo con `POST /api/contact` y `/health` — **Verifica:** `curl` devuelve `{"ok":true}`. [ERIC]
 - [x] T05 · Agregar el formulario al frontend y el proxy `/api` en Nginx — **Verifica:** enviar el formulario muestra la confirmación. [ERIC]
-- [ ] T06 · Escribir los Dockerfiles sin root y el modo v2 del backend — **Verifica:** v2 responde 500 en `/health`. [ ]
+- [x] T06 · Escribir los Dockerfiles sin root y el modo v2 del backend — **Verifica:** v2 responde 500 en `/health`. [ERIC]
 
 ## Sitios de clientes
 
