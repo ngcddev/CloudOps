@@ -58,3 +58,20 @@ kubectl get nodes                          # el nodo, Ready
 kubectl get pods -n kube-system            # traefik, Running
 curl -i http://restaurante.hub.local       # 404 de Traefik: aún no hay sitio
 ```
+
+## Gitea y registro de imágenes
+
+```bash
+kubectl apply -k gitops/platform/gitea
+kubectl -n gitea wait --for=condition=Ready pod -l app=gitea --timeout=300s
+```
+
+El administrador **no** se guarda en el repo. Se crea una vez, con una contraseña que solo conoce quien
+instala (guárdala en el gestor de contraseñas del equipo, no en un archivo versionado):
+
+```bash
+kubectl -n gitea exec deploy/gitea -- gitea admin user create --admin \
+  --username forja-admin --password '<contraseña>' --email admin@forja.test --must-change-password=false
+```
+
+La organización `forja-digital` se crea desde la web (`http://gitea.hub.local`) o por la API.
