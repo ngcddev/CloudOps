@@ -40,7 +40,7 @@
 ## El Hub en el clúster (`gitops/hub/`)
 
 - [x] T16 · Escribir el StatefulSet de PostgreSQL del Hub con volumen persistente y el Secret creado fuera del repo — **Verifica:** el Pod queda `Ready` y `pg_isready` responde; `git grep` no encuentra la contraseña en el repo. [sebastian-debug]
-- [ ] T17 · Publicar las imágenes de `api` y `web` del Hub y escribir sus Deployments, Services e Ingress en `hub.local` — **Verifica:** `http://hub.local` abre la consola con los 3 clientes sembrados. [ ]
+- [x] T17 · Publicar las imágenes de `api` y `web` del Hub y escribir sus Deployments, Services e Ingress en `hub.local` — **Verifica:** `http://hub.local` abre la consola con los 3 clientes sembrados. [sebastian-debug]
 
 ## Cierre
 
