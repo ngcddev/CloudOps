@@ -5,3 +5,4 @@ resources:
   - namespace.yaml
   - resourcequota.yaml
   - limitrange.yaml
+  - networkpolicy.yaml
