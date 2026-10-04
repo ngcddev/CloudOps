@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dental Popayán | Reserva de cita</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Dental Popayán</div>
+      <nav>
+        <a href="#inicio">Inicio</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#contacto">Citas</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-copy">
+          <p class="eyebrow">Atención moderna</p>
+          <h1>Tu sonrisa en buenas manos.</h1>
+          <p>
+            Consultas, limpieza, ortodoncia y seguimiento dental con un trato cálido,
+            claro y eficiente para toda la familia.
+          </p>
+        </div>
+
+        <div class="hero-panel">
+          <span class="label">Agenda</span>
+          <strong>Consulta</strong>
+          <strong>Estética</strong>
+          <strong>Prevención</strong>
+        </div>
+      </section>
+
+      <section class="services" id="servicios">
+        <div class="section-heading">
+          <p class="eyebrow">Servicios</p>
+          <h2>Diseñamos una experiencia dental tranquila.</h2>
+        </div>
+
+        <div class="cards">
+          <article>
+            <h3>Revisión general</h3>
+            <p>Diagnóstico completo para detectar riesgos tempranamente.</p>
+          </article>
+          <article>
+            <h3>Limpieza</h3>
+            <p>Profilaxis y control de placa para una sonrisa saludable.</p>
+          </article>
+          <article>
+            <h3>Ortodoncia</h3>
+            <p>Plan de tratamiento con seguimiento claro y personalizado.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="form-section" id="contacto">
+        <div class="form-card">
+          <p class="eyebrow">Reserva tu cita</p>
+          <h2>Solicita información</h2>
+
+          <form id="contact-form">
+            <label>
+              Nombre
+              <input type="text" id="name" name="name" placeholder="Tu nombre" required />
+            </label>
+
+            <label>
+              Teléfono
+              <input type="tel" id="phone" name="phone" placeholder="300 123 4567" required />
+            </label>
+
+            <label>
+              Motivo
+              <textarea id="reason" name="reason" rows="4" placeholder="Cuéntanos qué necesitas" required></textarea>
+            </label>
+
+            <button type="submit">Enviar consulta</button>
+          </form>
+
+          <p id="status-message" class="status-message" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Versión v1</span>
+      <span>CloudOps Demo Clinic</span>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
