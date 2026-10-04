@@ -35,7 +35,7 @@
 
 - [x] T13 · Probar el aislamiento de red con un Pod `busybox` en `cliente-restaurante` — **Verifica:** `wget` a la ferretería falla por tiempo de espera y a su propio sitio funciona (CA-3). [sebastian-debug]
 - [x] T14 · Probar que Pod Security rechaza un contenedor con root — **Verifica:** `kubectl run root-test --image=nginx -n cliente-restaurante` es rechazado con el mensaje de política `restricted` (CA-4). [sebastian-debug]
-- [ ] T15 · Probar que un sitio con la verificación de salud fallando no recibe tráfico — **Verifica:** el Pod con la imagen `v2` (500 en `/health`) queda `0/1 Ready` y el Service no lo lista como endpoint (CA-6). [ ]
+- [x] T15 · Probar que un sitio con la verificación de salud fallando no recibe tráfico — **Verifica:** el Pod con la imagen `v2` (500 en `/health`) queda `0/1 Ready` y el Service no lo lista como endpoint (CA-6). [sebastian-debug]
 
 ## El Hub en el clúster (`gitops/hub/`)
 
