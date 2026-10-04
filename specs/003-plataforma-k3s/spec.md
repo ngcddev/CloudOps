@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Cloud / Platform) · Industrial aporta las cuotas por plan
 >
-> **Módulo:** 2 · **Requerimientos:** RF-03, RNF-03 · **Depende de:** 002 · **Estado:** Tareas listas
+> **Módulo:** 2 · **Requerimientos:** RF-03, RNF-03 · **Depende de:** 002 · **Estado:** Terminada
 
 ## Qué y por qué
 
@@ -27,14 +27,14 @@ recibe lo que promete.
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Existe un espacio por cliente (`cliente-restaurante`, `cliente-ferreteria`,
+- [x] CA-1. Existe un espacio por cliente (`cliente-restaurante`, `cliente-ferreteria`,
   `cliente-consultorio`) además de los de plataforma (`hub`, `argocd`, `monitoring`, `gitea`).
-- [ ] CA-2. Cada espacio de cliente tiene un límite de CPU y memoria igual al de su plan (spec 000).
-- [ ] CA-3. Un sitio de un cliente **no puede** comunicarse por red con el de otro cliente.
-- [ ] CA-4. Un contenedor que intenta correr como root o con privilegios es **rechazado**.
-- [ ] CA-5. Cada sitio responde en su dirección (`restaurante.hub.local`, `ferreteria.hub.local`,
+- [x] CA-2. Cada espacio de cliente tiene un límite de CPU y memoria igual al de su plan (spec 000).
+- [x] CA-3. Un sitio de un cliente **no puede** comunicarse por red con el de otro cliente.
+- [x] CA-4. Un contenedor que intenta correr como root o con privilegios es **rechazado**.
+- [x] CA-5. Cada sitio responde en su dirección (`restaurante.hub.local`, `ferreteria.hub.local`,
   `consultorio.hub.local`) y el Hub en `hub.local`.
-- [ ] CA-6. Un sitio solo recibe tráfico cuando su verificación de salud responde bien.
+- [x] CA-6. Un sitio solo recibe tráfico cuando su verificación de salud responde bien.
 
 ## Fuera de alcance
 
