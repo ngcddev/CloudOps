@@ -1,0 +1,79 @@
+# Gitea (Git + registro de imágenes) en el namespace gitea (spec 003, T04).
+# SQLite y una sola réplica: el clúster es de un nodo y la RAM del PC A es justa.
+# El usuario administrador NO está aquí: se crea con `gitea admin user create` (ver ../../README.md).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitea-data
+  namespace: gitea
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+  namespace: gitea
+  labels:
+    app: gitea
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # el volumen es ReadWriteOnce: no puede haber dos Pods a la vez
+  selector:
+    matchLabels:
+      app: gitea
+  template:
+    metadata:
+      labels:
+        app: gitea
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: gitea
+          image: gitea/gitea:1.22.6-rootless
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - { name: GITEA__database__DB_TYPE, value: sqlite3 }
+            - { name: GITEA__server__DOMAIN, value: gitea.hub.local }
+            - { name: GITEA__server__ROOT_URL, value: "http://gitea.hub.local/" }
+            - { name: GITEA__server__HTTP_PORT, value: "3000" }
+            - { name: GITEA__security__INSTALL_LOCK, value: "true" }
+            - { name: GITEA__service__DISABLE_REGISTRATION, value: "true" }
+            - { name: GITEA__packages__ENABLED, value: "true" }
+            - { name: GITEA__actions__ENABLED, value: "false" }   # Actions entra en el módulo 3
+            - { name: GITEA__log__LEVEL, value: Warn }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/gitea }
+            - { name: data, mountPath: /etc/gitea, subPath: config }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          readinessProbe:
+            httpGet: { path: /api/healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/healthz, port: http }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gitea-data
