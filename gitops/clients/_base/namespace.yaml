@@ -1,0 +1,14 @@
+# Namespace de un cliente (plantilla, spec 003 T07). Cada overlay cambia el nombre y las etiquetas
+# hub/client y hub/plan. Pod Security Admission `restricted` rechaza Pods con root o privilegios.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cliente-plantilla
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    app.kubernetes.io/part-of: cloudops-hub
+    hub/client: plantilla
+    hub/plan: plantilla

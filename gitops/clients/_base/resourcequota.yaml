@@ -1,0 +1,10 @@
+# Tope de CPU y memoria del cliente = cuota de su plan (seed/plans.json). Los valores de aquí son los
+# del plan Básico; cada overlay los reemplaza por los de su plan (spec 003 T07).
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: plan
+spec:
+  hard:
+    limits.cpu: 250m
+    limits.memory: 256Mi

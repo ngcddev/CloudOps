@@ -1,0 +1,7 @@
+# Plantilla base de un cliente; los overlays de gitops/clients/<cliente>/ la completan (spec 003).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - resourcequota.yaml
+  - limitrange.yaml
