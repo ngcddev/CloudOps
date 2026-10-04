@@ -28,7 +28,7 @@
 ## Los 3 clientes (`gitops/clients/<cliente>/`)
 
 - [x] T10 · Crear el overlay de La Sazón (`cliente-restaurante`, plan Premium 1000m/1Gi, `restaurante.hub.local`) y aplicarlo — **Verifica:** el sitio abre en su dirección y `kubectl describe quota -n cliente-restaurante` muestra 1000m/1Gi. [sebastian-debug]
-- [ ] T11 · Crear el overlay de El Tornillo (`cliente-ferreteria`, plan Estándar 500m/512Mi, `ferreteria.hub.local`) y aplicarlo — **Verifica:** el sitio abre en su dirección y la cuota es 500m/512Mi. [ ]
+- [x] T11 · Crear el overlay de El Tornillo (`cliente-ferreteria`, plan Estándar 500m/512Mi, `ferreteria.hub.local`) y aplicarlo — **Verifica:** el sitio abre en su dirección y la cuota es 500m/512Mi. [sebastian-debug]
 - [ ] T12 · Crear el overlay de Dental Popayán (`cliente-consultorio`, plan Básico 250m/256Mi) con frontend, backend y la ruta `/api` — **Verifica:** el formulario de citas responde en `consultorio.hub.local` y los dos Pods caben en la cuota de 250m/256Mi. [ ]
 
 ## Pruebas de aislamiento y seguridad

@@ -1,0 +1,36 @@
+# Cliente: Ferretería El Tornillo · plan Estándar (500m / 512Mi, seed/plans.json) · spec 003 T11.
+# Se aplica con `kubectl apply -k gitops/clients/ferreteria`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cliente-ferreteria
+resources:
+  - ../_base
+images:
+  - name: gitea.hub.local/forja-digital/plantilla
+    newName: gitea.hub.local/forja-digital/ferreteria
+    newTag: v1
+patches:
+  - target: { kind: Namespace }
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: cliente-ferreteria
+      - op: replace
+        path: /metadata/labels/hub~1client
+        value: ferreteria
+      - op: replace
+        path: /metadata/labels/hub~1plan
+        value: estandar
+  - target: { kind: ResourceQuota }
+    patch: |-
+      - op: replace
+        path: /spec/hard/limits.cpu
+        value: 500m
+      - op: replace
+        path: /spec/hard/limits.memory
+        value: 512Mi
+  - target: { kind: Ingress }
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: ferreteria.hub.local
