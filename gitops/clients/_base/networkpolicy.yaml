@@ -1,0 +1,28 @@
+# Aislamiento de red del cliente (spec 003 T08): deniega toda entrada y solo deja pasar a Traefik
+# (kube-system) y a Prometheus/Blackbox (monitoring). Así un sitio no puede llegar al de otro cliente,
+# ni siquiera desde su propio namespace salvo por lo que se permite abajo.
+# Dentro del mismo namespace los Pods sí se hablan (el frontend del consultorio llama a su backend).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: permitir-traefik-monitoreo-y-propio
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system   # Traefik, el Ingress de k3s
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring    # Prometheus y Blackbox Exporter
+        - podSelector: {}                                # los Pods del mismo cliente

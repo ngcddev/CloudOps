@@ -22,7 +22,7 @@
 ## Plantilla base de cliente (`gitops/clients/_base/`)
 
 - [x] T07 · Escribir `namespace.yaml`, `resourcequota.yaml` y `limitrange.yaml` con las etiquetas de Pod Security `restricted` y los límites por defecto — **Verifica:** `kubectl kustomize gitops/clients/_base` genera los 3 recursos y `kubectl apply --dry-run=server` no da errores. [sebastian-debug]
-- [ ] T08 · Escribir `networkpolicy.yaml` con `default-deny` de entrada y permiso desde `kube-system` (Traefik) y `monitoring` — **Verifica:** `kubectl describe networkpolicy` muestra las dos reglas de entrada. [ ]
+- [x] T08 · Escribir `networkpolicy.yaml` con `default-deny` de entrada y permiso desde `kube-system` (Traefik) y `monitoring` — **Verifica:** `kubectl describe networkpolicy` muestra las dos reglas de entrada. [sebastian-debug]
 - [ ] T09 · Escribir `deployment.yaml`, `service.yaml` e `ingress.yaml` con `runAsNonRoot`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, `seccompProfile: RuntimeDefault` y probes en `/health` — **Verifica:** `kubectl kustomize` renderiza los 3 y el Deployment pasa `kubectl apply --dry-run=server` contra un namespace `restricted`. [ ]
 
 ## Los 3 clientes (`gitops/clients/<cliente>/`)
