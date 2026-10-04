@@ -1,0 +1,60 @@
+# Cliente: Dental Popayán · plan Básico (250m / 256Mi, seed/plans.json) · spec 003 T12.
+# Plantilla landing + formulario: frontend (web) y backend. `/` va al frontend y `/api` al backend.
+# Se aplica con `kubectl apply -k gitops/clients/consultorio`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cliente-consultorio
+resources:
+  - ../_base
+  - backend.yaml
+images:
+  - name: gitea.hub.local/forja-digital/plantilla
+    newName: gitea.hub.local/forja-digital/consultorio-web
+    newTag: v1
+  - name: gitea.hub.local/forja-digital/plantilla-api
+    newName: gitea.hub.local/forja-digital/consultorio-api
+    newTag: v1
+patches:
+  - target: { kind: Namespace }
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: cliente-consultorio
+      - op: replace
+        path: /metadata/labels/hub~1client
+        value: consultorio
+      - op: replace
+        path: /metadata/labels/hub~1plan
+        value: basico
+  - target: { kind: ResourceQuota }
+    patch: |-
+      - op: replace
+        path: /spec/hard/limits.cpu
+        value: 250m
+      - op: replace
+        path: /spec/hard/limits.memory
+        value: 256Mi
+  - target: { kind: Deployment, name: web }
+    patch: |-
+      - op: add
+        path: /spec/strategy
+        value:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 0
+            maxUnavailable: 1
+  - target: { kind: Ingress }
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: consultorio.hub.local
+      - op: add
+        path: /spec/rules/0/http/paths/-
+        value:
+          path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: backend
+              port:
+                name: http
