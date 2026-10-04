@@ -9,7 +9,7 @@
 
 ## Clúster y red
 
-- [ ] T01 · Instalar k3s de un nodo en el PC A y copiar el `kubeconfig` — **Verifica:** `kubectl get nodes` muestra el nodo `Ready` y `kube-system` tiene Traefik corriendo. [ ]
+- [x] T01 · Instalar k3s de un nodo en el PC A y copiar el `kubeconfig` — **Verifica:** `kubectl get nodes` muestra el nodo `Ready` y `kube-system` tiene Traefik corriendo. [sebastian-debug]
 - [ ] T02 · Crear `gitops/platform/namespaces.yaml` con `hub`, `argocd`, `monitoring` y `gitea` — **Verifica:** `kubectl get ns` los lista. [ ]
 - [ ] T03 · Apuntar `hub.local` y los subdominios (`restaurante`, `ferreteria`, `consultorio`, `gitea`) al PC A en `/etc/hosts` y documentarlo en `gitops/README.md` — **Verifica:** `curl -i http://restaurante.hub.local` responde el 404 de Traefik (aún sin sitio). [ ]
 
