@@ -6,3 +6,6 @@ resources:
   - resourcequota.yaml
   - limitrange.yaml
   - networkpolicy.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
