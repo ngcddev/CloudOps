@@ -52,3 +52,12 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 
 - **GitHub `ngcddev/CloudOps`**: monorepo de desarrollo (este).
 - **Gitea `hub-gitops`**: repo que Argo CD vigila; se siembra desde `gitops/`. El Hub escribe aquí los cambios de versión y los rollback.
+
+## Herramientas de plataforma (módulo 2)
+
+| Qué | Dirección / nombre |
+|---|---|
+| Gitea | `gitea.hub.local` · organización `forja-digital` |
+| Registro de imágenes | `gitea.hub.local/forja-digital/<app>:<versión>` (`restaurante`, `ferreteria`, `consultorio-web`, `consultorio-api`) |
+| Repo GitOps | `forja-digital/hub-gitops` |
+| Argo CD | `argocd.hub.local` |

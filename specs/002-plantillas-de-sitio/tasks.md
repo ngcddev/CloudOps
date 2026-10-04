@@ -17,14 +17,14 @@
 
 ## Sitios de clientes
 
-- [ ] T07 · Crear el sitio de La Sazón desde la plantilla 1 — **Verifica:** muestra menú y reservas ficticias. [ ]
-- [ ] T08 · Crear el sitio de El Tornillo desde la plantilla 1 — **Verifica:** muestra catálogo ficticio. [ ]
-- [ ] T09 · Crear el sitio de Dental Popayán desde la plantilla 2 — **Verifica:** formulario de citas funciona. [ ]
+- [x] T07 · Crear el sitio de La Sazón desde la plantilla 1 — **Verifica:** muestra menú y reservas ficticias. [sebastian-debug]
+- [x] T08 · Crear el sitio de El Tornillo desde la plantilla 1 — **Verifica:** muestra catálogo ficticio. [sebastian-debug]
+- [x] T09 · Crear el sitio de Dental Popayán desde la plantilla 2 — **Verifica:** formulario de citas funciona. [sebastian-debug]
 
 ## Integración
 
-- [ ] T10 · Agregar los 3 sitios a `docker-compose.yml` con puertos 8081–8083 — **Verifica:** `docker compose up` los levanta con el Hub. [ ]
+- [x] T10 · Agregar los 3 sitios a `docker-compose.yml` con puertos 8081–8083 — **Verifica:** `docker compose up` los levanta con el Hub. [sebastian-debug]
 
 ## Cierre
 
-- [ ] T11 · Demo: 3 sitios en v1, La Sazón en v2 con 500, formulario enviado, usuario no root — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [x] T11 · Demo: 3 sitios en v1, La Sazón en v2 con 500, formulario enviado, usuario no root — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [sebastian-debug]

@@ -47,41 +47,53 @@ services:
     depends_on:
       - api
 
-  # Plantilla 1 · Landing estática (spec 002): http://localhost:8081
-  # Cambiar APP_VERSION a v2 y reconstruir para ver el 500 de la demo.
-  plantilla-landing:
+  # ---------- Sitios de los clientes (spec 002) ----------
+  # La versión se fija en build (v1 = sana, v2 = rota con HTTP 500). Para pasar un sitio a v2:
+  #   RESTAURANTE_VERSION=v2 docker compose up --build -d restaurante
+
+  # Sitio de La Sazón (plantilla landing) en :8081
+  restaurante:
     build:
-      context: ./apps/templates/landing
+      context: ./apps/restaurante
       args:
-        APP_VERSION: v1
+        APP_VERSION: ${RESTAURANTE_VERSION:-v1}
+    image: hub/restaurante:${RESTAURANTE_VERSION:-v1}
     ports:
-      - "8081:8080"
+      - "${RESTAURANTE_PORT:-8081}:8080"
 
-  # Plantilla 2 · Landing + formulario (spec 002): http://localhost:8083
-  plantilla-form-api:
+  # Sitio de El Tornillo (plantilla landing) en :8082
+  ferreteria:
     build:
-      context: ./apps/templates/landing-form
-      dockerfile: Dockerfile.backend
+      context: ./apps/ferreteria
       args:
-        APP_VERSION: v1
+        APP_VERSION: ${FERRETERIA_VERSION:-v1}
+    image: hub/ferreteria:${FERRETERIA_VERSION:-v1}
+    ports:
+      - "${FERRETERIA_PORT:-8082}:8080"
 
-  plantilla-form-web:
+  # Sitio de Dental Popayán (plantilla landing-form) en :8083; /api pasa a consultorio-api
+  consultorio-web:
     build:
-      context: ./apps/templates/landing-form
+      context: ./apps/consultorio
       dockerfile: Dockerfile.frontend
       args:
-        APP_VERSION: v1
+        APP_VERSION: ${CONSULTORIO_VERSION:-v1}
+    image: hub/consultorio-web:${CONSULTORIO_VERSION:-v1}
     environment:
-      API_UPSTREAM: plantilla-form-api:8000
+      API_UPSTREAM: consultorio-api:8000
     ports:
-      - "8083:8080"
+      - "${CONSULTORIO_PORT:-8083}:8080"
     depends_on:
-      - plantilla-form-api
+      - consultorio-api
 
-  # Pendientes del módulo 1 (spec 002-T07 a T10): los sitios de clientes reemplazan a las plantillas
-  # restaurante      → :8081
-  # ferreteria       → :8082
-  # consultorio-web  → :8083 y consultorio-api
+  # Backend del formulario de citas de Dental Popayán (solo se publica a través de consultorio-web)
+  consultorio-api:
+    build:
+      context: ./apps/consultorio
+      dockerfile: Dockerfile.backend
+      args:
+        APP_VERSION: ${CONSULTORIO_VERSION:-v1}
+    image: hub/consultorio-api:${CONSULTORIO_VERSION:-v1}
 
 volumes:
   db_data:

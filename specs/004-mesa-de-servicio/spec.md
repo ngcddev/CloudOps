@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Backend, Frontend) · Industrial valida la matriz P1–P4 y el flujo de estados
 >
-> **Módulo:** 2 (producto: puede adelantarse) · **Requerimientos:** RF-04, RF-05 · **Depende de:** 000, 001 · **Estado:** Spec y plan
+> **Módulo:** 2 (producto: puede adelantarse) · **Requerimientos:** RF-04, RF-05 · **Depende de:** 000, 001 · **Estado:** Tareas listas
 
 ## Qué y por qué
 

@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Backend, Frontend) · Industrial valida planes y SLA
 >
-> **Módulo:** 1 · **Requerimientos:** RF-01, RF-02 · **Depende de:** 000 · **Estado:** Tareas listas
+> **Módulo:** 1 · **Requerimientos:** RF-01, RF-02 · **Depende de:** 000 · **Estado:** Terminada
 
 ## Qué y por qué
 
@@ -28,16 +28,16 @@ incidentes, reportes) cuelga de un cliente y su servicio.
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Desde cero, un solo comando levanta el sistema con la agencia **Forja Digital**, los
+- [x] CA-1. Desde cero, un solo comando levanta el sistema con la agencia **Forja Digital**, los
   3 planes de la spec 000 y los 3 clientes canónicos cargados.
-- [ ] CA-2. Se puede crear, listar, ver y editar un cliente (nombre, contacto, correo, teléfono).
-- [ ] CA-3. Cada cliente tiene al menos un proyecto y un servicio; el servicio tiene nombre, dirección
+- [x] CA-2. Se puede crear, listar, ver y editar un cliente (nombre, contacto, correo, teléfono).
+- [x] CA-3. Cada cliente tiene al menos un proyecto y un servicio; el servicio tiene nombre, dirección
   (host), plantilla y plan.
-- [ ] CA-4. El detalle del cliente muestra su proyecto, su servicio, el plan y los tiempos de SLA
+- [x] CA-4. El detalle del cliente muestra su proyecto, su servicio, el plan y los tiempos de SLA
   por prioridad tomados de la spec 000.
-- [ ] CA-5. No se puede crear un servicio sin plan ni un cliente sin nombre; el error se explica en
+- [x] CA-5. No se puede crear un servicio sin plan ni un cliente sin nombre; el error se explica en
   español.
-- [ ] CA-6. La interfaz está en español y en blanco y negro.
+- [x] CA-6. La interfaz está en español y en blanco y negro.
 
 ## Fuera de alcance
 
