@@ -1,0 +1,5 @@
+# El Hub en el clúster (spec 003 T16-T17). El Secret hub-db NO está aquí: ver crear-secretos.sh.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - postgres.yaml
