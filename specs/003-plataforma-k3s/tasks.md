@@ -44,4 +44,4 @@
 
 ## Cierre
 
-- [ ] T18 · Demo: espacios y cuotas por plan, los 3 sitios y el Hub por su dirección, ferretería inalcanzable desde el restaurante y root rechazado — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [x] T18 · Demo: espacios y cuotas por plan, los 3 sitios y el Hub por su dirección, ferretería inalcanzable desde el restaurante y root rechazado — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [sebastian-debug]
