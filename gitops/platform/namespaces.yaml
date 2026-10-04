@@ -1,0 +1,29 @@
+# Namespaces de plataforma del clúster (spec 003, T02): uno por herramienta de la agencia.
+# Los de cliente (cliente-<nombre>) viven en gitops/clients/_base/namespace.yaml.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hub
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gitea
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
