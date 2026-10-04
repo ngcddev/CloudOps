@@ -1,0 +1,12 @@
+# Service del sitio (spec 003 T09): solo lista como destino a los Pods que están Ready.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

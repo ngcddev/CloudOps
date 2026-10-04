@@ -1,0 +1,47 @@
+# Sitio del cliente (plantilla landing, spec 003 T09): Nginx sin root en el puerto 8080 con /health.
+# Cada overlay cambia la imagen (gitops/clients/<cliente>/kustomization.yaml). Cumple el perfil
+# Pod Security `restricted`. La readiness probe hace de prueba de humo: un Pod con la v2 (500 en
+# /health) no queda Ready y el Service no le manda tráfico.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: gitea.hub.local/forja-digital/plantilla:v1
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10

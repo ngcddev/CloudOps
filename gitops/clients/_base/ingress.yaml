@@ -1,0 +1,18 @@
+# Ingress del sitio (spec 003 T09): <cliente>.hub.local entra por Traefik. Cada overlay cambia el host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: plantilla.hub.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  name: http
