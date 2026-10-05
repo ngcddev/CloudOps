@@ -13,16 +13,16 @@
 
 ## Modelo de datos
 
-- [x] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ ]
-- [x] T03 · Crear las tablas `tickets`, `ticket_events` y `work_logs` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ ]
+- [x] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ANDRES]
+- [x] T03 · Crear las tablas `tickets`, `ticket_events` y `work_logs` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ANDRES]
 
 ## Reglas de negocio (`backend/app/services/`)
 
-- [x] T04 · Escribir `priority.py` con `classify(impact, urgency)` leyendo la matriz — **Verifica:** `pytest` cubre las 9 combinaciones y rechaza valores inválidos. [ ]
+- [x] T04 · Escribir `priority.py` con `classify(impact, urgency)` leyendo la matriz — **Verifica:** `pytest` cubre las 9 combinaciones y rechaza valores inválidos. [ANDRES]
 - [x] T05 · Escribir `ticket_flow.py` con las transiciones válidas de `abierto → en_progreso → en_espera → resuelto → cerrado` — **Verifica:** `pytest` acepta las válidas, rechaza los saltos (por ejemplo `abierto → resuelto`) y fija `first_response_at` al pasar a `en_progreso`. [ ]
-- [x] T06 · Escribir `sla.py` con `due_dates` para el reloj 24/7 de P1 — **Verifica:** `pytest`: un P1 creado a las 14:00 vence respuesta 14:15 y solución 18:00. [ ]
-- [x] T07 · Extender `due_dates` al horario del plan (America/Bogota, guardando UTC) — **Verifica:** `pytest` con casos de viernes tarde, fin de semana y fuera de horario en cada plan. [ ]
-- [x] T08 · Escribir `sla_state(ticket, now)` con `a_tiempo`, `en_riesgo` (≥ 80 % del plazo) y `vencido` — **Verifica:** `pytest` cubre los tres estados y el borde exacto del 80 %. [ ]
+- [x] T06 · Escribir `sla.py` con `due_dates` para el reloj 24/7 de P1 — **Verifica:** `pytest`: un P1 creado a las 14:00 vence respuesta 14:15 y solución 18:00. [ANDRES]
+- [x] T07 · Extender `due_dates` al horario del plan (America/Bogota, guardando UTC) — **Verifica:** `pytest` con casos de viernes tarde, fin de semana y fuera de horario en cada plan. [ANDRES]
+- [x] T08 · Escribir `sla_state(ticket, now)` con `a_tiempo`, `en_riesgo` (≥ 80 % del plazo) y `vencido` — **Verifica:** `pytest` cubre los tres estados y el borde exacto del 80 %. [ANDRES]
 
 ## API
 
