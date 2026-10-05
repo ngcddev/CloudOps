@@ -1,4 +1,4 @@
-# Prueba de la migración de Alembic: sube y baja limpia sobre una base vacía (spec 001, T04).
+# Prueba de las migraciones de Alembic: sube y baja sobre una base vacía (specs 001 y 004).
 from pathlib import Path
 
 from alembic import command
@@ -14,6 +14,9 @@ TABLES = {
     "projects",
     "services",
     "users",
+    "tickets",
+    "ticket_events",
+    "work_logs",
 }
 
 
@@ -29,6 +32,11 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
     with engine.begin() as connection:
         command.upgrade(_config(connection), "head")
         assert TABLES <= set(inspect(connection).get_table_names())
+
+        command.downgrade(_config(connection), "-1")
+        remaining_tables = set(inspect(connection).get_table_names())
+        assert not {"tickets", "ticket_events", "work_logs"} & remaining_tables
+        assert {"agencies", "plans", "sla_policies", "clients", "projects", "services", "users"} <= remaining_tables
 
         command.downgrade(_config(connection), "base")
         assert not TABLES & set(inspect(connection).get_table_names())
