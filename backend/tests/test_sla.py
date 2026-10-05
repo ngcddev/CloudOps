@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from app.models.plan import Plan
-from app.services.sla import due_dates
+from app.services.sla import due_dates, sla_state
 
 
 def make_plan(support_hours: str = "24x7") -> Plan:
@@ -73,3 +73,53 @@ def test_estandar_incluye_el_sabado():
     response_due_at, _ = due_dates(created_at, "P2", make_plan("lun-sab 07:00-20:00"))
 
     assert response_due_at == datetime(2026, 10, 3, 18, 0, tzinfo=timezone.utc)
+
+
+def make_ticket(created_at, response_due_at, resolution_due_at, first_response_at=None):
+    from app.models.ticket import Ticket
+
+    return Ticket(
+        service_id=1,
+        title="Solicitud",
+        description="Descripción",
+        created_at=created_at,
+        response_due_at=response_due_at,
+        resolution_due_at=resolution_due_at,
+        first_response_at=first_response_at,
+    )
+
+
+def test_sla_state_respuesta_a_tiempo():
+    created_at = datetime(2026, 10, 4, 14, 0, tzinfo=timezone.utc)
+    ticket = make_ticket(created_at, datetime(2026, 10, 4, 14, 15, tzinfo=timezone.utc), None)
+
+    assert sla_state(ticket, datetime(2026, 10, 4, 14, 11, tzinfo=timezone.utc)) == "a_tiempo"
+
+
+def test_sla_state_en_riesgo_en_el_borde_exactamente_del_80_por_ciento():
+    created_at = datetime(2026, 10, 4, 14, 0, tzinfo=timezone.utc)
+    ticket = make_ticket(created_at, datetime(2026, 10, 4, 14, 15, tzinfo=timezone.utc), None)
+
+    assert sla_state(ticket, datetime(2026, 10, 4, 14, 12, tzinfo=timezone.utc)) == "en_riesgo"
+
+
+def test_sla_state_vencido_al_llegar_a_la_fecha_limite():
+    created_at = datetime(2026, 10, 4, 14, 0, tzinfo=timezone.utc)
+    due_at = datetime(2026, 10, 4, 14, 15, tzinfo=timezone.utc)
+    ticket = make_ticket(created_at, due_at, None)
+
+    assert sla_state(ticket, due_at) == "vencido"
+
+
+def test_sla_state_cambia_a_solucion_despues_de_la_primera_respuesta():
+    created_at = datetime(2026, 10, 4, 14, 0, tzinfo=timezone.utc)
+    first_response_at = datetime(2026, 10, 4, 14, 10, tzinfo=timezone.utc)
+    resolution_due_at = datetime(2026, 10, 4, 18, 0, tzinfo=timezone.utc)
+    ticket = make_ticket(
+        created_at,
+        datetime(2026, 10, 4, 14, 15, tzinfo=timezone.utc),
+        resolution_due_at,
+        first_response_at,
+    )
+
+    assert sla_state(ticket, datetime(2026, 10, 4, 17, 12, tzinfo=timezone.utc)) == "en_riesgo"
