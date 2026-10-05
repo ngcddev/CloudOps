@@ -20,7 +20,7 @@
 
 - [x] T04 · Escribir `priority.py` con `classify(impact, urgency)` leyendo la matriz — **Verifica:** `pytest` cubre las 9 combinaciones y rechaza valores inválidos. [ ]
 - [x] T05 · Escribir `ticket_flow.py` con las transiciones válidas de `abierto → en_progreso → en_espera → resuelto → cerrado` — **Verifica:** `pytest` acepta las válidas, rechaza los saltos (por ejemplo `abierto → resuelto`) y fija `first_response_at` al pasar a `en_progreso`. [ ]
-- [ ] T06 · Escribir `sla.py` con `due_dates` para el reloj 24/7 de P1 — **Verifica:** `pytest`: un P1 creado a las 14:00 vence respuesta 14:15 y solución 18:00. [ ]
+- [x] T06 · Escribir `sla.py` con `due_dates` para el reloj 24/7 de P1 — **Verifica:** `pytest`: un P1 creado a las 14:00 vence respuesta 14:15 y solución 18:00. [ ]
 - [ ] T07 · Extender `due_dates` al horario del plan (America/Bogota, guardando UTC) — **Verifica:** `pytest` con casos de viernes tarde, fin de semana y fuera de horario en cada plan. [ ]
 - [ ] T08 · Escribir `sla_state(ticket, now)` con `a_tiempo`, `en_riesgo` (≥ 80 % del plazo) y `vencido` — **Verifica:** `pytest` cubre los tres estados y el borde exacto del 80 %. [ ]
 
