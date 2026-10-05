@@ -21,6 +21,18 @@ class TicketCreate(BaseModel):
         return value
 
 
+class TicketClassify(BaseModel):
+    impact: Literal["alto", "medio", "bajo"]
+    urgency: Literal["alta", "media", "baja"]
+    priority: Literal["P1", "P2", "P3", "P4"] | None = None
+    correction_reason: str | None = None
+
+    @field_validator("correction_reason")
+    @classmethod
+    def _limpiar_motivo(cls, value: str | None) -> str | None:
+        return value.strip() if value is not None else None
+
+
 class TicketEventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
