@@ -33,6 +33,16 @@ class TicketClassify(BaseModel):
         return value.strip() if value is not None else None
 
 
+class TicketAssign(BaseModel):
+    assignee_id: int
+    actor_id: int | None = None
+
+
+class TicketTransition(BaseModel):
+    new_status: Literal["en_progreso", "en_espera", "resuelto", "cerrado"]
+    actor_id: int | None = None
+
+
 class TicketEventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

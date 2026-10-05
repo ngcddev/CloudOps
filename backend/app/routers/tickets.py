@@ -14,7 +14,15 @@ from app.models.ticket_event import TicketEvent
 from app.models.user import User
 from app.services.priority import classify
 from app.services.sla import due_dates
-from app.schemas.ticket import TicketClassify, TicketCreate, TicketDetail, TicketOut
+from app.services.ticket_flow import transition
+from app.schemas.ticket import (
+    TicketAssign,
+    TicketClassify,
+    TicketCreate,
+    TicketDetail,
+    TicketOut,
+    TicketTransition,
+)
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 
@@ -105,6 +113,59 @@ def classify_ticket(ticket_id: int, data: TicketClassify, db: Session = Depends(
             from_value=old_priority,
             to_value=selected_priority,
             note=data.correction_reason,
+            internal=False,
+        )
+    )
+    db.commit()
+    db.refresh(ticket)
+    return ticket
+
+
+@router.post("/{ticket_id}/assign", response_model=TicketOut)
+def assign_ticket(ticket_id: int, data: TicketAssign, db: Session = Depends(get_db)):
+    """Asigna un responsable y registra el cambio en el historial."""
+    ticket = _get_ticket_or_404(db, ticket_id)
+    if db.get(User, data.assignee_id) is None:
+        raise HTTPException(status_code=404, detail="El usuario responsable no existe.")
+    if data.actor_id is not None and db.get(User, data.actor_id) is None:
+        raise HTTPException(status_code=404, detail="El usuario que asigna no existe.")
+
+    old_assignee = str(ticket.assignee_id) if ticket.assignee_id is not None else None
+    ticket.assignee_id = data.assignee_id
+    db.add(
+        TicketEvent(
+            ticket=ticket,
+            actor_id=data.actor_id,
+            type="asignacion",
+            from_value=old_assignee,
+            to_value=str(data.assignee_id),
+            internal=False,
+        )
+    )
+    db.commit()
+    db.refresh(ticket)
+    return ticket
+
+
+@router.post("/{ticket_id}/transition", response_model=TicketOut)
+def transition_ticket(ticket_id: int, data: TicketTransition, db: Session = Depends(get_db)):
+    """Cambia el estado si la transición pertenece al flujo permitido."""
+    ticket = _get_ticket_or_404(db, ticket_id)
+    if data.actor_id is not None and db.get(User, data.actor_id) is None:
+        raise HTTPException(status_code=404, detail="El usuario que cambia el estado no existe.")
+
+    old_status = ticket.status
+    try:
+        transition(ticket, data.new_status)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    db.add(
+        TicketEvent(
+            ticket=ticket,
+            actor_id=data.actor_id,
+            type="estado",
+            from_value=old_status,
+            to_value=data.new_status,
             internal=False,
         )
     )
