@@ -1,6 +1,6 @@
-# Cálculo de fechas límite del SLA para tickets (spec 004, T06-T07).
+# Cálculo de fechas límite y estado del SLA (spec 004, T06-T08).
 import re
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from app.models.plan import Plan
@@ -38,6 +38,37 @@ def due_dates(created_at: datetime, priority: str, plan: Plan) -> tuple[datetime
         _add_business_minutes(created_at_utc, response_minutes, schedule),
         _add_business_minutes(created_at_utc, resolution_minutes, schedule),
     )
+
+
+def sla_state(ticket, now: datetime | None = None) -> str:
+    """Devuelve a_tiempo, en_riesgo o vencido para el plazo activo del ticket."""
+    created_at = _require_aware(ticket.created_at, "created_at")
+    current = _require_aware(now or datetime.now(timezone.utc), "now")
+    if ticket.first_response_at is None:
+        due_at = ticket.response_due_at
+    else:
+        due_at = ticket.resolution_due_at
+    if due_at is None:
+        raise ValueError("El ticket no tiene una fecha límite para calcular el SLA.")
+
+    created_at = created_at.astimezone(timezone.utc)
+    current = current.astimezone(timezone.utc)
+    due_at = _require_aware(due_at, "due_at").astimezone(timezone.utc)
+    total = due_at - created_at
+    elapsed = current - created_at
+    if total <= timedelta(0):
+        raise ValueError("La fecha límite debe ser posterior a la creación del ticket.")
+    if current >= due_at:
+        return "vencido"
+    if elapsed * 5 >= total * 4:
+        return "en_riesgo"
+    return "a_tiempo"
+
+
+def _require_aware(value: datetime | None, field_name: str) -> datetime:
+    if value is None or value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError(f"La fecha «{field_name}» debe incluir zona horaria.")
+    return value
 
 
 def _parse_support_hours(value: str) -> tuple[set[int], time, time]:
