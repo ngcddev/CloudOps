@@ -1,5 +1,6 @@
 # Endpoints de solicitudes: creación, bandeja y detalle (spec 004, T09).
 from datetime import timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -23,11 +24,19 @@ from app.schemas.ticket import (
     TicketDetail,
     TicketOut,
     TicketTransition,
+    TicketEventOut,
     WorkLogCreate,
     WorkLogOut,
 )
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
+CLIENT_STATUS_LABELS = {
+    "abierto": "Abierto",
+    "en_progreso": "En progreso",
+    "en_espera": "En espera",
+    "resuelto": "Resuelto",
+    "cerrado": "Cerrado",
+}
 
 
 def _get_ticket_or_404(db: Session, ticket_id: int) -> Ticket:
@@ -40,6 +49,25 @@ def _get_ticket_or_404(db: Session, ticket_id: int) -> Ticket:
     if ticket is None:
         raise HTTPException(status_code=404, detail="La solicitud no existe.")
     return ticket
+
+
+def _check_client_access(ticket: Ticket, viewer_role: str, client_id: int | None) -> None:
+    if viewer_role == "agencia":
+        return
+    if client_id is None:
+        raise HTTPException(status_code=422, detail="El cliente debe indicar su client_id.")
+    if ticket.service.project.client_id != client_id:
+        raise HTTPException(status_code=404, detail="La solicitud no existe.")
+
+
+def _present_ticket(ticket: Ticket, viewer_role: str, client_id: int | None, detail: bool = False):
+    _check_client_access(ticket, viewer_role, client_id)
+    result = TicketDetail.model_validate(ticket) if detail else TicketOut.model_validate(ticket)
+    if viewer_role == "cliente":
+        result.status = CLIENT_STATUS_LABELS.get(result.status, result.status)
+        if detail:
+            result.events = [event for event in result.events if not event.internal]
+    return result
 
 
 @router.post("", response_model=TicketOut, status_code=status.HTTP_201_CREATED)
@@ -62,6 +90,7 @@ def list_tickets(
     client_id: int | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
     priority: str | None = Query(default=None),
+    viewer_role: Literal["agencia", "cliente"] = Query(default="agencia"),
     db: Session = Depends(get_db),
 ):
     """Lista solicitudes con filtros opcionales por cliente, estado y prioridad."""
@@ -72,13 +101,19 @@ def list_tickets(
         query = query.where(Ticket.status == status_filter)
     if priority is not None:
         query = query.where(Ticket.priority == priority)
-    return db.scalars(query.order_by(Ticket.id)).all()
+    tickets = db.scalars(query.order_by(Ticket.id)).all()
+    return [_present_ticket(ticket, viewer_role, client_id) for ticket in tickets]
 
 
 @router.get("/{ticket_id}", response_model=TicketDetail)
-def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
+def get_ticket(
+    ticket_id: int,
+    viewer_role: Literal["agencia", "cliente"] = Query(default="agencia"),
+    client_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
     """Devuelve una solicitud con su historial y horas registradas."""
-    return _get_ticket_or_404(db, ticket_id)
+    return _present_ticket(_get_ticket_or_404(db, ticket_id), viewer_role, client_id, detail=True)
 
 
 @router.post("/{ticket_id}/classify", response_model=TicketOut)
