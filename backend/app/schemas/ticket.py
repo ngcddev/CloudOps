@@ -1,5 +1,6 @@
 # Esquemas de entrada y salida de solicitudes (spec 004, T09).
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -41,6 +42,19 @@ class TicketAssign(BaseModel):
 class TicketTransition(BaseModel):
     new_status: Literal["en_progreso", "en_espera", "resuelto", "cerrado"]
     actor_id: int | None = None
+
+
+class WorkLogCreate(BaseModel):
+    user_id: int
+    hours: Decimal
+    note: str | None = None
+
+    @field_validator("hours")
+    @classmethod
+    def _horas_positivas(cls, value: Decimal) -> Decimal:
+        if value <= 0:
+            raise ValueError("Las horas deben ser mayores que cero.")
+        return value
 
 
 class TicketEventOut(BaseModel):
