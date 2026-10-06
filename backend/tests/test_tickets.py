@@ -159,3 +159,41 @@ def test_salto_invalido_responde_409(client, session_factory):
     )
 
     assert response.status_code == 409
+
+
+def test_registrar_horas_actualiza_el_total_del_detalle(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Horas", "description": "Prueba"},
+    ).json()["id"]
+
+    first = client.post(
+        f"/api/tickets/{ticket_id}/work-logs",
+        json={"user_id": 1, "hours": 1, "note": "Diagnóstico"},
+    )
+    second = client.post(
+        f"/api/tickets/{ticket_id}/work-logs",
+        json={"user_id": 1, "hours": 0.5, "note": "Corrección"},
+    )
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    detail = client.get(f"/api/tickets/{ticket_id}").json()
+    assert sum(log["hours"] for log in detail["work_logs"]) == 1.5
+
+
+def test_horas_negativas_responden_422(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Horas inválidas", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/work-logs",
+        json={"user_id": 1, "hours": -0.5},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Las horas deben ser mayores que cero."
