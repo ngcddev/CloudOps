@@ -42,7 +42,7 @@
 
 ## Datos semilla
 
-- [ ] T19 · Agregar 3 tickets semilla en distintos estados y prioridades — **Verifica:** `docker compose down -v && docker compose up --build` deja la bandeja con 3 tickets y ninguno es el de la demo. [ ]
+- [x] T19 · Agregar 3 tickets semilla en distintos estados y prioridades — **Verifica:** `docker compose down -v && docker compose up --build` deja la bandeja con 3 tickets y ninguno es el de la demo. [ANDRES]
 
 ## Cierre
 
