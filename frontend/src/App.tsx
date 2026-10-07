@@ -5,6 +5,7 @@ import AgencyLayout from "./components/AgencyLayout";
 import ClientDetail from "./pages/agencia/ClientDetail";
 import ClientForm from "./pages/agencia/ClientForm";
 import ClientList from "./pages/agencia/ClientList";
+import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
 import NotFound from "./pages/NotFound";
 
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="clientes/nuevo" element={<ClientForm />} />
         <Route path="clientes/:id" element={<ClientDetail />} />
         <Route path="tickets" element={<TicketList />} />
+        <Route path="tickets/:id" element={<TicketDetail />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       <Route path="*" element={<NotFound />} />
