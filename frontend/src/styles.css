@@ -291,6 +291,10 @@ h3 {
   padding: 10px 12px;
 }
 
+.portal-form {
+  margin-bottom: var(--space);
+}
+
 /* Avisos: se distinguen por ícono, texto y borde, no por color */
 .notice,
 .error {

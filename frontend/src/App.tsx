@@ -7,6 +7,7 @@ import ClientForm from "./pages/agencia/ClientForm";
 import ClientList from "./pages/agencia/ClientList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
+import PortalTicketList from "./pages/portal/TicketList";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -22,6 +23,8 @@ export default function App() {
         <Route path="tickets/:id" element={<TicketDetail />} />
         <Route path="*" element={<NotFound />} />
       </Route>
+      <Route path="/portal" element={<Navigate to="/portal/solicitudes" replace />} />
+      <Route path="/portal/solicitudes" element={<PortalTicketList />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
