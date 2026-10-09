@@ -1,0 +1,27 @@
+{
+  "users": [
+    {
+      "name": "Sofía Ramírez",
+      "email": "sofia@forjadigital.test",
+      "role": "agencia"
+    },
+    {
+      "name": "Marta Ríos",
+      "email": "contacto@lasazon.test",
+      "role": "cliente",
+      "client_name": "Restaurante La Sazón"
+    },
+    {
+      "name": "Jorge Muñoz",
+      "email": "contacto@eltornillo.test",
+      "role": "cliente",
+      "client_name": "Ferretería El Tornillo"
+    },
+    {
+      "name": "Laura Cifuentes",
+      "email": "contacto@dentalpopayan.test",
+      "role": "cliente",
+      "client_name": "Consultorio Dental Popayán"
+    }
+  ]
+}
