@@ -1,0 +1,1 @@
+# Reglas de negocio de la mesa de servicio.
