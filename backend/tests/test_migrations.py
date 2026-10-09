@@ -6,7 +6,15 @@ from alembic.config import Config
 from sqlalchemy import create_engine, inspect
 
 BACKEND = Path(__file__).resolve().parents[1]
-TABLES = {"agencies", "plans", "sla_policies", "clients", "projects", "services"}
+TABLES = {
+    "agencies",
+    "plans",
+    "sla_policies",
+    "clients",
+    "projects",
+    "services",
+    "users",
+}
 
 
 def _config(connection) -> Config:
