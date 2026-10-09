@@ -1,0 +1,21 @@
+{
+  "impact": ["alto", "medio", "bajo"],
+  "urgency": ["alta", "media", "baja"],
+  "matrix": {
+    "alto": {
+      "alta": "P1",
+      "media": "P2",
+      "baja": "P3"
+    },
+    "medio": {
+      "alta": "P2",
+      "media": "P3",
+      "baja": "P4"
+    },
+    "bajo": {
+      "alta": "P3",
+      "media": "P4",
+      "baja": "P4"
+    }
+  }
+}

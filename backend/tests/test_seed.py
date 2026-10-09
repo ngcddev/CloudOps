@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import func, select
 
 from app import seed
-from app.models import Agency, Client, Plan, Project, Service, SlaPolicy
+from app.models import Agency, Client, Plan, Project, Service, SlaPolicy, Ticket
 
 
 def _count(db, model) -> int:
@@ -20,6 +20,16 @@ def test_seed_loads_agency_plans_sla_and_three_clients(seeded):
     assert _count(seeded, Client) == 3
     assert _count(seeded, Project) == 3
     assert _count(seeded, Service) == 3
+
+
+def test_seed_adds_three_sample_tickets_in_different_states_and_priorities(seeded):
+    tickets = seeded.scalars(select(Ticket).order_by(Ticket.id)).all()
+    assert len(tickets) == 3
+    statuses = {ticket.status for ticket in tickets}
+    priorities = {ticket.priority for ticket in tickets}
+    assert statuses == {"abierto", "en_progreso", "resuelto"}
+    assert priorities == {"P1", "P2", "P3"}
+    assert all("El menú del domingo no aparece" not in ticket.title for ticket in tickets)
 
 
 def test_seed_uses_the_canonical_names(seeded):

@@ -1,0 +1,239 @@
+# Pruebas de creación, bandeja y detalle de solicitudes (spec 004, T09).
+from sqlalchemy import select
+
+from app.models import Client, Service, Ticket, TicketEvent
+from app.seed import seed_if_empty
+
+
+def _seed_service(session_factory):
+    with session_factory() as db:
+        seed_if_empty(db)
+        service = db.scalar(select(Service).order_by(Service.id))
+        client = db.scalar(select(Client).order_by(Client.id))
+        return service.id, client.id
+
+
+def test_crear_listar_filtrar_y_ver_ticket(client, session_factory):
+    service_id, client_id = _seed_service(session_factory)
+    payload = {
+        "service_id": service_id,
+        "title": "El menú no aparece",
+        "description": "La carta del domingo no carga.",
+    }
+
+    created = client.post("/api/tickets", json=payload)
+    assert created.status_code == 201
+    ticket_id = created.json()["id"]
+    assert created.json()["status"] == "abierto"
+
+    listed = client.get("/api/tickets", params={"client_id": client_id, "status": "abierto"})
+    assert listed.status_code == 200
+    assert [ticket["id"] for ticket in listed.json()] == [ticket_id]
+
+    detail = client.get(f"/api/tickets/{ticket_id}")
+    assert detail.status_code == 200
+    assert detail.json()["title"] == payload["title"]
+    assert detail.json()["events"] == []
+
+
+def test_lista_filtra_por_prioridad(client, session_factory):
+    service_id, client_id = _seed_service(session_factory)
+    first = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "P1", "description": "Urgente"},
+    ).json()["id"]
+    second = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "P2", "description": "Importante"},
+    ).json()["id"]
+
+    with session_factory() as db:
+        db.get(Ticket, first).priority = "P1"
+        db.get(Ticket, second).priority = "P2"
+        db.commit()
+
+    response = client.get("/api/tickets", params={"client_id": client_id, "priority": "P2"})
+    assert response.status_code == 200
+    assert [ticket["id"] for ticket in response.json()] == [second]
+
+
+def test_detalle_devuelve_historial(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Historial", "description": "Prueba"},
+    ).json()["id"]
+    with session_factory() as db:
+        db.add(TicketEvent(ticket_id=ticket_id, type="comentario", note="Recibido", internal=False))
+        db.commit()
+
+    response = client.get(f"/api/tickets/{ticket_id}")
+    assert response.status_code == 200
+    assert response.json()["events"][0]["note"] == "Recibido"
+
+
+def test_clasificar_propone_p2_calcula_sla_y_registra_evento(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Menú", "description": "No aparece"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/classify",
+        json={"impact": "alto", "urgency": "media"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["priority"] == "P2"
+    assert response.json()["response_due_at"] is not None
+    assert response.json()["resolution_due_at"] is not None
+    detail = client.get(f"/api/tickets/{ticket_id}").json()
+    assert detail["events"][0]["type"] == "prioridad"
+
+
+def test_corregir_prioridad_sin_motivo_responde_422(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Menú", "description": "No aparece"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/classify",
+        json={"impact": "alto", "urgency": "media", "priority": "P1"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Debe indicar un motivo para corregir la prioridad propuesta."
+
+
+def test_asignar_registra_responsable_actor_y_hora(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Asignar", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/assign",
+        json={"assignee_id": 1, "actor_id": 1},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["assignee_id"] == 1
+    event = client.get(f"/api/tickets/{ticket_id}").json()["events"][0]
+    assert (event["type"], event["actor_id"], event["to_value"]) == ("asignacion", 1, "1")
+    assert event["created_at"] is not None
+
+
+def test_transicionar_a_en_progreso_registra_evento_y_respuesta(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Estado", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/transition",
+        json={"new_status": "en_progreso", "actor_id": 1},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "en_progreso"
+    assert response.json()["first_response_at"] is not None
+    event = client.get(f"/api/tickets/{ticket_id}").json()["events"][0]
+    assert (event["type"], event["actor_id"], event["to_value"]) == ("estado", 1, "en_progreso")
+
+
+def test_salto_invalido_responde_409(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Salto", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/transition",
+        json={"new_status": "resuelto", "actor_id": 1},
+    )
+
+    assert response.status_code == 409
+
+
+def test_registrar_horas_actualiza_el_total_del_detalle(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Horas", "description": "Prueba"},
+    ).json()["id"]
+
+    first = client.post(
+        f"/api/tickets/{ticket_id}/work-logs",
+        json={"user_id": 1, "hours": 1, "note": "Diagnóstico"},
+    )
+    second = client.post(
+        f"/api/tickets/{ticket_id}/work-logs",
+        json={"user_id": 1, "hours": 0.5, "note": "Corrección"},
+    )
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    detail = client.get(f"/api/tickets/{ticket_id}").json()
+    assert sum(log["hours"] for log in detail["work_logs"]) == 1.5
+
+
+def test_horas_negativas_responden_422(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Horas inválidas", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/work-logs",
+        json={"user_id": 1, "hours": -0.5},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Las horas deben ser mayores que cero."
+
+
+def test_cliente_no_ve_eventos_internos_y_recibe_estado_simple(client, session_factory):
+    service_id, client_id = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Portal", "description": "Prueba"},
+    ).json()["id"]
+    with session_factory() as db:
+        db.add_all(
+            [
+                TicketEvent(ticket_id=ticket_id, type="comentario", note="Visible", internal=False),
+                TicketEvent(ticket_id=ticket_id, type="comentario", note="Interna", internal=True),
+            ]
+        )
+        db.commit()
+
+    response = client.get(
+        f"/api/tickets/{ticket_id}",
+        params={"viewer_role": "cliente", "client_id": client_id},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "Abierto"
+    assert [event["note"] for event in response.json()["events"]] == ["Visible"]
+
+
+def test_cliente_no_puede_consultar_ticket_de_otro_cliente(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Privado", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.get(
+        f"/api/tickets/{ticket_id}",
+        params={"viewer_role": "cliente", "client_id": 999},
+    )
+
+    assert response.status_code == 404
