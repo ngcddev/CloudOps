@@ -9,19 +9,19 @@
 
 ## Insumos de la spec 000
 
-- [ ] T01 · Dejar `seed/priority_matrix.json` con las 9 combinaciones impacto × urgencia (propuesta si 000-T07 aún no cierra) — **Verifica:** el JSON tiene `impact`, `urgency` y `matrix` completos y `pytest` lo carga sin error. [ ]
+- [x] T01 · Dejar `seed/priority_matrix.json` con las 9 combinaciones impacto × urgencia (propuesta si 000-T07 aún no cierra) — **Verifica:** el JSON tiene `impact`, `urgency` y `matrix` completos y `pytest` lo carga sin error. [ERIC]
 
 ## Modelo de datos
 
-- [ ] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ ]
-- [ ] T03 · Crear las tablas `tickets`, `ticket_events` y `work_logs` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ ]
+- [x] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ ]
+- [x] T03 · Crear las tablas `tickets`, `ticket_events` y `work_logs` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ ]
 
 ## Reglas de negocio (`backend/app/services/`)
 
-- [ ] T04 · Escribir `priority.py` con `classify(impact, urgency)` leyendo la matriz — **Verifica:** `pytest` cubre las 9 combinaciones y rechaza valores inválidos. [ ]
-- [ ] T05 · Escribir `ticket_flow.py` con las transiciones válidas de `abierto → en_progreso → en_espera → resuelto → cerrado` — **Verifica:** `pytest` acepta las válidas, rechaza los saltos (por ejemplo `abierto → resuelto`) y fija `first_response_at` al pasar a `en_progreso`. [ ]
-- [ ] T06 · Escribir `sla.py` con `due_dates` para el reloj 24/7 de P1 — **Verifica:** `pytest`: un P1 creado a las 14:00 vence respuesta 14:15 y solución 18:00. [ ]
-- [ ] T07 · Extender `due_dates` al horario del plan (America/Bogota, guardando UTC) — **Verifica:** `pytest` con casos de viernes tarde, fin de semana y fuera de horario en cada plan. [ ]
+- [x] T04 · Escribir `priority.py` con `classify(impact, urgency)` leyendo la matriz — **Verifica:** `pytest` cubre las 9 combinaciones y rechaza valores inválidos. [ ]
+- [x] T05 · Escribir `ticket_flow.py` con las transiciones válidas de `abierto → en_progreso → en_espera → resuelto → cerrado` — **Verifica:** `pytest` acepta las válidas, rechaza los saltos (por ejemplo `abierto → resuelto`) y fija `first_response_at` al pasar a `en_progreso`. [ ]
+- [x] T06 · Escribir `sla.py` con `due_dates` para el reloj 24/7 de P1 — **Verifica:** `pytest`: un P1 creado a las 14:00 vence respuesta 14:15 y solución 18:00. [ ]
+- [x] T07 · Extender `due_dates` al horario del plan (America/Bogota, guardando UTC) — **Verifica:** `pytest` con casos de viernes tarde, fin de semana y fuera de horario en cada plan. [ ]
 - [ ] T08 · Escribir `sla_state(ticket, now)` con `a_tiempo`, `en_riesgo` (≥ 80 % del plazo) y `vencido` — **Verifica:** `pytest` cubre los tres estados y el borde exacto del 80 %. [ ]
 
 ## API
