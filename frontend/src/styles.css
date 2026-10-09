@@ -153,6 +153,148 @@ h3 {
   color: var(--paper);
 }
 
+.filters-panel {
+  margin-bottom: var(--space);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space);
+}
+
+.filters-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.filters-grid select {
+  border: 1px solid var(--ink);
+  padding: 8px 10px;
+  font: inherit;
+  background: var(--paper);
+}
+
+.priority-badge,
+.status-pill,
+.sla-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.priority-P1 {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.priority-P2 {
+  border-style: dashed;
+}
+
+.priority-P3,
+.priority-P4 {
+  background: #f3f3f3;
+}
+
+.status-abierto {
+  border-style: dashed;
+}
+
+.status-en_progreso {
+  background: #efefef;
+}
+
+.status-en_espera {
+  border-style: dashed;
+}
+
+.status-resuelto {
+  background: #ededed;
+}
+
+.status-cerrado {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.sla-a_tiempo {
+  border-color: var(--ink);
+  background: #f5f5f5;
+}
+
+.sla-en_riesgo {
+  border-color: var(--ink);
+  background: #f0f0f0;
+}
+
+.sla-vencido {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ticket-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space);
+  margin-bottom: var(--space);
+}
+
+.stacked-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stacked-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.stacked-form input,
+.stacked-form select,
+.stacked-form textarea {
+  border: 1px solid var(--ink);
+  padding: 8px 10px;
+  font: inherit;
+  background: var(--paper);
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-list li {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+}
+
+.portal-form {
+  margin-bottom: var(--space);
+}
+
 /* Avisos: se distinguen por ícono, texto y borde, no por color */
 .notice,
 .error {
