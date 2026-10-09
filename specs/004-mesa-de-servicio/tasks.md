@@ -9,12 +9,12 @@
 
 ## Insumos de la spec 000
 
-- [ ] T01 · Dejar `seed/priority_matrix.json` con las 9 combinaciones impacto × urgencia (propuesta si 000-T07 aún no cierra) — **Verifica:** el JSON tiene `impact`, `urgency` y `matrix` completos y `pytest` lo carga sin error. [ ]
+- [x] T01 · Dejar `seed/priority_matrix.json` con las 9 combinaciones impacto × urgencia (propuesta si 000-T07 aún no cierra) — **Verifica:** el JSON tiene `impact`, `urgency` y `matrix` completos y `pytest` lo carga sin error. [ERIC]
 
 ## Modelo de datos
 
-- [ ] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ ]
-- [ ] T03 · Crear las tablas `tickets`, `ticket_events` y `work_logs` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ ]
+- [x] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ ]
+- [x] T03 · Crear las tablas `tickets`, `ticket_events` y `work_logs` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ ]
 
 ## Reglas de negocio (`backend/app/services/`)
 
