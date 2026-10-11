@@ -197,3 +197,43 @@ def test_horas_negativas_responden_422(client, session_factory):
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["msg"] == "Las horas deben ser mayores que cero."
+
+
+def test_cliente_no_ve_eventos_internos_y_recibe_estado_simple(client, session_factory):
+    service_id, client_id = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Portal", "description": "Prueba"},
+    ).json()["id"]
+    with session_factory() as db:
+        db.add_all(
+            [
+                TicketEvent(ticket_id=ticket_id, type="comentario", note="Visible", internal=False),
+                TicketEvent(ticket_id=ticket_id, type="comentario", note="Interna", internal=True),
+            ]
+        )
+        db.commit()
+
+    response = client.get(
+        f"/api/tickets/{ticket_id}",
+        params={"viewer_role": "cliente", "client_id": client_id},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "Abierto"
+    assert [event["note"] for event in response.json()["events"]] == ["Visible"]
+
+
+def test_cliente_no_puede_consultar_ticket_de_otro_cliente(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Privado", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.get(
+        f"/api/tickets/{ticket_id}",
+        params={"viewer_role": "cliente", "client_id": 999},
+    )
+
+    assert response.status_code == 404

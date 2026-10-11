@@ -30,7 +30,7 @@
 - [x] T10 · Crear `POST /api/tickets/{id}/classify` que asigna la prioridad, calcula las horas límite y permite corregirla dejando el motivo — **Verifica:** impacto alto + urgencia media da P2 con sus fechas, y la corrección sin motivo responde 422. [ANDRES]
 - [x] T11 · Crear `POST /api/tickets/{id}/assign` y `POST /api/tickets/{id}/transition` registrando cada cambio en `ticket_events` — **Verifica:** un salto inválido responde 409 y el historial muestra hora (UTC) y usuario de cada cambio. [ANDRES]
 - [x] T12 · Crear `POST /api/tickets/{id}/work-logs` — **Verifica:** registrar 1,5 h suma 1,5 en el detalle; horas negativas dan 422. [ANDRES]
-- [ ] T13 · Ocultar al cliente las notas internas y devolver los estados en el lenguaje del [glosario](../../docs/glosario.md) — **Verifica:** la misma solicitud, consultada como cliente, no trae eventos con `internal = true`. [ ]
+- [x] T13 · Ocultar al cliente las notas internas y devolver los estados en el lenguaje del [glosario](../../docs/glosario.md) — **Verifica:** la misma solicitud, consultada como cliente, no trae eventos con `internal = true`. [ANDRES]
 - [ ] T14 · Agregar pruebas de punta a punta del ciclo del ticket con pytest — **Verifica:** `docker compose exec api pytest` en verde. [ ]
 
 ## Pantallas
