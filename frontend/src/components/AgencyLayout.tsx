@@ -7,7 +7,8 @@ import MockDataNotice from "./MockDataNotice";
 const sections: { label: string; to?: string; spec?: string }[] = [
   { label: "Clientes", to: "/agencia/clientes" },
   { label: "Solicitudes", to: "/agencia/tickets" },
-  { label: "Cambios", spec: "005" },
+  { label: "Cambios", to: "/agencia/cambios" },
+  { label: "Servicios", to: "/agencia/servicios" },
   { label: "Incidentes", spec: "008" },
   { label: "Tableros", spec: "010" },
   { label: "Reportes", spec: "013" },

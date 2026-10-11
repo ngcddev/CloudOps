@@ -35,6 +35,18 @@ spec:
                 secretKeyRef:
                   name: hub-db
                   key: DATABASE_URL
+            # Gitea y Argo CD (spec 005): el Hub escribe en hub-gitops y lee el estado de Argo CD.
+            # Los tokens vienen del Secret hub-gitops-tokens (ver crear-tokens.sh); sin él la API
+            # arranca igual y los cambios por GitOps quedan sin conexión.
+            - { name: GITEA_URL, value: "http://gitea.gitea.svc:3000" }
+            - { name: GITEA_REPO, value: "forja-digital/hub-gitops" }
+            - { name: ARGOCD_URL, value: "http://argocd-server.argocd.svc" }
+            - name: GITEA_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hub-gitops-tokens, key: GITEA_TOKEN, optional: true }
+            - name: ARGOCD_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hub-gitops-tokens, key: ARGOCD_TOKEN, optional: true }
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

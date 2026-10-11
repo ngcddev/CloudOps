@@ -516,3 +516,25 @@ h4 {
     overflow-x: auto;
   }
 }
+
+/* ---------- Cambios por GitOps (spec 005) ---------- */
+
+/* El estado del cambio se distingue por texto, ícono y borde, no por color */
+.change-pendiente {
+  border-style: dashed;
+}
+
+.change-aprobada,
+.change-en_validacion {
+  background: #efefef;
+}
+
+.change-desplegada {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.change-rechazada {
+  border-style: dotted;
+  text-decoration: line-through;
+}

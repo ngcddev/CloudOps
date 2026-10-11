@@ -1,0 +1,24 @@
+# Entrada de Backstage de Consultorio Dental Popayán (spec 005, T21, RF-22). Se registra desde hub-gitops;
+# Argo CD la ignora porque kustomization.yaml no la incluye.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: consultorio-dental-popayan
+  title: Consultorio Dental Popayán · sitio web
+  description: Sitio web de Consultorio Dental Popayán, operado por Forja Digital (plan Básico).
+  annotations:
+    # Enlace al Hub: la consola de la agencia con la versión y el estado de este sitio
+    hub.local/console-url: http://hub.local/agencia/servicios
+    backstage.io/source-location: url:http://gitea.hub.local/forja-digital/hub-gitops/src/branch/main/clients/consultorio/
+  links:
+    - url: http://hub.local/agencia/servicios
+      title: Hub · estado del servicio
+    - url: http://consultorio.hub.local
+      title: Sitio del cliente
+  tags:
+    - sitio-web
+    - basico
+spec:
+  type: website
+  lifecycle: production
+  owner: forja-digital

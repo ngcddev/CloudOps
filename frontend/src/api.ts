@@ -613,3 +613,232 @@ export async function registerClient(
   await createService(createdProject.id, service);
   return created;
 }
+
+// ---------- Cambios por GitOps (spec 005) ----------
+
+// Hasta que exista autenticación (spec 007) las acciones de la consola las firma la técnica sembrada
+export const CURRENT_USER_ID = 1;
+const CURRENT_USER_NAME = "Sofía Ramírez";
+
+export type ChangeStatus = "pendiente" | "aprobada" | "en_validacion" | "desplegada" | "rechazada";
+
+export interface ChangeRequest {
+  id: number;
+  ticket_id: number;
+  ticket_title: string | null;
+  service_id: number;
+  from_version: string;
+  to_version: string;
+  status: ChangeStatus;
+  requested_by_id: number | null;
+  requested_by_name: string | null;
+  approved_by_id: number | null;
+  approved_by_name: string | null;
+  gitops_commit_sha: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  approved_at: string | null;
+  deployed_at: string | null;
+}
+
+export interface ChangeRequestInput {
+  ticket_id: number;
+  to_version: string;
+  requested_by_id?: number | null;
+}
+
+// Una fila de la consola de servicios: versión activa, sincronización y salud que informa Argo CD
+export interface ServiceVersionStatus {
+  service_id: number;
+  client_id: number;
+  client_name: string;
+  service_name: string;
+  host: string;
+  namespace: string;
+  current_version: string;
+  stable_version: string;
+  sync_status: string;
+  health_status: string;
+  last_author: string | null;
+  last_change_at: string | null;
+  open_change_id: number | null;
+  open_change_status: ChangeStatus | null;
+  open_change_to_version: string | null;
+}
+
+export interface Deployment {
+  id: number;
+  service_id: number;
+  version: string;
+  commit_sha: string | null;
+  author: string;
+  source: "cambio" | "rollback";
+  created_at: string;
+}
+
+const OPEN_CHANGE_STATUSES: ChangeStatus[] = ["pendiente", "aprobada", "en_validacion"];
+
+// Estado de los cambios y las versiones en datos de prueba (la API real no usa nada de esto)
+const changeMock = {
+  changes: [] as ChangeRequest[],
+  versions: new Map<number, { current: string; author: string | null; at: string | null }>(),
+  nextId: 1,
+};
+
+function mockServices() {
+  return mock.clients.flatMap((client) =>
+    client.projects.flatMap((project) => project.services.map((service) => ({ client, service }))),
+  );
+}
+
+function mockVersion(serviceId: number) {
+  let entry = changeMock.versions.get(serviceId);
+  if (!entry) {
+    entry = { current: "v1", author: null, at: null };
+    changeMock.versions.set(serviceId, entry);
+  }
+  return entry;
+}
+
+function findMockChange(id: number): ChangeRequest {
+  const change = changeMock.changes.find((item) => item.id === id);
+  if (!change) throw new ApiError("La solicitud de cambio no existe.", 404);
+  return change;
+}
+
+export async function listChangeRequests(): Promise<ChangeRequest[]> {
+  if ((await detectMode()) === "mock") return [...changeMock.changes].sort((a, b) => b.id - a.id);
+  return request<ChangeRequest[]>("/change-requests");
+}
+
+export async function createChangeRequest(input: ChangeRequestInput): Promise<ChangeRequest> {
+  if ((await detectMode()) === "mock") {
+    const ticket = findMockTicket(input.ticket_id);
+    if (ticket.kind !== "cambio") throw new ApiError("La solicitud debe ser de tipo cambio.", 422);
+    requireText(input.to_version, "La versión destino es obligatoria.");
+    const version = mockVersion(ticket.service_id);
+    if (input.to_version.trim() === version.current) {
+      throw new ApiError(`El sitio ya está en la versión ${version.current}.`, 422);
+    }
+    if (changeMock.changes.some((c) => c.service_id === ticket.service_id && OPEN_CHANGE_STATUSES.includes(c.status))) {
+      throw new ApiError("Ya hay un cambio en curso para este sitio.", 409);
+    }
+    const change: ChangeRequest = {
+      id: changeMock.nextId++,
+      ticket_id: ticket.id,
+      ticket_title: ticket.title,
+      service_id: ticket.service_id,
+      from_version: version.current,
+      to_version: input.to_version.trim(),
+      status: "pendiente",
+      requested_by_id: input.requested_by_id ?? null,
+      requested_by_name: input.requested_by_id ? CURRENT_USER_NAME : null,
+      approved_by_id: null,
+      approved_by_name: null,
+      gitops_commit_sha: null,
+      rejection_reason: null,
+      created_at: new Date().toISOString(),
+      approved_at: null,
+      deployed_at: null,
+    };
+    changeMock.changes.push(change);
+    return change;
+  }
+  return request<ChangeRequest>("/change-requests", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function approveChangeRequest(id: number, actorId: number = CURRENT_USER_ID): Promise<ChangeRequest> {
+  if ((await detectMode()) === "mock") {
+    const change = findMockChange(id);
+    if (change.status !== "pendiente") {
+      throw new ApiError(`No se permite pasar de «${change.status}» a «aprobada».`, 409);
+    }
+    change.status = "en_validacion";
+    change.approved_by_id = actorId;
+    change.approved_by_name = CURRENT_USER_NAME;
+    change.approved_at = new Date().toISOString();
+    change.gitops_commit_sha = Math.random().toString(16).slice(2).padEnd(40, "0").slice(0, 40);
+    // Argo CD tarda unos segundos en sincronizar: se simula para que la bandeja muestre el paso
+    setTimeout(() => {
+      change.status = "desplegada";
+      change.deployed_at = new Date().toISOString();
+      const version = mockVersion(change.service_id);
+      version.current = change.to_version;
+      version.author = CURRENT_USER_NAME;
+      version.at = change.deployed_at;
+    }, 4000);
+    return change;
+  }
+  return request<ChangeRequest>(`/change-requests/${id}/approve`, {
+    method: "POST",
+    body: JSON.stringify({ actor_id: actorId }),
+  });
+}
+
+export async function rejectChangeRequest(
+  id: number,
+  reason: string,
+  actorId: number = CURRENT_USER_ID,
+): Promise<ChangeRequest> {
+  if ((await detectMode()) === "mock") {
+    const change = findMockChange(id);
+    requireText(reason, "Debe indicar el motivo del rechazo.");
+    if (change.status !== "pendiente") {
+      throw new ApiError(`No se permite pasar de «${change.status}» a «rechazada».`, 409);
+    }
+    change.status = "rechazada";
+    change.rejection_reason = reason.trim();
+    return change;
+  }
+  return request<ChangeRequest>(`/change-requests/${id}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ reason, actor_id: actorId }),
+  });
+}
+
+export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
+  if ((await detectMode()) === "mock") {
+    return mockServices().map(({ client, service }) => {
+      const version = mockVersion(service.id);
+      const open = changeMock.changes.find(
+        (c) => c.service_id === service.id && OPEN_CHANGE_STATUSES.includes(c.status),
+      );
+      return {
+        service_id: service.id,
+        client_id: client.id,
+        client_name: client.name,
+        service_name: service.name,
+        host: service.host,
+        namespace: service.namespace,
+        current_version: version.current,
+        stable_version: version.current,
+        sync_status: open?.status === "en_validacion" ? "OutOfSync" : "Synced",
+        health_status: "Healthy",
+        last_author: version.author,
+        last_change_at: version.at,
+        open_change_id: open?.id ?? null,
+        open_change_status: open?.status ?? null,
+        open_change_to_version: open?.to_version ?? null,
+      };
+    });
+  }
+  return request<ServiceVersionStatus[]>("/services/status");
+}
+
+export async function listDeployments(serviceId: number): Promise<Deployment[]> {
+  if ((await detectMode()) === "mock") {
+    return changeMock.changes
+      .filter((c) => c.service_id === serviceId && c.status === "desplegada")
+      .map((c) => ({
+        id: c.id,
+        service_id: serviceId,
+        version: c.to_version,
+        commit_sha: c.gitops_commit_sha,
+        author: c.approved_by_name ?? "Hub",
+        source: "cambio" as const,
+        created_at: c.deployed_at ?? c.created_at,
+      }))
+      .reverse();
+  }
+  return request<Deployment[]>(`/services/${serviceId}/deployments`);
+}

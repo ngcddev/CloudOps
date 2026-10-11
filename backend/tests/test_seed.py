@@ -68,3 +68,9 @@ def test_seed_rejects_a_service_with_an_unknown_plan(db, tmp_path, monkeypatch):
 
     with pytest.raises(ValueError, match="inexistente"):
         seed.seed_if_empty(db)
+
+
+def test_seed_services_start_in_v1(seeded):
+    # Spec 005: cada sitio arranca publicado en v1 y con v1 como última versión estable
+    services = seeded.scalars(select(Service)).all()
+    assert {(s.current_version, s.stable_version) for s in services} == {("v1", "v1")}

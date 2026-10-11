@@ -36,3 +36,16 @@ Se leen de `.env` (copiado de [`.env.example`](../.env.example)). La principal e
 |---|---|
 | Pruebas | `docker compose exec api pytest` |
 | Migraciones | `docker compose exec api alembic upgrade head` |
+
+## Prueba contra un Gitea real (spec 005)
+
+`tests/test_gitops_integration.py` recorre el ciclo aprobar → commit → Argo CD → consola con Gitea y
+Argo CD falsos. Para repetir la aprobación contra un Gitea local real, apunta a un repo **de pruebas**
+(la prueba hace commits en él) con un token de escritura:
+
+```bash
+docker compose exec -e GITEA_TEST_URL=http://gitea.hub.local -e GITEA_TEST_REPO=forja-digital/hub-gitops-pruebas \
+  -e GITEA_TEST_TOKEN=<token> api pytest tests/test_gitops_integration.py
+```
+
+Sin esas variables, esa prueba se omite.
