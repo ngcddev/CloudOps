@@ -7,6 +7,7 @@ import {
   listTickets,
   type ClientDetail,
   type Ticket,
+  type TicketKind,
 } from "../../api";
 
 export default function PortalTicketList() {
@@ -14,7 +15,7 @@ export default function PortalTicketList() {
   const [selectedClientId, setSelectedClientId] = useState<number | "">("");
   const [selectedServiceId, setSelectedServiceId] = useState<number | "">("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [form, setForm] = useState({ title: "", description: "" });
+  const [form, setForm] = useState({ title: "", description: "", kind: "solicitud" as TicketKind });
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -82,11 +83,11 @@ export default function PortalTicketList() {
         created_by_id: 1,
         title: form.title.trim(),
         description: form.description.trim(),
-        kind: "solicitud",
+        kind: form.kind,
       });
       const refreshed = await listTickets({ client_id: Number(selectedClientId), viewer_role: "cliente" });
       setTickets(refreshed);
-      setForm({ title: "", description: "" });
+      setForm({ title: "", description: "", kind: "solicitud" });
       setNotice("Solicitud creada correctamente.");
     } catch (submitError) {
       setError((submitError as Error).message);
@@ -136,6 +137,17 @@ export default function PortalTicketList() {
           </label>
 
           <label>
+            <span>¿Qué necesitas?</span>
+            <select
+              value={form.kind}
+              onChange={(event) => setForm((current) => ({ ...current, kind: event.target.value as TicketKind }))}
+            >
+              <option value="solicitud">Reportar un problema o hacer una consulta</option>
+              <option value="cambio">Pedir un cambio en mi sitio</option>
+            </select>
+          </label>
+
+          <label>
             <span>Título</span>
             <input
               type="text"
@@ -169,6 +181,7 @@ export default function PortalTicketList() {
             <thead>
               <tr>
                 <th>Solicitud</th>
+                <th>Tipo</th>
                 <th>Prioridad</th>
                 <th>Estado</th>
                 <th>Creada</th>
@@ -181,6 +194,7 @@ export default function PortalTicketList() {
                     <strong>{ticket.title}</strong>
                     <div className="muted">#{ticket.id}</div>
                   </td>
+                  <td>{ticket.kind === "cambio" ? "Cambio en el sitio" : "Consulta o problema"}</td>
                   <td>
                     <span className={`priority-badge priority-${ticket.priority ?? "sin-prioridad"}`}>{ticket.priority ?? "—"}</span>
                   </td>
