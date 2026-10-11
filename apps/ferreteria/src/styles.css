@@ -242,3 +242,32 @@ nav a {
     grid-template-columns: 1fr;
   }
 }
+
+/* Portada nueva (spec 005): oculta por defecto y en la v1; visible cuando /health reporta otra versión. */
+.solo-nueva-portada {
+  display: none;
+}
+
+body[data-version]:not([data-version="v1"]) .solo-nueva-portada {
+  display: block;
+  margin: 1.5rem 5vw 0;
+  padding: 1.5rem 2rem;
+  background: var(--fg);
+  color: var(--panel);
+  border-radius: 12px;
+}
+
+body[data-version]:not([data-version="v1"]) .solo-nueva-portada .eyebrow {
+  color: var(--line);
+}
+
+body[data-version]:not([data-version="v1"]) .solo-nueva-portada h2 {
+  margin: 0.25rem 0 1rem;
+}
+
+
+body[data-version]:not([data-version="v1"]) .solo-nueva-portada .button.primary {
+  background: var(--panel);
+  color: var(--fg);
+  border-color: var(--panel);
+}

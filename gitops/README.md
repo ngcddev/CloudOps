@@ -163,3 +163,15 @@ GITEA_ADMIN_USER=forja-admin GITEA_ADMIN_PASSWORD='<contraseña>' bash gitops/hu
 Los deja en el Secret `hub-gitops-tokens` del namespace `hub`, que la API del Hub lee como
 `GITEA_TOKEN` y `ARGOCD_TOKEN`. En desarrollo local van en `.env` (ignorado por Git);
 `.env.example` solo trae valores de ejemplo. Para rotarlos: borrar el Secret y volver a correr el script.
+
+### Publicar la `v1.1` de El Tornillo (spec 005)
+
+La portada nueva de El Tornillo (banner de temporada) aparece en toda versión distinta de `v1`: es la
+versión que la demo de la spec 005 publica con un cambio aprobado.
+
+```bash
+REGISTRY_USER=forja-admin REGISTRY_PASSWORD='<contraseña>' bash apps/publicar-imagenes.sh ferreteria:v1.1
+```
+
+Para verla sin clúster: `FERRETERIA_VERSION=v1.1 docker compose up --build -d ferreteria` y abrir
+`http://localhost:8082`.
