@@ -10,10 +10,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.integrations.argocd import AppStatus, ArgoCDError
+from app.integrations.gitea import GiteaError
 from app.models.change_request import ChangeRequest
 from app.models.deployment import Deployment
 from app.models.service import Service
 from app.services.change_flow import step_event, transition
+from app.services.gitops_publish import kustomization_path
+from app.services.kustomization import get_tags
 
 logger = logging.getLogger("hub.deploy_watch")
 
@@ -31,7 +34,61 @@ def is_published(status: AppStatus, commit_sha: str | None) -> bool:
     )
 
 
-def check_cycle(db: Session, argocd, now: datetime | None = None) -> list[int]:
+# Autor que se registra cuando la versión cambió en Git sin pasar por el Hub (spec 005, T25)
+MANUAL_AUTHOR = "Cambio manual en Git"
+OPEN_STATUSES = ("pendiente", "aprobada", "en_validacion")
+
+
+def reconcile_version(db: Session, service: Service, status: AppStatus, gitea, now: datetime) -> bool:
+    """Alinea la versión del Hub con la que tiene Git cuando alguien la cambia o revierte a mano.
+
+    Solo actúa si el servicio no tiene un cambio del Hub en curso y Argo CD ya aplicó lo que hay en
+    Git (`Synced`). Devuelve True si cambió la versión.
+    """
+    if status.sync != "Synced":
+        return False
+    open_change = db.scalar(
+        select(ChangeRequest.id).where(
+            ChangeRequest.service_id == service.id, ChangeRequest.status.in_(OPEN_STATUSES)
+        )
+    )
+    if open_change is not None:
+        return False
+    try:
+        file = gitea.get_file(kustomization_path(service.namespace))
+    except GiteaError as error:
+        logger.warning("No se pudo leer la versión de %s en Git: %s", service.namespace, error)
+        return False
+    tags = set(get_tags(file.text))
+    if len(tags) != 1:
+        return False  # web y api con versiones distintas: no se adivina
+    tag = tags.pop()
+    if tag == service.current_version:
+        return False
+
+    # Volver a una versión que el sitio ya tuvo es una restauración; cualquier otra, un cambio
+    previous = set(
+        db.scalars(select(Deployment.version).where(Deployment.service_id == service.id)).all()
+    ) | set(
+        db.scalars(select(ChangeRequest.from_version).where(ChangeRequest.service_id == service.id)).all()
+    )
+    service.current_version = tag
+    if status.health == "Healthy":
+        service.stable_version = tag
+    db.add(
+        Deployment(
+            service_id=service.id,
+            version=tag,
+            commit_sha=status.revision,
+            author=MANUAL_AUTHOR,
+            source="rollback" if tag in previous else "cambio",
+            created_at=now,
+        )
+    )
+    return True
+
+
+def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) -> list[int]:
     """Una vuelta: refresca sincronización y salud de cada servicio y confirma los cambios listos.
 
     `argocd` es cualquier objeto con `get_application(nombre) -> AppStatus`. Devuelve los ids de las
@@ -77,6 +134,8 @@ def check_cycle(db: Session, argocd, now: datetime | None = None) -> list[int]:
                 )
             )
             deployed.append(change.id)
+        if gitea is not None:
+            reconcile_version(db, service, status, gitea, timestamp)
     db.commit()
     return deployed
 
@@ -85,12 +144,13 @@ async def watch_forever(
     session_factory: Callable[[], Session],
     argocd,
     interval: float = INTERVAL_SECONDS,
+    gitea=None,
 ) -> None:
     """Corre `check_cycle` cada `interval` segundos hasta que se cancele la tarea."""
 
     def once() -> None:
         with session_factory() as db:
-            check_cycle(db, argocd)
+            check_cycle(db, argocd, gitea=gitea)
 
     while True:
         try:

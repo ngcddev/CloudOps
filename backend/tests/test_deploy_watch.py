@@ -145,7 +145,7 @@ def test_refresca_los_tres_clientes_en_cada_vuelta(seeded):
 def test_watch_forever_sigue_aunque_una_vuelta_falle(session_factory, monkeypatch):
     llamadas = []
 
-    def vuelta(db, argocd):
+    def vuelta(db, argocd, gitea=None):
         llamadas.append(1)
         if len(llamadas) == 1:
             raise RuntimeError("base caída")
@@ -164,3 +164,97 @@ def test_watch_forever_sigue_aunque_una_vuelta_falle(session_factory, monkeypatc
     asyncio.run(correr())
 
     assert len(llamadas) >= 2
+
+
+# ---------- Reconciliar con Git cuando alguien cambia la versión a mano (spec 005, T25) ----------
+
+from app.integrations.gitea import GiteaClient  # noqa: E402
+from tests.fake_gitea import FakeGitea  # noqa: E402
+
+KUSTOMIZATION = "images:\n  - name: x\n    newName: gitea.hub.local/forja-digital/ferreteria\n    newTag: {tag}\n"
+RUTA = "clients/ferreteria/kustomization.yaml"
+FERRETERIA = "cliente-ferreteria"
+
+
+def _con_git(tag: str):
+    """Gitea falso con el tag indicado en el kustomization de El Tornillo."""
+    fake = FakeGitea({
+        RUTA: KUSTOMIZATION.format(tag=tag),
+        "clients/restaurante/kustomization.yaml": KUSTOMIZATION.format(tag="v1"),
+        "clients/consultorio/kustomization.yaml": KUSTOMIZATION.format(tag="v1"),
+    })
+    return fake
+
+
+def _reconciliar(db, fake, status=AppStatus("Synced", "Healthy", SHA)):
+    argo = ArgoSimulado(**{FERRETERIA: status})
+    return check_cycle(db, argo, now=AHORA, gitea=GiteaClient(fake.url, fake.repo, fake.token))
+
+
+def test_un_revert_manual_en_git_devuelve_la_consola_a_v1(seeded, en_validacion):
+    # El cambio del Hub ya se publicó: la consola está en v1.1
+    check_cycle(seeded, ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Healthy", SHA)}), now=AHORA)
+    with _con_git("v1") as fake:  # alguien hizo `git revert` y Argo CD ya sincronizó
+        _reconciliar(seeded, fake, AppStatus("Synced", "Healthy", "c" * 40))
+
+    service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
+    assert (service.current_version, service.stable_version) == ("v1", "v1")
+    last = seeded.scalars(select(Deployment).order_by(Deployment.id)).all()[-1]
+    assert (last.version, last.source, last.author, last.commit_sha) == (
+        "v1", "rollback", "Cambio manual en Git", "c" * 40
+    )
+
+
+def test_un_cambio_manual_hacia_una_version_nueva_es_un_cambio(seeded):
+    with _con_git("v2") as fake:
+        _reconciliar(seeded, fake)
+
+    service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
+    assert service.current_version == "v2"
+    deployment = seeded.scalar(select(Deployment).where(Deployment.service_id == service.id))
+    assert (deployment.source, deployment.author) == ("cambio", "Cambio manual en Git")
+
+
+def test_no_toca_la_version_si_hay_un_cambio_del_hub_en_curso(seeded, en_validacion):
+    with _con_git("v1.1") as fake:
+        _reconciliar(seeded, fake, AppStatus("OutOfSync", "Healthy", "d" * 40))
+    with _con_git("v9") as fake:
+        _reconciliar(seeded, fake, AppStatus("Synced", "Healthy", "d" * 40))
+
+    service = seeded.get(Service, en_validacion.service_id)
+    assert service.current_version == "v1"
+
+
+def test_espera_a_que_argocd_sincronice_antes_de_alinear(seeded):
+    with _con_git("v2") as fake:
+        _reconciliar(seeded, fake, AppStatus("OutOfSync", "Healthy", SHA))
+
+    service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
+    assert service.current_version == "v1"
+    assert seeded.scalars(select(Deployment)).all() == []
+
+
+def test_con_la_aplicacion_degradada_cambia_la_activa_pero_no_la_estable(seeded):
+    with _con_git("v2") as fake:
+        _reconciliar(seeded, fake, AppStatus("Synced", "Degraded", SHA))
+
+    service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
+    assert (service.current_version, service.stable_version) == ("v2", "v1")
+
+
+def test_sin_diferencias_no_registra_nada(seeded):
+    with _con_git("v1") as fake:
+        _reconciliar(seeded, fake)
+
+    assert seeded.scalars(select(Deployment)).all() == []
+
+
+def test_si_gitea_no_responde_la_vuelta_sigue(seeded):
+    sin_conexion = GiteaClient("http://127.0.0.1:9", "forja-digital/hub-gitops", "t", timeout=1)
+    argo = ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Healthy", SHA)})
+
+    check_cycle(seeded, argo, now=AHORA, gitea=sin_conexion)
+
+    service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
+    assert service.current_version == "v1"
+    assert service.sync_status == "Synced"

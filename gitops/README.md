@@ -216,3 +216,10 @@ muestra `v1.1`, `Synced`, `Healthy` y el nombre del técnico. El script termina 
 cantidad de fallas. Antes: `ferreteria:v1.1` publicada, `hub-gitops` sembrado, Application de
 El Tornillo `Synced` y el sitio en `v1`. Para repetirla hay que dejar el sitio en `v1` (revertir el
 commit, ver [`ciclo-gitops.sh`](pruebas/ciclo-gitops.sh)) y la base del Hub vacía.
+
+## Cambios hechos a mano en Git
+
+Si alguien cambia `newTag` o hace `git revert` directamente en `hub-gitops`, el seguimiento del Hub
+(cada 15 s) lo detecta cuando Argo CD ya sincronizó y alinea la consola: actualiza la versión activa,
+registra el cambio en el historial como "Cambio manual en Git" (restauración si vuelve a una versión
+anterior) y deja la estable solo si la aplicación está sana. No actúa mientras haya un cambio del Hub en curso.
