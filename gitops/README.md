@@ -98,3 +98,22 @@ Construye `restaurante`, `ferreteria`, `consultorio-web` y `consultorio-api` en 
 (responde 500 en `/health`) y las sube a `gitea.hub.local/forja-digital/`. Se puede pasar el nombre de
 una o más apps para publicar solo esas. Se usa `skopeo` en un contenedor porque Docker solo acepta
 un registro HTTP si es `localhost`.
+
+## Argo CD
+
+```bash
+kubectl apply -k gitops/platform/argocd
+kubectl -n argocd rollout status deploy/argocd-server --timeout=300s
+```
+
+Instala Argo CD 2.13.3 en `argocd` con límites de memoria y lo expone en `http://argocd.hub.local`.
+Dex (SSO) y el controlador de notificaciones quedan en 0 réplicas: no se usan y ahorran RAM. Se aplica
+a mano una sola vez; Argo CD no se gestiona a sí mismo por GitOps.
+
+El usuario es `admin` y la contraseña inicial la genera Argo CD (no está en el repo):
+
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+```
+
+Cámbiala en *User Info → Update password* y borra el Secret inicial.
