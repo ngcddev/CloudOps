@@ -1,0 +1,32 @@
+# Configuración de Backstage para el Hub (spec 005, T22): se suma a app-config.yaml y
+# app-config.production.yaml de la imagen. Catálogo mínimo, sin base de datos (SQLite en memoria):
+# al reiniciar, el catálogo se vuelve a leer de hub-gitops.
+app:
+  title: Catálogo · Forja Digital
+  baseUrl: http://backstage.hub.local
+backend:
+  baseUrl: http://backstage.hub.local
+  listen:
+    port: 7007
+  cors:
+    origin: http://backstage.hub.local
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+# Gitea se lee por su Service dentro del clúster (el repo es público)
+integrations:
+  gitea:
+    - host: gitea.gitea.svc:3000
+      baseUrl: http://gitea.gitea.svc:3000
+catalog:
+  rules:
+    - allow: [Component, Group, Location]
+  locations:
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/platform/backstage/group.yaml
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/restaurante/catalog-info.yaml
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/ferreteria/catalog-info.yaml
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/consultorio/catalog-info.yaml

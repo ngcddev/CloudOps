@@ -47,7 +47,7 @@ PowerShell como administrador; en Linux, `/etc/hosts`). Se usan entradas explíc
 puede resolverse por mDNS.
 
 ```
-127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local
+127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local backstage.hub.local
 ```
 
 Cambia `127.0.0.1` por la IP fija del PC A cuando se entre desde otro equipo.
@@ -186,3 +186,19 @@ Cambia `newTag` de El Tornillo a `v1.1` en `hub-gitops`, mide cuánto tarda Argo
 `v1.1` (debe ser menos de 3 minutos), revierte el commit con `git revert` y comprueba que el sitio
 vuelve a `v1`. Es la misma ruta que seguirá el Hub, sin el Hub: si esto falla, el problema está en la
 plataforma y no en el código de la API.
+
+## Catálogo con Backstage (opcional)
+
+```bash
+kubectl apply -k gitops/platform/backstage
+kubectl -n hub rollout status deploy/backstage --timeout=300s
+```
+
+Backstage queda en `http://backstage.hub.local` con un catálogo mínimo: la agencia (`forja-digital`) y
+los 3 clientes con su servicio y el enlace a la consola del Hub. Lee los `catalog-info.yaml` de
+`hub-gitops`, así que primero hay que sembrar ese repo. Usa hasta 1 GiB de memoria: si el PC A queda
+justo, se apaga sin afectar nada más y `/agencia/servicios` del Hub cumple el rol:
+
+```bash
+kubectl -n hub scale deploy/backstage --replicas=0
+```
