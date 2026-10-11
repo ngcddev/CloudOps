@@ -106,3 +106,56 @@ def test_corregir_prioridad_sin_motivo_responde_422(client, session_factory):
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Debe indicar un motivo para corregir la prioridad propuesta."
+
+
+def test_asignar_registra_responsable_actor_y_hora(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Asignar", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/assign",
+        json={"assignee_id": 1, "actor_id": 1},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["assignee_id"] == 1
+    event = client.get(f"/api/tickets/{ticket_id}").json()["events"][0]
+    assert (event["type"], event["actor_id"], event["to_value"]) == ("asignacion", 1, "1")
+    assert event["created_at"] is not None
+
+
+def test_transicionar_a_en_progreso_registra_evento_y_respuesta(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Estado", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/transition",
+        json={"new_status": "en_progreso", "actor_id": 1},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "en_progreso"
+    assert response.json()["first_response_at"] is not None
+    event = client.get(f"/api/tickets/{ticket_id}").json()["events"][0]
+    assert (event["type"], event["actor_id"], event["to_value"]) == ("estado", 1, "en_progreso")
+
+
+def test_salto_invalido_responde_409(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Salto", "description": "Prueba"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/transition",
+        json={"new_status": "resuelto", "actor_id": 1},
+    )
+
+    assert response.status_code == 409
