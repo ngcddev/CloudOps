@@ -13,8 +13,15 @@ def _seed_service(session_factory):
         return service.id, client.id
 
 
+def _seeded_ticket_ids(session_factory) -> set[int]:
+    """Ids de los tickets que ya trae la semilla, para ignorarlos al comparar listas."""
+    with session_factory() as db:
+        return set(db.scalars(select(Ticket.id)).all())
+
+
 def test_crear_listar_filtrar_y_ver_ticket(client, session_factory):
     service_id, client_id = _seed_service(session_factory)
+    seeded = _seeded_ticket_ids(session_factory)
     payload = {
         "service_id": service_id,
         "title": "El menú no aparece",
@@ -28,7 +35,7 @@ def test_crear_listar_filtrar_y_ver_ticket(client, session_factory):
 
     listed = client.get("/api/tickets", params={"client_id": client_id, "status": "abierto"})
     assert listed.status_code == 200
-    assert [ticket["id"] for ticket in listed.json()] == [ticket_id]
+    assert [t["id"] for t in listed.json() if t["id"] not in seeded] == [ticket_id]
 
     detail = client.get(f"/api/tickets/{ticket_id}")
     assert detail.status_code == 200
@@ -38,6 +45,7 @@ def test_crear_listar_filtrar_y_ver_ticket(client, session_factory):
 
 def test_lista_filtra_por_prioridad(client, session_factory):
     service_id, client_id = _seed_service(session_factory)
+    seeded = _seeded_ticket_ids(session_factory)
     first = client.post(
         "/api/tickets",
         json={"service_id": service_id, "title": "P1", "description": "Urgente"},
@@ -54,7 +62,7 @@ def test_lista_filtra_por_prioridad(client, session_factory):
 
     response = client.get("/api/tickets", params={"client_id": client_id, "priority": "P2"})
     assert response.status_code == 200
-    assert [ticket["id"] for ticket in response.json()] == [second]
+    assert [t["id"] for t in response.json() if t["id"] not in seeded] == [second]
 
 
 def test_detalle_devuelve_historial(client, session_factory):
