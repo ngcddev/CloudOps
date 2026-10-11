@@ -12,6 +12,7 @@ from app import models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.config import settings
 from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
+from app.integrations.gitea import gitea_from_settings
 from app.routers import catalog, change_requests, clients, services, tickets
 from app.seed import seed_if_empty
 from app.services.deploy_watch import watch_forever
@@ -26,7 +27,9 @@ async def lifespan(_: FastAPI):
     # Seguimiento de las publicaciones (spec 005): solo si hay conexión configurada con Argo CD
     watcher = None
     if settings.argocd_url and settings.argocd_token:
-        watcher = asyncio.create_task(watch_forever(SessionLocal, argocd_from_settings()))
+        # Con Gitea configurado, el seguimiento también alinea la versión si cambia a mano en Git
+        gitea = gitea_from_settings() if settings.gitea_url and settings.gitea_token else None
+        watcher = asyncio.create_task(watch_forever(SessionLocal, argocd_from_settings(), gitea=gitea))
     yield
     if watcher is not None:
         watcher.cancel()
