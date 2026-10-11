@@ -4,9 +4,13 @@ import { Link, useParams } from "react-router-dom";
 import {
   assignTicket,
   classifyTicket,
+  createChangeRequest,
   createWorkLog,
+  CURRENT_USER_ID,
   getTicket,
+  listChangeRequests,
   transitionTicket,
+  type ChangeRequest,
   type Ticket,
   type TicketDetail as TicketDetailData,
   type TicketImpact,
@@ -27,6 +31,15 @@ const SLA_ICONS: Record<SlaState, string> = {
   a_tiempo: "✓",
   en_riesgo: "⚠",
   vencido: "✕",
+};
+
+// Texto de cada estado de un cambio (glosario)
+const CHANGE_STATUS_TEXT: Record<ChangeRequest["status"], string> = {
+  pendiente: "Pendiente",
+  aprobada: "Aprobada",
+  en_validacion: "En validación",
+  desplegada: "Publicada",
+  rechazada: "Rechazada",
 };
 
 function getTicketSlaState(ticket: Ticket): SlaState {
@@ -52,6 +65,16 @@ export default function TicketDetail() {
   const [assignForm, setAssignForm] = useState({ assignee_id: "2" });
   const [transitionForm, setTransitionForm] = useState({ new_status: "en_progreso" as Exclude<TicketStatus, "abierto"> });
   const [workLogForm, setWorkLogForm] = useState({ user_id: "1", hours: "1.5", note: "" });
+  // Cambios de versión registrados desde esta solicitud (spec 005)
+  const [changes, setChanges] = useState<ChangeRequest[]>([]);
+  const [targetVersion, setTargetVersion] = useState("");
+  const [changeError, setChangeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    listChangeRequests()
+      .then((all) => setChanges(all.filter((change) => change.ticket_id === Number(id))))
+      .catch(() => setChanges([]));
+  }, [id]);
 
   useEffect(() => {
     setTicket(null);
@@ -109,6 +132,23 @@ export default function TicketDetail() {
       setTicket((current) => (current ? { ...current, ...updated } : current));
     } catch (submitError) {
       setError((submitError as Error).message);
+    }
+  }
+
+  async function handleRegisterChange(event: React.FormEvent) {
+    event.preventDefault();
+    if (!ticket) return;
+    setChangeError(null);
+    try {
+      const created = await createChangeRequest({
+        ticket_id: ticket.id,
+        to_version: targetVersion,
+        requested_by_id: CURRENT_USER_ID,
+      });
+      setChanges((current) => [created, ...current]);
+      setTargetVersion("");
+    } catch (submitError) {
+      setChangeError((submitError as Error).message);
     }
   }
 
@@ -275,6 +315,49 @@ export default function TicketDetail() {
               </form>
             </section>
           </div>
+
+          {ticket.kind === "cambio" && (
+            <section className="card" aria-labelledby="registrar-cambio">
+              <h3 id="registrar-cambio">Cambio de versión</h3>
+              {changes.length > 0 && (
+                <ul className="history-list">
+                  {changes.map((change) => (
+                    <li key={change.id}>
+                      <strong>
+                        {change.from_version} → {change.to_version}
+                      </strong>
+                      <div>
+                        <span className={`status-pill change-${change.status}`}>{CHANGE_STATUS_TEXT[change.status]}</span>
+                      </div>
+                      {change.rejection_reason && <div className="muted">Motivo: {change.rejection_reason}</div>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <form onSubmit={handleRegisterChange} className="stacked-form">
+                <label>
+                  <span>Versión destino</span>
+                  <input
+                    type="text"
+                    value={targetVersion}
+                    placeholder="v1.1"
+                    required
+                    onChange={(event) => setTargetVersion(event.target.value)}
+                  />
+                </label>
+                {changeError && (
+                  <p className="error" role="alert">
+                    ✕ {changeError}
+                  </p>
+                )}
+                <button type="submit" className="button">Registrar cambio</button>
+              </form>
+              <p className="muted">
+                El cambio queda pendiente en la <Link to="/agencia/cambios">bandeja de cambios</Link>, donde se aprueba
+                o se rechaza.
+              </p>
+            </section>
+          )}
 
           <section className="card">
             <h3>Historial</h3>
