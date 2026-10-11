@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import {
   getClient,
@@ -182,7 +183,9 @@ export default function TicketList() {
                         <div className="muted">{service?.serviceName ?? "Servicio"}</div>
                       </td>
                       <td>
-                        <strong>{ticket.title}</strong>
+                        <Link to={`/agencia/tickets/${ticket.id}`}>
+                          <strong>{ticket.title}</strong>
+                        </Link>
                         <div className="muted">#{ticket.id}</div>
                       </td>
                       <td>
