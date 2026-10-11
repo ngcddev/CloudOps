@@ -50,7 +50,10 @@ class ChangeRequestOut(BaseModel):
     to_version: str
     status: str
     requested_by_id: int | None
+    requested_by_name: str | None
     approved_by_id: int | None
+    approved_by_name: str | None
+    ticket_title: str | None
     gitops_commit_sha: str | None
     rejection_reason: str | None
     created_at: datetime
