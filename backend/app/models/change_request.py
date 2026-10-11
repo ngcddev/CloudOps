@@ -29,3 +29,16 @@ class ChangeRequest(Base):
     service = relationship("Service")
     requested_by = relationship("User", foreign_keys=[requested_by_id])
     approved_by = relationship("User", foreign_keys=[approved_by_id])
+
+    # Nombres que la bandeja de cambios muestra sin pedir los usuarios y solicitudes por separado
+    @property
+    def requested_by_name(self) -> str | None:
+        return self.requested_by.name if self.requested_by else None
+
+    @property
+    def approved_by_name(self) -> str | None:
+        return self.approved_by.name if self.approved_by else None
+
+    @property
+    def ticket_title(self) -> str | None:
+        return self.ticket.title if self.ticket else None

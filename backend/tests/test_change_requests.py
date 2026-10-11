@@ -140,3 +140,19 @@ def test_tras_rechazar_se_puede_pedir_otro_cambio(client, ferreteria):
     client.post(f"/api/change-requests/{first}/reject", json={"reason": "Falta contenido"})
 
     assert _create(client, _ticket(client, ferreteria.id), to_version="v1.2").status_code == 201
+
+
+def test_lista_las_solicitudes_de_cambio_con_nombres_y_filtra_por_estado(client, seeded, ferreteria):
+    tecnico = seeded.scalar(select(User).where(User.role == "agencia"))
+    first = _create(client, _ticket(client, ferreteria.id), requested_by_id=tecnico.id).json()["id"]
+    client.post(f"/api/change-requests/{first}/reject", json={"reason": "Falta contenido"})
+    second = _create(client, _ticket(client, ferreteria.id), to_version="v1.2").json()["id"]
+
+    listed = client.get("/api/change-requests").json()
+
+    assert [item["id"] for item in listed] == [second, first]
+    assert listed[1]["requested_by_name"] == tecnico.name
+    assert listed[1]["ticket_title"] == "Publicar la nueva portada"
+    pendientes = client.get("/api/change-requests", params={"status": "pendiente"}).json()
+    assert [item["id"] for item in pendientes] == [second]
+    assert client.get("/api/change-requests", params={"service_id": 9999}).json() == []
