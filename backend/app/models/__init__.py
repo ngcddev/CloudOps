@@ -5,7 +5,10 @@ from app.models.plan import Plan
 from app.models.project import Project
 from app.models.service import Service
 from app.models.sla_policy import SlaPolicy
+from app.models.ticket import Ticket
+from app.models.ticket_event import TicketEvent
 from app.models.user import User
+from app.models.work_log import WorkLog
 
 __all__ = [
 	"Agency",
@@ -14,5 +17,8 @@ __all__ = [
 	"Project",
 	"Service",
 	"SlaPolicy",
+	"Ticket",
+	"TicketEvent",
 	"User",
+	"WorkLog",
 ]
