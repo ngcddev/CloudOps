@@ -45,7 +45,7 @@
 ## Catálogo (RF-22, apagable si falta RAM)
 
 - [x] T21 · Escribir un `catalog-info.yaml` por cliente (`kind: Component`, `spec.owner: forja-digital`, enlace al Hub) — **Verifica:** los 3 archivos pasan la validación YAML. [ngcddev]
-- [ ] T22 · Instalar Backstage con catálogo mínimo y registrar los 3 clientes desde `hub-gitops` — **Verifica:** el catálogo lista los 3 clientes con su servicio y el enlace al Hub (CA-6); si falta RAM, se apaga y `/agencia/servicios` cumple el rol. [ ]
+- [ ] T22 · Instalar Backstage con catálogo mínimo y registrar los 3 clientes desde `hub-gitops` — **Verifica:** el catálogo lista los 3 clientes con su servicio y el enlace al Hub (CA-6); si falta RAM, se apaga y `/agencia/servicios` cumple el rol. [ngcddev]
 
 ## Cierre
 
