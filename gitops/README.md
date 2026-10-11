@@ -202,3 +202,17 @@ justo, se apaga sin afectar nada más y `/agencia/servicios` del Hub cumple el r
 ```bash
 kubectl -n hub scale deploy/backstage --replicas=0
 ```
+
+## Demo de la spec 005 (cambios por GitOps)
+
+```bash
+bash gitops/pruebas/demo-005.sh
+```
+
+Recorre la demo con el clúster real: El Tornillo pide publicar la nueva portada (`v1` → `v1.1`), el
+técnico aprueba en el Hub, se comprueba el commit en `hub-gitops` (un solo archivo, con el mensaje
+`chore(ferreteria): versión v1.1 (cambio #N)`), Argo CD sincroniza en menos de 3 minutos y la consola
+muestra `v1.1`, `Synced`, `Healthy` y el nombre del técnico. El script termina con `DEMO OK` o con la
+cantidad de fallas. Antes: `ferreteria:v1.1` publicada, `hub-gitops` sembrado, Application de
+El Tornillo `Synced` y el sitio en `v1`. Para repetirla hay que dejar el sitio en `v1` (revertir el
+commit, ver [`ciclo-gitops.sh`](pruebas/ciclo-gitops.sh)) y la base del Hub vacía.
