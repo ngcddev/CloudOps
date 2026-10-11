@@ -145,3 +145,21 @@ el del namespace: el Hub la consulta por ese nombre. Argo CD llega a Gitea por e
 
 Si el sitio ya se había aplicado a mano con `kubectl apply -k` (spec 003), Argo CD lo adopta sin
 recrearlo porque los manifiestos son los mismos.
+
+## Tokens del Hub (Gitea y Argo CD)
+
+El Hub escribe en `hub-gitops` (Gitea) y lee el estado de Argo CD. Cada acceso tiene su token, con el
+mínimo permiso, y ninguno vive en el repo:
+
+| Token | Quién | Alcance |
+|---|---|---|
+| `GITEA_TOKEN` | usuario `hub-bot` | `write:repository`, y `hub-bot` es colaborador solo de `forja-digital/hub-gitops` |
+| `ARGOCD_TOKEN` | cuenta local `hub-readonly` | rol `readonly`: lee aplicaciones, no sincroniza ni borra |
+
+```bash
+GITEA_ADMIN_USER=forja-admin GITEA_ADMIN_PASSWORD='<contraseña>' bash gitops/hub/crear-tokens.sh
+```
+
+Los deja en el Secret `hub-gitops-tokens` del namespace `hub`, que la API del Hub lee como
+`GITEA_TOKEN` y `ARGOCD_TOKEN`. En desarrollo local van en `.env` (ignorado por Git);
+`.env.example` solo trae valores de ejemplo. Para rotarlos: borrar el Secret y volver a correr el script.
