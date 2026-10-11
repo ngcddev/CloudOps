@@ -7,13 +7,28 @@ from app.db import get_db
 from app.models.change_request import ChangeRequest
 from app.models.ticket import Ticket
 from app.models.user import User
-from app.schemas.change_request import ChangeRequestCreate, ChangeRequestOut, ChangeRequestReject
+from app.integrations.gitea import GiteaClient, GiteaError, gitea_from_settings
+from app.schemas.change_request import (
+    ChangeRequestApprove,
+    ChangeRequestCreate,
+    ChangeRequestOut,
+    ChangeRequestReject,
+)
 from app.services.change_flow import step_event, transition
+from app.services.gitops_publish import NothingToPublish, publish_version
 
 router = APIRouter(prefix="/api/change-requests", tags=["change-requests"])
 
 # Estados en los que un cambio sigue "en curso" y bloquea otro sobre el mismo servicio
 OPEN_STATUSES = ("pendiente", "aprobada", "en_validacion")
+
+
+def get_gitea() -> GiteaClient:
+    """Cliente de Gitea con la configuración del entorno (las pruebas lo reemplazan)."""
+    try:
+        return gitea_from_settings()
+    except GiteaError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 def get_change_or_404(db: Session, change_id: int) -> ChangeRequest:
@@ -82,6 +97,55 @@ def reject_change_request(change_id: int, data: ChangeRequestReject, db: Session
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     db.add(step_event(change, previous, data.actor_id, data.reason))
+    db.commit()
+    db.refresh(change)
+    return change
+
+
+@router.post("/{change_id}/approve", response_model=ChangeRequestOut)
+def approve_change_request(
+    change_id: int,
+    data: ChangeRequestApprove,
+    db: Session = Depends(get_db),
+    gitea: GiteaClient = Depends(get_gitea),
+):
+    """Aprueba el cambio: escribe la versión en hub-gitops y lo deja en `en_validacion`.
+
+    El Hub solo escribe el tag en Gitea (CA-2); Argo CD aplica el cambio y la tarea periódica
+    confirma la publicación. Si Gitea falla, la solicitud sigue pendiente.
+    """
+    change = get_change_or_404(db, change_id)
+    approver = db.get(User, data.actor_id)
+    if approver is None:
+        raise HTTPException(status_code=404, detail="El usuario que aprueba no existe.")
+    if approver.role != "agencia":
+        raise HTTPException(status_code=403, detail="Solo la agencia puede aprobar cambios.")
+    if change.status != "pendiente":
+        raise HTTPException(
+            status_code=409,
+            detail=f"No se permite pasar de «{change.status}» a «aprobada».",
+        )
+
+    try:
+        sha = publish_version(
+            gitea,
+            change.service.namespace,
+            change.to_version,
+            change.id,
+            approver.name,
+            approver.email,
+        )
+    except NothingToPublish as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except GiteaError as error:
+        raise HTTPException(status_code=502, detail=f"No se pudo publicar en Gitea: {error}") from error
+
+    # aprobada y en_validacion ocurren en el mismo instante: el commit ya está escrito
+    transition(change, "aprobada", actor_id=approver.id)
+    db.add(step_event(change, "pendiente", approver.id, f"Commit {sha[:7]} en hub-gitops."))
+    transition(change, "en_validacion", actor_id=approver.id)
+    db.add(step_event(change, "aprobada", approver.id, "Esperando a que Argo CD sincronice."))
+    change.gitops_commit_sha = sha
     db.commit()
     db.refresh(change)
     return change
