@@ -12,6 +12,7 @@ from app.models.service import Service
 from app.models.ticket import Ticket
 from app.models.ticket_event import TicketEvent
 from app.models.user import User
+from app.models.work_log import WorkLog
 from app.services.priority import classify
 from app.services.sla import due_dates
 from app.services.ticket_flow import transition
@@ -22,6 +23,8 @@ from app.schemas.ticket import (
     TicketDetail,
     TicketOut,
     TicketTransition,
+    WorkLogCreate,
+    WorkLogOut,
 )
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
@@ -172,3 +175,18 @@ def transition_ticket(ticket_id: int, data: TicketTransition, db: Session = Depe
     db.commit()
     db.refresh(ticket)
     return ticket
+
+
+@router.post("/{ticket_id}/work-logs", response_model=WorkLogOut, status_code=status.HTTP_201_CREATED)
+def create_work_log(ticket_id: int, data: WorkLogCreate, db: Session = Depends(get_db)):
+    """Registra horas trabajadas por un usuario en una solicitud."""
+    if db.get(Ticket, ticket_id) is None:
+        raise HTTPException(status_code=404, detail="La solicitud no existe.")
+    if db.get(User, data.user_id) is None:
+        raise HTTPException(status_code=404, detail="El usuario no existe.")
+
+    work_log = WorkLog(ticket_id=ticket_id, **data.model_dump())
+    db.add(work_log)
+    db.commit()
+    db.refresh(work_log)
+    return work_log
