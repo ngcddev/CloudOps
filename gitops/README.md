@@ -175,3 +175,14 @@ REGISTRY_USER=forja-admin REGISTRY_PASSWORD='<contraseña>' bash apps/publicar-i
 
 Para verla sin clúster: `FERRETERIA_VERSION=v1.1 docker compose up --build -d ferreteria` y abrir
 `http://localhost:8082`.
+
+## Probar el ciclo GitOps a mano
+
+```bash
+GITEA_USER=forja-admin GITEA_PASSWORD='<contraseña>' bash gitops/pruebas/ciclo-gitops.sh
+```
+
+Cambia `newTag` de El Tornillo a `v1.1` en `hub-gitops`, mide cuánto tarda Argo CD en dejar el sitio en
+`v1.1` (debe ser menos de 3 minutos), revierte el commit con `git revert` y comprueba que el sitio
+vuelve a `v1`. Es la misma ruta que seguirá el Hub, sin el Hub: si esto falla, el problema está en la
+plataforma y no en el código de la API.
