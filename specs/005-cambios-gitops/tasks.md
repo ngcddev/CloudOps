@@ -19,7 +19,7 @@
 ## Modelo de datos
 
 - [x] T07 · Crear las tablas `change_requests` y `deployments`, y sumar a `services` los campos `current_version`, `stable_version`, `sync_status` y `health_status`, con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ngcddev]
-- [ ] T08 · Agregar `current_version` y `stable_version` en `v1` a los servicios de `seed/clients.json` y actualizar `seed/README.md` — **Verifica:** los tests de semilla pasan y `GET /api/clients/{id}` muestra la versión. [ ]
+- [x] T08 · Agregar `current_version` y `stable_version` en `v1` a los servicios de `seed/clients.json` y actualizar `seed/README.md` — **Verifica:** los tests de semilla pasan y `GET /api/clients/{id}` muestra la versión. [ngcddev]
 
 ## Reglas e integraciones (`backend/app/`)
 
