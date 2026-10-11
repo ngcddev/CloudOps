@@ -1,5 +1,6 @@
 # Punto de entrada de la API del Hub: crea la app, registra routers y expone GET /health.
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -8,9 +9,12 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
+from app.config import settings
 from app.db import SessionLocal, get_db
+from app.integrations.argocd import argocd_from_settings
 from app.routers import catalog, change_requests, clients, tickets
 from app.seed import seed_if_empty
+from app.services.deploy_watch import watch_forever
 
 
 @asynccontextmanager
@@ -19,7 +23,15 @@ async def lifespan(_: FastAPI):
     # aquí solo se cargan los datos semilla si la base está vacía.
     with SessionLocal() as db:
         seed_if_empty(db)
+    # Seguimiento de las publicaciones (spec 005): solo si hay conexión configurada con Argo CD
+    watcher = None
+    if settings.argocd_url and settings.argocd_token:
+        watcher = asyncio.create_task(watch_forever(SessionLocal, argocd_from_settings()))
     yield
+    if watcher is not None:
+        watcher.cancel()
+        with suppress(asyncio.CancelledError):
+            await watcher
 
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
