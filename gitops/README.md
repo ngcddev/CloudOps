@@ -130,3 +130,18 @@ GITEA_USER=forja-admin GITEA_PASSWORD='<contraseña>' bash gitops/platform/gitea
 
 El script es idempotente: si el repo ya tiene commits no lo vuelve a sembrar. Desde ese momento el
 contenido de `hub-gitops` manda; los cambios del monorepo en `gitops/` no se propagan solos.
+
+## Una Application por cliente
+
+```bash
+kubectl apply -k gitops/platform/argocd/applications
+kubectl -n argocd get applications     # las 3, Synced y Healthy
+```
+
+Cada `Application` (`cliente-restaurante`, `cliente-ferreteria`, `cliente-consultorio`) vigila
+`clients/<cliente>` de `hub-gitops` con sincronización automática, `prune` y `self-heal`. Su nombre es
+el del namespace: el Hub la consulta por ese nombre. Argo CD llega a Gitea por el Service
+(`gitea.gitea.svc:3000`), no por `gitea.hub.local`, que los Pods no resuelven.
+
+Si el sitio ya se había aplicado a mano con `kubectl apply -k` (spec 003), Argo CD lo adopta sin
+recrearlo porque los manifiestos son los mismos.
