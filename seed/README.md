@@ -12,7 +12,7 @@ que cambiar un campo, se cambia aquí en un PR que revisan el industrial y el ba
 | `plans.json` | Los 3 planes: SLO, horario, cuota CPU/RAM, precio, horas incluidas | Industrial (000-T09) | 000 → 001 |
 | `sla_policies.json` | Tiempos de respuesta y solución por prioridad, y cuándo corre el reloj | Industrial (000-T08) | 000 → 001, 004, 008 |
 | `clients.json` | La agencia Forja Digital y los 3 clientes con su proyecto y servicio | Backend, con los nombres canónicos | 001 |
-| `priority_matrix.json` | Matriz impacto × urgencia → P1–P4 (aún no existe) | Industrial (000-T07) | 000 → 004, 008 |
+| `priority_matrix.json` | Matriz provisional impacto × urgencia → P1–P4 | Industrial (000-T07) | 000 → 004, 008 |
 
 ## Estado actual: propuesta
 

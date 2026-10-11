@@ -9,7 +9,7 @@
 
 ## Insumos de la spec 000
 
-- [ ] T01 · Dejar `seed/priority_matrix.json` con las 9 combinaciones impacto × urgencia (propuesta si 000-T07 aún no cierra) — **Verifica:** el JSON tiene `impact`, `urgency` y `matrix` completos y `pytest` lo carga sin error. [ ]
+- [x] T01 · Dejar `seed/priority_matrix.json` con las 9 combinaciones impacto × urgencia (propuesta si 000-T07 aún no cierra) — **Verifica:** el JSON tiene `impact`, `urgency` y `matrix` completos y `pytest` lo carga sin error. [ERIC]
 
 ## Modelo de datos
 
