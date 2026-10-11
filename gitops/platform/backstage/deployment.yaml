@@ -1,0 +1,72 @@
+# Backstage (spec 005, T22): imagen oficial de demostración fijada por digest, sin root, con límites
+# de memoria. La configuración propia se monta como app-config.hub.yaml y se suma a las de la imagen.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage
+  labels:
+    app: backstage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstage
+  template:
+    metadata:
+      labels:
+        app: backstage
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backstage
+          # Fijado por digest (índice multi-arquitectura de ghcr.io/backstage/backstage:latest)
+          image: ghcr.io/backstage/backstage@sha256:68f2025a3f2774e04d58a65a948ccd04a93ddab7b7977be850e9df6d3beae6e3
+          command: ["node", "packages/backend"]
+          args:
+            - --config
+            - app-config.yaml
+            - --config
+            - app-config.production.yaml
+            - --config
+            - /config/app-config.hub.yaml
+          ports:
+            - name: http
+              containerPort: 7007
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits: { cpu: 1000m, memory: 1Gi }
+          readinessProbe:
+            httpGet: { path: /healthcheck, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthcheck, port: http }
+            initialDelaySeconds: 90
+            periodSeconds: 20
+          volumeMounts:
+            - { name: config, mountPath: /config, readOnly: true }
+      volumes:
+        - name: config
+          configMap:
+            name: backstage-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backstage
+spec:
+  selector:
+    app: backstage
+  ports:
+    - name: http
+      port: 7007
+      targetPort: http
