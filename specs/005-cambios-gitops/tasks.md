@@ -49,4 +49,4 @@
 
 ## Cierre
 
-- [ ] T23 · Demo: El Tornillo pide publicar la nueva portada, el técnico aprueba, se ve el commit en Gitea, Argo CD sincroniza y la consola muestra `v1.1` — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [ ] T23 · Demo: El Tornillo pide publicar la nueva portada, el técnico aprueba, se ve el commit en Gitea, Argo CD sincroniza y la consola muestra `v1.1` — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ngcddev]
