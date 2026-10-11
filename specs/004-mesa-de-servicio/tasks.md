@@ -13,7 +13,7 @@
 
 ## Modelo de datos
 
-- [ ] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ ]
+- [x] T02 · Crear la tabla `users` con migración y `seed/users.json` (un técnico de la agencia y uno por cliente, sin contraseña) — **Verifica:** `alembic upgrade head` sin errores y la tabla queda con 4 usuarios al arrancar de cero. [ ]
 - [ ] T03 · Crear las tablas `tickets`, `ticket_events` y `work_logs` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ ]
 
 ## Reglas de negocio (`backend/app/services/`)

@@ -5,5 +5,14 @@ from app.models.plan import Plan
 from app.models.project import Project
 from app.models.service import Service
 from app.models.sla_policy import SlaPolicy
+from app.models.user import User
 
-__all__ = ["Agency", "Client", "Plan", "Project", "Service", "SlaPolicy"]
+__all__ = [
+	"Agency",
+	"Client",
+	"Plan",
+	"Project",
+	"Service",
+	"SlaPolicy",
+	"User",
+]

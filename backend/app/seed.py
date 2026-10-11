@@ -7,7 +7,7 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Agency, Client, Plan, Project, Service, SlaPolicy
+from app.models import Agency, Client, Plan, Project, Service, SlaPolicy, User
 
 # En el contenedor la carpeta se indica con SEED_DIR; en tu máquina se usa seed/ del repositorio.
 SEED_DIR = Path(os.getenv("SEED_DIR") or Path(__file__).resolve().parents[2] / "seed")
@@ -49,6 +49,7 @@ def seed_if_empty(db: Session) -> bool:
     for item in _read("sla_policies.json"):
         db.add(SlaPolicy(**item))
 
+    clients_by_name: dict[str, Client] = {}
     for item in clients_data["clients"]:
         client = Client(
             agency=agency,
@@ -58,6 +59,7 @@ def seed_if_empty(db: Session) -> bool:
             phone=item["phone"],
         )
         db.add(client)
+        clients_by_name[client.name] = client
         for project_item in item["projects"]:
             project = Project(
                 client=client, name=project_item["name"], description=project_item["description"]
@@ -76,5 +78,21 @@ def seed_if_empty(db: Session) -> bool:
                     namespace=service_item["namespace"],
                 )
                 db.add(service)
+
+    for item in _read("users.json")["users"]:
+        client = None
+        if item["role"] == "cliente":
+            client_name = item.get("client_name")
+            client = clients_by_name.get(client_name)
+            if client is None:
+                raise ValueError(f"El cliente «{client_name}» del usuario no existe.")
+        db.add(
+            User(
+                name=item["name"],
+                email=item["email"],
+                role=item["role"],
+                client=client,
+            )
+        )
     db.commit()
     return True
