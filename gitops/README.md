@@ -117,3 +117,16 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.pas
 ```
 
 Cámbiala en *User Info → Update password* y borra el Secret inicial.
+
+## Repo `hub-gitops`
+
+Argo CD no lee el monorepo: vigila el repo `forja-digital/hub-gitops` de Gitea, y es ahí donde el Hub
+escribe cada cambio de versión (spec 005). Se crea y se siembra una sola vez con el contenido de
+`platform/`, `hub/` y `clients/`:
+
+```bash
+GITEA_USER=forja-admin GITEA_PASSWORD='<contraseña>' bash gitops/platform/gitea/sembrar-hub-gitops.sh
+```
+
+El script es idempotente: si el repo ya tiene commits no lo vuelve a sembrar. Desde ese momento el
+contenido de `hub-gitops` manda; los cambios del monorepo en `gitops/` no se propagan solos.

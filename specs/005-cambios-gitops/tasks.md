@@ -10,7 +10,7 @@
 ## GitOps en la plataforma
 
 - [ ] T01 · Instalar Argo CD en el namespace `argocd` con límites de memoria, expuesto en `argocd.hub.local` — **Verifica:** la interfaz abre e inicia sesión con el usuario administrador. [ngcddev]
-- [ ] T02 · Crear el repo `hub-gitops` en Gitea y sembrarlo desde `gitops/` — **Verifica:** el repo muestra `platform/`, `hub/` y `clients/` con el mismo contenido que el monorepo. [ ]
+- [ ] T02 · Crear el repo `hub-gitops` en Gitea y sembrarlo desde `gitops/` — **Verifica:** el repo muestra `platform/`, `hub/` y `clients/` con el mismo contenido que el monorepo. [ngcddev]
 - [ ] T03 · Crear una `Application` de Argo CD por cliente con sincronización automática y `self-heal` apuntando a `clients/<cliente>` — **Verifica:** las 3 aparecen `Synced` y `Healthy`. [ ]
 - [ ] T04 · Crear un token de Gitea con escritura solo sobre `hub-gitops` y uno de Argo CD de solo lectura, guardados en `Secret` y en `.env.example` como valores de ejemplo — **Verifica:** `git grep` no encuentra ningún token real en el repo. [ ]
 - [ ] T05 · Publicar la versión `v1.1` de El Tornillo (portada nueva) en el registro de Gitea — **Verifica:** la imagen `ferreteria:v1.1` aparece en los paquetes y su pie y `/health` muestran `v1.1`. [ ]
