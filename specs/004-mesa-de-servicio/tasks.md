@@ -38,7 +38,7 @@
 - [x] T15 · Agregar a `frontend/src/api.ts` los tipos y llamadas de tickets (con datos de prueba si la API no responde) — **Verifica:** `tsc` sin errores. [ERIC]
 - [x] T16 · Crear la bandeja `/agencia/tickets` con filtros por cliente, prioridad, estado y SLA — **Verifica:** filtrar por P2 deja solo los P2 y cada fila muestra "a tiempo", "en riesgo" o "vencido" con texto e ícono. [ERIC]
 - [x] T17 · Crear el detalle `/agencia/tickets/:id` para clasificar, asignar, cambiar estado, registrar horas y ver el historial — **Verifica:** clasificar y pasar a `en_progreso` actualiza el historial sin recargar. [ERIC]
-- [ ] T18 · Crear `/portal/solicitudes` con la lista y "Nueva solicitud" usando el selector de cliente de desarrollo — **Verifica:** La Sazón crea una solicitud y solo ve las suyas, en lenguaje simple. [ ]
+- [x] T18 · Crear `/portal/solicitudes` con la lista y "Nueva solicitud" usando el selector de cliente de desarrollo — **Verifica:** La Sazón crea una solicitud y solo ve las suyas, en lenguaje simple. [ERIC]
 
 ## Datos semilla
 
