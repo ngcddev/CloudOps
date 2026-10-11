@@ -81,6 +81,7 @@ export default function TicketDetail() {
         urgency: classifyForm.urgency as TicketUrgency,
         priority: classifyForm.priority as TicketPriority,
         correction_reason: classifyForm.correction_reason || null,
+        actor_id: 1,
       });
       setTicket((current) => (current ? { ...current, ...updated } : current));
       setClassifyForm((current) => ({ ...current, correction_reason: "" }));

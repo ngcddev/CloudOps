@@ -29,17 +29,17 @@ en que llegó.
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Un cliente crea una solicitud (título, descripción, servicio) desde el portal.
-- [ ] CA-2. La agencia elige impacto y urgencia y el sistema asigna P1–P4 según la matriz de la
+- [x] CA-1. Un cliente crea una solicitud (título, descripción, servicio) desde el portal.
+- [x] CA-2. La agencia elige impacto y urgencia y el sistema asigna P1–P4 según la matriz de la
   spec 000; la prioridad se puede corregir dejando el motivo.
-- [ ] CA-3. La agencia asigna un responsable y mueve el ticket por
+- [x] CA-3. La agencia asigna un responsable y mueve el ticket por
   `abierto → en_progreso → en_espera → resuelto → cerrado`; no se permiten saltos inválidos.
-- [ ] CA-4. Cada cambio de estado, prioridad o responsable queda en el historial con hora (UTC) y
+- [x] CA-4. Cada cambio de estado, prioridad o responsable queda en el historial con hora (UTC) y
   usuario.
-- [ ] CA-5. Cada ticket muestra su hora límite de respuesta y de solución, y si va "a tiempo",
+- [x] CA-5. Cada ticket muestra su hora límite de respuesta y de solución, y si va "a tiempo",
   "en riesgo" (≥ 80 %) o "vencido".
-- [ ] CA-6. El técnico registra horas trabajadas en el ticket.
-- [ ] CA-7. El cliente ve sus solicitudes con estados en lenguaje simple, sin ver notas internas.
+- [x] CA-6. El técnico registra horas trabajadas en el ticket.
+- [x] CA-7. El cliente ve sus solicitudes con estados en lenguaje simple, sin ver notas internas.
 
 ## Fuera de alcance
 

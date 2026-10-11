@@ -27,6 +27,7 @@ class TicketClassify(BaseModel):
     urgency: Literal["alta", "media", "baja"]
     priority: Literal["P1", "P2", "P3", "P4"] | None = None
     correction_reason: str | None = None
+    actor_id: int | None = None
 
     @field_validator("correction_reason")
     @classmethod

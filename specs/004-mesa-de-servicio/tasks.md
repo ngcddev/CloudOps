@@ -42,8 +42,8 @@
 
 ## Datos semilla
 
-- [x] T19 · Agregar 3 tickets semilla en distintos estados y prioridades — **Verifica:** `docker compose down -v && docker compose up --build` deja la bandeja con 3 tickets y ninguno es el de la demo. [ANDRES]
+- [x] T19 · Agregar 3 tickets semilla en distintos estados y prioridades — **Verifica:** `docker compose down -v && docker compose up --build` deja la bandeja con 3 tickets y ninguno es el de la demo. [ERIC]
 
 ## Cierre
 
-- [ ] T20 · Demo: "El menú del domingo no aparece" de La Sazón pasa a P2, se asigna, se resuelve con 1,5 h y el cliente ve "Resuelto" — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [x] T20 · Demo: "El menú del domingo no aparece" de La Sazón pasa a P2, se asigna, se resuelve con 1,5 h y el cliente ve "Resuelto" — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ERIC]

@@ -25,7 +25,7 @@ def test_ciclo_completo_de_solicitud_desde_cliente_hasta_resuelto(client, sessio
 
     classified = client.post(
         f"/api/tickets/{ticket_id}/classify",
-        json={"impact": "alto", "urgency": "media"},
+        json={"impact": "alto", "urgency": "media", "actor_id": 1},
     )
     assert classified.status_code == 200
     assert classified.json()["priority"] == "P2"
@@ -57,7 +57,7 @@ def test_ciclo_completo_de_solicitud_desde_cliente_hasta_resuelto(client, sessio
     assert sum(log["hours"] for log in agency_body["work_logs"]) == 1.5
     assert len(agency_body["events"]) == 7
     assert all(event["created_at"] for event in agency_body["events"])
-    assert all(event["actor_id"] in (None, 1) for event in agency_body["events"])
+    assert all(event["actor_id"] == 1 for event in agency_body["events"])
 
     client_detail = client.get(
         f"/api/tickets/{ticket_id}",
