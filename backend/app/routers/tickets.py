@@ -120,6 +120,8 @@ def get_ticket(
 def classify_ticket(ticket_id: int, data: TicketClassify, db: Session = Depends(get_db)):
     """Clasifica una solicitud, calcula su SLA y registra la decisión."""
     ticket = _get_ticket_or_404(db, ticket_id)
+    if data.actor_id is not None and db.get(User, data.actor_id) is None:
+        raise HTTPException(status_code=404, detail="El usuario que clasifica no existe.")
     proposed_priority = classify(data.impact, data.urgency)
     selected_priority = data.priority or proposed_priority
     if selected_priority != proposed_priority and not data.correction_reason:
@@ -147,6 +149,7 @@ def classify_ticket(ticket_id: int, data: TicketClassify, db: Session = Depends(
     db.add(
         TicketEvent(
             ticket=ticket,
+            actor_id=data.actor_id,
             type="prioridad",
             from_value=old_priority,
             to_value=selected_priority,

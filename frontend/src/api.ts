@@ -137,6 +137,7 @@ export interface TicketClassifyInput {
   urgency: TicketUrgency;
   priority?: TicketPriority;
   correction_reason?: string | null;
+  actor_id?: number | null;
 }
 
 export interface TicketAssignInput {
@@ -528,7 +529,7 @@ export async function classifyTicket(id: number, input: TicketClassifyInput): Pr
     ticket.resolution_due_at = new Date(Date.parse(ticket.created_at) + 8 * 60 * 60 * 1000).toISOString();
     ticket.events.unshift({
       id: Date.now(),
-      actor_id: 1,
+      actor_id: input.actor_id ?? 1,
       type: "prioridad",
       from_value: previousPriority,
       to_value: ticket.priority,
