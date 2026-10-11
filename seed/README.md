@@ -11,7 +11,7 @@ que cambiar un campo, se cambia aquí en un PR que revisan el industrial y el ba
 |---|---|---|---|
 | `plans.json` | Los 3 planes: SLO, horario, cuota CPU/RAM, precio, horas incluidas | Industrial (000-T09) | 000 → 001 |
 | `sla_policies.json` | Tiempos de respuesta y solución por prioridad, y cuándo corre el reloj | Industrial (000-T08) | 000 → 001, 004, 008 |
-| `clients.json` | La agencia Forja Digital y los 3 clientes con su proyecto y servicio | Backend, con los nombres canónicos | 001 |
+| `clients.json` | La agencia Forja Digital y los 3 clientes con su proyecto, servicio y versión (`v1`) | Backend, con los nombres canónicos | 001, 005 |
 | `priority_matrix.json` | Matriz provisional impacto × urgencia → P1–P4 | Industrial (000-T07) | 000 → 004, 008 |
 
 ## Estado actual: propuesta
@@ -34,6 +34,9 @@ El industrial los confirma o ajusta en las tareas de la spec 000. Mientras tanto
 - `response_minutes` / `resolution_minutes`: siempre en minutos (4 h = `240`).
 - `services[].template`: `landing` o `landing_form` (spec 002).
 - `services[].plan_code`: debe existir en `plans.json`.
+- `services[].current_version` y `services[].stable_version` (spec 005): versión publicada del sitio y
+  última versión estable, ambas `"v1"` al arrancar. Son opcionales (valen `"v1"` si faltan). Tras la
+  demo de cambios, `current_version` cambia en la base, no en este archivo.
 - Correos con dominio `.test` y teléfonos `+57 300 000 000N`: todo es ficticio.
 
 ## Cómo se cargan y cómo cambiar un valor
