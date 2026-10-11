@@ -1,4 +1,6 @@
 # Endpoints de solicitudes: creación, bandeja y detalle (spec 004, T09).
+from datetime import timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -8,8 +10,11 @@ from app.models.client import Client
 from app.models.project import Project
 from app.models.service import Service
 from app.models.ticket import Ticket
+from app.models.ticket_event import TicketEvent
 from app.models.user import User
-from app.schemas.ticket import TicketCreate, TicketDetail, TicketOut
+from app.services.priority import classify
+from app.services.sla import due_dates
+from app.schemas.ticket import TicketClassify, TicketCreate, TicketDetail, TicketOut
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 
@@ -63,3 +68,46 @@ def list_tickets(
 def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
     """Devuelve una solicitud con su historial y horas registradas."""
     return _get_ticket_or_404(db, ticket_id)
+
+
+@router.post("/{ticket_id}/classify", response_model=TicketOut)
+def classify_ticket(ticket_id: int, data: TicketClassify, db: Session = Depends(get_db)):
+    """Clasifica una solicitud, calcula su SLA y registra la decisión."""
+    ticket = _get_ticket_or_404(db, ticket_id)
+    proposed_priority = classify(data.impact, data.urgency)
+    selected_priority = data.priority or proposed_priority
+    if selected_priority != proposed_priority and not data.correction_reason:
+        raise HTTPException(
+            status_code=422,
+            detail="Debe indicar un motivo para corregir la prioridad propuesta.",
+        )
+
+    if ticket.created_at is None:
+        raise HTTPException(status_code=422, detail="La solicitud no tiene fecha de creación.")
+    service = db.get(Service, ticket.service_id)
+    if service is None or service.plan is None:
+        raise HTTPException(status_code=422, detail="El servicio no tiene un plan asignado.")
+
+    created_at = ticket.created_at
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    response_due_at, resolution_due_at = due_dates(created_at, selected_priority, service.plan)
+    old_priority = ticket.priority
+    ticket.impact = data.impact
+    ticket.urgency = data.urgency
+    ticket.priority = selected_priority
+    ticket.response_due_at = response_due_at
+    ticket.resolution_due_at = resolution_due_at
+    db.add(
+        TicketEvent(
+            ticket=ticket,
+            type="prioridad",
+            from_value=old_priority,
+            to_value=selected_priority,
+            note=data.correction_reason,
+            internal=False,
+        )
+    )
+    db.commit()
+    db.refresh(ticket)
+    return ticket

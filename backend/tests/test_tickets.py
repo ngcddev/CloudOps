@@ -70,3 +70,39 @@ def test_detalle_devuelve_historial(client, session_factory):
     response = client.get(f"/api/tickets/{ticket_id}")
     assert response.status_code == 200
     assert response.json()["events"][0]["note"] == "Recibido"
+
+
+def test_clasificar_propone_p2_calcula_sla_y_registra_evento(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Menú", "description": "No aparece"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/classify",
+        json={"impact": "alto", "urgency": "media"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["priority"] == "P2"
+    assert response.json()["response_due_at"] is not None
+    assert response.json()["resolution_due_at"] is not None
+    detail = client.get(f"/api/tickets/{ticket_id}").json()
+    assert detail["events"][0]["type"] == "prioridad"
+
+
+def test_corregir_prioridad_sin_motivo_responde_422(client, session_factory):
+    service_id, _ = _seed_service(session_factory)
+    ticket_id = client.post(
+        "/api/tickets",
+        json={"service_id": service_id, "title": "Menú", "description": "No aparece"},
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/tickets/{ticket_id}/classify",
+        json={"impact": "alto", "urgency": "media", "priority": "P1"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Debe indicar un motivo para corregir la prioridad propuesta."
