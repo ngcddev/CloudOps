@@ -40,7 +40,7 @@
 
 - [x] T18 · Crear la bandeja `/agencia/cambios` con aprobar y rechazar (el rechazo pide motivo) — **Verifica:** aprobar muestra "En validación" y luego "Publicada" sin recargar. [ngcddev]
 - [x] T19 · Agregar al detalle del ticket de tipo cambio el botón "Registrar cambio" con la versión destino — **Verifica:** el cambio aparece `pendiente` en la bandeja de cambios. [ngcddev]
-- [ ] T20 · Crear `/agencia/servicios` con versión activa, sincronización, salud y último autor por cliente — **Verifica:** tras la demo muestra `v1.1`, "Sincronizado" y el nombre del técnico (CA-4). [ ]
+- [x] T20 · Crear `/agencia/servicios` con versión activa, sincronización, salud y último autor por cliente — **Verifica:** tras la demo muestra `v1.1`, "Sincronizado" y el nombre del técnico (CA-4). [ngcddev]
 
 ## Catálogo (RF-22, apagable si falta RAM)
 
