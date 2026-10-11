@@ -2,7 +2,8 @@
 # Construye y publica en el registro de Gitea las imágenes de los sitios de clientes (spec 003, T06):
 # restaurante, ferreteria, consultorio-web y consultorio-api, cada una en v1 (sana) y v2 (rota, 500).
 # También las del Hub (T17): hub-api y hub-web, solo en v1. Se piden por nombre; no se publican por defecto.
-# Uso:  REGISTRY_USER=forja-admin REGISTRY_PASSWORD='...' bash apps/publicar-imagenes.sh [app ...]
+# Uso:  REGISTRY_USER=forja-admin REGISTRY_PASSWORD='...' bash apps/publicar-imagenes.sh [app[:versión] ...]
+# Con `app:versión` (por ejemplo ferreteria:v1.1) se publica solo esa versión de la app (spec 005, T05).
 # Sin argumentos publica las cuatro de los sitios. La contraseña va en el entorno: nunca en el repo.
 #
 # Se sube con skopeo en un contenedor (Docker no confía en un registro HTTP que no sea localhost) y
@@ -32,8 +33,11 @@ trap 'rm -rf "$TMP"' EXIT
 # Ruta que Docker pueda montar: en Git Bash (Windows) hace falta la ruta de Windows
 MOUNT="$(cd "$TMP" && (pwd -W 2>/dev/null || pwd))"
 
-for app in "${APPS[@]}"; do
-  for version in ${VERSIONS[$app]:-v1 v2}; do
+for entrada in "${APPS[@]}"; do
+  app="${entrada%%:*}"
+  # `app:versión` publica solo esa versión; sin versión se usan las de VERSIONS (o v1 y v2)
+  if [ "$entrada" = "$app" ]; then versiones="${VERSIONS[$app]:-v1 v2}"; else versiones="${entrada#*:}"; fi
+  for version in $versiones; do
     local_tag="hub/${app}:${version}"
     echo ">> ${app}:${version}"
     docker build -q ${EXTRA[$app]:-} --build-arg "APP_VERSION=${version}" \
