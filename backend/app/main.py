@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.db import SessionLocal, get_db
-from app.routers import catalog, clients, tickets
+from app.routers import catalog, change_requests, clients, tickets
 from app.seed import seed_if_empty
 
 
@@ -27,6 +27,7 @@ app.include_router(catalog.router)
 app.include_router(clients.router)
 app.include_router(clients.projects_router)
 app.include_router(tickets.router)
+app.include_router(change_requests.router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
 _CAMPOS = {
@@ -38,6 +39,9 @@ _CAMPOS = {
     "template": "plantilla",
     "namespace": "namespace",
     "plan_id": "plan",
+    "reason": "motivo",
+    "to_version": "versión destino",
+    "ticket_id": "solicitud",
 }
 
 
