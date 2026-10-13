@@ -2,6 +2,7 @@
 import pytest
 from sqlalchemy import select
 
+from app.config import settings
 from app.integrations.gitea import GiteaClient
 from app.main import app
 from app.models import Service, TicketEvent, User
@@ -167,7 +168,11 @@ def test_si_el_repo_ya_tiene_la_version_no_hace_commit(client, gitea, tecnico, c
     assert gitea.commits == []
 
 
-def test_sin_configurar_gitea_responde_503(client, tecnico, cambio):
+def test_sin_configurar_gitea_responde_503(client, tecnico, cambio, monkeypatch):
+    # No depende del entorno: aunque el contenedor tenga GITEA_URL y GITEA_TOKEN, aquí van vacíos
+    monkeypatch.setattr(settings, "gitea_url", "")
+    monkeypatch.setattr(settings, "gitea_token", "")
+
     response = client.post(f"/api/change-requests/{cambio['id']}/approve", json={"actor_id": tecnico.id})
 
     assert response.status_code == 503
