@@ -35,6 +35,11 @@ services:
       GITEA_TOKEN: ${GITEA_TOKEN:-}
       ARGOCD_URL: ${ARGOCD_URL:-}
       ARGOCD_TOKEN: ${ARGOCD_TOKEN:-}
+    # Solo para desarrollo: las pruebas (docker compose exec api pytest) leen seed/ y gitops/ en las
+    # rutas del repo (/seed y /gitops). La imagen de producción no los lleva.
+    volumes:
+      - ./seed:/seed:ro
+      - ./gitops:/gitops:ro
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
