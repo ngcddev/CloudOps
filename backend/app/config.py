@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     gitea_url: str = ""
     gitea_repo: str = "forja-digital/hub-gitops"
     gitea_token: str = ""
+    # Argo CD (spec 005): solo lectura del estado de las aplicaciones
+    argocd_url: str = ""
+    argocd_token: str = ""
 
 
 settings = Settings()

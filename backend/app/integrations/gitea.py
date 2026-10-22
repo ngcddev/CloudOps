@@ -5,13 +5,10 @@ import json
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable
 from dataclasses import dataclass
 
 from app.config import settings
-
-# transporte(request, timeout) -> (código HTTP, cuerpo); se reemplaza en las pruebas
-Transport = Callable[[urllib.request.Request, float], tuple[int, bytes]]
+from app.integrations.http import Transport, urllib_transport
 
 
 class GiteaError(Exception):
@@ -29,14 +26,6 @@ class GiteaFile:
     sha: str  # sha del blob; Gitea lo pide para actualizar y detectar cambios concurrentes
 
 
-def _urllib_transport(request: urllib.request.Request, timeout: float) -> tuple[int, bytes]:
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
-            return response.status, response.read()
-    except urllib.error.HTTPError as error:
-        return error.code, error.read()
-
-
 def version_commit_message(client: str, tag: str, change_id: int) -> str:
     """Mensaje del commit de GitOps: `chore(<cliente>): versión <tag> (cambio #<id>)`."""
     return f"chore({client}): versión {tag} (cambio #{change_id})"
@@ -49,7 +38,7 @@ class GiteaClient:
         repo: str,
         token: str,
         branch: str = "main",
-        transport: Transport = _urllib_transport,
+        transport: Transport = urllib_transport,
         timeout: float = 10,
     ):
         if not base_url or not token:
