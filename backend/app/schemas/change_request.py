@@ -35,6 +35,11 @@ class ChangeRequestReject(BaseModel):
         return value
 
 
+class ChangeRequestApprove(BaseModel):
+    # Quién aprueba: queda en el commit de Gitea y en el historial de la solicitud
+    actor_id: int
+
+
 class ChangeRequestOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
