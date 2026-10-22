@@ -26,7 +26,12 @@ elif [ "$codigo" != "200" ]; then
   exit 1
 fi
 
-if [ "$(curl_api "${API}/repos/${ORG}/${REPO}/commits?limit=1" | head -c 2)" != "[]" ]; then
+# Un repo vacío responde 409 ("Git Repository is empty") o `[]` según la versión de Gitea: solo cuenta
+# como "con commits" una respuesta 200 con al menos un commit.
+respuesta="$(curl_api -w $'\n%{http_code}' "${API}/repos/${ORG}/${REPO}/commits?limit=1")"
+codigo="${respuesta##*$'\n'}"
+cuerpo="${respuesta%$'\n'*}"
+if [ "$codigo" = "200" ] && [ "$(printf '%s' "$cuerpo" | head -c 2)" != "[]" ]; then
   echo "${ORG}/${REPO} ya tiene commits: no se vuelve a sembrar."
   exit 0
 fi
