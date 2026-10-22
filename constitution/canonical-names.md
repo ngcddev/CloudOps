@@ -61,3 +61,4 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 | Registro de imágenes | `gitea.hub.local/forja-digital/<app>:<versión>` (`restaurante`, `ferreteria`, `consultorio-web`, `consultorio-api`) |
 | Repo GitOps | `forja-digital/hub-gitops` |
 | Argo CD | `argocd.hub.local` |
+| Backstage (catálogo, opcional) | `backstage.hub.local` |

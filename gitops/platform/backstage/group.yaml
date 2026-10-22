@@ -1,0 +1,10 @@
+# La agencia como grupo de Backstage: es el `spec.owner` de los 3 clientes (spec 005, T21/T22).
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: forja-digital
+  title: Forja Digital
+  description: Agencia que opera los sitios de los clientes.
+spec:
+  type: team
+  children: []
