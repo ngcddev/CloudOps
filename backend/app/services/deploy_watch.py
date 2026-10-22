@@ -4,11 +4,12 @@
 import asyncio
 import logging
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.integrations.argocd import AppStatus, ArgoCDError
 from app.integrations.gitea import GiteaError
 from app.models.change_request import ChangeRequest
@@ -32,6 +33,16 @@ def is_published(status: AppStatus, commit_sha: str | None) -> bool:
         and commit_sha is not None
         and (status.revision or "").lower() == commit_sha.lower()
     )
+
+
+def validation_expired(change: ChangeRequest, now: datetime) -> bool:
+    """True si el cambio lleva más del tiempo de validación esperando a quedar publicado y sano."""
+    started = change.approved_at
+    if started is None:
+        return False
+    if started.tzinfo is None:  # SQLite devuelve fechas sin zona
+        started = started.replace(tzinfo=timezone.utc)
+    return now - started > timedelta(minutes=settings.validation_timeout_minutes)
 
 
 # Autor que se registra cuando la versión cambió en Git sin pasar por el Hub (spec 005, T25)
@@ -121,6 +132,18 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
         ).all()
         for change in pending:
             if not is_published(status, change.gitops_commit_sha):
+                if validation_expired(change, timestamp):
+                    transition(change, "fallida", actor_id=change.approved_by_id, now=timestamp)
+                    logger.warning(
+                        "El cambio #%s de %s no quedó publicado a tiempo (sincronización %s, salud %s)",
+                        change.id, service.namespace, status.sync, status.health,
+                    )
+                    db.add(
+                        step_event(
+                            change, "en_validacion", change.approved_by_id,
+                            "Hubo un problema al publicar la actualización; nuestro equipo lo está revisando.",
+                        )
+                    )
                 continue
             approver = change.approved_by
             transition(change, "desplegada", actor_id=change.approved_by_id, now=timestamp)
@@ -139,7 +162,7 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
             db.add(
                 step_event(
                     change, "en_validacion", change.approved_by_id,
-                    f"Argo CD confirmó {change.to_version}: sincronizado y sano.",
+                    "Publicamos la actualización que usted solicitó.",
                 )
             )
             deployed.append(change.id)
