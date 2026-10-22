@@ -52,13 +52,24 @@ GITEA_TOKEN="$(curl -sf -u "${BOT}:${CLAVE_BOT}" -H 'Content-Type: application/j
 # ---------- Argo CD: cuenta hub-readonly con token de solo lectura ----------
 kubectl -n argocd patch configmap argocd-cm --type merge \
   -p "{\"data\":{\"accounts.${CUENTA_ARGOCD}\":\"apiKey\"}}" >/dev/null
-kubectl -n argocd patch configmap argocd-rbac-cm --type merge \
-  -p "{\"data\":{\"policy.csv\":\"g, ${CUENTA_ARGOCD}, role:readonly\"}}" >/dev/null
+# policy.csv es una sola cadena: se le agrega la regla sin pisar las que ya tenga
+REGLA="g, ${CUENTA_ARGOCD}, role:readonly"
+POLITICAS="$(kubectl -n argocd get configmap argocd-rbac-cm -o jsonpath='{.data.policy\.csv}')"
+if ! printf '%s\n' "$POLITICAS" | grep -qxF "$REGLA"; then
+  NUEVAS="${POLITICAS:+${POLITICAS}$'\n'}${REGLA}"
+  NUEVAS_JSON="$(printf '%s' "$NUEVAS" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\n/\\n/g')"
+  kubectl -n argocd patch configmap argocd-rbac-cm --type merge \
+    -p "{\"data\":{\"policy.csv\":\"${NUEVAS_JSON}\"}}" >/dev/null
+fi
 CLAVE_ADMIN="$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)"
 SESION="$(curl -sf -H 'Content-Type: application/json' -X POST "${ARGOCD_URL}/api/v1/session" \
   -d "{\"username\":\"admin\",\"password\":\"${CLAVE_ADMIN}\"}" | campo token)"
 ARGOCD_TOKEN="$(curl -sf -H "Authorization: Bearer ${SESION}" -H 'Content-Type: application/json' \
   -X POST "${ARGOCD_URL}/api/v1/account/${CUENTA_ARGOCD}/token" -d '{}' | campo token)"
+
+# Un campo que no vino en la respuesta daría un token vacío y un Secret "creado" que no sirve
+[ -n "$GITEA_TOKEN" ] || { echo "Gitea no devolvió el token de ${BOT}: no se crea el Secret." >&2; exit 1; }
+[ -n "$ARGOCD_TOKEN" ] || { echo "Argo CD no devolvió el token de ${CUENTA_ARGOCD}: no se crea el Secret." >&2; exit 1; }
 
 kubectl -n "$NS" create secret generic hub-gitops-tokens \
   --from-literal=GITEA_TOKEN="$GITEA_TOKEN" \
