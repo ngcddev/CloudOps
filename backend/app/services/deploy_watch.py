@@ -39,13 +39,16 @@ MANUAL_AUTHOR = "Cambio manual en Git"
 OPEN_STATUSES = ("pendiente", "aprobada", "en_validacion")
 
 
-def reconcile_version(db: Session, service: Service, status: AppStatus, gitea, now: datetime) -> bool:
+def reconcile_version(
+    db: Session, service: Service, status: AppStatus, gitea, now: datetime, head: str
+) -> bool:
     """Alinea la versión del Hub con la que tiene Git cuando alguien la cambia o revierte a mano.
 
-    Solo actúa si el servicio no tiene un cambio del Hub en curso y Argo CD ya aplicó lo que hay en
-    Git (`Synced`). Devuelve True si cambió la versión.
+    Solo actúa si el servicio no tiene un cambio del Hub en curso y Argo CD ya aplicó el último commit
+    de la rama (`head`): `Synced` por sí solo habla de la revisión anterior, y fiarse de él anunciaría
+    una versión que el clúster todavía no tiene. Devuelve True si cambió la versión.
     """
-    if status.sync != "Synced":
+    if status.sync != "Synced" or (status.revision or "").lower() != head.lower():
         return False
     open_change = db.scalar(
         select(ChangeRequest.id).where(
@@ -96,6 +99,12 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
     """
     timestamp = now or datetime.now(timezone.utc)
     deployed: list[int] = []
+    head = None
+    if gitea is not None:
+        try:
+            head = gitea.head_sha()  # una consulta por vuelta, no una por servicio
+        except GiteaError as error:
+            logger.warning("No se pudo leer la rama de hub-gitops: %s", error)
     for service in db.scalars(select(Service).order_by(Service.id)).all():
         try:
             status = argocd.get_application(service.namespace)
@@ -134,8 +143,8 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
                 )
             )
             deployed.append(change.id)
-        if gitea is not None:
-            reconcile_version(db, service, status, gitea, timestamp)
+        if head is not None:
+            reconcile_version(db, service, status, gitea, timestamp, head)
     db.commit()
     return deployed
 
