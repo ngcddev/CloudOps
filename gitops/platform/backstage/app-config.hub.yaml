@@ -6,8 +6,8 @@ app:
   baseUrl: http://backstage.hub.local
 backend:
   baseUrl: http://backstage.hub.local
-  listen:
-    port: 7007
+  # No se redefine `listen`: la imagen ya trae `listen: ':7007'` (texto) y mezclarlo con un objeto
+  # hace que Backstage se caiga al arrancar ("got string, wanted object").
   cors:
     origin: http://backstage.hub.local
   database:
