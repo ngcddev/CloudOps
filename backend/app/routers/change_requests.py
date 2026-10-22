@@ -15,7 +15,7 @@ from app.schemas.change_request import (
     ChangeRequestReject,
 )
 from app.services.change_flow import step_event, transition
-from app.services.gitops_publish import NothingToPublish, publish_version
+from app.services.gitops_publish import NothingToPublish, find_existing_publication, publish_version
 
 router = APIRouter(prefix="/api/change-requests", tags=["change-requests"])
 
@@ -92,7 +92,7 @@ def create_change_request(data: ChangeRequestCreate, db: Session = Depends(get_d
     db.add(
         step_event(
             change, None, data.requested_by_id,
-            f"Cambio de {change.from_version} a {change.to_version} pendiente de aprobación.",
+            f"Recibimos su solicitud para cambiar el sitio de {change.from_version} a {change.to_version}.",
         )
     )
     db.commit()
@@ -151,15 +151,29 @@ def approve_change_request(
             approver.email,
         )
     except NothingToPublish as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
+        # Puede ser una aprobación anterior que escribió en Gitea y no alcanzó a guardarse: se adopta
+        try:
+            sha = find_existing_publication(gitea, change.service.namespace, change.to_version, change.id)
+        except GiteaError as gitea_error:
+            raise HTTPException(
+                status_code=502, detail=f"No se pudo publicar en Gitea: {gitea_error}"
+            ) from gitea_error
+        if sha is None:
+            raise HTTPException(status_code=409, detail=str(error)) from error
     except GiteaError as error:
         raise HTTPException(status_code=502, detail=f"No se pudo publicar en Gitea: {error}") from error
 
     # aprobada y en_validacion ocurren en el mismo instante: el commit ya está escrito
     transition(change, "aprobada", actor_id=approver.id)
-    db.add(step_event(change, "pendiente", approver.id, f"Commit {sha[:7]} en hub-gitops."))
+    db.add(step_event(change, "pendiente", approver.id, "Su solicitud fue aprobada."))
     transition(change, "en_validacion", actor_id=approver.id)
-    db.add(step_event(change, "aprobada", approver.id, "Esperando a que Argo CD sincronice."))
+    db.add(
+        step_event(
+            change, "aprobada", approver.id,
+            f"Commit {sha[:7]} en hub-gitops; esperando a que Argo CD sincronice.",
+            internal=True,
+        )
+    )
     change.gitops_commit_sha = sha
     db.commit()
     db.refresh(change)

@@ -1,5 +1,5 @@
 # Transiciones válidas de una solicitud de cambio (spec 005, T09):
-# pendiente → aprobada → en_validacion → desplegada, o pendiente → rechazada.
+# pendiente → aprobada → en_validacion → desplegada | fallida, o pendiente → rechazada.
 from datetime import datetime, timezone
 
 from app.models.change_request import ChangeRequest
@@ -8,9 +8,10 @@ from app.models.ticket_event import TicketEvent
 VALID_TRANSITIONS: dict[str, set[str]] = {
     "pendiente": {"aprobada", "rechazada"},
     "aprobada": {"en_validacion"},
-    "en_validacion": {"desplegada"},
+    "en_validacion": {"desplegada", "fallida"},
     "desplegada": set(),
     "rechazada": set(),
+    "fallida": set(),
 }
 
 
@@ -50,8 +51,13 @@ def step_event(
     from_status: str | None,
     actor_id: int | None,
     note: str | None = None,
+    internal: bool = False,
 ) -> TicketEvent:
-    """Evento del historial de la solicitud que deja constancia de un paso: quién, cuándo y de qué a qué."""
+    """Evento del historial de la solicitud que deja constancia de un paso: quién, cuándo y de qué a qué.
+
+    Lo que lleva jerga técnica (commits, Argo CD) va con `internal=True` para que el cliente no lo vea;
+    el resto usa el texto del glosario.
+    """
     return TicketEvent(
         ticket_id=change.ticket_id,
         actor_id=actor_id,
@@ -59,5 +65,5 @@ def step_event(
         from_value=from_status,
         to_value=change.status,
         note=note,
-        internal=False,
+        internal=internal,
     )

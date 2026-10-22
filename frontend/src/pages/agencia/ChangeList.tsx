@@ -20,6 +20,7 @@ const STATUS_TEXT: Record<ChangeStatus, { icon: string; text: string }> = {
   en_validacion: { icon: "⟳", text: "En validación" },
   desplegada: { icon: "✓", text: "Publicada" },
   rechazada: { icon: "✕", text: "Rechazada" },
+  fallida: { icon: "!", text: "No se pudo publicar" },
 };
 
 // Mientras un cambio espera a Argo CD la bandeja se vuelve a leer sola

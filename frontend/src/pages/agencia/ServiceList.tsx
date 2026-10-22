@@ -32,6 +32,7 @@ const CHANGE_TEXT: Record<ChangeStatus, string> = {
   en_validacion: "en validación",
   desplegada: "publicada",
   rechazada: "rechazada",
+  fallida: "no se pudo publicar",
 };
 
 // Estado de los sitios en vivo: se vuelve a leer cada tanto

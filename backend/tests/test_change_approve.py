@@ -5,7 +5,7 @@ from sqlalchemy import select
 from app.config import settings
 from app.integrations.gitea import GiteaClient
 from app.main import app
-from app.models import Service, TicketEvent, User
+from app.models import Service, Ticket, TicketEvent, User
 from app.routers.change_requests import get_gitea
 from tests.fake_gitea import FakeGitea
 
@@ -177,3 +177,56 @@ def test_sin_configurar_gitea_responde_503(client, tecnico, cambio, monkeypatch)
 
     assert response.status_code == 503
     assert "GITEA_URL" in response.json()["detail"]
+
+
+# ---------- Aprobación que escribió en Gitea pero no alcanzó a guardarse ----------
+
+def _publicacion_previa(gitea, cambio, mensaje=None):
+    """Deja en Gitea el commit que habría hecho la aprobación, como si la base hubiera fallado después."""
+    cliente = GiteaClient(gitea.url, gitea.repo, gitea.token)
+    archivo = cliente.get_file("clients/ferreteria/kustomization.yaml")
+    return cliente.update_file(
+        "clients/ferreteria/kustomization.yaml",
+        archivo.text.replace("newTag: v1" + chr(10), "newTag: v1.1" + chr(10)),
+        archivo.sha,
+        mensaje or f"chore(ferreteria): versión v1.1 (cambio #{cambio['id']})",
+        "Sofía", "sofia@forjadigital.test",
+    )
+
+
+def test_adopta_el_commit_si_la_aprobacion_anterior_no_alcanzo_a_guardarse(client, gitea, tecnico, cambio):
+    sha = _publicacion_previa(gitea, cambio)
+
+    response = client.post(f"/api/change-requests/{cambio['id']}/approve", json={"actor_id": tecnico.id})
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "en_validacion"
+    assert response.json()["gitops_commit_sha"] == sha
+    assert len(gitea.commits) == 1  # no se hizo un segundo commit
+
+
+def test_si_el_ultimo_commit_no_es_de_este_cambio_sigue_siendo_409(client, gitea, tecnico, cambio):
+    _publicacion_previa(gitea, cambio, mensaje="chore(ferreteria): versión v1.1 (cambio #999)")
+
+    response = client.post(f"/api/change-requests/{cambio['id']}/approve", json={"actor_id": tecnico.id})
+
+    assert response.status_code == 409
+
+
+def test_el_cliente_no_ve_jerga_en_el_historial_del_cambio(client, seeded, gitea, tecnico, cambio):
+    client.post(f"/api/change-requests/{cambio['id']}/approve", json={"actor_id": tecnico.id})
+    ticket = seeded.get(Ticket, cambio["ticket_id"])
+    client_id = ticket.service.project.client_id
+
+    vista = client.get(
+        f"/api/tickets/{ticket.id}", params={"viewer_role": "cliente", "client_id": client_id}
+    ).json()
+
+    cambios = [e for e in vista["events"] if e["type"] == "cambio"]
+    assert [(e["from_value"], e["to_value"]) for e in cambios] == [(None, "Pendiente"), ("Pendiente", "Aprobada")]
+    texto = " ".join(str(e) for e in cambios).lower()
+    for jerga in ("commit", "hub-gitops", "argo", "en_validacion"):
+        assert jerga not in texto
+    # la agencia sí ve el paso técnico
+    agencia = client.get(f"/api/tickets/{ticket.id}").json()
+    assert any("hub-gitops" in (e["note"] or "") for e in agencia["events"])

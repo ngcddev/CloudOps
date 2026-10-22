@@ -620,7 +620,7 @@ export async function registerClient(
 export const CURRENT_USER_ID = 1;
 const CURRENT_USER_NAME = "Sofía Ramírez";
 
-export type ChangeStatus = "pendiente" | "aprobada" | "en_validacion" | "desplegada" | "rechazada";
+export type ChangeStatus = "pendiente" | "aprobada" | "en_validacion" | "desplegada" | "rechazada" | "fallida";
 
 export interface ChangeRequest {
   id: number;

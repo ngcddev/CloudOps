@@ -538,3 +538,8 @@ h4 {
   border-style: dotted;
   text-decoration: line-through;
 }
+
+/* No se pudo publicar: borde grueso e ícono "!" (el estado nunca se comunica con color) */
+.change-fallida {
+  border-width: 3px;
+}

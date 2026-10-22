@@ -50,8 +50,13 @@ class GiteaClient:
         self.transport = transport
         self.timeout = timeout
 
-    def _call(self, method: str, path: str, body: dict | None = None, query: str = "") -> dict:
-        url = f"{self.base_url}/api/v1/repos/{self.repo}/contents/{urllib.parse.quote(path)}{query}"
+    def _call(self, method: str, path: str, body: dict | None = None, query: str = "") -> dict | list:
+        """Llama a la API de contenidos de un archivo: /repos/{repo}/contents/{path}."""
+        return self._request(method, f"contents/{urllib.parse.quote(path)}{query}", body)
+
+    def _request(self, method: str, resource: str, body: dict | None = None) -> dict | list:
+        url = f"{self.base_url}/api/v1/repos/{self.repo}/{resource}"
+        path = resource
         data = json.dumps(body).encode() if body is not None else None
         request = urllib.request.Request(url, data=data, method=method)
         request.add_header("Authorization", f"token {self.token}")
@@ -65,6 +70,19 @@ class GiteaClient:
         if status >= 400:
             raise GiteaError(f"Gitea respondió {status} en {method} {path}.", status)
         return json.loads(raw or b"{}")
+
+    def head_sha(self) -> str:
+        """SHA del último commit de la rama configurada (el que Argo CD toma como revisión)."""
+        data = self._request("GET", f"branches/{urllib.parse.quote(self.branch)}")
+        return data["commit"]["id"]
+
+    def latest_commit(self, path: str) -> tuple[str, str] | None:
+        """(sha, mensaje) del último commit que tocó `path` en la rama, o None si no hay ninguno."""
+        query = f"commits?path={urllib.parse.quote(path)}&sha={urllib.parse.quote(self.branch)}&limit=1"
+        data = self._request("GET", query)
+        if not data:
+            return None
+        return data[0]["sha"], data[0]["commit"]["message"]
 
     def get_file(self, path: str) -> GiteaFile:
         """Lee un archivo de la rama configurada."""

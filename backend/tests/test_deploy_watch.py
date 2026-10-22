@@ -187,6 +187,8 @@ def _con_git(tag: str):
 
 
 def _reconciliar(db, fake, status=AppStatus("Synced", "Healthy", SHA)):
+    # Por defecto Argo CD ya aplicó el último commit de la rama; las pruebas de revisión atrasada lo cambian
+    fake.head = fake.head or status.revision
     argo = ArgoSimulado(**{FERRETERIA: status})
     return check_cycle(db, argo, now=AHORA, gitea=GiteaClient(fake.url, fake.repo, fake.token))
 
@@ -258,3 +260,92 @@ def test_si_gitea_no_responde_la_vuelta_sigue(seeded):
     service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
     assert service.current_version == "v1"
     assert service.sync_status == "Synced"
+
+
+def test_no_alinea_si_argocd_sigue_en_una_revision_anterior_a_la_rama(seeded):
+    # Alguien empuja v2 a mano: Git ya está en el commit nuevo pero Argo CD sigue `Synced` en el anterior
+    with _con_git("v2") as fake:
+        fake.head = "e" * 40
+        _reconciliar(seeded, fake, AppStatus("Synced", "Healthy", "d" * 40))
+
+    service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
+    assert (service.current_version, service.stable_version) == ("v1", "v1")
+    assert seeded.scalars(select(Deployment)).all() == []
+
+
+def test_el_despliegue_manual_guarda_el_commit_que_trajo_la_version(seeded):
+    with _con_git("v2") as fake:
+        fake.head = "f" * 40
+        _reconciliar(seeded, fake, AppStatus("Synced", "Healthy", "f" * 40))
+
+    assert seeded.scalar(select(Deployment)).commit_sha == "f" * 40
+
+
+def test_si_no_se_puede_leer_la_rama_no_se_reconcilia_pero_la_vuelta_sigue(seeded):
+    sin_conexion = GiteaClient("http://127.0.0.1:9", "forja-digital/hub-gitops", "t", timeout=1)
+    argo = ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Healthy", SHA)})
+
+    check_cycle(seeded, argo, now=AHORA, gitea=sin_conexion)
+
+    service = seeded.scalar(select(Service).where(Service.namespace == FERRETERIA))
+    assert (service.sync_status, service.current_version) == ("Synced", "v1")
+
+
+# ---------- Cambios que no llegan a publicarse (estado fallida) ----------
+
+from datetime import timedelta  # noqa: E402
+
+
+def _aprobado_hace(db, change, minutos: int):
+    change.approved_at = AHORA - timedelta(minutes=minutos)
+    db.commit()
+
+
+def test_un_cambio_que_no_se_publica_a_tiempo_pasa_a_fallida_y_libera_el_sitio(seeded, en_validacion):
+    _aprobado_hace(seeded, en_validacion, 11)
+    argo = ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Degraded", SHA)})
+
+    deployed = check_cycle(seeded, argo, now=AHORA)
+
+    seeded.refresh(en_validacion)
+    assert deployed == []
+    assert en_validacion.status == "fallida"
+    assert en_validacion.deployed_at is None
+    event = seeded.scalars(
+        select(TicketEvent).where(TicketEvent.ticket_id == en_validacion.ticket_id).order_by(TicketEvent.id)
+    ).all()[-1]
+    assert (event.from_value, event.to_value, event.internal) == ("en_validacion", "fallida", False)
+    assert "Argo" not in event.note and "commit" not in event.note.lower()
+    service = seeded.get(Service, en_validacion.service_id)
+    assert service.current_version == "v1"
+
+
+def test_dentro_del_tiempo_de_validacion_sigue_esperando(seeded, en_validacion):
+    _aprobado_hace(seeded, en_validacion, 9)
+
+    check_cycle(seeded, ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Progressing", SHA)}), now=AHORA)
+
+    seeded.refresh(en_validacion)
+    assert en_validacion.status == "en_validacion"
+
+
+def test_un_cambio_publicado_a_tiempo_no_falla_aunque_haya_pasado_el_limite(seeded, en_validacion):
+    _aprobado_hace(seeded, en_validacion, 30)
+
+    check_cycle(seeded, ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Healthy", SHA)}), now=AHORA)
+
+    seeded.refresh(en_validacion)
+    assert en_validacion.status == "desplegada"
+
+
+def test_tras_fallar_se_puede_pedir_otro_cambio_para_el_sitio(client, seeded, en_validacion):
+    _aprobado_hace(seeded, en_validacion, 11)
+    check_cycle(seeded, ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Degraded", SHA)}), now=AHORA)
+    ticket = client.post(
+        "/api/tickets",
+        json={"service_id": en_validacion.service_id, "title": "Corregir", "description": "x", "kind": "cambio"},
+    ).json()
+
+    response = client.post("/api/change-requests", json={"ticket_id": ticket["id"], "to_version": "v1.2"})
+
+    assert response.status_code == 201
