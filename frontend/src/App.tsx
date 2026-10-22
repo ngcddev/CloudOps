@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AgencyLayout from "./components/AgencyLayout";
 import ClientDetail from "./pages/agencia/ClientDetail";
 import ClientForm from "./pages/agencia/ClientForm";
+import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="clientes" element={<ClientList />} />
         <Route path="clientes/nuevo" element={<ClientForm />} />
         <Route path="clientes/:id" element={<ClientDetail />} />
+        <Route path="cambios" element={<ChangeList />} />
         <Route path="tickets" element={<TicketList />} />
         <Route path="tickets/:id" element={<TicketDetail />} />
         <Route path="*" element={<NotFound />} />

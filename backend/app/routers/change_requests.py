@@ -1,5 +1,5 @@
 # Endpoints de solicitudes de cambio de versión: crear y rechazar (spec 005, T13).
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -41,6 +41,21 @@ def get_change_or_404(db: Session, change_id: int) -> ChangeRequest:
 def require_user(db: Session, user_id: int | None, message: str) -> None:
     if user_id is not None and db.get(User, user_id) is None:
         raise HTTPException(status_code=404, detail=message)
+
+
+@router.get("", response_model=list[ChangeRequestOut])
+def list_change_requests(
+    status_filter: str | None = Query(default=None, alias="status"),
+    service_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """Bandeja de solicitudes de cambio, de la más reciente a la más antigua."""
+    query = select(ChangeRequest)
+    if status_filter is not None:
+        query = query.where(ChangeRequest.status == status_filter)
+    if service_id is not None:
+        query = query.where(ChangeRequest.service_id == service_id)
+    return db.scalars(query.order_by(ChangeRequest.id.desc())).all()
 
 
 @router.post("", response_model=ChangeRequestOut, status_code=status.HTTP_201_CREATED)

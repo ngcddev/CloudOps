@@ -40,3 +40,13 @@ export function formatPrice(value: number | null): string {
 export function formatTemplate(template: Template): string {
   return template === "landing_form" ? "Landing + formulario" : "Landing estática";
 }
+
+// Fecha y hora en hora de Colombia (en la base van en UTC): "11/10/2026, 10:05 a. m."
+export function formatDateTime(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("es-CO", {
+    timeZone: "America/Bogota",
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
