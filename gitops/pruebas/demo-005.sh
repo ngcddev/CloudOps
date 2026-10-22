@@ -63,7 +63,13 @@ while [ $(( $(date +%s) - inicio )) -lt "$LIMITE" ]; do
 done
 segundos=$(( $(date +%s) - inicio ))
 [ "$version" = "$VERSION_DESTINO" ] && ok "/health reporta ${VERSION_DESTINO} a los ${segundos} s" || falla "/health reporta '${version}' tras ${LIMITE} s"
-curl -s -m 5 "${SITIO}/" | grep -q 'id="version"' && ok "el sitio responde con su pie de versión" || falla "el sitio no responde en /"
+# Justo al cambiar de Pod, una petición suelta puede caer en el relevo: se reintenta unos segundos
+responde=no
+for _ in 1 2 3 4 5 6; do
+  curl -s -m 5 "${SITIO}/" | grep -q 'id="version"' && { responde=si; break; }
+  sleep 2
+done
+[ "$responde" = si ] && ok "el sitio responde con su pie de versión" || falla "el sitio no responde en /"
 
 echo "== 5. La solicitud pasa a desplegada, con hora y usuario en cada paso (CA-1) =="
 final=""
