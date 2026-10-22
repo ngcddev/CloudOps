@@ -1,11 +1,12 @@
 # Gitea falso para las pruebas (spec 005): un servidor HTTP local que implementa solo la parte de la
-# API de contenidos que usa el Hub (GET y PUT /repos/{repo}/contents/{path}) y guarda cada commit.
+# API que usa el Hub (contenidos, rama y commits por ruta) y guarda cada commit.
 import base64
 import hashlib
 import json
 import re
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, unquote, urlparse
 
 
 def _blob_sha(text: str) -> str:
@@ -20,13 +21,15 @@ class FakeGitea:
         self.token = token
         self.commits: list[dict] = []
         self.requests: list[tuple[str, str]] = []
+        # SHA que devuelve la rama; si es None, el del último commit (o ceros si no hay ninguno)
+        self.head: str | None = None
         fake = self
 
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args):  # silencio en la salida de pytest
                 pass
 
-            def _send(self, status: int, body: dict):
+            def _send(self, status: int, body):
                 raw = json.dumps(body).encode()
                 self.send_response(status)
                 self.send_header("Content-Type", "application/json")
@@ -34,19 +37,35 @@ class FakeGitea:
                 self.end_headers()
                 self.wfile.write(raw)
 
-            def _route(self):
+            def _authorized(self) -> bool:
                 fake.requests.append((self.command, self.path))
                 if self.headers.get("Authorization") != f"token {fake.token}":
                     self._send(401, {"message": "token is required"})
-                    return None
+                    return False
+                return True
+
+            def _contents_path(self):
                 match = re.fullmatch(rf"/api/v1/repos/{re.escape(fake.repo)}/contents/([^?]+)(\?.*)?", self.path)
                 if not match:
                     self._send(404, {"message": "not found"})
                     return None
-                return match.group(1)
+                return unquote(match.group(1))
 
             def do_GET(self):
-                path = self._route()
+                if not self._authorized():
+                    return
+                base = f"/api/v1/repos/{fake.repo}/"
+                url = urlparse(self.path)
+                if url.path.startswith(base + "branches/"):
+                    head = fake.head or (fake.commits[-1]["sha"] if fake.commits else "0" * 40)
+                    return self._send(200, {"commit": {"id": head}})
+                if url.path == base + "commits":
+                    path = parse_qs(url.query).get("path", [None])[0]
+                    found = [c for c in reversed(fake.commits) if path is None or c["path"] == path]
+                    return self._send(
+                        200, [{"sha": c["sha"], "commit": {"message": c["message"] + "\n"}} for c in found[:1]]
+                    )
+                path = self._contents_path()
                 if path is None:
                     return
                 if path not in fake.files:
@@ -59,7 +78,9 @@ class FakeGitea:
                 })
 
             def do_PUT(self):
-                path = self._route()
+                if not self._authorized():
+                    return
+                path = self._contents_path()
                 if path is None:
                     return
                 body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))

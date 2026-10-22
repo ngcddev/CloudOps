@@ -29,6 +29,19 @@ def kustomization_path(namespace: str) -> str:
     return f"clients/{client_slug(namespace)}/kustomization.yaml"
 
 
+def find_existing_publication(gitea: GiteaClient, namespace: str, tag: str, change_id: int) -> str | None:
+    """SHA del commit si el último que tocó el archivo ya es la publicación de este cambio.
+
+    Cubre una aprobación que escribió en Gitea pero no alcanzó a guardarse en la base: al reintentar,
+    el archivo ya tiene la versión y en vez de quedar atascado el cambio adopta ese commit.
+    """
+    latest = gitea.latest_commit(kustomization_path(namespace))
+    if latest is None:
+        return None
+    sha, message = latest
+    return sha if message.strip() == version_commit_message(client_slug(namespace), tag, change_id) else None
+
+
 def publish_version(
     gitea: GiteaClient,
     namespace: str,

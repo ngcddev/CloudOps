@@ -4,11 +4,12 @@
 import asyncio
 import logging
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.integrations.argocd import AppStatus, ArgoCDError
 from app.integrations.gitea import GiteaError
 from app.models.change_request import ChangeRequest
@@ -34,18 +35,31 @@ def is_published(status: AppStatus, commit_sha: str | None) -> bool:
     )
 
 
+def validation_expired(change: ChangeRequest, now: datetime) -> bool:
+    """True si el cambio lleva más del tiempo de validación esperando a quedar publicado y sano."""
+    started = change.approved_at
+    if started is None:
+        return False
+    if started.tzinfo is None:  # SQLite devuelve fechas sin zona
+        started = started.replace(tzinfo=timezone.utc)
+    return now - started > timedelta(minutes=settings.validation_timeout_minutes)
+
+
 # Autor que se registra cuando la versión cambió en Git sin pasar por el Hub (spec 005, T25)
 MANUAL_AUTHOR = "Cambio manual en Git"
 OPEN_STATUSES = ("pendiente", "aprobada", "en_validacion")
 
 
-def reconcile_version(db: Session, service: Service, status: AppStatus, gitea, now: datetime) -> bool:
+def reconcile_version(
+    db: Session, service: Service, status: AppStatus, gitea, now: datetime, head: str
+) -> bool:
     """Alinea la versión del Hub con la que tiene Git cuando alguien la cambia o revierte a mano.
 
-    Solo actúa si el servicio no tiene un cambio del Hub en curso y Argo CD ya aplicó lo que hay en
-    Git (`Synced`). Devuelve True si cambió la versión.
+    Solo actúa si el servicio no tiene un cambio del Hub en curso y Argo CD ya aplicó el último commit
+    de la rama (`head`): `Synced` por sí solo habla de la revisión anterior, y fiarse de él anunciaría
+    una versión que el clúster todavía no tiene. Devuelve True si cambió la versión.
     """
-    if status.sync != "Synced":
+    if status.sync != "Synced" or (status.revision or "").lower() != head.lower():
         return False
     open_change = db.scalar(
         select(ChangeRequest.id).where(
@@ -96,6 +110,12 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
     """
     timestamp = now or datetime.now(timezone.utc)
     deployed: list[int] = []
+    head = None
+    if gitea is not None:
+        try:
+            head = gitea.head_sha()  # una consulta por vuelta, no una por servicio
+        except GiteaError as error:
+            logger.warning("No se pudo leer la rama de hub-gitops: %s", error)
     for service in db.scalars(select(Service).order_by(Service.id)).all():
         try:
             status = argocd.get_application(service.namespace)
@@ -112,6 +132,18 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
         ).all()
         for change in pending:
             if not is_published(status, change.gitops_commit_sha):
+                if validation_expired(change, timestamp):
+                    transition(change, "fallida", actor_id=change.approved_by_id, now=timestamp)
+                    logger.warning(
+                        "El cambio #%s de %s no quedó publicado a tiempo (sincronización %s, salud %s)",
+                        change.id, service.namespace, status.sync, status.health,
+                    )
+                    db.add(
+                        step_event(
+                            change, "en_validacion", change.approved_by_id,
+                            "Hubo un problema al publicar la actualización; nuestro equipo lo está revisando.",
+                        )
+                    )
                 continue
             approver = change.approved_by
             transition(change, "desplegada", actor_id=change.approved_by_id, now=timestamp)
@@ -130,12 +162,12 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
             db.add(
                 step_event(
                     change, "en_validacion", change.approved_by_id,
-                    f"Argo CD confirmó {change.to_version}: sincronizado y sano.",
+                    "Publicamos la actualización que usted solicitó.",
                 )
             )
             deployed.append(change.id)
-        if gitea is not None:
-            reconcile_version(db, service, status, gitea, timestamp)
+        if head is not None:
+            reconcile_version(db, service, status, gitea, timestamp, head)
     db.commit()
     return deployed
 
