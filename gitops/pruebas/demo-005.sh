@@ -63,7 +63,13 @@ while [ $(( $(date +%s) - inicio )) -lt "$LIMITE" ]; do
 done
 segundos=$(( $(date +%s) - inicio ))
 [ "$version" = "$VERSION_DESTINO" ] && ok "/health reporta ${VERSION_DESTINO} a los ${segundos} s" || falla "/health reporta '${version}' tras ${LIMITE} s"
-curl -s -m 5 "${SITIO}/" | grep -q 'id="version"' && ok "el sitio responde con su pie de versión" || falla "el sitio no responde en /"
+# Justo al cambiar de Pod, una petición suelta puede caer en el relevo: se reintenta unos segundos
+responde=no
+for _ in 1 2 3 4 5 6; do
+  curl -s -m 5 "${SITIO}/" | grep -q 'id="version"' && { responde=si; break; }
+  sleep 2
+done
+[ "$responde" = si ] && ok "el sitio responde con su pie de versión" || falla "el sitio no responde en /"
 
 echo "== 5. La solicitud pasa a desplegada, con hora y usuario en cada paso (CA-1) =="
 final=""
@@ -85,7 +91,8 @@ autor="$(echo "$fila" | campo last_author)"
 [ -n "$autor" ] && ok "último cambio por ${autor}" || falla "no hay último autor"
 
 echo "== 7. Catálogo con los 3 clientes (CA-6, opcional si Backstage está apagado) =="
-if curl -s -m 10 -o /dev/null "${BACKSTAGE}/api/catalog/entities?filter=kind=component"; then
+# Solo cuenta como "responde" un 200: si Backstage no está, Traefik contesta 404 y curl igual sale con éxito
+if [ "$(curl -s -m 10 -o /dev/null -w '%{http_code}' "${BACKSTAGE}/api/catalog/entities?filter=kind=component")" = "200" ]; then
   n="$(curl -s -m 10 "${BACKSTAGE}/api/catalog/entities?filter=kind=component" | grep -o '"kind":"Component"' | wc -l | tr -d ' ')"
   [ "$n" -ge 3 ] && ok "el catálogo lista ${n} componentes" || falla "el catálogo lista ${n} componentes (se esperaban 3)"
 else
