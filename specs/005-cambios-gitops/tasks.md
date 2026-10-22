@@ -32,7 +32,7 @@
 
 - [x] T13 · Crear `POST /api/change-requests` (vinculada a un ticket `kind = cambio`) y `POST /api/change-requests/{id}/reject` — **Verifica:** desde `/docs` se crea la solicitud en `pendiente` y se rechaza con motivo; sin motivo responde 422. [ngcddev]
 - [x] T14 · Crear `POST /api/change-requests/{id}/approve` que escribe el tag en Gitea y deja la solicitud en `en_validacion` con el SHA del commit — **Verifica:** aprobar crea un commit en `hub-gitops` y ningún otro archivo cambia (CA-2). [ngcddev]
-- [ ] T15 · Crear la tarea periódica (cada 15 s) que consulta Argo CD y pasa la solicitud a `desplegada` cuando la aplicación está `Synced`, `Healthy` y en la revisión del commit — **Verifica:** `pytest` con Argo CD simulado cubre desplegada, sincronización pendiente y falla de salud; la solicitud queda registrada en `deployments`. [ ]
+- [x] T15 · Crear la tarea periódica (cada 15 s) que consulta Argo CD y pasa la solicitud a `desplegada` cuando la aplicación está `Synced`, `Healthy` y en la revisión del commit — **Verifica:** `pytest` con Argo CD simulado cubre desplegada, sincronización pendiente y falla de salud; la solicitud queda registrada en `deployments`. [ngcddev]
 - [ ] T16 · Crear `GET /api/services/status` y `GET /api/services/{id}/deployments` — **Verifica:** devuelve versión activa, sincronización, salud y último autor de los 3 clientes, y el historial de versiones. [ ]
 - [ ] T17 · Agregar la prueba de integración con Gitea local: aprobar un cambio crea exactamente un commit — **Verifica:** `docker compose exec api pytest` en verde. [ ]
 
