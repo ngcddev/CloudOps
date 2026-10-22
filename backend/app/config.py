@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     # Argo CD (spec 005): solo lectura del estado de las aplicaciones
     argocd_url: str = ""
     argocd_token: str = ""
+    # Minutos que un cambio aprobado puede esperar a quedar publicado y sano antes de pasar a `fallida`
+    validation_timeout_minutes: int = 10
 
 
 settings = Settings()
