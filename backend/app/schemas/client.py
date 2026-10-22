@@ -103,6 +103,11 @@ class ServiceOut(BaseModel):
     template: str
     namespace: str
     status: str
+    # Versión publicada y estado que informa Argo CD (spec 005)
+    current_version: str
+    stable_version: str
+    sync_status: str
+    health_status: str
     plan: PlanOut
 
 

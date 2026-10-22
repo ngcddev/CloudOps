@@ -18,7 +18,9 @@
               "host": "restaurante.hub.local",
               "template": "landing",
               "namespace": "cliente-restaurante",
-              "plan_code": "premium"
+              "plan_code": "premium",
+              "current_version": "v1",
+              "stable_version": "v1"
             }
           ]
         }
@@ -39,7 +41,9 @@
               "host": "ferreteria.hub.local",
               "template": "landing",
               "namespace": "cliente-ferreteria",
-              "plan_code": "estandar"
+              "plan_code": "estandar",
+              "current_version": "v1",
+              "stable_version": "v1"
             }
           ]
         }
@@ -60,7 +64,9 @@
               "host": "consultorio.hub.local",
               "template": "landing_form",
               "namespace": "cliente-consultorio",
-              "plan_code": "basico"
+              "plan_code": "basico",
+              "current_version": "v1",
+              "stable_version": "v1"
             }
           ]
         }

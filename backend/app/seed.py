@@ -78,6 +78,8 @@ def seed_if_empty(db: Session) -> bool:
                     host=service_item["host"],
                     template=service_item["template"],
                     namespace=service_item["namespace"],
+                    current_version=service_item.get("current_version", "v1"),
+                    stable_version=service_item.get("stable_version", "v1"),
                 )
                 db.add(service)
 
