@@ -46,3 +46,12 @@ def test_detail_of_la_sazon_shows_premium_and_p1_sla(client, seeded):
     assert service["plan"]["name"] == "Premium"
     p1 = detail["sla_policies"][0]
     assert (p1["priority"], p1["response_minutes"], p1["resolution_minutes"]) == ("P1", 15, 240)
+
+
+def test_detail_shows_the_service_version(client, seeded):
+    first_id = client.get("/api/clients").json()[0]["id"]
+
+    service = client.get(f"/api/clients/{first_id}").json()["projects"][0]["services"][0]
+
+    assert (service["current_version"], service["stable_version"]) == ("v1", "v1")
+    assert (service["sync_status"], service["health_status"]) == ("Unknown", "Unknown")

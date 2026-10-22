@@ -36,7 +36,13 @@ Hub ──API Argo CD (lectura)──> sync status, health, revision → estado 
   `chore(<cliente>): versión <tag> (cambio #<id>)` y autor = usuario del Hub.
 - `argocd.py`: `GET /api/v1/applications/{name}` → `status.sync.status`, `status.health.status`,
   `status.sync.revision`. Token de solo lectura.
-- Tarea periódica (cada 15 s) que actualiza el estado de los cambios en `en_validacion`.
+- Tarea periódica (cada 15 s) que actualiza el estado de los cambios en `en_validacion`. Si pasan más de
+  `VALIDATION_TIMEOUT_MINUTES` (10 por defecto) sin que Argo CD deje el cambio publicado y sano, pasa a
+  `fallida` y libera el sitio para pedir otro cambio; el Git queda como está (lo revierte la spec 009).
+- La misma tarea alinea la versión de la consola cuando alguien cambia Git a mano, pero solo cuando Argo CD
+  ya aplicó el último commit de la rama (`Synced` por sí solo habla de la revisión anterior).
+- Aprobar es idempotente: si Gitea ya tiene el commit de ese cambio (la base falló después de escribir), se
+  adopta ese commit en vez de quedar atascado.
 
 ## API
 

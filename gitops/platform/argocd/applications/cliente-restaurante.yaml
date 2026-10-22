@@ -1,0 +1,24 @@
+# Application de Argo CD de La Sazón (spec 005, T03): reconcilia clients/restaurante de hub-gitops en el
+# namespace cliente-restaurante. El nombre de la Application es el namespace: el Hub la consulta por él.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cliente-restaurante
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+    hub/client: restaurante
+spec:
+  project: default
+  source:
+    # Dentro del clúster se llega a Gitea por su Service; el repo es público (solo lectura)
+    repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+    targetRevision: main
+    path: clients/restaurante
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cliente-restaurante
+  syncPolicy:
+    automated:
+      prune: true      # lo que sale de Git sale del clúster
+      selfHeal: true   # un cambio manual en el clúster se revierte a lo que dice Git

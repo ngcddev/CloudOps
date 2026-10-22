@@ -37,6 +37,15 @@ CLIENT_STATUS_LABELS = {
     "resuelto": "Resuelto",
     "cerrado": "Cerrado",
 }
+# Estados de una solicitud de cambio tal como los ve el cliente (docs/glosario.md)
+CLIENT_CHANGE_LABELS = {
+    "pendiente": "Pendiente",
+    "aprobada": "Aprobada",
+    "en_validacion": "En validación",
+    "desplegada": "Publicada",
+    "rechazada": "Rechazada",
+    "fallida": "No se pudo publicar",
+}
 
 
 def _get_ticket_or_404(db: Session, ticket_id: int) -> Ticket:
@@ -67,6 +76,10 @@ def _present_ticket(ticket: Ticket, viewer_role: str, client_id: int | None, det
         result.status = CLIENT_STATUS_LABELS.get(result.status, result.status)
         if detail:
             result.events = [event for event in result.events if not event.internal]
+            for event in result.events:
+                if event.type == "cambio":
+                    event.from_value = CLIENT_CHANGE_LABELS.get(event.from_value, event.from_value)
+                    event.to_value = CLIENT_CHANGE_LABELS.get(event.to_value, event.to_value)
     return result
 
 

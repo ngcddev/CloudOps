@@ -1,0 +1,14 @@
+# Backstage con catálogo mínimo (spec 005, T22 · RF-22): lista los 3 clientes y su servicio con
+# enlace al Hub. Es opcional: si falta RAM se apaga y /agencia/servicios del Hub cumple el rol.
+#   kubectl apply -k gitops/platform/backstage
+#   kubectl -n hub scale deploy/backstage --replicas=0     # apagarlo
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: hub
+resources:
+  - deployment.yaml
+  - ingress.yaml
+configMapGenerator:
+  - name: backstage-config
+    files:
+      - app-config.hub.yaml

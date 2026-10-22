@@ -1,0 +1,18 @@
+# Ingress de Backstage: backstage.hub.local (spec 005, T22).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backstage
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: backstage.hub.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backstage
+                port:
+                  name: http

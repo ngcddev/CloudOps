@@ -1,0 +1,8 @@
+# Una Application de Argo CD por cliente (spec 005, T03).
+# Se aplica una vez, con Argo CD y hub-gitops ya listos: `kubectl apply -k gitops/platform/argocd/applications`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cliente-restaurante.yaml
+  - cliente-ferreteria.yaml
+  - cliente-consultorio.yaml

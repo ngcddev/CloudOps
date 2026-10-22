@@ -17,6 +17,15 @@ patches:
         path: /data
         value:
           server.insecure: "true"
+  # Argo CD consulta Git cada 3 minutos (más hasta 1 de variación): con eso publicar en menos de 3
+  # minutos (CA-3) no está garantizado. Con 30 s y sin variación el cambio se ve en segundos.
+  - target: { kind: ConfigMap, name: argocd-cm }
+    patch: |-
+      - op: add
+        path: /data
+        value:
+          timeout.reconciliation: 30s
+          timeout.reconciliation.jitter: 0s
   # Dex (SSO) y notificaciones no se usan: el acceso es el usuario admin local. Apagarlos ahorra RAM.
   - target: { kind: Deployment, name: argocd-dex-server }
     patch: |-

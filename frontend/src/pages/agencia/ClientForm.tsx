@@ -31,6 +31,8 @@ function validate(values: FormValues): FieldErrors {
   if (!values.service_name.trim()) errors.service_name = "El nombre del servicio es obligatorio.";
   if (!values.host.trim()) errors.host = "La dirección del sitio es obligatoria.";
   if (!values.namespace.trim()) errors.namespace = "El espacio en el clúster es obligatorio.";
+  else if (!/^cliente-[a-z0-9]+(-[a-z0-9]+)*$/.test(values.namespace.trim()))
+    errors.namespace = "Debe empezar por «cliente-» y usar solo minúsculas, números y guiones.";
   if (!values.plan_id) errors.plan_id = "Elija un plan: un servicio no puede quedar sin plan.";
   return errors;
 }

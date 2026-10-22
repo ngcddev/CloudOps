@@ -35,7 +35,7 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 - **Ticket:** `abierto` → `en_progreso` → `en_espera` → `resuelto` → `cerrado`.
 - **Incidente:** `abierto` → `mitigado` → `cerrado`.
 - **Servicio (sitio):** `operativo` · `degradado` · `caido`.
-- **Solicitud de cambio:** `pendiente` → `aprobada` → `en_validacion` → `desplegada` | `rechazada`.
+- **Solicitud de cambio:** `pendiente` → `aprobada` → `en_validacion` → `desplegada` | `fallida`; o `pendiente` → `rechazada`. `fallida` es un cambio aprobado que no llegó a publicarse sano dentro del tiempo de validación (10 min por defecto).
 - **Texto de IA:** `borrador_ia` → `aprobado` | `descartado`.
 
 ## Apps demo
@@ -61,3 +61,4 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 | Registro de imágenes | `gitea.hub.local/forja-digital/<app>:<versión>` (`restaurante`, `ferreteria`, `consultorio-web`, `consultorio-api`) |
 | Repo GitOps | `forja-digital/hub-gitops` |
 | Argo CD | `argocd.hub.local` |
+| Backstage (catálogo, opcional) | `backstage.hub.local` |

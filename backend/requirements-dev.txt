@@ -3,3 +3,5 @@
 -r requirements.txt
 pytest==9.1.1
 httpx2==2.13.1
+# Para validar los YAML de gitops/ (catalog-info de Backstage, spec 005)
+PyYAML==6.0.3

@@ -1,0 +1,24 @@
+# Application de Argo CD de Dental Popayán (spec 005, T03): reconcilia clients/consultorio de hub-gitops en el
+# namespace cliente-consultorio. El nombre de la Application es el namespace: el Hub la consulta por él.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cliente-consultorio
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+    hub/client: consultorio
+spec:
+  project: default
+  source:
+    # Dentro del clúster se llega a Gitea por su Service; el repo es público (solo lectura)
+    repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+    targetRevision: main
+    path: clients/consultorio
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cliente-consultorio
+  syncPolicy:
+    automated:
+      prune: true      # lo que sale de Git sale del clúster
+      selfHeal: true   # un cambio manual en el clúster se revierte a lo que dice Git
