@@ -13,7 +13,9 @@ fi
 
 USUARIO=hub
 BASE=hub
-CLAVE="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))' 2>/dev/null || python -c 'import secrets; print(secrets.token_urlsafe(24))')"
+# Clave alfanumérica de 24 caracteres sin depender de Python (en Windows `python` suele ser solo un alias)
+CLAVE="$(head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24)"
+[ "${#CLAVE}" -eq 24 ] || { echo "No se pudo generar la clave (¿hay /dev/urandom y base64?)." >&2; exit 1; }
 
 kubectl -n "$NS" create secret generic hub-db \
   --from-literal=POSTGRES_USER="$USUARIO" \

@@ -26,10 +26,9 @@ if kubectl -n "$NS" get secret hub-gitops-tokens >/dev/null 2>&1; then
   exit 0
 fi
 
-aleatoria() { python3 -c 'import secrets; print(secrets.token_urlsafe(24))' 2>/dev/null \
-  || python -c 'import secrets; print(secrets.token_urlsafe(24))'; }
-campo() { python3 -c "import json,sys; print(json.load(sys.stdin)['$1'])" 2>/dev/null \
-  || python -c "import json,sys; print(json.load(sys.stdin)['$1'])"; }
+# Sin Python (en Windows suele ser solo un alias): clave con /dev/urandom y campos JSON con sed
+aleatoria() { head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24; }
+campo() { sed -n "s/.*\"$1\" *: *\"\([^\"]*\)\".*/\1/p" | head -1; }
 
 # ---------- Gitea: usuario hub-bot con escritura solo en hub-gitops ----------
 CLAVE_BOT="$(aleatoria)"   # solo sirve para pedir el token; no se guarda
