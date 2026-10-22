@@ -1,4 +1,5 @@
 # Esquemas de cliente: lo que entra en POST/PATCH y lo que sale en lista y detalle (plan 001#api).
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -70,6 +71,11 @@ class PlanOut(BaseModel):
     included_hours: float | None
 
 
+# El namespace de un cliente es `cliente-<nombre>` (etiqueta DNS en minúsculas): de él sale la carpeta
+# del cliente en hub-gitops, así que no puede traer rutas ni caracteres raros (spec 005).
+_NAMESPACE = re.compile(r"cliente-[a-z0-9]+(-[a-z0-9]+)*")
+
+
 class ServiceCreate(BaseModel):
     name: str = Field(max_length=200)
     host: str = Field(max_length=255)
@@ -84,6 +90,15 @@ class ServiceCreate(BaseModel):
         value = value.strip()
         if not value:
             raise ValueError("Este campo es obligatorio.")
+        return value
+
+    @field_validator("namespace")
+    @classmethod
+    def _namespace_valido(cls, value: str) -> str:
+        if not _NAMESPACE.fullmatch(value):
+            raise ValueError(
+                "El espacio debe empezar por «cliente-» y usar solo minúsculas, números y guiones."
+            )
         return value
 
     @field_validator("plan_id")
