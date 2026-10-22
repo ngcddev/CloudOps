@@ -50,3 +50,10 @@
 ## Cierre
 
 - [ ] T23 · Demo: El Tornillo pide publicar la nueva portada, el técnico aprueba, se ve el commit en Gitea, Argo CD sincroniza y la consola muestra `v1.1` — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ngcddev]
+
+## Propuestas (por confirmar con el equipo antes de tomarlas)
+
+> Salieron al implementar la spec; no estaban en el plan y no se hicieron sin acordarlo.
+
+- [ ] T24 · Agregar al portal del cliente la opción "Pedir un cambio en mi sitio" que crea la solicitud con `kind = cambio` — **Verifica:** desde `/portal/solicitudes` el cliente crea una solicitud de cambio y aparece en la bandeja de la agencia con el botón "Registrar cambio" (hoy el portal solo crea `kind = solicitud`, y el paso 1 de la demo se hace por API). [ ]
+- [ ] T25 · Reconciliar la versión de la consola con la que tiene Git cuando alguien cambia `newTag` o revierte un commit a mano — **Verifica:** tras un `git revert` en `hub-gitops`, `/agencia/servicios` vuelve a mostrar `v1` sin intervenir (hoy `current_version` solo cambia al desplegar un cambio del Hub, así que un revert manual deja la consola en `v1.1`). [ ]
