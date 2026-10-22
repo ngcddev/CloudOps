@@ -72,8 +72,8 @@ export default function TicketDetail() {
   const [changeError, setChangeError] = useState<string | null>(null);
 
   useEffect(() => {
-    listChangeRequests()
-      .then((all) => setChanges(all.filter((change) => change.ticket_id === Number(id))))
+    listChangeRequests({ ticket_id: Number(id) })
+      .then(setChanges)
       .catch(() => setChanges([]));
   }, [id]);
 

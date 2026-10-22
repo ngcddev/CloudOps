@@ -1,6 +1,6 @@
 # Endpoints del estado de los servicios y su historial de versiones (spec 005, T16).
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -22,17 +22,26 @@ def services_status(db: Session = Depends(get_db)):
         select(Service, Client).join(Project, Service.project_id == Project.id)
         .join(Client, Project.client_id == Client.id).order_by(Service.id)
     ).all()
+    # Dos consultas para todos los servicios, no dos por servicio: el último despliegue de cada uno y su
+    # cambio en curso (si hay varios, el más reciente)
+    last_by_service = {
+        deployment.service_id: deployment
+        for deployment in db.scalars(
+            select(Deployment).where(
+                Deployment.id.in_(select(func.max(Deployment.id)).group_by(Deployment.service_id))
+            )
+        )
+    }
+    open_by_service = {
+        change.service_id: change
+        for change in db.scalars(
+            select(ChangeRequest).where(ChangeRequest.status.in_(OPEN_STATUSES)).order_by(ChangeRequest.id)
+        )
+    }
     result = []
     for service, client in rows:
-        last = db.scalar(
-            select(Deployment).where(Deployment.service_id == service.id).order_by(Deployment.id.desc()).limit(1)
-        )
-        open_change = db.scalar(
-            select(ChangeRequest)
-            .where(ChangeRequest.service_id == service.id, ChangeRequest.status.in_(OPEN_STATUSES))
-            .order_by(ChangeRequest.id.desc())
-            .limit(1)
-        )
+        last = last_by_service.get(service.id)
+        open_change = open_by_service.get(service.id)
         result.append(
             ServiceStatusOut(
                 service_id=service.id,
