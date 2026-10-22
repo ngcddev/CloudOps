@@ -23,7 +23,7 @@
 
 ## Reglas e integraciones (`backend/app/`)
 
-- [ ] T09 · Escribir `services/change_flow.py` con `pendiente → aprobada → en_validacion → desplegada` y `rechazada` — **Verifica:** `pytest` acepta las transiciones válidas, rechaza las inválidas y exige motivo al rechazar. [ ]
+- [x] T09 · Escribir `services/change_flow.py` con `pendiente → aprobada → en_validacion → desplegada` y `rechazada` — **Verifica:** `pytest` acepta las transiciones válidas, rechaza las inválidas y exige motivo al rechazar. [ngcddev]
 - [ ] T10 · Escribir la función que cambia solo `images.newTag` en el `kustomization.yaml` de un cliente — **Verifica:** `pytest` compara antes y después: la única línea distinta es la del tag. [ ]
 - [ ] T11 · Escribir `integrations/gitea.py` para leer un archivo y actualizarlo con el mensaje `chore(<cliente>): versión <tag> (cambio #<id>)` y autor del Hub — **Verifica:** contra Gitea local, la llamada crea exactamente un commit con ese mensaje. [ ]
 - [ ] T12 · Escribir `integrations/argocd.py` que lee sincronización, salud y revisión de una aplicación — **Verifica:** contra Argo CD local devuelve `Synced`, `Healthy` y el SHA de la revisión para La Sazón. [ ]
