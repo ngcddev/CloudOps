@@ -31,6 +31,10 @@ una PyME nunca ve datos de otra, y la agencia puede responder "¿quién hizo est
 - [ ] CA-3. Un usuario `cliente` solo ve datos de su cliente; pedir los de otro responde "no
   encontrado".
 - [ ] CA-4. Un usuario `cliente` no puede ejecutar acciones de agencia (aprobar, asignar, rollback).
+  *Nota de la 005:* hoy `POST /api/change-requests/{id}/approve` (y `reject` y la creación) toman el actor
+  de `actor_id`/`requested_by_id` del cuerpo y solo comprueban que sea un usuario `agencia`; al llegar la
+  sesión, el actor debe salir de ella y el cuerpo ya no debe traerlo. Mientras tanto cualquiera que alcance
+  la API puede publicar una versión.
 - [ ] CA-5. Aprobar, rechazar, desplegar, hacer rollback, cambiar prioridad y aprobar textos de IA
   quedan en la bitácora con usuario, acción, objeto y hora.
 - [ ] CA-6. La bitácora no se puede editar ni borrar desde la aplicación.

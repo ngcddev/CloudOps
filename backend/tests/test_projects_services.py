@@ -120,3 +120,20 @@ def test_duplicate_namespace_is_409(client, plan):
 
     assert response.status_code == 409
     assert "namespace" in response.json()["detail"]
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "namespace",
+    ["panaderia", "cliente-", "Cliente-Luz", "cliente-x/../../hub/api", "cliente-../x", "cliente luz", "cliente--luz", "cliente-luz-"],
+)
+def test_namespace_que_no_es_de_un_cliente_es_422_en_espanol(client, plan, namespace):
+    client_id = client.post("/api/clients", json={"name": "Panadería Luz"}).json()["id"]
+    project_id = client.post(f"/api/clients/{client_id}/projects", json={"name": "Sitio web"}).json()["id"]
+
+    response = client.post(f"/api/projects/{project_id}/services", json=_service(plan, namespace=namespace))
+
+    assert response.status_code == 422
+    assert "cliente-" in response.json()["detail"][0]["msg"]

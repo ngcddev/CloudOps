@@ -15,7 +15,12 @@ from app.schemas.change_request import (
     ChangeRequestReject,
 )
 from app.services.change_flow import step_event, transition
-from app.services.gitops_publish import NothingToPublish, find_existing_publication, publish_version
+from app.services.gitops_publish import (
+    NothingToPublish,
+    find_existing_publication,
+    kustomization_path,
+    publish_version,
+)
 
 router = APIRouter(prefix="/api/change-requests", tags=["change-requests"])
 
@@ -140,6 +145,11 @@ def approve_change_request(
             status_code=409,
             detail=f"No se permite pasar de «{change.status}» a «aprobada».",
         )
+
+    try:
+        kustomization_path(change.service.namespace)  # namespace que no es de un cliente: no se escribe nada
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
     try:
         sha = publish_version(

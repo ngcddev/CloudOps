@@ -1,5 +1,7 @@
 # Publicar una versión por GitOps (spec 005, T14): cambia images.newTag del cliente en hub-gitops
 # con un único commit. Es lo único que el Hub escribe; Argo CD hace el resto.
+import re
+
 from app.integrations.gitea import GiteaClient, version_commit_message
 from app.services.kustomization import set_new_tag
 
@@ -8,9 +10,19 @@ class NothingToPublish(Exception):
     """El repositorio ya tiene esa versión: no habría commit que hacer."""
 
 
+_SLUG = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
+
+
 def client_slug(namespace: str) -> str:
-    """`cliente-ferreteria` → `ferreteria`: nombre de la carpeta del cliente en hub-gitops."""
-    return namespace.removeprefix("cliente-")
+    """`cliente-ferreteria` → `ferreteria`: nombre de la carpeta del cliente en hub-gitops.
+
+    Falla (ValueError) si el namespace no es `cliente-<nombre>`: así un dato mal guardado nunca arma una
+    ruta fuera de `clients/` ni escribe en un archivo que no es de un cliente.
+    """
+    slug = namespace.removeprefix("cliente-")
+    if slug == namespace or not _SLUG.fullmatch(slug):
+        raise ValueError(f"El namespace «{namespace}» no corresponde a un cliente de hub-gitops.")
+    return slug
 
 
 def kustomization_path(namespace: str) -> str:
