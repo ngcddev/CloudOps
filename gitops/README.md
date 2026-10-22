@@ -223,3 +223,14 @@ Si alguien cambia `newTag` o hace `git revert` directamente en `hub-gitops`, el 
 (cada 15 s) lo detecta cuando Argo CD ya sincronizó y alinea la consola: actualiza la versión activa,
 registra el cambio en el historial como "Cambio manual en Git" (restauración si vuelve a una versión
 anterior) y deja la estable solo si la aplicación está sana. No actúa mientras haya un cambio del Hub en curso.
+
+### Rapidez con que Argo CD ve los cambios
+
+Por defecto Argo CD consulta Git cada 3 minutos (más hasta 1 minuto de variación), así que "publicar en
+menos de 3 minutos" no estaba garantizado. `gitops/platform/argocd` fija `timeout.reconciliation` en
+30 s y quita la variación. Si Argo CD ya estaba instalado, aplica y reinicia (las claves se leen al arrancar):
+
+```bash
+kubectl apply -k gitops/platform/argocd
+kubectl -n argocd rollout restart statefulset/argocd-application-controller deploy/argocd-repo-server
+```
