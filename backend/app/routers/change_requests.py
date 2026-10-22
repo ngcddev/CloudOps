@@ -1,7 +1,7 @@
 # Endpoints de solicitudes de cambio de versión: crear y rechazar (spec 005, T13).
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.models.change_request import ChangeRequest
@@ -47,14 +47,22 @@ def require_user(db: Session, user_id: int | None, message: str) -> None:
 def list_change_requests(
     status_filter: str | None = Query(default=None, alias="status"),
     service_id: int | None = Query(default=None),
+    ticket_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """Bandeja de solicitudes de cambio, de la más reciente a la más antigua."""
-    query = select(ChangeRequest)
+    # Los nombres que salen en la respuesta (quién pidió, quién aprobó, título) se cargan en bloque
+    query = select(ChangeRequest).options(
+        selectinload(ChangeRequest.requested_by),
+        selectinload(ChangeRequest.approved_by),
+        selectinload(ChangeRequest.ticket),
+    )
     if status_filter is not None:
         query = query.where(ChangeRequest.status == status_filter)
     if service_id is not None:
         query = query.where(ChangeRequest.service_id == service_id)
+    if ticket_id is not None:
+        query = query.where(ChangeRequest.ticket_id == ticket_id)
     return db.scalars(query.order_by(ChangeRequest.id.desc())).all()
 
 
