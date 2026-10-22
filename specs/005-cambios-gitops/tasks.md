@@ -9,12 +9,12 @@
 
 ## GitOps en la plataforma
 
-- [ ] T01 · Instalar Argo CD en el namespace `argocd` con límites de memoria, expuesto en `argocd.hub.local` — **Verifica:** la interfaz abre e inicia sesión con el usuario administrador. [ngcddev]
-- [ ] T02 · Crear el repo `hub-gitops` en Gitea y sembrarlo desde `gitops/` — **Verifica:** el repo muestra `platform/`, `hub/` y `clients/` con el mismo contenido que el monorepo. [ngcddev]
-- [ ] T03 · Crear una `Application` de Argo CD por cliente con sincronización automática y `self-heal` apuntando a `clients/<cliente>` — **Verifica:** las 3 aparecen `Synced` y `Healthy`. [ngcddev]
-- [ ] T04 · Crear un token de Gitea con escritura solo sobre `hub-gitops` y uno de Argo CD de solo lectura, guardados en `Secret` y en `.env.example` como valores de ejemplo — **Verifica:** `git grep` no encuentra ningún token real en el repo. [ngcddev]
-- [ ] T05 · Publicar la versión `v1.1` de El Tornillo (portada nueva) en el registro de Gitea — **Verifica:** la imagen `ferreteria:v1.1` aparece en los paquetes y su pie y `/health` muestran `v1.1`. [ngcddev]
-- [ ] T06 · Probar el ciclo a mano: cambiar `newTag` en Gitea y luego revertir ese commit — **Verifica:** Argo CD sincroniza en menos de 3 minutos, el sitio muestra `v1.1` y tras el `revert` vuelve a `v1` (CA-3 y CA-5). [ngcddev]
+- [x] T01 · Instalar Argo CD en el namespace `argocd` con límites de memoria, expuesto en `argocd.hub.local` — **Verifica:** la interfaz abre e inicia sesión con el usuario administrador. [ngcddev]
+- [x] T02 · Crear el repo `hub-gitops` en Gitea y sembrarlo desde `gitops/` — **Verifica:** el repo muestra `platform/`, `hub/` y `clients/` con el mismo contenido que el monorepo. [ngcddev]
+- [x] T03 · Crear una `Application` de Argo CD por cliente con sincronización automática y `self-heal` apuntando a `clients/<cliente>` — **Verifica:** las 3 aparecen `Synced` y `Healthy`. [ngcddev]
+- [x] T04 · Crear un token de Gitea con escritura solo sobre `hub-gitops` y uno de Argo CD de solo lectura, guardados en `Secret` y en `.env.example` como valores de ejemplo — **Verifica:** `git grep` no encuentra ningún token real en el repo. [ngcddev]
+- [x] T05 · Publicar la versión `v1.1` de El Tornillo (portada nueva) en el registro de Gitea — **Verifica:** la imagen `ferreteria:v1.1` aparece en los paquetes y su pie y `/health` muestran `v1.1`. [ngcddev]
+- [x] T06 · Probar el ciclo a mano: cambiar `newTag` en Gitea y luego revertir ese commit — **Verifica:** Argo CD sincroniza en menos de 3 minutos, el sitio muestra `v1.1` y tras el `revert` vuelve a `v1` (CA-3 y CA-5). [ngcddev]
 
 ## Modelo de datos
 
@@ -25,8 +25,8 @@
 
 - [x] T09 · Escribir `services/change_flow.py` con `pendiente → aprobada → en_validacion → desplegada` y `rechazada` — **Verifica:** `pytest` acepta las transiciones válidas, rechaza las inválidas y exige motivo al rechazar. [ngcddev]
 - [x] T10 · Escribir la función que cambia solo `images.newTag` en el `kustomization.yaml` de un cliente — **Verifica:** `pytest` compara antes y después: la única línea distinta es la del tag. [ngcddev]
-- [ ] T11 · Escribir `integrations/gitea.py` para leer un archivo y actualizarlo con el mensaje `chore(<cliente>): versión <tag> (cambio #<id>)` y autor del Hub — **Verifica:** contra Gitea local, la llamada crea exactamente un commit con ese mensaje. [ngcddev]
-- [ ] T12 · Escribir `integrations/argocd.py` que lee sincronización, salud y revisión de una aplicación — **Verifica:** contra Argo CD local devuelve `Synced`, `Healthy` y el SHA de la revisión para La Sazón. [ngcddev]
+- [x] T11 · Escribir `integrations/gitea.py` para leer un archivo y actualizarlo con el mensaje `chore(<cliente>): versión <tag> (cambio #<id>)` y autor del Hub — **Verifica:** contra Gitea local, la llamada crea exactamente un commit con ese mensaje. [ngcddev]
+- [x] T12 · Escribir `integrations/argocd.py` que lee sincronización, salud y revisión de una aplicación — **Verifica:** contra Argo CD local devuelve `Synced`, `Healthy` y el SHA de la revisión para La Sazón. [ngcddev]
 
 ## API
 
@@ -34,7 +34,7 @@
 - [x] T14 · Crear `POST /api/change-requests/{id}/approve` que escribe el tag en Gitea y deja la solicitud en `en_validacion` con el SHA del commit — **Verifica:** aprobar crea un commit en `hub-gitops` y ningún otro archivo cambia (CA-2). [ngcddev]
 - [x] T15 · Crear la tarea periódica (cada 15 s) que consulta Argo CD y pasa la solicitud a `desplegada` cuando la aplicación está `Synced`, `Healthy` y en la revisión del commit — **Verifica:** `pytest` con Argo CD simulado cubre desplegada, sincronización pendiente y falla de salud; la solicitud queda registrada en `deployments`. [ngcddev]
 - [x] T16 · Crear `GET /api/services/status` y `GET /api/services/{id}/deployments` — **Verifica:** devuelve versión activa, sincronización, salud y último autor de los 3 clientes, y el historial de versiones. [ngcddev]
-- [ ] T17 · Agregar la prueba de integración con Gitea local: aprobar un cambio crea exactamente un commit — **Verifica:** `docker compose exec api pytest` en verde. [ngcddev]
+- [ ] T17 · Agregar la prueba de integración con Gitea local: aprobar un cambio crea exactamente un commit — **Verifica:** `docker compose exec api pytest` en verde. Hecha y en verde; falta ejecutar la variante contra un Gitea real (`GITEA_TEST_*`, ver `backend/README.md`). [ngcddev]
 
 ## Pantallas
 
@@ -45,11 +45,11 @@
 ## Catálogo (RF-22, apagable si falta RAM)
 
 - [x] T21 · Escribir un `catalog-info.yaml` por cliente (`kind: Component`, `spec.owner: forja-digital`, enlace al Hub) — **Verifica:** los 3 archivos pasan la validación YAML. [ngcddev]
-- [ ] T22 · Instalar Backstage con catálogo mínimo y registrar los 3 clientes desde `hub-gitops` — **Verifica:** el catálogo lista los 3 clientes con su servicio y el enlace al Hub (CA-6); si falta RAM, se apaga y `/agencia/servicios` cumple el rol. [ngcddev]
+- [x] T22 · Instalar Backstage con catálogo mínimo y registrar los 3 clientes desde `hub-gitops` — **Verifica:** el catálogo lista los 3 clientes con su servicio y el enlace al Hub (CA-6); si falta RAM, se apaga y `/agencia/servicios` cumple el rol. [ngcddev]
 
 ## Cierre
 
-- [ ] T23 · Demo: El Tornillo pide publicar la nueva portada, el técnico aprueba, se ve el commit en Gitea, Argo CD sincroniza y la consola muestra `v1.1` — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ngcddev]
+- [x] T23 · Demo: El Tornillo pide publicar la nueva portada, el técnico aprueba, se ve el commit en Gitea, Argo CD sincroniza y la consola muestra `v1.1` — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ngcddev]
 
 ## Propuestas (por confirmar con el equipo antes de tomarlas)
 
