@@ -10,6 +10,11 @@ backend:
   # hace que Backstage se caiga al arrancar ("got string, wanted object").
   cors:
     origin: http://backstage.hub.local
+  # Por defecto Backstage manda `upgrade-insecure-requests`, que hace que el navegador pida todos los
+  # archivos por https. Aquí se sirve por http (sin certificado), y la página queda en blanco con
+  # ERR_CERT_AUTHORITY_INVALID. Con un certificado real se puede volver a activar.
+  csp:
+    upgrade-insecure-requests: false
   database:
     client: better-sqlite3
     connection: ':memory:'
