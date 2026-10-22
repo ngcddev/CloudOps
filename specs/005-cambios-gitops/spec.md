@@ -28,16 +28,16 @@ registrada y se puede revertir.
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Una solicitud de cambio pasa por `pendiente → aprobada → en_validacion → desplegada`
+- [x] CA-1. Una solicitud de cambio pasa por `pendiente → aprobada → en_validacion → desplegada`
   (o `rechazada`), con hora y usuario en cada paso.
-- [ ] CA-2. Al aprobar un cambio, el Hub actualiza la versión del cliente en el repositorio de
+- [x] CA-2. Al aprobar un cambio, el Hub actualiza la versión del cliente en el repositorio de
   configuración, **y en ningún otro lugar**.
-- [ ] CA-3. En menos de 3 minutos, el sitio del cliente muestra la nueva versión en su pie y en
+- [x] CA-3. En menos de 3 minutos, el sitio del cliente muestra la nueva versión en su pie y en
   `/health`.
-- [ ] CA-4. La consola muestra, por cliente, la versión activa, el estado de sincronización y quién
+- [x] CA-4. La consola muestra, por cliente, la versión activa, el estado de sincronización y quién
   hizo el último cambio.
-- [ ] CA-5. Revertir el último commit en el repositorio devuelve el sitio a la versión anterior.
-- [ ] CA-6. Existe un catálogo mínimo con los 3 clientes y sus servicios, con enlace al Hub.
+- [x] CA-5. Revertir el último commit en el repositorio devuelve el sitio a la versión anterior.
+- [x] CA-6. Existe un catálogo mínimo con los 3 clientes y sus servicios, con enlace al Hub.
 
 ## Fuera de alcance
 
