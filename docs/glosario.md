@@ -51,5 +51,5 @@
 | Ticket | `abierto` · `en_progreso` · `en_espera` · `resuelto` · `cerrado` | Abierto · En progreso · En espera · Resuelto · Cerrado |
 | Incidente | `abierto` · `mitigado` · `cerrado` | Abierto · Mitigado · Cerrado |
 | Servicio | `operativo` · `degradado` · `caido` | Operativo · Con fallas · No disponible |
-| Solicitud de cambio | `pendiente` · `aprobada` · `en_validacion` · `desplegada` · `rechazada` | Pendiente · Aprobada · En validación · Publicada · Rechazada |
+| Solicitud de cambio | `pendiente` · `aprobada` · `en_validacion` · `desplegada` · `rechazada` · `fallida` | Pendiente · Aprobada · En validación · Publicada · Rechazada · No se pudo publicar |
 | Texto de IA | `borrador_ia` · `aprobado` · `descartado` | Borrador · Aprobado · Descartado |
