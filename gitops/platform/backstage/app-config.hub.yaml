@@ -10,9 +10,24 @@ backend:
   # hace que Backstage se caiga al arrancar ("got string, wanted object").
   cors:
     origin: http://backstage.hub.local
+  # Por defecto Backstage manda `upgrade-insecure-requests`, que hace que el navegador pida todos los
+  # archivos por https. Aquí se sirve por http (sin certificado), y la página queda en blanco con
+  # ERR_CERT_AUTHORITY_INVALID. Con un certificado real se puede volver a activar.
+  csp:
+    upgrade-insecure-requests: false
   database:
     client: better-sqlite3
     connection: ':memory:'
+  # Entorno de pruebas del PC A, solo accesible desde la red local: la API del catálogo se lee sin
+  # token (la demo y `curl` lo necesitan). Si Backstage se expone fuera, quitar esta línea.
+  auth:
+    dangerouslyDisableDefaultAuthPolicy: true
+# Acceso como invitado: la imagen de demostración solo lo permite en desarrollo, y aquí corre en producción
+auth:
+  environment: development
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
 # Gitea se lee por su Service dentro del clúster (el repo es público)
 integrations:
   gitea:
