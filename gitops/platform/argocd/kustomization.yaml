@@ -1,0 +1,66 @@
+# Argo CD en el namespace argocd (spec 005, T01): instalación oficial fijada en una versión, con
+# límites de memoria (el PC A queda justo de RAM) y la interfaz en argocd.hub.local.
+# Se aplica una sola vez a mano: `kubectl apply -k gitops/platform/argocd`. Desde ahí Argo CD
+# reconcilia los clientes (spec 005, T03); él mismo no se gestiona por GitOps.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+resources:
+  # Versión fija: una actualización de Argo CD es un cambio deliberado en este archivo.
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.3/manifests/install.yaml
+  - ingress.yaml
+patches:
+  # La interfaz va detrás de Traefik por HTTP (igual que Gitea): el servidor no redirige a HTTPS.
+  - target: { kind: ConfigMap, name: argocd-cmd-params-cm }
+    patch: |-
+      - op: add
+        path: /data
+        value:
+          server.insecure: "true"
+  # Dex (SSO) y notificaciones no se usan: el acceso es el usuario admin local. Apagarlos ahorra RAM.
+  - target: { kind: Deployment, name: argocd-dex-server }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target: { kind: Deployment, name: argocd-notifications-controller }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  # Límites de memoria por componente
+  - target: { kind: Deployment, name: argocd-server }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 50m, memory: 96Mi }
+          limits: { cpu: 300m, memory: 256Mi }
+  - target: { kind: Deployment, name: argocd-repo-server }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 50m, memory: 96Mi }
+          limits: { cpu: 300m, memory: 256Mi }
+  - target: { kind: Deployment, name: argocd-redis }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 25m, memory: 32Mi }
+          limits: { cpu: 100m, memory: 96Mi }
+  - target: { kind: Deployment, name: argocd-applicationset-controller }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 25m, memory: 48Mi }
+          limits: { cpu: 100m, memory: 128Mi }
+  - target: { kind: StatefulSet, name: argocd-application-controller }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 100m, memory: 192Mi }
+          limits: { cpu: 500m, memory: 512Mi }
