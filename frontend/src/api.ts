@@ -706,9 +706,13 @@ function findMockChange(id: number): ChangeRequest {
   return change;
 }
 
-export async function listChangeRequests(): Promise<ChangeRequest[]> {
-  if ((await detectMode()) === "mock") return [...changeMock.changes].sort((a, b) => b.id - a.id);
-  return request<ChangeRequest[]>("/change-requests");
+export async function listChangeRequests(params?: { ticket_id?: number }): Promise<ChangeRequest[]> {
+  if ((await detectMode()) === "mock") {
+    const changes = changeMock.changes.filter((c) => params?.ticket_id === undefined || c.ticket_id === params.ticket_id);
+    return changes.sort((a, b) => b.id - a.id);
+  }
+  const query = params?.ticket_id !== undefined ? `?ticket_id=${params.ticket_id}` : "";
+  return request<ChangeRequest[]>(`/change-requests${query}`);
 }
 
 export async function createChangeRequest(input: ChangeRequestInput): Promise<ChangeRequest> {
