@@ -40,6 +40,7 @@ const CHANGE_STATUS_TEXT: Record<ChangeRequest["status"], string> = {
   en_validacion: "En validación",
   desplegada: "Publicada",
   rechazada: "Rechazada",
+  fallida: "No se pudo publicar",
 };
 
 function getTicketSlaState(ticket: Ticket): SlaState {
