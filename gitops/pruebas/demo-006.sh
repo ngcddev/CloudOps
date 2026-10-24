@@ -25,6 +25,9 @@ LIMITE="${LIMITE:-420}"
 : "${GITEA_ADMIN_USER:?Falta GITEA_ADMIN_USER}"
 : "${GITEA_ADMIN_PASSWORD:?Falta GITEA_ADMIN_PASSWORD}"
 
+# La raíz del repo, calculada antes de entrar a la carpeta temporal del sitio
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
 fallos=0
 ok()    { echo "   OK   $1"; }
 falla() { echo "   FALLA $1"; fallos=$((fallos+1)); }
@@ -128,7 +131,6 @@ fi
 
 echo "== 4. Pod root rechazado por la plataforma (CA-7) =="
 if command -v kubectl >/dev/null 2>&1 && kubectl get ns cliente-ferreteria >/dev/null 2>&1; then
-  RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
   bash "$RAIZ/gitops/pruebas/pod-security.sh" ferreteria >/dev/null 2>&1 && ok "el Pod con root fue rechazado" || falla "Pod Security dejó pasar un Pod root"
 else
   echo "   (sin clúster a la mano: se omite; corre gitops/pruebas/pod-security.sh ferreteria donde esté k3s)"
