@@ -32,6 +32,8 @@ services:
       # Sesiones (spec 007)
       JWT_SECRET: ${JWT_SECRET:?Falta .env; copia .env.example a .env}
       SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:?Falta .env; copia .env.example a .env}
+      # Puerta de seguridad (spec 006): vacío = la API no acepta eventos del pipeline
+      PIPELINE_TOKEN: ${PIPELINE_TOKEN:-}
       # GitOps (spec 005): vacíos = la API arranca sin conexión con Gitea ni Argo CD
       GITEA_URL: ${GITEA_URL:-}
       GITEA_REPO: ${GITEA_REPO:-forja-digital/hub-gitops}
@@ -39,10 +41,11 @@ services:
       ARGOCD_URL: ${ARGOCD_URL:-}
       ARGOCD_TOKEN: ${ARGOCD_TOKEN:-}
     # Solo para desarrollo: las pruebas (docker compose exec api pytest) leen seed/ y gitops/ en las
-    # rutas del repo (/seed y /gitops). La imagen de producción no los lleva.
+    # rutas del repo (/seed, /gitops y /pipelines). La imagen de producción no los lleva.
     volumes:
       - ./seed:/seed:ro
       - ./gitops:/gitops:ro
+      - ./pipelines:/pipelines:ro
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:

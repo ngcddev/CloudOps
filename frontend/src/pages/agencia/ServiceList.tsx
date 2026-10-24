@@ -8,6 +8,7 @@ import {
   type Deployment,
   type ServiceVersionStatus,
 } from "../../api";
+import { gateSummary } from "../../components/SecurityChecks";
 import { formatDateTime } from "../../format";
 
 // Lo que informa Argo CD, en texto de la consola con ícono (el estado nunca se comunica con color)
@@ -91,6 +92,7 @@ export default function ServiceList() {
               <th>Versión activa</th>
               <th>Sincronización</th>
               <th>Salud</th>
+              <th>Controles de seguridad</th>
               <th>Último cambio</th>
               <th>Historial</th>
             </tr>
@@ -117,6 +119,10 @@ export default function ServiceList() {
                   <td>{SYNC_TEXT[row.sync_status] ?? row.sync_status}</td>
                   <td>{HEALTH_TEXT[row.health_status] ?? row.health_status}</td>
                   <td>
+                    {gateSummary(row.security_status, row.security_failed_step)}
+                    <div className="muted">Versión {row.current_version}</div>
+                  </td>
+                  <td>
                     {row.last_author ? (
                       <>
                         {row.last_author}
@@ -139,7 +145,7 @@ export default function ServiceList() {
                 </tr>
                 {history?.serviceId === row.service_id && (
                   <tr>
-                    <td colSpan={6}>
+                    <td colSpan={7}>
                       {history.items.length === 0 ? (
                         <span className="muted">Este sitio todavía no tiene cambios publicados.</span>
                       ) : (

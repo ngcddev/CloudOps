@@ -8,6 +8,8 @@
 #       publicada, hub-gitops sembrado y las entradas de hosts; el sitio de El Tornillo debe estar en v1)
 # Para volver a empezar: `git revert` del commit del cambio en hub-gitops (ver gitops/pruebas/ciclo-gitops.sh)
 # y base nueva del Hub (docker compose down -v / reiniciar el Pod de la API con la base vacía).
+# Desde la spec 006 el Hub solo deja aprobar una versión que pasó la puerta de seguridad: ferreteria:v1.1 debe
+# tener su corrida en «ok» (pipelines/sembrar-repos-sitios.sh la sube y la puerta corre sola).
 # Desde la spec 007 el Hub pide sesión: HUB_PASSWORD es la contraseña de los usuarios sembrados
 # (kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d).
 set -uo pipefail

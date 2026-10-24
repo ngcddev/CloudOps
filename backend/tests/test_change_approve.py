@@ -53,8 +53,9 @@ def tecnico(seeded) -> User:
 
 
 @pytest.fixture
-def cambio(client, seeded):
-    """Una solicitud de cambio pendiente de El Tornillo (v1 → v1.1)."""
+def cambio(client, seeded, pass_gate):
+    """Una solicitud de cambio pendiente de El Tornillo (v1 → v1.1), con su versión ya revisada por la puerta."""
+    pass_gate("cliente-ferreteria", "v1.1")
     service = seeded.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))
     ticket = client.post(
         "/api/tickets",
@@ -261,3 +262,83 @@ def test_si_gitea_falla_no_queda_fila_de_aprobacion_en_la_bitacora(client, seede
     assert client.post(f"/api/change-requests/{cambio['id']}/approve").status_code == 502
 
     assert seeded.scalars(select(AuditLog).where(AuditLog.action == "aprobar")).all() == []
+
+
+# --- Puerta de seguridad (spec 006, T15 · CA-6) ---
+
+
+def _pedir(client, seeded, version):
+    service = seeded.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))
+    ticket = client.post(
+        "/api/tickets",
+        json={"service_id": service.id, "title": "Publicar", "description": "x", "kind": "cambio"},
+    ).json()
+    return client.post("/api/change-requests", json={"ticket_id": ticket["id"], "to_version": version}).json()
+
+
+def test_sin_corrida_no_se_puede_aprobar_y_gitea_no_recibe_nada(client, seeded, gitea):
+    cambio = _pedir(client, seeded, "v1.1")
+
+    response = client.post(f"/api/change-requests/{cambio['id']}/approve")
+
+    assert response.status_code == 409
+    assert "aún no pasó por la puerta de seguridad" in response.json()["detail"]
+    assert gitea.commits == []
+    assert client.get("/api/change-requests").json()[0]["status"] == "pendiente"
+
+
+def test_con_la_corrida_en_curso_no_se_puede_aprobar(client, seeded, gitea):
+    from app.services import security_gate as gate
+
+    service = seeded.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))
+    gate.open_run(seeded, service.id, "v1.1", None, ["ferreteria"])
+    seeded.commit()
+    cambio = _pedir(client, seeded, "v1.1")
+
+    response = client.post(f"/api/change-requests/{cambio['id']}/approve")
+
+    assert response.status_code == 409
+    assert "todavía están corriendo" in response.json()["detail"]
+    assert gitea.commits == []
+
+
+def test_con_la_corrida_fallida_el_motivo_dice_que_control_fallo(client, seeded, gitea):
+    from app.services import security_gate as gate
+
+    service = seeded.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))
+    run = gate.open_run(seeded, service.id, "v1.1", None, ["ferreteria"])
+    gate.add_check(seeded, run, "secretos", "ok", "", None, None)
+    gate.add_check(seeded, run, "vulnerabilidades", "fallo", "2 críticas", None, "ferreteria")
+    seeded.commit()
+    # el cambio se pide a mano en la base: pedirlo por la API ya lo rechaza solo
+    from app.models import ChangeRequest, Ticket
+
+    ticket = Ticket(service_id=service.id, title="Publicar", description="x", kind="cambio")
+    seeded.add(ticket)
+    seeded.flush()
+    change = ChangeRequest(ticket_id=ticket.id, service_id=service.id, from_version="v1", to_version="v1.1", status="pendiente")
+    seeded.add(change)
+    seeded.commit()
+
+    response = client.post(f"/api/change-requests/{change.id}/approve")
+
+    assert response.status_code == 409
+    assert "vulnerabilidades críticas" in response.json()["detail"]
+    assert gitea.commits == []
+
+
+def test_la_puerta_de_otra_version_no_sirve(client, seeded, gitea, pass_gate):
+    pass_gate("cliente-ferreteria", "v1.2")
+    cambio = _pedir(client, seeded, "v1.1")
+
+    assert client.post(f"/api/change-requests/{cambio['id']}/approve").status_code == 409
+
+
+def test_con_la_puerta_en_ok_se_publica_como_antes(client, seeded, gitea, pass_gate):
+    pass_gate("cliente-ferreteria", "v1.1")
+    cambio = _pedir(client, seeded, "v1.1")
+
+    response = client.post(f"/api/change-requests/{cambio['id']}/approve")
+
+    assert response.status_code == 200
+    assert len(gitea.commits) == 1

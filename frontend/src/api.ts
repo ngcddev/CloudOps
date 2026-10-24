@@ -691,6 +691,9 @@ export interface ServiceVersionStatus {
   open_change_id: number | null;
   open_change_status: ChangeStatus | null;
   open_change_to_version: string | null;
+  // Puerta de seguridad de la versión activa (spec 006)
+  security_status: GateStatus;
+  security_failed_step: SecurityStep | "pipeline" | null;
 }
 
 export interface Deployment {
@@ -843,6 +846,8 @@ export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
         open_change_id: open?.id ?? null,
         open_change_status: open?.status ?? null,
         open_change_to_version: open?.to_version ?? null,
+        security_status: "ok" as GateStatus,
+        security_failed_step: null,
       };
     });
   }
@@ -914,4 +919,97 @@ export async function listAuditLogs(filters: AuditLogFilters = {}): Promise<Audi
   if (filters.from) query.set("from", filters.from);
   if (filters.to) query.set("to", filters.to);
   return request<AuditLog[]>(`/audit-logs${query.size ? `?${query.toString()}` : ""}`);
+}
+
+
+// ---------- Puerta de seguridad (spec 006) ----------
+
+export type GateStatus = "sin_corrida" | "en_curso" | "ok" | "fallo";
+export type SecurityStep = "secretos" | "construccion" | "vulnerabilidades" | "sbom" | "firma" | "verificacion";
+
+export interface SecurityCheck {
+  id: number;
+  step: SecurityStep;
+  // Imagen a la que aplica; null en los controles de toda la versión (secretos)
+  image: string | null;
+  status: "ok" | "fallo";
+  summary: string;
+  // true si el control guardó un reporte descargable como evidencia
+  has_report: boolean;
+  created_at: string;
+}
+
+export interface SecurityRun {
+  id: number;
+  service_id: number;
+  version: string;
+  commit_sha: string | null;
+  images: string[];
+  status: GateStatus;
+  failed_step: SecurityStep | "pipeline" | null;
+  image_digests: Record<string, string> | null;
+  started_at: string;
+  finished_at: string | null;
+  checks: SecurityCheck[];
+}
+
+// Estado de la puerta para la versión destino de un cambio, con su última corrida
+export interface Gate {
+  version: string;
+  status: GateStatus;
+  failed_step: SecurityRun["failed_step"];
+  run: SecurityRun | null;
+}
+
+const MOCK_STEPS: SecurityStep[] = ["secretos", "construccion", "vulnerabilidades", "sbom", "firma", "verificacion"];
+
+export async function getChangeGate(changeId: number): Promise<Gate> {
+  if ((await detectMode()) === "mock") {
+    const change = findMockChange(changeId);
+    const startedAt = change.created_at;
+    return {
+      version: change.to_version,
+      status: "ok",
+      failed_step: null,
+      run: {
+        id: changeId,
+        service_id: change.service_id,
+        version: change.to_version,
+        commit_sha: null,
+        images: ["ferreteria"],
+        status: "ok",
+        failed_step: null,
+        image_digests: null,
+        started_at: startedAt,
+        finished_at: startedAt,
+        checks: MOCK_STEPS.map((step, index) => ({
+          id: changeId * 10 + index,
+          step,
+          image: step === "secretos" ? null : "ferreteria",
+          status: "ok" as const,
+          summary: "Datos de prueba",
+          has_report: false,
+          created_at: startedAt,
+        })),
+      },
+    };
+  }
+  return request<Gate>(`/change-requests/${changeId}/checks`);
+}
+
+// Descarga el reporte de un control (la evidencia). Va por fetch para enviar la sesión en la cabecera.
+export async function downloadCheckReport(checkId: number): Promise<void> {
+  if ((await detectMode()) === "mock") throw new ApiError("Con datos de prueba no hay reportes guardados.", 404);
+  const headers: Record<string, string> = {};
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch(`/api/security-checks/${checkId}/report`, { headers });
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+  const name = /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? `reporte-${checkId}.json`;
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  // Se revoca después: en algunos navegadores revocar de inmediato cancela la descarga
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

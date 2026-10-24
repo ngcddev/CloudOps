@@ -13,8 +13,8 @@
 | Construcción | `docker build` del sitio con `APP_VERSION=<tag>` | El build falla |
 | Vulnerabilidades | Trivy (`--severity CRITICAL --ignore-unfixed --exit-code 1`) | Hay CVE crítica con arreglo |
 | SBOM | Syft (SPDX JSON) | — (evidencia) |
-| Firma | Cosign (`cosign sign --key`, clave en secreto de Gitea Actions) | — |
-| Verificación | `cosign verify --key pipelines/cosign.pub` | Firma inválida o ausente |
+| Firma | Skopeo sube la imagen al registro de Gitea y Cosign 3 firma su **digest** (`--key`, clave en secreto de Gitea Actions; sin registro de transparencia pública: `--use-signing-config=false --tlog-upload=false`) | No se puede subir o firmar |
+| Verificación | `cosign verify --key pipelines/cosign.pub --insecure-ignore-tlog` sobre el mismo digest | Firma inválida o ausente |
 | Pods | Pod Security Admission `restricted` (spec 003) | Pod root o privilegiado |
 
 La puerta revisa seguridad, no salud: no arranca la imagen ni llama a `/health`. Así la v2 rota
@@ -50,26 +50,49 @@ no tiene que lanzar workflows en Gitea, la puerta no necesita permiso de escritu
 el Hub conserva la escritura del tag que ya probó la 005. El técnico ve el resultado antes de pedir
 la aprobación.
 
-## Workflow (`pipelines/puerta.yaml`)
+## Workflow (`pipelines/puerta.yaml`) y scripts
 
-- Se dispara con `push` de tags `v*`. Runner `act_runner` en un equipo de desarrollo con Docker, que
-  ve `gitea.hub.local` y `hub.local` (archivo `hosts`).
-- Gitleaks revisa los commits del tag que no están en tags anteriores
-  (`--log-opts="<tag> --not <tags anteriores>"`): un secreto viejo ya corregido no bloquea para
-  siempre, uno nuevo sí.
+El workflow es delgado: cada paso llama a `pipelines/puerta.sh <paso>` (que viaja al repo del sitio en
+`.gitea/puerta/` junto con `reportar.sh`, `lib.sh` y `cosign.pub`). Así los mismos pasos se prueban sin
+Gitea con `pipelines/pruebas/simular-puerta.sh`. Las herramientas corren como contenedores con versión
+fija (`lib.sh`); el runner solo necesita Docker, git, curl y bash. Los scripts se invocan con `bash`
+(Windows no guarda el bit de ejecución en git).
+
+- Se dispara con `push` de tags `v*`. Runner `act_runner` empaquetado en `pipelines/runner/` con etiqueta
+  `puerta:host` (los pasos corren en su contenedor y lanzan las herramientas como contenedores hermanos; la
+  carpeta de trabajo se monta con la misma ruta dentro y fuera). Ve `gitea.hub.local` y `hub.local`.
+- Gitleaks revisa los commits del tag desde la etiqueta anterior (`--log-opts="<anterior>..<tag>"`): un
+  secreto viejo ya corregido no bloquea para siempre, uno nuevo sí. Quien filtró un secreto debe rotarlo
+  igual: seguirá en el historial.
 - La imagen se construye con Docker, se guarda en un tar y Trivy y Syft leen el tar. Se sube con
   `skopeo` (`--dest-tls-verify=false`) como en `apps/publicar-imagenes.sh`, y Cosign usa
-  `--allow-http-registry` porque el registro de Gitea va por HTTP.
+  `--allow-http-registry` porque el registro de Gitea va por HTTP (`REGISTRY_INSEGURO=0` cuando tenga
+  certificado). Cosign firma y verifica por **digest**, no por etiqueta.
 - El consultorio construye sus dos imágenes (`consultorio-web` y `consultorio-api`) en la misma
   corrida; la versión pasa solo si pasan las dos.
-- `pipelines/reportar.sh <paso> <estado> <resumen> [reporte.json]` envía cada paso al Hub; el último
-  paso corre siempre (`if: always()`) y cierra la corrida.
+- `pipelines/reportar.sh inicio | paso … | fin …` envía cada paso al Hub; el último paso corre siempre
+  (`if: always()`) y cierra la corrida con `job.status`. El Hub revisa la corrida completa al cerrarla: un
+  `ok` sin los seis controles de cada imagen queda en `fallo`.
+- Secretos de la organización: `HUB_URL`, `HUB_PIPELINE_TOKEN`, `REGISTRY_USER`, `REGISTRY_PASSWORD`,
+  `COSIGN_PRIVATE_KEY`, `COSIGN_PASSWORD`; variables: `REGISTRY`, `REGISTRY_IP`, `DOCKER_NETWORK`. Los carga
+  `pipelines/configurar-gitea.sh` (la clave privada de Cosign va directo a Gitea, nunca a un archivo).
+
+## Hallazgos al construirla
+
+| Hallazgo | Qué se hizo |
+|---|---|
+| La base `nginx-unprivileged:1.27-alpine` de los sitios traía 2 CVE críticas de OpenSSL (con arreglo): la puerta bloqueaba hasta la versión limpia | Base subida a `1.30-alpine` en los 3 sitios y las plantillas; prueba de humo del consultorio en verde |
+| Cosign 3 cambió sus opciones (`--tlog-upload` solo con `--use-signing-config=false`; HTTP con `--allow-http-registry`) | Opciones fijadas en `puerta.sh` y verificadas contra el registro de Gitea 1.22.6 |
+| El registro de Gitea **sí** guarda y devuelve las firmas de Cosign | Verificado: no hizo falta el plan B (firma como archivo junto al SBOM) |
+| Gitleaks ignora claves que contienen la palabra `EXAMPLE` | Las pruebas usan claves falsas sin esa palabra; las de AWS de la documentación no sirven de prueba |
+| Windows no guarda el bit de ejecución en git | Los scripts se llaman con `bash` y `sembrar-repos-sitios.sh` los marca |
+| Trivy necesita su base de datos | Volumen `puerta-trivy-cache` en el runner; `TRIVY_SKIP_DB_UPDATE=1` sin internet |
 
 ## Modelo de datos
 
 | Tabla | Campos |
 |---|---|
-| `security_runs` | `id` · `service_id` FK · `version` · `commit_sha` · `status` (`en_curso` / `ok` / `fallo`) · `failed_step` · `image_digests` JSON · `started_at` · `finished_at` |
+| `security_runs` | `id` · `service_id` FK · `version` · `commit_sha` · `images` JSON (las imágenes que debe producir la versión) · `status` (`en_curso` / `ok` / `fallo`) · `failed_step` · `image_digests` JSON · `started_at` · `finished_at` |
 | `security_checks` | `id` · `run_id` FK · `step` (`secretos`, `construccion`, `vulnerabilidades`, `sbom`, `firma`, `verificacion`) · `image` · `status` (`ok` / `fallo`) · `summary` · `report` JSON · `created_at` |
 
 Los reportes (JSON de Gitleaks y Trivy, SBOM, salida de `cosign verify`) se guardan en la base
@@ -131,6 +154,7 @@ vuelve a subir abre una corrida nueva; vale la última.
 | Un tag del registro se puede sobrescribir después de verificado | Solo la puerta tiene usuario de escritura en el registro; el Hub guarda el digest verificado como evidencia. Fijar el digest en `hub-gitops`: mejora futura |
 | El registro de Gitea no acepta firmas de Cosign | Probarlo primero (T05); si falla, guardar la firma como archivo junto al SBOM |
 | La firma no se verifica en el clúster | Nadie despliega a mano (principio 3); documentado como mejora futura |
+| Quien escribe en un repo de sitio puede cambiar su workflow y sus scripts | La puerta frena errores, no a quien tiene permiso de escritura: repos solo para la agencia, `main` protegida y revisión de `.gitea/` (ver `pipelines/README.md`) |
 | El runner necesita Docker y RAM | Corre fuera del PC A (tech-stack) |
 
 ## Cómo se verifica

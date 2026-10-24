@@ -6,6 +6,8 @@ from app.models.client import Client
 from app.models.deployment import Deployment
 from app.models.plan import Plan
 from app.models.project import Project
+from app.models.security_check import SecurityCheck
+from app.models.security_run import SecurityRun
 from app.models.service import Service
 from app.models.sla_policy import SlaPolicy
 from app.models.ticket import Ticket
@@ -21,6 +23,8 @@ __all__ = [
 	"Deployment",
 	"Plan",
 	"Project",
+	"SecurityCheck",
+	"SecurityRun",
 	"Service",
 	"SlaPolicy",
 	"Ticket",

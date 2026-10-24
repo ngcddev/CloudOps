@@ -53,7 +53,8 @@ spec:
             - { name: GITEA__security__INSTALL_LOCK, value: "true" }
             - { name: GITEA__service__DISABLE_REGISTRATION, value: "true" }
             - { name: GITEA__packages__ENABLED, value: "true" }
-            - { name: GITEA__actions__ENABLED, value: "false" }   # Actions entra en el módulo 3
+            # Gitea Actions (spec 006): corre la puerta de seguridad de los sitios; el runner vive fuera del PC A
+            - { name: GITEA__actions__ENABLED, value: "true" }
             - { name: GITEA__log__LEVEL, value: Warn }
           volumeMounts:
             - { name: data, mountPath: /var/lib/gitea }

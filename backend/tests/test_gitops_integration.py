@@ -38,8 +38,9 @@ KUSTOMIZATION = (
 )
 
 
-def _pedir_y_aprobar(client, db, gitea_client: GiteaClient, to_version: str) -> dict:
+def _pedir_y_aprobar(client, db, gitea_client: GiteaClient, to_version: str, pass_gate) -> dict:
     """Crea la solicitud de cambio de El Tornillo y la aprueba con el cliente de Gitea indicado."""
+    pass_gate("cliente-ferreteria", to_version)
     service = db.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))
     tecnico = db.scalar(select(User).where(User.role == "agencia"))
     ticket = client.post(
@@ -54,11 +55,11 @@ def _pedir_y_aprobar(client, db, gitea_client: GiteaClient, to_version: str) -> 
     return approved.json()
 
 
-def test_ciclo_completo_aprobar_commit_argocd_y_consola(client, seeded):
+def test_ciclo_completo_aprobar_commit_argocd_y_consola(client, seeded, pass_gate):
     with FakeGitea({PATH: KUSTOMIZATION}) as gitea, FakeArgoCD({}) as argocd:
         gitea_client = GiteaClient(gitea.url, gitea.repo, gitea.token)
 
-        change = _pedir_y_aprobar(client, seeded, gitea_client, "v1.1")
+        change = _pedir_y_aprobar(client, seeded, gitea_client, "v1.1", pass_gate)
 
         # Aprobar crea exactamente un commit y cambia solo el tag
         assert len(gitea.commits) == 1
@@ -89,7 +90,7 @@ def test_ciclo_completo_aprobar_commit_argocd_y_consola(client, seeded):
     not all(os.getenv(v) for v in ("GITEA_TEST_URL", "GITEA_TEST_TOKEN", "GITEA_TEST_REPO")),
     reason="Define GITEA_TEST_URL, GITEA_TEST_TOKEN y GITEA_TEST_REPO para probar contra un Gitea real",
 )
-def test_contra_gitea_local_aprobar_crea_exactamente_un_commit(client, seeded):
+def test_contra_gitea_local_aprobar_crea_exactamente_un_commit(client, seeded, pass_gate):
     url = os.environ["GITEA_TEST_URL"].rstrip("/")
     repo, token = os.environ["GITEA_TEST_REPO"], os.environ["GITEA_TEST_TOKEN"]
     gitea_client = GiteaClient(url, repo, token)
@@ -109,7 +110,7 @@ def test_contra_gitea_local_aprobar_crea_exactamente_un_commit(client, seeded):
     seeded.commit()
     antes = commits()
 
-    change = _pedir_y_aprobar(client, seeded, gitea_client, destino)
+    change = _pedir_y_aprobar(client, seeded, gitea_client, destino, pass_gate)
 
     despues = commits()
     assert len(despues) == len(antes) + 1
