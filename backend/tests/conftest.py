@@ -7,6 +7,7 @@ os.environ["DATABASE_URL"] = "sqlite://"
 os.environ["JWT_SECRET"] = "clave-de-pruebas-que-no-es-secreta-0123456789"
 os.environ["SEED_USER_PASSWORD"] = "clave-de-desarrollo"
 os.environ["BCRYPT_ROUNDS"] = "4"
+os.environ["PIPELINE_TOKEN"] = "token-del-pipeline-de-pruebas"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

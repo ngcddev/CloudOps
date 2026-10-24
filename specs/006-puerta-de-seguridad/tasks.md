@@ -31,7 +31,7 @@
 ## Modelo y reglas en el Hub
 
 - [x] T12 · Crear las tablas `security_runs` y `security_checks` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ngcddev]
-- [ ] T13 · Crear `POST /api/pipeline-events` con `PIPELINE_TOKEN` (en `config.py` y `.env.example`): abre la corrida, registra cada paso con su reporte y la cierra — **Verifica:** `pytest`: una corrida completa queda `ok` con 6 controles; sin token o con otro → 401; servicio o paso desconocido → 422. [ ]
+- [x] T13 · Crear `POST /api/pipeline-events` con `PIPELINE_TOKEN` (en `config.py` y `.env.example`): abre la corrida, registra cada paso con su reporte y la cierra — **Verifica:** `pytest`: una corrida completa queda `ok` con 6 controles; sin token o con otro → 401; servicio o paso desconocido → 422. [ngcddev]
 - [x] T14 · Escribir `services/security_gate.py` con `gate_status(service, version)` — **Verifica:** `pytest` cubre `sin_corrida`, `en_curso`, `ok`, `fallo` y que vale la última corrida de la versión. [ngcddev]
 - [ ] T15 · Exigir puerta `ok` en `POST /api/change-requests/{id}/approve` antes de escribir en Gitea — **Verifica:** `pytest` con Gitea simulado (`tests/fake_gitea.py`): con puerta `en_curso` o `fallo` responde 409 con el motivo y Gitea no recibe ningún commit; con `ok` publica como antes (CA-6). [ ]
 - [ ] T16 · Rechazar solas las solicitudes `pendiente` hacia una versión que falló (al cerrar la corrida y al crear la solicitud), con el texto del glosario para el cliente — **Verifica:** `pytest`: la solicitud queda `rechazada` con "Detenida por controles de seguridad: secretos" y, vista como cliente, el evento dice "Una actualización fue detenida porque contenía información sensible." (CA-5). [ ]
