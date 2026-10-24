@@ -2,7 +2,7 @@
 # Construir desde esta carpeta: docker build --build-arg APP_VERSION=v1 -t hub/ferreteria:v1 .
 # Al arrancar, la imagen reemplaza ${APP_VERSION} en la plantilla de nginx.conf.
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.30-alpine
 ARG APP_VERSION=v1
 ENV APP_VERSION=${APP_VERSION}
 COPY nginx.conf /etc/nginx/templates/default.conf.template
