@@ -45,7 +45,7 @@
 
 ## Plataforma y repositorio
 
-- [ ] T21 · Correr Gitleaks sobre la historia completa del monorepo y dejar `.gitleaks.toml` que solo permite los valores de desarrollo de `.env.example` — **Verifica:** `gitleaks git .` termina sin hallazgos (CA-8). [ ]
+- [x] T21 · Correr Gitleaks sobre la historia completa del monorepo y dejar `.gitleaks.toml` que solo permite los valores de desarrollo de `.env.example` — **Verifica:** `gitleaks git .` termina sin hallazgos (CA-8). [ngcddev]
 
 ## Integración
 
