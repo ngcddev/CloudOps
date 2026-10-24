@@ -30,3 +30,23 @@ def test_tabla_users_tiene_la_estructura_de_t02(seeded):
     assert columns == {
         "id", "name", "email", "role", "client_id", "password_hash", "is_active", "last_login_at",
     }
+
+def test_seed_passwords_da_contrasena_solo_a_quien_no_tiene(seeded):
+    from app.models import User
+    from app.seed import seed_passwords
+    from app.services.auth import verify_password
+    from sqlalchemy import select
+
+    sofia = seeded.scalar(select(User).where(User.email == "sofia@forjadigital.test"))
+    marta = seeded.scalar(select(User).where(User.email == "contacto@lasazon.test"))
+    sofia.password_hash = None
+    marta.password_hash = "hash-propio-de-marta"
+    seeded.commit()
+
+    assert seed_passwords(seeded) == 1
+
+    seeded.refresh(sofia)
+    seeded.refresh(marta)
+    assert verify_password("clave-de-desarrollo", sofia.password_hash)
+    assert marta.password_hash == "hash-propio-de-marta"
+    assert seed_passwords(seeded) == 0

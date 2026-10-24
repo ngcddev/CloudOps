@@ -26,6 +26,25 @@ def _decimal(value) -> Decimal | None:
     return None if value is None else Decimal(str(value))
 
 
+def seed_passwords(db: Session) -> int:
+    """Da la contraseña de desarrollo (SEED_USER_PASSWORD) a los usuarios que aún no tienen una.
+
+    El seed solo corre con la base vacía; una base creada antes de la spec 007 tiene usuarios sin
+    contraseña y así podrían entrar sin borrar nada. Nunca cambia la de quien ya tiene. Devuelve
+    cuántos usuarios actualizó.
+    """
+    if not settings.seed_user_password:
+        return 0
+    pending = db.scalars(select(User).where(User.password_hash.is_(None))).all()
+    if not pending:
+        return 0
+    password_hash = hash_password(settings.seed_user_password)
+    for user in pending:
+        user.password_hash = password_hash
+    db.commit()
+    return len(pending)
+
+
 def seed_if_empty(db: Session) -> bool:
     """Carga la semilla solo si no hay agencia. Devuelve True si cargó datos."""
     if db.scalar(select(Agency.id).limit(1)) is not None:
