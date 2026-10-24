@@ -1010,5 +1010,6 @@ export async function downloadCheckReport(checkId: number): Promise<void> {
   link.href = url;
   link.download = name;
   link.click();
-  URL.revokeObjectURL(url);
+  // Se revoca después: en algunos navegadores revocar de inmediato cancela la descarga
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

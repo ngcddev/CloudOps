@@ -42,10 +42,18 @@ export default function ChangeList() {
   const load = useCallback(async () => {
     try {
       const [changeData, serviceData] = await Promise.all([listChangeRequests(), listServicesStatus()]);
-      const gateData = await Promise.all(changeData.map((change) => getChangeGate(change.id)));
+      // Si la puerta de un cambio no se puede leer, ese cambio queda sin controles pero la bandeja sigue
+      const gateResults = await Promise.allSettled(changeData.map((change) => getChangeGate(change.id)));
       setChanges(changeData);
       setServices(serviceData);
-      setGates(new Map(changeData.map((change, index) => [change.id, gateData[index]])));
+      setGates(
+        new Map(
+          changeData.flatMap((change, index) => {
+            const result = gateResults[index];
+            return result.status === "fulfilled" ? [[change.id, result.value] as [number, Gate]] : [];
+          }),
+        ),
+      );
       setError(null);
     } catch (loadError) {
       setError((loadError as Error).message);

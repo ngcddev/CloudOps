@@ -12,6 +12,10 @@ services:
   runner:
     build: .
     restart: unless-stopped
+    # Límites del propio runner (convención: límites de CPU y RAM en cada componente). Las herramientas que lanza
+    # son contenedores hermanos y no heredan estos límites: ver pipelines/README.md
+    mem_limit: 512m
+    cpus: 1.0
     environment:
       GITEA_INSTANCE_URL: ${GITEA_INSTANCE_URL:?Falta GITEA_INSTANCE_URL (por ejemplo http://gitea.hub.local)}
       GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_REGISTRATION_TOKEN:?Falta el token de registro del runner}

@@ -92,6 +92,18 @@ prueba el sitio de dos imágenes.
 
 ## Límites conocidos
 
+- **El runner corre como root y con el socket de Docker montado.** Es una excepción consciente a la regla de
+  «contenedores sin root» (necesita lanzar contenedores hermanos con el Docker del equipo) y equivale a dar root del
+  equipo a quien pueda cambiar un workflow. Por eso va en un equipo de desarrollo aparte del PC A, solo para la
+  agencia. Sus propios límites son `mem_limit` y `cpus` del compose; las herramientas que lanza no los heredan.
+- **Credenciales en la lista de procesos.** La contraseña del registro (`--dest-creds`, `--registry-password`) y el
+  token del Hub (`curl -H`) viajan como argumentos mientras corre cada herramienta: alguien con `ps` o
+  `docker inspect` en el runner las lee. Mejora futura: archivos de autenticación temporales.
+- **Bash 4 o superior** (`mapfile`): vale para el runner (Alpine) y Git Bash; el bash 3.2 de macOS no sirve.
+- Los reportes de Gitleaks los escribe un contenedor como root dentro del espacio de trabajo: en un runner sin root,
+  la limpieza puede fallar por permisos.
+- Reintentar el evento `inicio` tras perder la respuesta puede dejar una corrida huérfana en «en curso»; no afecta a
+  la puerta (vale la última) pero ensucia el historial.
 - **Quien puede subir a un repo de sitio también puede cambiar su workflow y sus scripts.** La puerta frena los
   errores y los descuidos, no a alguien con permiso de escritura que quiera saltársela. Mitigación: repos de sitios
   con escritura solo para la agencia, rama `main` protegida y revisión de los cambios en `.gitea/`.
