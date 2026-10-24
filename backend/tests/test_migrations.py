@@ -20,6 +20,8 @@ TABLES = {
     "change_requests",
     "deployments",
     "audit_logs",
+    "security_runs",
+    "security_checks",
 }
 
 
@@ -41,6 +43,11 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
         assert {"password_hash", "is_active", "last_login_at"} <= {
             c["name"] for c in inspect(connection).get_columns("users")
         }
+
+        # 0007 (spec 006): quita las corridas y los controles de seguridad
+        command.downgrade(_config(connection), "-1")
+        assert not {"security_runs", "security_checks"} & set(inspect(connection).get_table_names())
+        assert "audit_logs" in set(inspect(connection).get_table_names())
 
         # 0006 (spec 007): quita la bitácora
         command.downgrade(_config(connection), "-1")
