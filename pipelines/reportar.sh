@@ -13,15 +13,9 @@ set -euo pipefail
 : "${SITE:?Falta SITE}"
 : "${VERSION:?Falta VERSION}"
 
-JQ_IMAGE="${JQ_IMAGE:-ghcr.io/jqlang/jq:1.8.1}"
-# jq local si existe; si no, el de un contenedor (el runner solo necesita Docker). Todo entra por stdin.
-jq_run() {
-  if command -v jq >/dev/null 2>&1; then
-    jq "$@"
-  else
-    docker run --rm -i "$JQ_IMAGE" "$@"
-  fi
-}
+# jq_run: jq local si existe; si no, el de un contenedor (el runner solo necesita Docker)
+# shellcheck source=lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 evento="${1:?Uso: reportar.sh inicio | paso <control> <ok|fallo> <resumen> [imagen] [reporte] | fin <ok|fallo> [digests]}"
 base=(--arg event "$evento" --arg site "$SITE" --arg version "$VERSION" --arg commit "${COMMIT_SHA:-}")
