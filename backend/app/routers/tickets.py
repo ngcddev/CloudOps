@@ -1,12 +1,12 @@
 # Endpoints de solicitudes: creación, bandeja y detalle (spec 004, T09), con sesión y alcance por cliente (spec 007).
 from datetime import timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
-from app.deps import client_scope, current_user
+from app.deps import client_scope, current_user, require_agency
 from app.models.client import Client
 from app.models.project import Project
 from app.models.service import Service
@@ -14,6 +14,7 @@ from app.models.ticket import Ticket
 from app.models.ticket_event import TicketEvent
 from app.models.user import User
 from app.models.work_log import WorkLog
+from app.services import audit
 from app.services.priority import classify
 from app.services.sla import due_dates
 from app.services.ticket_flow import transition
@@ -129,11 +130,15 @@ def get_ticket(ticket_id: int, db: Session = Depends(get_db), user: User = Depen
 
 
 @router.post("/{ticket_id}/classify", response_model=TicketOut)
-def classify_ticket(ticket_id: int, data: TicketClassify, db: Session = Depends(get_db)):
+def classify_ticket(
+    ticket_id: int,
+    data: TicketClassify,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
     """Clasifica una solicitud, calcula su SLA y registra la decisión."""
     ticket = _get_ticket_or_404(db, ticket_id)
-    if data.actor_id is not None and db.get(User, data.actor_id) is None:
-        raise HTTPException(status_code=404, detail="El usuario que clasifica no existe.")
     proposed_priority = classify(data.impact, data.urgency)
     selected_priority = data.priority or proposed_priority
     if selected_priority != proposed_priority and not data.correction_reason:
@@ -161,7 +166,7 @@ def classify_ticket(ticket_id: int, data: TicketClassify, db: Session = Depends(
     db.add(
         TicketEvent(
             ticket=ticket,
-            actor_id=data.actor_id,
+            actor_id=actor.id,
             type="prioridad",
             from_value=old_priority,
             to_value=selected_priority,
@@ -169,31 +174,44 @@ def classify_ticket(ticket_id: int, data: TicketClassify, db: Session = Depends(
             internal=False,
         )
     )
+    audit.record(
+        db, actor, "cambiar_prioridad", "ticket", ticket.id,
+        {"de": old_priority, "a": selected_priority, "motivo": data.correction_reason},
+        audit.request_ip(request),
+    )
     db.commit()
     db.refresh(ticket)
     return ticket
 
 
 @router.post("/{ticket_id}/assign", response_model=TicketOut)
-def assign_ticket(ticket_id: int, data: TicketAssign, db: Session = Depends(get_db)):
+def assign_ticket(
+    ticket_id: int,
+    data: TicketAssign,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
     """Asigna un responsable y registra el cambio en el historial."""
     ticket = _get_ticket_or_404(db, ticket_id)
     if db.get(User, data.assignee_id) is None:
         raise HTTPException(status_code=404, detail="El usuario responsable no existe.")
-    if data.actor_id is not None and db.get(User, data.actor_id) is None:
-        raise HTTPException(status_code=404, detail="El usuario que asigna no existe.")
 
     old_assignee = str(ticket.assignee_id) if ticket.assignee_id is not None else None
     ticket.assignee_id = data.assignee_id
     db.add(
         TicketEvent(
             ticket=ticket,
-            actor_id=data.actor_id,
+            actor_id=actor.id,
             type="asignacion",
             from_value=old_assignee,
             to_value=str(data.assignee_id),
             internal=False,
         )
+    )
+    audit.record(
+        db, actor, "asignar", "ticket", ticket.id,
+        {"de": old_assignee, "a": str(data.assignee_id)}, audit.request_ip(request),
     )
     db.commit()
     db.refresh(ticket)
@@ -201,11 +219,15 @@ def assign_ticket(ticket_id: int, data: TicketAssign, db: Session = Depends(get_
 
 
 @router.post("/{ticket_id}/transition", response_model=TicketOut)
-def transition_ticket(ticket_id: int, data: TicketTransition, db: Session = Depends(get_db)):
+def transition_ticket(
+    ticket_id: int,
+    data: TicketTransition,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
     """Cambia el estado si la transición pertenece al flujo permitido."""
     ticket = _get_ticket_or_404(db, ticket_id)
-    if data.actor_id is not None and db.get(User, data.actor_id) is None:
-        raise HTTPException(status_code=404, detail="El usuario que cambia el estado no existe.")
 
     old_status = ticket.status
     try:
@@ -215,12 +237,16 @@ def transition_ticket(ticket_id: int, data: TicketTransition, db: Session = Depe
     db.add(
         TicketEvent(
             ticket=ticket,
-            actor_id=data.actor_id,
+            actor_id=actor.id,
             type="estado",
             from_value=old_status,
             to_value=data.new_status,
             internal=False,
         )
+    )
+    audit.record(
+        db, actor, "cambiar_estado", "ticket", ticket.id,
+        {"de": old_status, "a": data.new_status}, audit.request_ip(request),
     )
     db.commit()
     db.refresh(ticket)
@@ -228,14 +254,17 @@ def transition_ticket(ticket_id: int, data: TicketTransition, db: Session = Depe
 
 
 @router.post("/{ticket_id}/work-logs", response_model=WorkLogOut, status_code=status.HTTP_201_CREATED)
-def create_work_log(ticket_id: int, data: WorkLogCreate, db: Session = Depends(get_db)):
-    """Registra horas trabajadas por un usuario en una solicitud."""
+def create_work_log(
+    ticket_id: int,
+    data: WorkLogCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_agency),
+):
+    """Registra las horas trabajadas por el usuario de la sesión en una solicitud."""
     if db.get(Ticket, ticket_id) is None:
         raise HTTPException(status_code=404, detail="La solicitud no existe.")
-    if db.get(User, data.user_id) is None:
-        raise HTTPException(status_code=404, detail="El usuario no existe.")
 
-    work_log = WorkLog(ticket_id=ticket_id, **data.model_dump())
+    work_log = WorkLog(ticket_id=ticket_id, user_id=user.id, **data.model_dump())
     db.add(work_log)
     db.commit()
     db.refresh(work_log)

@@ -137,13 +137,13 @@ def test_asignar_registra_responsable_actor_y_hora(client, session_factory):
 
     response = client.post(
         f"/api/tickets/{ticket_id}/assign",
-        json={"assignee_id": 1, "actor_id": 1},
+        json={"assignee_id": 1},
     )
 
     assert response.status_code == 200
     assert response.json()["assignee_id"] == 1
     event = client.get(f"/api/tickets/{ticket_id}").json()["events"][0]
-    assert (event["type"], event["actor_id"], event["to_value"]) == ("asignacion", 1, "1")
+    assert (event["type"], event["actor_id"], event["to_value"]) == ("asignacion", client.get("/api/auth/me").json()["id"], "1")
     assert event["created_at"] is not None
 
 
@@ -156,14 +156,14 @@ def test_transicionar_a_en_progreso_registra_evento_y_respuesta(client, session_
 
     response = client.post(
         f"/api/tickets/{ticket_id}/transition",
-        json={"new_status": "en_progreso", "actor_id": 1},
+        json={"new_status": "en_progreso"},
     )
 
     assert response.status_code == 200
     assert response.json()["status"] == "en_progreso"
     assert response.json()["first_response_at"] is not None
     event = client.get(f"/api/tickets/{ticket_id}").json()["events"][0]
-    assert (event["type"], event["actor_id"], event["to_value"]) == ("estado", 1, "en_progreso")
+    assert (event["type"], event["actor_id"], event["to_value"]) == ("estado", client.get("/api/auth/me").json()["id"], "en_progreso")
 
 
 def test_salto_invalido_responde_409(client, session_factory):
@@ -175,7 +175,7 @@ def test_salto_invalido_responde_409(client, session_factory):
 
     response = client.post(
         f"/api/tickets/{ticket_id}/transition",
-        json={"new_status": "resuelto", "actor_id": 1},
+        json={"new_status": "resuelto"},
     )
 
     assert response.status_code == 409
@@ -190,11 +190,11 @@ def test_registrar_horas_actualiza_el_total_del_detalle(client, session_factory)
 
     first = client.post(
         f"/api/tickets/{ticket_id}/work-logs",
-        json={"user_id": 1, "hours": 1, "note": "Diagnóstico"},
+        json={"hours": 1, "note": "Diagnóstico"},
     )
     second = client.post(
         f"/api/tickets/{ticket_id}/work-logs",
-        json={"user_id": 1, "hours": 0.5, "note": "Corrección"},
+        json={"hours": 0.5, "note": "Corrección"},
     )
 
     assert first.status_code == 201
@@ -212,7 +212,7 @@ def test_horas_negativas_responden_422(client, session_factory):
 
     response = client.post(
         f"/api/tickets/{ticket_id}/work-logs",
-        json={"user_id": 1, "hours": -0.5},
+        json={"hours": -0.5},
     )
 
     assert response.status_code == 422

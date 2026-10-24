@@ -26,7 +26,6 @@ class TicketClassify(BaseModel):
     urgency: Literal["alta", "media", "baja"]
     priority: Literal["P1", "P2", "P3", "P4"] | None = None
     correction_reason: str | None = None
-    actor_id: int | None = None
 
     @field_validator("correction_reason")
     @classmethod
@@ -36,16 +35,13 @@ class TicketClassify(BaseModel):
 
 class TicketAssign(BaseModel):
     assignee_id: int
-    actor_id: int | None = None
 
 
 class TicketTransition(BaseModel):
     new_status: Literal["en_progreso", "en_espera", "resuelto", "cerrado"]
-    actor_id: int | None = None
 
 
 class WorkLogCreate(BaseModel):
-    user_id: int
     hours: Decimal
     note: str | None = None
 
