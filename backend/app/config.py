@@ -4,6 +4,12 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str
+    # Sesiones (spec 007): clave de firma del token; sin ella la API no arranca
+    jwt_secret: str
+    # Contraseña de desarrollo que el seed aplica a todos los usuarios sembrados (spec 007)
+    seed_user_password: str = ""
+    # Costo de bcrypt; las pruebas lo bajan para no tardar
+    bcrypt_rounds: int = 12
     # Gitea (spec 005): vacíos = sin conexión; la API arranca y los cambios por GitOps avisan
     gitea_url: str = ""
     gitea_repo: str = "forja-digital/hub-gitops"

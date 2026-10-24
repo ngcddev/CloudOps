@@ -1,9 +1,10 @@
-# Endpoints del estado de los servicios y su historial de versiones (spec 005, T16).
+# Endpoints del estado de los servicios y su historial de versiones (spec 005, T16). Solo agencia (spec 007).
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.deps import require_agency
 from app.models.change_request import ChangeRequest
 from app.models.client import Client
 from app.models.deployment import Deployment
@@ -12,7 +13,7 @@ from app.models.service import Service
 from app.routers.change_requests import OPEN_STATUSES
 from app.schemas.service_status import DeploymentOut, ServiceStatusOut
 
-router = APIRouter(prefix="/api/services", tags=["services"])
+router = APIRouter(prefix="/api/services", tags=["services"], dependencies=[Depends(require_agency)])
 
 
 @router.get("/status", response_model=list[ServiceStatusOut])

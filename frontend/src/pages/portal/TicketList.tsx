@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { useAuth } from "../../auth";
 import {
   createTicket,
   getClient,
-  listClients,
   listTickets,
   type ClientDetail,
   type Ticket,
@@ -11,8 +11,10 @@ import {
 } from "../../api";
 
 export default function PortalTicketList() {
-  const [clients, setClients] = useState<ClientDetail[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<number | "">("");
+  // El portal muestra siempre la empresa de quien entró: ya no se elige el cliente (spec 007)
+  const { user } = useAuth();
+  const clientId = user?.client_id ?? null;
+  const [client, setClient] = useState<ClientDetail | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<number | "">("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [form, setForm] = useState({ title: "", description: "", kind: "solicitud" as TicketKind });
@@ -20,58 +22,31 @@ export default function PortalTicketList() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    listClients()
-      .then(async (clientSummaries) => {
-        const clientDetails = await Promise.all(clientSummaries.map((client) => getClient(client.id)));
-        setClients(clientDetails);
-        if (clientDetails.length > 0) {
-          setSelectedClientId((current) => (current === "" ? clientDetails[0].id : current));
-        }
-      })
-      .catch((loadError: Error) => setError(loadError.message));
-  }, []);
-
-  useEffect(() => {
-    if (selectedClientId === "") {
-      setTickets([]);
-      setSelectedServiceId("");
+    if (clientId === null) {
+      setError("Tu usuario no tiene una empresa asignada.");
       return;
     }
-
-    listTickets({ client_id: Number(selectedClientId), viewer_role: "cliente" })
+    getClient(clientId)
+      .then(setClient)
+      .catch((loadError: Error) => setError(loadError.message));
+    listTickets()
       .then(setTickets)
       .catch((loadError: Error) => setError(loadError.message));
-  }, [selectedClientId]);
+  }, [clientId]);
 
-  const selectedClient = useMemo(
-    () => clients.find((client) => client.id === selectedClientId) ?? null,
-    [clients, selectedClientId],
-  );
+  const services = useMemo(() => client?.projects.flatMap((project) => project.services) ?? [], [client]);
 
   useEffect(() => {
-    if (!selectedClient) {
-      setSelectedServiceId("");
-      return;
-    }
-
-    const services = selectedClient.projects.flatMap((project) => project.services);
-    if (services.length === 0) {
-      setSelectedServiceId("");
-      return;
-    }
-
     setSelectedServiceId((current) => {
-      if (current === "" || !services.some((service) => service.id === current)) {
-        return services[0].id;
-      }
-      return current;
+      if (services.length === 0) return "";
+      return current === "" || !services.some((service) => service.id === current) ? services[0].id : current;
     });
-  }, [selectedClient]);
+  }, [services]);
 
   async function handleCreateTicket(event: React.FormEvent) {
     event.preventDefault();
-    if (!selectedClientId || !selectedServiceId) {
-      setError("Debes seleccionar un cliente y servicio para crear la solicitud.");
+    if (!selectedServiceId) {
+      setError("Debes seleccionar un servicio para crear la solicitud.");
       return;
     }
 
@@ -80,12 +55,11 @@ export default function PortalTicketList() {
       setNotice(null);
       await createTicket({
         service_id: Number(selectedServiceId),
-        created_by_id: 1,
         title: form.title.trim(),
         description: form.description.trim(),
         kind: form.kind,
       });
-      const refreshed = await listTickets({ client_id: Number(selectedClientId), viewer_role: "cliente" });
+      const refreshed = await listTickets();
       setTickets(refreshed);
       setForm({ title: "", description: "", kind: "solicitud" });
       setNotice("Solicitud creada correctamente.");
@@ -98,6 +72,7 @@ export default function PortalTicketList() {
     <>
       <div className="page-header">
         <h1>Solicitudes</h1>
+        {client && <p className="muted">{client.name}</p>}
       </div>
 
       {error && (
@@ -115,24 +90,13 @@ export default function PortalTicketList() {
         <h2>Nueva solicitud</h2>
         <form onSubmit={handleCreateTicket} className="stacked-form">
           <label>
-            <span>Cliente</span>
-            <select value={selectedClientId} onChange={(event) => setSelectedClientId(event.target.value === "" ? "" : Number(event.target.value))}>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
             <span>Servicio</span>
             <select value={selectedServiceId} onChange={(event) => setSelectedServiceId(event.target.value === "" ? "" : Number(event.target.value))}>
-              {selectedClient?.projects.flatMap((project) => project.services).map((service) => (
+              {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name} · {service.host}
                 </option>
-              )) ?? null}
+              ))}
             </select>
           </label>
 

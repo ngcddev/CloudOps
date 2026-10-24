@@ -164,6 +164,21 @@ Los deja en el Secret `hub-gitops-tokens` del namespace `hub`, que la API del Hu
 `GITEA_TOKEN` y `ARGOCD_TOKEN`. En desarrollo local van en `.env` (ignorado por Git);
 `.env.example` solo trae valores de ejemplo. Para rotarlos: borrar el Secret y volver a correr el script.
 
+### Sesiones del Hub (spec 007)
+
+Desde la spec 007 la API pide iniciar sesión y no arranca sin `JWT_SECRET`. Los dos valores viven en el
+Secret `hub-auth` del namespace `hub`, que crea el mismo script de la base de datos (con valores al azar,
+solo dentro del clúster):
+
+```bash
+bash gitops/hub/crear-secretos.sh
+kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d   # contraseña de los usuarios sembrados
+```
+
+Correrlo **antes** de publicar la imagen nueva de `hub-api`. Los usuarios sembrados (`sofia@forjadigital.test`,
+`camilo@forjadigital.test` y los de cada cliente) comparten esa contraseña. Una base creada antes de la
+spec 007 también sirve: al arrancar, la API da contraseña solo a los usuarios que no tienen.
+
 ### Publicar la `v1.1` de El Tornillo (spec 005)
 
 La portada nueva de El Tornillo (banner de temporada) aparece en toda versión distinta de `v1`: es la

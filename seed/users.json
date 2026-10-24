@@ -22,6 +22,11 @@
       "email": "contacto@dentalpopayan.test",
       "role": "cliente",
       "client_name": "Consultorio Dental Popayán"
+    },
+    {
+      "name": "Camilo Torres",
+      "email": "camilo@forjadigital.test",
+      "role": "agencia"
     }
   ]
 }

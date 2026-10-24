@@ -19,6 +19,13 @@ from app.services.kustomization import get_tags
 from tests.fake_argocd import FakeArgoCD
 from tests.fake_gitea import FakeGitea
 
+
+@pytest.fixture
+def client(seeded, as_user):
+    """Estas pruebas operan como Sofía, técnica de la agencia sembrada (spec 007)."""
+    return as_user("sofia@forjadigital.test")
+
+
 PATH = "clients/ferreteria/kustomization.yaml"
 KUSTOMIZATION = (
     "apiVersion: kustomize.config.k8s.io/v1beta1\n"
@@ -42,7 +49,7 @@ def _pedir_y_aprobar(client, db, gitea_client: GiteaClient, to_version: str) -> 
     change = client.post("/api/change-requests", json={"ticket_id": ticket["id"], "to_version": to_version})
     assert change.status_code == 201, change.text
     app.dependency_overrides[get_gitea] = lambda: gitea_client
-    approved = client.post(f"/api/change-requests/{change.json()['id']}/approve", json={"actor_id": tecnico.id})
+    approved = client.post(f"/api/change-requests/{change.json()['id']}/approve")
     assert approved.status_code == 200, approved.text
     return approved.json()
 

@@ -2,7 +2,13 @@
 import pytest
 from sqlalchemy import select
 
-from app.models import Service, TicketEvent, User
+from app.models import AuditLog, Service, TicketEvent, User
+
+
+@pytest.fixture
+def client(seeded, as_user):
+    """Estas pruebas operan como Sofía, técnica de la agencia sembrada (spec 007)."""
+    return as_user("sofia@forjadigital.test")
 
 
 @pytest.fixture
@@ -47,7 +53,7 @@ def test_el_paso_queda_en_el_historial_de_la_solicitud(client, seeded, ferreteri
     tecnico = seeded.scalar(select(User).where(User.role == "agencia"))
     ticket_id = _ticket(client, ferreteria.id)
 
-    _create(client, ticket_id, requested_by_id=tecnico.id)
+    _create(client, ticket_id)
 
     events = seeded.scalars(select(TicketEvent).where(TicketEvent.ticket_id == ticket_id)).all()
     assert [(e.type, e.from_value, e.to_value, e.actor_id) for e in events] == [
@@ -102,7 +108,7 @@ def test_rechaza_con_motivo_y_queda_registrado(client, seeded, ferreteria):
 
     response = client.post(
         f"/api/change-requests/{change_id}/reject",
-        json={"reason": "La portada no cumple la guía de marca", "actor_id": tecnico.id},
+        json={"reason": "La portada no cumple la guía de marca"},
     )
 
     assert response.status_code == 200
@@ -144,7 +150,7 @@ def test_tras_rechazar_se_puede_pedir_otro_cambio(client, ferreteria):
 
 def test_lista_las_solicitudes_de_cambio_con_nombres_y_filtra_por_estado(client, seeded, ferreteria):
     tecnico = seeded.scalar(select(User).where(User.role == "agencia"))
-    first = _create(client, _ticket(client, ferreteria.id), requested_by_id=tecnico.id).json()["id"]
+    first = _create(client, _ticket(client, ferreteria.id)).json()["id"]
     client.post(f"/api/change-requests/{first}/reject", json={"reason": "Falta contenido"})
     second = _create(client, _ticket(client, ferreteria.id), to_version="v1.2").json()["id"]
 
@@ -156,3 +162,50 @@ def test_lista_las_solicitudes_de_cambio_con_nombres_y_filtra_por_estado(client,
     pendientes = client.get("/api/change-requests", params={"status": "pendiente"}).json()
     assert [item["id"] for item in pendientes] == [second]
     assert client.get("/api/change-requests", params={"service_id": 9999}).json() == []
+
+
+def test_el_cliente_no_puede_listar_crear_ni_rechazar_cambios(as_user, ferreteria, client):
+    ticket_id = _ticket(client, ferreteria.id)
+    change_id = _create(client, ticket_id).json()["id"]
+    cliente = as_user("contacto@eltornillo.test")
+
+    assert cliente.get("/api/change-requests").status_code == 403
+    assert cliente.post("/api/change-requests", json={"ticket_id": ticket_id, "to_version": "v9"}).status_code == 403
+    assert cliente.post(f"/api/change-requests/{change_id}/reject", json={"reason": "x"}).status_code == 403
+
+
+def test_sin_sesion_los_cambios_responden_401(anonymous, ferreteria, client):
+    change_id = _create(client, _ticket(client, ferreteria.id)).json()["id"]
+
+    assert anonymous.get("/api/change-requests").status_code == 401
+    assert anonymous.post(f"/api/change-requests/{change_id}/reject", json={"reason": "x"}).status_code == 401
+
+
+def test_quien_pide_el_cambio_es_el_usuario_de_la_sesion(client, seeded, ferreteria):
+    sofia = seeded.scalar(select(User).where(User.email == "sofia@forjadigital.test"))
+    otro = seeded.scalar(select(User).where(User.email == "camilo@forjadigital.test"))
+
+    body = _create(client, _ticket(client, ferreteria.id), requested_by_id=otro.id).json()
+
+    assert body["requested_by_id"] == sofia.id
+
+
+def test_pedir_y_rechazar_un_cambio_quedan_en_la_bitacora(client, seeded, ferreteria):
+    sofia = seeded.scalar(select(User).where(User.email == "sofia@forjadigital.test"))
+    change_id = _create(client, _ticket(client, ferreteria.id)).json()["id"]
+    client.post(f"/api/change-requests/{change_id}/reject", json={"reason": "No cumple la guía"})
+
+    logs = seeded.scalars(select(AuditLog).where(AuditLog.entity == "change_request").order_by(AuditLog.id)).all()
+    assert [(log.action, log.user_id, log.entity_id) for log in logs] == [
+        ("crear", sofia.id, change_id),
+        ("rechazar", sofia.id, change_id),
+    ]
+    assert logs[0].details["a"] == "v1.1"
+    assert logs[1].details == {"motivo": "No cumple la guía"}
+
+
+def test_un_rechazo_invalido_no_deja_fila_en_la_bitacora(client, seeded, ferreteria):
+    change_id = _create(client, _ticket(client, ferreteria.id)).json()["id"]
+    client.post(f"/api/change-requests/{change_id}/reject", json={"reason": "   "})
+
+    assert seeded.scalars(select(AuditLog).where(AuditLog.action == "rechazar")).all() == []

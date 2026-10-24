@@ -6,7 +6,6 @@ import {
   classifyTicket,
   createChangeRequest,
   createWorkLog,
-  CURRENT_USER_ID,
   getTicket,
   listChangeRequests,
   transitionTicket,
@@ -65,7 +64,7 @@ export default function TicketDetail() {
   const [classifyForm, setClassifyForm] = useState({ impact: "alto", urgency: "media", priority: "P2", correction_reason: "" });
   const [assignForm, setAssignForm] = useState({ assignee_id: "2" });
   const [transitionForm, setTransitionForm] = useState({ new_status: "en_progreso" as Exclude<TicketStatus, "abierto"> });
-  const [workLogForm, setWorkLogForm] = useState({ user_id: "1", hours: "1.5", note: "" });
+  const [workLogForm, setWorkLogForm] = useState({ hours: "1.5", note: "" });
   // Cambios de versión registrados desde esta solicitud (spec 005)
   const [changes, setChanges] = useState<ChangeRequest[]>([]);
   const [targetVersion, setTargetVersion] = useState("");
@@ -80,7 +79,7 @@ export default function TicketDetail() {
   useEffect(() => {
     setTicket(null);
     setError(null);
-    getTicket(Number(id), "agencia")
+    getTicket(Number(id))
       .then((data) => {
         setTicket(data);
         setClassifyForm({
@@ -105,7 +104,6 @@ export default function TicketDetail() {
         urgency: classifyForm.urgency as TicketUrgency,
         priority: classifyForm.priority as TicketPriority,
         correction_reason: classifyForm.correction_reason || null,
-        actor_id: 1,
       });
       setTicket((current) => (current ? { ...current, ...updated } : current));
       setClassifyForm((current) => ({ ...current, correction_reason: "" }));
@@ -118,7 +116,7 @@ export default function TicketDetail() {
     event.preventDefault();
     if (!ticket) return;
     try {
-      const updated = await assignTicket(ticket.id, { assignee_id: Number(assignForm.assignee_id), actor_id: 1 });
+      const updated = await assignTicket(ticket.id, { assignee_id: Number(assignForm.assignee_id) });
       setTicket((current) => (current ? { ...current, ...updated } : current));
     } catch (submitError) {
       setError((submitError as Error).message);
@@ -129,7 +127,7 @@ export default function TicketDetail() {
     event.preventDefault();
     if (!ticket) return;
     try {
-      const updated = await transitionTicket(ticket.id, { new_status: transitionForm.new_status, actor_id: 1 });
+      const updated = await transitionTicket(ticket.id, { new_status: transitionForm.new_status });
       setTicket((current) => (current ? { ...current, ...updated } : current));
     } catch (submitError) {
       setError((submitError as Error).message);
@@ -144,7 +142,6 @@ export default function TicketDetail() {
       const created = await createChangeRequest({
         ticket_id: ticket.id,
         to_version: targetVersion,
-        requested_by_id: CURRENT_USER_ID,
       });
       setChanges((current) => [created, ...current]);
       setTargetVersion("");
@@ -158,7 +155,6 @@ export default function TicketDetail() {
     if (!ticket) return;
     try {
       const log = await createWorkLog(ticket.id, {
-        user_id: Number(workLogForm.user_id),
         hours: Number(workLogForm.hours),
         note: workLogForm.note || null,
       });
@@ -169,7 +165,7 @@ export default function TicketDetail() {
           work_logs: [log, ...current.work_logs],
         };
       });
-      setWorkLogForm({ user_id: "1", hours: "1.5", note: "" });
+      setWorkLogForm({ hours: "1.5", note: "" });
     } catch (submitError) {
       setError((submitError as Error).message);
     }
@@ -300,10 +296,6 @@ export default function TicketDetail() {
             <section className="card">
               <h3>Registrar horas</h3>
               <form onSubmit={handleWorkLog} className="stacked-form">
-                <label>
-                  <span>Usuario</span>
-                  <input type="number" value={workLogForm.user_id} onChange={(event) => setWorkLogForm((current) => ({ ...current, user_id: event.target.value }))} />
-                </label>
                 <label>
                   <span>Horas</span>
                   <input type="number" step="0.5" min="0.5" value={workLogForm.hours} onChange={(event) => setWorkLogForm((current) => ({ ...current, hours: event.target.value }))} />

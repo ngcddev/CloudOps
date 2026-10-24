@@ -13,8 +13,8 @@ from app.config import settings
 from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
-from app.routers import catalog, change_requests, clients, services, tickets
-from app.seed import seed_if_empty
+from app.routers import audit_logs, auth, catalog, change_requests, clients, services, tickets
+from app.seed import seed_if_empty, seed_passwords
 from app.services.deploy_watch import watch_forever
 
 
@@ -24,6 +24,7 @@ async def lifespan(_: FastAPI):
     # aquí solo se cargan los datos semilla si la base está vacía.
     with SessionLocal() as db:
         seed_if_empty(db)
+        seed_passwords(db)
     # Seguimiento de las publicaciones (spec 005): solo si hay conexión configurada con Argo CD
     watcher = None
     if settings.argocd_url and settings.argocd_token:
@@ -38,6 +39,8 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
+app.include_router(auth.router)
+app.include_router(audit_logs.router)
 app.include_router(catalog.router)
 app.include_router(clients.router)
 app.include_router(clients.projects_router)
@@ -55,6 +58,7 @@ _CAMPOS = {
     "template": "plantilla",
     "namespace": "namespace",
     "plan_id": "plan",
+    "password": "contraseña",
     "reason": "motivo",
     "to_version": "versión destino",
     "ticket_id": "solicitud",

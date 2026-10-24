@@ -1,5 +1,6 @@
 # API del Hub (spec 003 T17): FastAPI sin root en el puerto 8000. Al arrancar aplica las migraciones
-# y carga los datos semilla si la base está vacía. DATABASE_URL viene del Secret hub-db.
+# y carga los datos semilla si la base está vacía. DATABASE_URL viene del Secret hub-db y las claves
+# de sesión del Secret hub-auth (spec 007).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: gitea.hub.local/forja-digital/hub-api:v1
+          image: gitea.hub.local/forja-digital/hub-api:v1.2
           ports:
             - name: http
               containerPort: 8000
@@ -35,6 +36,14 @@ spec:
                 secretKeyRef:
                   name: hub-db
                   key: DATABASE_URL
+            # Sesiones (spec 007): clave de firma del token y contraseña de los usuarios sembrados, del
+            # Secret hub-auth (ver crear-secretos.sh). Sin él la API no arranca: es a propósito.
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: hub-auth, key: JWT_SECRET }
+            - name: SEED_USER_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: hub-auth, key: SEED_USER_PASSWORD }
             # Gitea y Argo CD (spec 005): el Hub escribe en hub-gitops y lee el estado de Argo CD.
             # Los tokens vienen del Secret hub-gitops-tokens (ver crear-tokens.sh); sin él la API
             # arranca igual y los cambios por GitOps quedan sin conexión.

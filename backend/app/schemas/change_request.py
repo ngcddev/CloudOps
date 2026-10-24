@@ -11,7 +11,6 @@ _VERSION = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}")
 class ChangeRequestCreate(BaseModel):
     ticket_id: int
     to_version: str
-    requested_by_id: int | None = None
 
     @field_validator("to_version")
     @classmethod
@@ -24,7 +23,6 @@ class ChangeRequestCreate(BaseModel):
 
 class ChangeRequestReject(BaseModel):
     reason: str
-    actor_id: int | None = None
 
     @field_validator("reason")
     @classmethod
@@ -33,11 +31,6 @@ class ChangeRequestReject(BaseModel):
         if not value:
             raise ValueError("Debe indicar el motivo del rechazo.")
         return value
-
-
-class ChangeRequestApprove(BaseModel):
-    # Quién aprueba: queda en el commit de Gitea y en el historial de la solicitud
-    actor_id: int
 
 
 class ChangeRequestOut(BaseModel):
