@@ -33,6 +33,7 @@ export SITE VERSION COMMIT_SHA
 # shellcheck source=lib.sh
 source "$AQUI/lib.sh"
 mkdir -p "$OUT"
+export PUERTA_OUT="$OUT"  # reportar.sh guarda ahí el id de la corrida
 
 # Imágenes que produce el sitio: una (`Dockerfile`) o dos (consultorio: -web y -api)
 imagenes() {

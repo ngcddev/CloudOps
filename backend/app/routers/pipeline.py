@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import get_db
+from app.models.security_run import SecurityRun
 from app.models.service import Service
 from app.schemas.security import PipelineEvent, SecurityRunOut
 from app.services import security_gate as gate
@@ -38,7 +39,13 @@ def pipeline_event(event: PipelineEvent, db: Session = Depends(get_db)):
             images = event.images or [event.site]
             run = gate.open_run(db, service.id, event.version, event.commit_sha, images)
         else:
-            run = gate.latest_run(db, service.id, event.version)
+            if event.run_id is not None:
+                # Un pipeline que se relanza no debe tocar la corrida de otro: los eventos van a la suya
+                run = db.get(SecurityRun, event.run_id)
+                if run is not None and (run.service_id != service.id or run.version != event.version):
+                    raise HTTPException(status_code=409, detail="Esa corrida no es de este sitio y versión.")
+            else:
+                run = gate.latest_run(db, service.id, event.version)
             if run is None:
                 raise HTTPException(
                     status_code=404, detail=f"La versión «{event.version}» no tiene una corrida abierta."

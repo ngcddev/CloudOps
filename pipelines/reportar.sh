@@ -21,6 +21,14 @@ evento="${1:?Uso: reportar.sh inicio | paso <control> <ok|fallo> <resumen> [imag
 base=(--arg event "$evento" --arg site "$SITE" --arg version "$VERSION" --arg commit "${COMMIT_SHA:-}")
 vacio=/dev/null  # entrada vacía para `jq -n`
 
+# El id de la corrida que abrió este pipeline queda en un archivo y viaja en cada evento posterior: si la versión se
+# vuelve a subir, los eventos del pipeline viejo no se mezclan con los de la corrida nueva
+archivo_corrida="${PUERTA_OUT:-.puerta}/run_id"
+run_id=""
+if [ "$evento" != "inicio" ] && [ -s "$archivo_corrida" ]; then run_id="$(cat "$archivo_corrida")"; fi
+base+=(--arg run "$run_id")
+corrida='(if $run != "" then ($run | tonumber) else null end)'
+
 case "$evento" in
   inicio)
     cuerpo="$(jq_run -n "${base[@]}" --arg images "${IMAGES:-}" \
@@ -33,21 +41,21 @@ case "$evento" in
     if [ -n "$reporte" ] && [ -s "$reporte" ]; then
       cuerpo="$(jq_run --slurp "${base[@]}" --arg step "$control" --arg status "$estado" --arg summary "$resumen" --arg image "$imagen" \
         '{event: $event, site: $site, version: $version, step: $step, status: $status, summary: $summary,
-          image: (if $image != "" then $image else null end), report: .[0]}' < "$reporte")"
+          image: (if $image != "" then $image else null end), run_id: '"$corrida"', report: .[0]}' < "$reporte")"
     else
       cuerpo="$(jq_run -n "${base[@]}" --arg step "$control" --arg status "$estado" --arg summary "$resumen" --arg image "$imagen" \
         '{event: $event, site: $site, version: $version, step: $step, status: $status, summary: $summary,
-          image: (if $image != "" then $image else null end)}' < "$vacio")"
+          image: (if $image != "" then $image else null end), run_id: '"$corrida"'}' < "$vacio")"
     fi
     ;;
   fin)
     estado="${2:?Falta el resultado (ok|fallo)}"; digests="${3:-}"
     if [ -n "$digests" ] && [ -s "$digests" ]; then
       cuerpo="$(jq_run --slurp "${base[@]}" --arg status "$estado" \
-        '{event: $event, site: $site, version: $version, status: $status, image_digests: .[0]}' < "$digests")"
+        '{event: $event, site: $site, version: $version, status: $status, run_id: '"$corrida"', image_digests: .[0]}' < "$digests")"
     else
       cuerpo="$(jq_run -n "${base[@]}" --arg status "$estado" \
-        '{event: $event, site: $site, version: $version, status: $status}' < "$vacio")"
+        '{event: $event, site: $site, version: $version, status: $status, run_id: '"$corrida"'}' < "$vacio")"
     fi
     ;;
   *) echo "Evento desconocido: $evento" >&2; exit 2 ;;
@@ -76,4 +84,8 @@ if [ "${codigo:0:1}" != "2" ]; then
 fi
 id="$(printf '%s' "$respuesta" | jq_run -r '.id')"
 estado_corrida="$(printf '%s' "$respuesta" | jq_run -r '.status')"
+if [ "$evento" = "inicio" ]; then
+  mkdir -p "$(dirname "$archivo_corrida")"
+  printf '%s' "$id" > "$archivo_corrida"
+fi
 echo "Hub: ${evento} ${2:-} registrado (corrida #${id}, estado ${estado_corrida})."

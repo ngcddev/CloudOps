@@ -209,3 +209,53 @@ def test_un_control_desconocido_es_422(http):
     _inicio(http)
 
     assert _paso(http, "magia").status_code == 422
+
+
+# --- Cada evento va a su corrida (revisión de código) ---
+
+
+def _evento_con_corrida(http, run_id, body):
+    return _post(http, {**body, "run_id": run_id})
+
+
+def test_los_eventos_con_run_id_van_a_su_corrida_aunque_haya_una_mas_nueva(http):
+    vieja = _inicio(http).json()["id"]
+    nueva = _inicio(http).json()["id"]
+
+    # el pipeline viejo sigue vivo y cuenta lo suyo: no debe tocar la corrida nueva
+    respuesta = _evento_con_corrida(
+        http, vieja, {"event": "paso", "site": "ferreteria", "version": "v1.1", "step": "secretos", "status": "ok"}
+    )
+
+    assert respuesta.json()["id"] == vieja
+    assert [c["step"] for c in respuesta.json()["checks"]] == ["secretos"]
+    sin_tocar = _paso(http, "secretos")  # sin run_id: la última (la nueva), todavía vacía
+    assert sin_tocar.json()["id"] == nueva
+
+
+def test_el_fin_de_un_pipeline_viejo_no_cierra_la_corrida_nueva(http):
+    vieja = _inicio(http).json()["id"]
+    nueva = _inicio(http).json()["id"]
+
+    cierre = _evento_con_corrida(http, vieja, {"event": "fin", "site": "ferreteria", "version": "v1.1", "status": "fallo"})
+
+    assert (cierre.json()["id"], cierre.json()["status"]) == (vieja, "fallo")
+    assert _paso(http, "secretos").json()["id"] == nueva  # la nueva sigue abierta y recibe sus controles
+
+
+def test_un_run_id_de_otra_version_o_sitio_es_409(http):
+    otra = _inicio(http, version="v2").json()["id"]
+
+    respuesta = _evento_con_corrida(
+        http, otra, {"event": "paso", "site": "ferreteria", "version": "v1.1", "step": "secretos", "status": "ok"}
+    )
+
+    assert respuesta.status_code == 409
+
+
+def test_un_run_id_que_no_existe_es_404(http):
+    respuesta = _evento_con_corrida(
+        http, 99999, {"event": "paso", "site": "ferreteria", "version": "v1.1", "step": "secretos", "status": "ok"}
+    )
+
+    assert respuesta.status_code == 404

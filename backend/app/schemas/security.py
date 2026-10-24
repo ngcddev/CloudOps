@@ -18,6 +18,8 @@ class PipelineEvent(BaseModel):
     site: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,40}$")
     version: str = Field(min_length=1, max_length=50)
     commit_sha: str | None = Field(default=None, max_length=64)
+    # paso y fin: la corrida que abrió este mismo pipeline. Sin él se usa la última de la versión (pipelines viejos).
+    run_id: int | None = None
     # inicio: las imágenes que debe producir la versión
     images: list[str] = Field(default_factory=list, max_length=5)
     # paso
