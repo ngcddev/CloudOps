@@ -23,3 +23,7 @@ class SecurityCheck(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     run = relationship("SecurityRun", back_populates="checks")
+
+    @property
+    def has_report(self) -> bool:
+        return self.report is not None

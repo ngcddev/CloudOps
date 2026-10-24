@@ -47,6 +47,8 @@ class SecurityCheckOut(BaseModel):
     image: str | None
     status: str
     summary: str
+    # true si el control guardó un reporte que se puede descargar como evidencia
+    has_report: bool
     created_at: datetime
 
 
@@ -64,3 +66,12 @@ class SecurityRunOut(BaseModel):
     started_at: datetime
     finished_at: datetime | None
     checks: list[SecurityCheckOut] = Field(default_factory=list)
+
+
+class GateOut(BaseModel):
+    """Estado de la puerta para una versión: `sin_corrida`, `en_curso`, `ok` o `fallo`, con su última corrida."""
+
+    version: str
+    status: str
+    failed_step: str | None
+    run: SecurityRunOut | None
