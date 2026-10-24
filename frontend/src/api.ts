@@ -866,3 +866,52 @@ export async function listDeployments(serviceId: number): Promise<Deployment[]> 
   }
   return request<Deployment[]>(`/services/${serviceId}/deployments`);
 }
+
+
+// ---------- Bitácora (spec 007) ----------
+
+export interface AuditLog {
+  id: number;
+  user_id: number | null;
+  // "Sistema" cuando la acción la hizo el Hub solo
+  user_name: string;
+  action: string;
+  entity: string;
+  entity_id: number | null;
+  details: Record<string, unknown> | null;
+  ip: string | null;
+  created_at: string;
+}
+
+export interface AuditLogFilters {
+  user_id?: number;
+  entity?: string;
+  action?: string;
+  from?: string;
+  to?: string;
+}
+
+export async function listAuditLogs(filters: AuditLogFilters = {}): Promise<AuditLog[]> {
+  if ((await detectMode()) === "mock") {
+    const now = Date.now();
+    const hoursAgo = (hours: number) => new Date(now - hours * 60 * 60 * 1000).toISOString();
+    const sample: AuditLog[] = [
+      { id: 3, user_id: null, user_name: "Sistema", action: "desplegar", entity: "change_request", entity_id: 1, details: { a: "v1.1", commit: "3fa9c21" }, ip: null, created_at: hoursAgo(1) },
+      { id: 2, user_id: MOCK_USER_ID, user_name: MOCK_USER_NAME, action: "aprobar", entity: "change_request", entity_id: 1, details: { a: "v1.1", commit: "3fa9c21" }, ip: "127.0.0.1", created_at: hoursAgo(2) },
+      { id: 1, user_id: MOCK_USER_ID, user_name: MOCK_USER_NAME, action: "cambiar_prioridad", entity: "ticket", entity_id: 1001, details: { a: "P2" }, ip: "127.0.0.1", created_at: hoursAgo(3) },
+    ];
+    return sample.filter(
+      (log) =>
+        (filters.user_id === undefined || log.user_id === filters.user_id) &&
+        (!filters.entity || log.entity === filters.entity) &&
+        (!filters.action || log.action === filters.action),
+    );
+  }
+  const query = new URLSearchParams();
+  if (filters.user_id !== undefined) query.set("user_id", String(filters.user_id));
+  if (filters.entity) query.set("entity", filters.entity);
+  if (filters.action) query.set("action", filters.action);
+  if (filters.from) query.set("from", filters.from);
+  if (filters.to) query.set("to", filters.to);
+  return request<AuditLog[]>(`/audit-logs${query.size ? `?${query.toString()}` : ""}`);
+}

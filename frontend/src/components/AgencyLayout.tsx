@@ -13,6 +13,7 @@ const sections: { label: string; to?: string; spec?: string }[] = [
   { label: "Incidentes", spec: "008" },
   { label: "Tableros", spec: "010" },
   { label: "Reportes", spec: "013" },
+  { label: "Bitácora", to: "/agencia/bitacora" },
 ];
 
 export default function AgencyLayout() {

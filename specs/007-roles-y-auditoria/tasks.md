@@ -39,7 +39,7 @@
 - [x] T16 · Crear `frontend/src/auth.tsx` (contexto de sesión en `sessionStorage`) y enviar `Authorization` desde `api.ts`, quitando `CURRENT_USER_ID`, `viewer_role`, `client_id` y los ids de actor de las llamadas (`TicketDetail.tsx`, `ChangeList.tsx`) — **Verifica:** `tsc` sin errores y `git grep CURRENT_USER_ID frontend/` sin resultados. [ngcddev]
 - [x] T17 · Crear `/login` y proteger las rutas: sin sesión → `/login`, cliente en `/agencia/*` → `/portal`, agencia en `/portal/*` → `/agencia`, y un 401 de la API cierra la sesión — **Verifica:** abrir `/agencia/cambios` sin sesión lleva a `/login`; entrar como agencia vuelve a la bandeja. [ngcddev]
 - [x] T18 · Mostrar el usuario y "Cerrar sesión" en la consola y el portal, y quitar el selector de cliente de `/portal/solicitudes` — **Verifica:** como La Sazón el portal muestra solo sus solicitudes y servicios; cerrar sesión vuelve a `/login`. [ngcddev]
-- [ ] T19 · Crear `/agencia/bitacora` con filtros y habilitar "Bitácora" en el menú de la consola — **Verifica:** aprobar un cambio y abrir la bitácora muestra la fila con usuario, acción, objeto y hora de Colombia. [ ]
+- [x] T19 · Crear `/agencia/bitacora` con filtros y habilitar "Bitácora" en el menú de la consola — **Verifica:** aprobar un cambio y abrir la bitácora muestra la fila con usuario, acción, objeto y hora de Colombia. [ngcddev]
 
 ## Despliegue en k3s
 

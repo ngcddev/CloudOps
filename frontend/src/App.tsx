@@ -7,6 +7,7 @@ import PortalLayout from "./components/PortalLayout";
 import RequireRole from "./components/RequireRole";
 import ClientDetail from "./pages/agencia/ClientDetail";
 import ClientForm from "./pages/agencia/ClientForm";
+import AuditLogList from "./pages/agencia/AuditLogList";
 import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
 import ServiceList from "./pages/agencia/ServiceList";
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="clientes" element={<ClientList />} />
           <Route path="clientes/nuevo" element={<ClientForm />} />
           <Route path="clientes/:id" element={<ClientDetail />} />
+          <Route path="bitacora" element={<AuditLogList />} />
           <Route path="cambios" element={<ChangeList />} />
           <Route path="servicios" element={<ServiceList />} />
           <Route path="tickets" element={<TicketList />} />
