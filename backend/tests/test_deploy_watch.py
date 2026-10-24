@@ -297,9 +297,9 @@ from datetime import timedelta  # noqa: E402
 
 
 @pytest.fixture
-def client(as_agency):
-    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
-    return as_agency
+def client(seeded, as_user):
+    """Estas pruebas operan como Sofía, técnica de la agencia sembrada (spec 007)."""
+    return as_user("sofia@forjadigital.test")
 
 
 def _aprobado_hace(db, change, minutos: int):

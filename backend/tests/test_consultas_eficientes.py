@@ -6,9 +6,9 @@ import pytest
 
 
 @pytest.fixture
-def client(as_agency):
-    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
-    return as_agency
+def client(seeded, as_user):
+    """Estas pruebas operan como Sofía, técnica de la agencia sembrada (spec 007)."""
+    return as_user("sofia@forjadigital.test")
 
 
 def _contar_consultas(session_factory, llamada) -> int:
@@ -75,7 +75,7 @@ def test_la_bandeja_de_cambios_no_hace_consultas_por_fila(client, session_factor
 
     cantidad = _contar_consultas(session_factory, lambda: client.get("/api/change-requests"))
 
-    assert cantidad <= 4  # la lista + quién pidió + quién aprobó + las solicitudes
+    assert cantidad <= 5  # la sesión + la lista + quién pidió + quién aprobó + las solicitudes
     lista = client.get("/api/change-requests").json()
     assert len(lista) == 3 and all(c["approved_by_name"] == tecnico.name for c in lista)
 

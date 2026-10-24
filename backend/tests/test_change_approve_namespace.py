@@ -7,9 +7,9 @@ import pytest
 
 
 @pytest.fixture
-def client(as_agency):
-    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
-    return as_agency
+def client(seeded, as_user):
+    """Estas pruebas operan como Sofía, técnica de la agencia sembrada (spec 007)."""
+    return as_user("sofia@forjadigital.test")
 
 
 def test_un_namespace_que_no_es_de_un_cliente_no_escribe_en_gitea(client, seeded, gitea, tecnico, cambio):  # noqa: F811
@@ -18,7 +18,7 @@ def test_un_namespace_que_no_es_de_un_cliente_no_escribe_en_gitea(client, seeded
     service.namespace = "cliente-x/../../hub/api"
     seeded.commit()
 
-    response = client.post(f"/api/change-requests/{cambio['id']}/approve", json={"actor_id": tecnico.id})
+    response = client.post(f"/api/change-requests/{cambio['id']}/approve")
 
     assert response.status_code == 422
     assert gitea.commits == []
