@@ -543,3 +543,15 @@ h4 {
 .change-fallida {
   border-width: 3px;
 }
+
+/* Inicio de sesión (spec 007): una tarjeta centrada, en blanco y negro */
+.login {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 24rem;
+}
