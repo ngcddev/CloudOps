@@ -31,7 +31,7 @@
 - [x] T11 · Proteger `change_requests`: rol agencia, actor desde la sesión (se quitan `requested_by_id` y `actor_id` de los esquemas y `require_user` del router) y registrar `crear`, `aprobar` y `rechazar` — **Verifica:** `pytest` con Gitea simulado (`tests/fake_gitea.py`): aprobar como cliente → 403 sin commit en Gitea; como agencia, `approved_by_id` es el usuario del token y queda la fila; un 502 de Gitea no deja fila (cierra la nota de la 005). [ngcddev]
 - [x] T12 · Dejar `GET /api/services/status` y `GET /api/services/{id}/deployments` solo para agencia — **Verifica:** `pytest`: como cliente → 403; como agencia responden igual que antes. [ngcddev]
 - [x] T13 · Registrar `desplegar` y `fallar` desde `services/deploy_watch.py` con usuario "Sistema", en el mismo commit que cambia el estado — **Verifica:** `pytest` con Argo CD simulado (`tests/fake_argocd.py`): un cambio que queda `desplegada` y otro `fallida` dejan una fila cada uno con `user_id` nulo. [ngcddev]
-- [ ] T14 · Agregar la prueba que recorre todas las rutas de la app y exige 401 sin token (salvo `/health` y `/api/auth/login`) — **Verifica:** `pytest` en verde; una ruta nueva sin protección la hace fallar. [ ]
+- [x] T14 · Agregar la prueba que recorre todas las rutas de la app y exige 401 sin token (salvo `/health` y `/api/auth/login`) — **Verifica:** `pytest` en verde; una ruta nueva sin protección la hace fallar. [ngcddev]
 - [ ] T15 · Crear `GET /api/audit-logs` con filtros por usuario, objeto, acción y fechas — **Verifica:** como agencia lista las acciones más recientes primero con "Sistema" donde no hay usuario; como cliente → 403. [ ]
 
 ## Pantallas
