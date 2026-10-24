@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Backend, Frontend)
 >
-> **Módulo:** 3 (producto: puede adelantarse) · **Requerimientos:** RF-01 (roles), RF-10 · **Depende de:** 001, 004, 005 · **Estado:** Tareas listas
+> **Módulo:** 3 (producto: puede adelantarse) · **Requerimientos:** RF-01 (roles), RF-10 · **Depende de:** 001, 004, 005 · **Estado:** En curso
 
 ## Qué y por qué
 
@@ -33,23 +33,23 @@ Esta spec cambia eso por una sesión real y deja una bitácora que las specs sig
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Existen usuarios sembrados: al menos 2 de agencia y 1 por cliente, todos con contraseña
+- [x] CA-1. Existen usuarios sembrados: al menos 2 de agencia y 1 por cliente, todos con contraseña
   de desarrollo.
-- [ ] CA-2. Sin sesión, ninguna ruta de la API (salvo la salud del servicio y el inicio de sesión)
+- [x] CA-2. Sin sesión, ninguna ruta de la API (salvo la salud del servicio y el inicio de sesión)
   ni del portal o la consola responde datos.
-- [ ] CA-3. Un usuario `cliente` solo ve datos de su cliente; pedir los de otro responde "no
+- [x] CA-3. Un usuario `cliente` solo ve datos de su cliente; pedir los de otro responde "no
   encontrado". El portal ya no tiene selector de cliente.
-- [ ] CA-4. Un usuario `cliente` no puede ejecutar acciones de agencia (clasificar, asignar, cambiar
+- [x] CA-4. Un usuario `cliente` no puede ejecutar acciones de agencia (clasificar, asignar, cambiar
   estado, registrar horas, crear o editar clientes, registrar, aprobar o rechazar cambios, ver el
   estado técnico de los servicios); el intento responde "sin permiso".
-- [ ] CA-5. Las acciones quedan a nombre del usuario de la sesión: la petición ya no trae quién la
+- [x] CA-5. Las acciones quedan a nombre del usuario de la sesión: la petición ya no trae quién la
   hace, y nadie puede aprobar, rechazar ni registrar nada en nombre de otro.
-- [ ] CA-6. Quedan en la bitácora, con usuario (o "Sistema"), acción, objeto y hora: cambiar
+- [x] CA-6. Quedan en la bitácora, con usuario (o "Sistema"), acción, objeto y hora: cambiar
   prioridad, asignar y cambiar el estado de una solicitud; crear y editar un cliente; registrar,
   aprobar y rechazar un cambio; y la publicación confirmada o fallida de un cambio. Las specs
   siguientes registran sus acciones en la misma bitácora.
-- [ ] CA-7. La bitácora no se puede editar ni borrar desde la aplicación.
-- [ ] CA-8. Las contraseñas se guardan cifradas con hash; ninguna está en el código ni en el repo.
+- [x] CA-7. La bitácora no se puede editar ni borrar desde la aplicación.
+- [x] CA-8. Las contraseñas se guardan cifradas con hash; ninguna está en el código ni en el repo.
 
 ## Fuera de alcance
 

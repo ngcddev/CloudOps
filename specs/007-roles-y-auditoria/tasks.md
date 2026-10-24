@@ -47,4 +47,4 @@
 
 ## Cierre
 
-- [ ] T21 · Demo: La Sazón entra y ve solo lo suyo, pedir El Tornillo da "no encontrado", la agencia aprueba un cambio de El Tornillo y la bitácora muestra la aprobación y la publicación a nombre de "Sistema"; se repiten las demos de la 004 y la 005 con login — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [ ] T21 · Demo: La Sazón entra y ve solo lo suyo, pedir El Tornillo da "no encontrado", la agencia aprueba un cambio de El Tornillo y la bitácora muestra la aprobación y la publicación a nombre de "Sistema"; se repiten las demos de la 004 y la 005 con login — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). *Hecho en compose: `gitops/pruebas/demo-007.sh` pasa; falta la parte con Gitea y Argo CD (aprobar y ver "Sistema") en k3s.* [ngcddev]
