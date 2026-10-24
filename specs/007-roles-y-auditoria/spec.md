@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Backend, Frontend)
 >
-> **Módulo:** 3 (producto: puede adelantarse) · **Requerimientos:** RF-01 (roles), RF-10 · **Depende de:** 001, 004, 005 · **Estado:** En curso
+> **Módulo:** 3 (producto: puede adelantarse) · **Requerimientos:** RF-01 (roles), RF-10 · **Depende de:** 001, 004, 005 · **Estado:** Terminada
 
 ## Qué y por qué
 

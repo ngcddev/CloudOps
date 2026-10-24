@@ -43,8 +43,8 @@
 
 ## Despliegue en k3s
 
-- [ ] T20 · Crear el `Secret` `hub-auth` (`JWT_SECRET` y `SEED_USER_PASSWORD` al azar) desde `gitops/hub/crear-secretos.sh`, pasarlo a la API en `gitops/hub/api.yaml` y publicar las imágenes nuevas de `hub-api` y `hub-web` — **Verifica:** `http://hub.local` pide entrar y acepta al usuario de La Sazón con la contraseña del `Secret`; `git grep` no encuentra los valores en el repo. *Hecho: script, manifiesto y documentación; falta publicar las imágenes y probar el login en k3s.* [ngcddev]
+- [x] T20 · Crear el `Secret` `hub-auth` (`JWT_SECRET` y `SEED_USER_PASSWORD` al azar) desde `gitops/hub/crear-secretos.sh`, pasarlo a la API en `gitops/hub/api.yaml` y publicar las imágenes nuevas de `hub-api` y `hub-web` — **Verifica:** `http://hub.local` pide entrar y acepta al usuario de La Sazón con la contraseña del `Secret`; `git grep` no encuentra los valores en el repo. *Verificado en el clúster: Secret hub-auth creado, Hub v1.1 publicado y aplicado; http://hub.local pide entrar, el usuario de La Sazón entra con la contraseña del Secret y git grep no encuentra los valores.* [ngcddev]
 
 ## Cierre
 
-- [ ] T21 · Demo: La Sazón entra y ve solo lo suyo, pedir El Tornillo da "no encontrado", la agencia aprueba un cambio de El Tornillo y la bitácora muestra la aprobación y la publicación a nombre de "Sistema"; se repiten las demos de la 004 y la 005 con login — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). *Hecho en compose: `gitops/pruebas/demo-007.sh` pasa; falta la parte con Gitea y Argo CD (aprobar y ver "Sistema") en k3s.* [ngcddev]
+- [x] T21 · Demo: La Sazón entra y ve solo lo suyo, pedir El Tornillo da "no encontrado", la agencia aprueba un cambio de El Tornillo y la bitácora muestra la aprobación y la publicación a nombre de "Sistema"; se repiten las demos de la 004 y la 005 con login — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). *Verificado en el clúster: demo-007.sh y demo-005.sh (con sesión) pasan; la bitácora muestra crear y aprobar a nombre de Sofía y desplegar a nombre de Sistema.* [ngcddev]
