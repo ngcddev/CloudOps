@@ -90,3 +90,12 @@ def test_historial_de_un_servicio_sin_cambios_esta_vacio(client, ferreteria):
 
 def test_servicio_inexistente_es_404(client, seeded):
     assert client.get("/api/services/9999/deployments").status_code == 404
+
+
+def test_el_estado_tecnico_de_los_servicios_es_solo_de_agencia(as_user, anonymous, ferreteria):
+    cliente = as_user("contacto@eltornillo.test")
+
+    assert cliente.get("/api/services/status").status_code == 403
+    assert cliente.get(f"/api/services/{ferreteria.id}/deployments").status_code == 403
+    assert anonymous.get("/api/services/status").status_code == 401
+    assert anonymous.get(f"/api/services/{ferreteria.id}/deployments").status_code == 401

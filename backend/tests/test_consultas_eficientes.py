@@ -46,7 +46,7 @@ def test_el_estado_de_los_servicios_no_hace_consultas_por_servicio(client, sessi
 
     cantidad = _contar_consultas(session_factory, lambda: client.get("/api/services/status"))
 
-    assert cantidad <= 4  # servicios + último despliegue + cambios en curso
+    assert cantidad <= 5  # la sesión + servicios + último despliegue + cambios en curso
     filas = client.get("/api/services/status").json()
     assert {f["open_change_to_version"] for f in filas} == {"v1.3"}
     assert {f["last_author"] for f in filas} == {"Sofía"}
