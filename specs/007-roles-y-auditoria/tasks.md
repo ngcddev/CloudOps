@@ -32,7 +32,7 @@
 - [x] T12 · Dejar `GET /api/services/status` y `GET /api/services/{id}/deployments` solo para agencia — **Verifica:** `pytest`: como cliente → 403; como agencia responden igual que antes. [ngcddev]
 - [x] T13 · Registrar `desplegar` y `fallar` desde `services/deploy_watch.py` con usuario "Sistema", en el mismo commit que cambia el estado — **Verifica:** `pytest` con Argo CD simulado (`tests/fake_argocd.py`): un cambio que queda `desplegada` y otro `fallida` dejan una fila cada uno con `user_id` nulo. [ngcddev]
 - [x] T14 · Agregar la prueba que recorre todas las rutas de la app y exige 401 sin token (salvo `/health` y `/api/auth/login`) — **Verifica:** `pytest` en verde; una ruta nueva sin protección la hace fallar. [ngcddev]
-- [ ] T15 · Crear `GET /api/audit-logs` con filtros por usuario, objeto, acción y fechas — **Verifica:** como agencia lista las acciones más recientes primero con "Sistema" donde no hay usuario; como cliente → 403. [ ]
+- [x] T15 · Crear `GET /api/audit-logs` con filtros por usuario, objeto, acción y fechas — **Verifica:** como agencia lista las acciones más recientes primero con "Sistema" donde no hay usuario; como cliente → 403. [ngcddev]
 
 ## Pantallas
 

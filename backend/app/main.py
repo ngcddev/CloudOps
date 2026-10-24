@@ -13,7 +13,7 @@ from app.config import settings
 from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
-from app.routers import auth, catalog, change_requests, clients, services, tickets
+from app.routers import audit_logs, auth, catalog, change_requests, clients, services, tickets
 from app.seed import seed_if_empty
 from app.services.deploy_watch import watch_forever
 
@@ -39,6 +39,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
 app.include_router(auth.router)
+app.include_router(audit_logs.router)
 app.include_router(catalog.router)
 app.include_router(clients.router)
 app.include_router(clients.projects_router)
