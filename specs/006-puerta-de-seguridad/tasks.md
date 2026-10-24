@@ -22,7 +22,7 @@
 
 ## Workflow de la puerta (`pipelines/`)
 
-- [ ] T07 · Escribir `pipelines/reportar.sh` que manda un paso al Hub (`POST /api/pipeline-events` con el token) — **Verifica:** contra el Hub en `docker compose`, un evento de prueba queda en la base. [ ]
+- [x] T07 · Escribir `pipelines/reportar.sh` que manda un paso al Hub (`POST /api/pipeline-events` con el token) — **Verifica:** contra el Hub en `docker compose`, un evento de prueba queda en la base. [ngcddev]
 - [ ] T08 · Escribir `pipelines/puerta.yaml` con `push` de tags `v*`: Gitleaks sobre los commits nuevos del tag y build con `APP_VERSION=<tag>` — **Verifica:** un tag con una contraseña falla en "secretos" y no llega a construir (CA-1). [ ]
 - [ ] T09 · Sumar al workflow Trivy (`CRITICAL`, `--ignore-unfixed`) y Syft sobre el tar de la imagen — **Verifica:** una versión con una imagen base vieja (por ejemplo `nginx:1.18`) falla en "vulnerabilidades" (CA-2); una limpia deja el SBOM SPDX en el Hub. [ ]
 - [ ] T10 · Sumar al workflow el push con `skopeo`, `cosign sign` y `cosign verify` — **Verifica:** una versión limpia queda firmada en el registro; si se cambia `cosign.pub` por otra clave, falla en "verificación" y la corrida queda `fallo` (CA-3). [ ]
