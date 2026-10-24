@@ -16,6 +16,7 @@ from app.schemas.change_request import (
     ChangeRequestReject,
 )
 from app.services import audit
+from app.services import security_gate as gate
 from app.services.change_flow import step_event, transition
 from app.services.gitops_publish import (
     NothingToPublish,
@@ -163,6 +164,10 @@ def approve_change_request(
             status_code=409,
             detail=f"No se permite pasar de «{change.status}» a «aprobada».",
         )
+    # Puerta de seguridad (spec 006): solo se publica una versión cuyos controles pasaron
+    current = gate.gate_status(db, change.service_id, change.to_version)
+    if current.status != gate.OK:
+        raise HTTPException(status_code=409, detail=gate.not_approvable_message(change.to_version, current))
 
     try:
         kustomization_path(change.service.namespace)  # namespace que no es de un cliente: no se escribe nada

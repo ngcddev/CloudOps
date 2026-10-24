@@ -129,3 +129,28 @@ def as_agency(api_db, session_factory):
 def as_client(api_db, seeded, as_user):
     """Cliente HTTP con la sesión de Marta Ríos, de La Sazón (usa la semilla)."""
     return as_user("contacto@lasazon.test")
+
+
+@pytest.fixture
+def pass_gate(db):
+    """Fábrica: `pass_gate("cliente-ferreteria", "v1.1")` deja la puerta de seguridad de esa versión en `ok`.
+
+    Recorre los mismos pasos que el pipeline (corrida, seis controles y cierre), así las pruebas de
+    aprobación no dependen de un atajo.
+    """
+    from app.models import Service
+    from app.services import security_gate as gate
+
+    def make(namespace: str, version: str, images: list[str] | None = None):
+        service = db.scalar(select(Service).where(Service.namespace == namespace))
+        images = images or [namespace.removeprefix("cliente-")]
+        run = gate.open_run(db, service.id, version, "a" * 40, images)
+        gate.add_check(db, run, "secretos", "ok", "Sin secretos", None, None)
+        for image in images:
+            for step in gate.IMAGE_STEPS:
+                gate.add_check(db, run, step, "ok", "", None, image)
+        gate.close_run(db, run, "ok")
+        db.commit()
+        return run
+
+    return make

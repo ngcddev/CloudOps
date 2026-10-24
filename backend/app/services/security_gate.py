@@ -35,6 +35,31 @@ class Gate:
         return self.run.failed_step if self.run is not None else None
 
 
+# Nombre de cada control para quien opera la consola (el cliente nunca ve esto: ver CLIENT_TEXT)
+STEP_LABELS = {
+    "secretos": "secretos en el código",
+    "construccion": "construcción de la imagen",
+    "vulnerabilidades": "vulnerabilidades críticas",
+    "sbom": "inventario de componentes (SBOM)",
+    "firma": "firma de la imagen",
+    "verificacion": "verificación de la firma",
+    "pipeline": "ejecución del pipeline",
+}
+
+
+def not_approvable_message(version: str, gate: "Gate") -> str:
+    """Por qué no se puede aprobar un cambio hacia `version`, para la agencia."""
+    if gate.status == SIN_CORRIDA:
+        return (
+            f"La versión {version} aún no pasó por la puerta de seguridad: "
+            "súbela al repositorio del sitio para que corran los controles."
+        )
+    if gate.status == EN_CURSO:
+        return f"Los controles de seguridad de la versión {version} todavía están corriendo."
+    label = STEP_LABELS.get(gate.failed_step or "", gate.failed_step or "un control")
+    return f"La versión {version} no pasó los controles de seguridad ({label})."
+
+
 def latest_run(db: Session, service_id: int, version: str) -> SecurityRun | None:
     """La última corrida de la versión: si se vuelve a subir, vale la más reciente."""
     return db.scalar(
