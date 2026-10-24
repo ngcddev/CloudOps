@@ -99,3 +99,38 @@ def test_el_estado_tecnico_de_los_servicios_es_solo_de_agencia(as_user, anonymou
     assert cliente.get(f"/api/services/{ferreteria.id}/deployments").status_code == 403
     assert anonymous.get("/api/services/status").status_code == 401
     assert anonymous.get(f"/api/services/{ferreteria.id}/deployments").status_code == 401
+
+
+# --- Puerta de seguridad de la versión activa (spec 006, T20) ---
+
+
+def test_indica_la_puerta_de_la_version_activa_de_cada_servicio(client, seeded, pass_gate):
+    pass_gate("cliente-ferreteria", "v1")
+    por_ns = {item["namespace"]: item for item in client.get("/api/services/status").json()}
+
+    assert por_ns["cliente-ferreteria"]["security_status"] == "ok"
+    assert por_ns["cliente-restaurante"]["security_status"] == "sin_corrida"
+    assert por_ns["cliente-restaurante"]["security_failed_step"] is None
+
+
+def test_la_puerta_de_otra_version_no_cuenta_como_la_activa(client, seeded, pass_gate):
+    pass_gate("cliente-ferreteria", "v1.1")  # la activa sigue siendo v1
+
+    por_ns = {item["namespace"]: item for item in client.get("/api/services/status").json()}
+
+    assert por_ns["cliente-ferreteria"]["security_status"] == "sin_corrida"
+
+
+def test_una_version_activa_que_fallo_la_puerta_dice_cual_control(client, seeded):
+    from app.services import security_gate as gate
+
+    servicio = seeded.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
+    run = gate.open_run(seeded, servicio.id, "v1", None, ["restaurante"])
+    gate.add_check(seeded, run, "secretos", "fallo", "1 hallazgo", None, None)
+    seeded.commit()
+
+    por_ns = {item["namespace"]: item for item in client.get("/api/services/status").json()}
+
+    assert (por_ns["cliente-restaurante"]["security_status"], por_ns["cliente-restaurante"]["security_failed_step"]) == (
+        "fallo", "secretos",
+    )

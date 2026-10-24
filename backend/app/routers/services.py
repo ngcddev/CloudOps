@@ -9,6 +9,7 @@ from app.models.change_request import ChangeRequest
 from app.models.client import Client
 from app.models.deployment import Deployment
 from app.models.project import Project
+from app.models.security_run import SecurityRun
 from app.models.service import Service
 from app.routers.change_requests import OPEN_STATUSES
 from app.schemas.service_status import DeploymentOut, ServiceStatusOut
@@ -39,9 +40,19 @@ def services_status(db: Session = Depends(get_db)):
             select(ChangeRequest).where(ChangeRequest.status.in_(OPEN_STATUSES)).order_by(ChangeRequest.id)
         )
     }
+    # La puerta de seguridad (spec 006): la última corrida de cada versión, en una sola consulta
+    latest_runs = {
+        (run.service_id, run.version): run
+        for run in db.scalars(
+            select(SecurityRun).where(
+                SecurityRun.id.in_(select(func.max(SecurityRun.id)).group_by(SecurityRun.service_id, SecurityRun.version))
+            )
+        )
+    }
     result = []
     for service, client in rows:
         last = last_by_service.get(service.id)
+        run = latest_runs.get((service.id, service.current_version))
         open_change = open_by_service.get(service.id)
         result.append(
             ServiceStatusOut(
@@ -60,6 +71,8 @@ def services_status(db: Session = Depends(get_db)):
                 open_change_id=open_change.id if open_change else None,
                 open_change_status=open_change.status if open_change else None,
                 open_change_to_version=open_change.to_version if open_change else None,
+                security_status=run.status if run else "sin_corrida",
+                security_failed_step=run.failed_step if run else None,
             )
         )
     return result
