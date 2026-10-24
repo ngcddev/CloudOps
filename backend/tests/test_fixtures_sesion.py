@@ -6,6 +6,7 @@ def test_as_agency_es_un_tecnico_de_la_agencia(as_agency):
 
     assert me.status_code == 200
     assert me.json()["role"] == "agencia"
+    assert me.json()["email"] == "tecnico.pruebas@forjadigital.test"
 
 
 def test_as_client_es_el_usuario_de_la_sazon(as_client):

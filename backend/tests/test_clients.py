@@ -1,5 +1,12 @@
 # Pruebas del CRUD de clientes: crear, listar, ver y editar (spec 001, T06 · CA-2 y CA-5).
 from app.models import Client
+import pytest
+
+
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
 
 
 def test_create_client_with_only_name(client):

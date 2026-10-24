@@ -120,8 +120,8 @@ def as_user(api_db, session_factory):
 
 @pytest.fixture
 def as_agency(api_db, session_factory):
-    """Cliente HTTP con la sesión de un técnico de la agencia (se crea si no hay semilla)."""
-    return _authenticated(session_factory, "sofia@forjadigital.test", "agencia")
+    """Cliente HTTP con la sesión de un técnico de la agencia (usuario propio de las pruebas, no choca con la semilla)."""
+    return _authenticated(session_factory, "tecnico.pruebas@forjadigital.test", "agencia")
 
 
 @pytest.fixture

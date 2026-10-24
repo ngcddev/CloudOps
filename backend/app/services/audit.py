@@ -1,4 +1,5 @@
 # Registro de acciones sensibles en la bitácora (spec 007, T07).
+from fastapi import Request
 from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog
@@ -29,3 +30,11 @@ def record(
     )
     db.add(log)
     return log
+
+
+def request_ip(request: Request) -> str | None:
+    """IP de quien hizo la petición (la del proxy si el Ingress la reenvía)."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else None
