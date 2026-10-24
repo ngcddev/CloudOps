@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import AgencyLayout from "./components/AgencyLayout";
 import HomeRedirect from "./components/HomeRedirect";
+import PortalLayout from "./components/PortalLayout";
 import RequireRole from "./components/RequireRole";
 import ClientDetail from "./pages/agencia/ClientDetail";
 import ClientForm from "./pages/agencia/ClientForm";
@@ -34,8 +35,11 @@ export default function App() {
         </Route>
       </Route>
       <Route element={<RequireRole role="cliente" />}>
-        <Route path="/portal" element={<Navigate to="/portal/solicitudes" replace />} />
-        <Route path="/portal/solicitudes" element={<PortalTicketList />} />
+        <Route path="/portal" element={<PortalLayout />}>
+          <Route index element={<Navigate to="solicitudes" replace />} />
+          <Route path="solicitudes" element={<PortalTicketList />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
