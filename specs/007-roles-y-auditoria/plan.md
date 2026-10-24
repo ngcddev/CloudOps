@@ -124,6 +124,9 @@ cambio `desplegada` o `fallida`.
 | La IP de la bitácora la escribe quien llama | `request_ip` usa la última entrada de `X-Forwarded-For` (la que agrega Traefik), no la primera |
 | Un reinicio da la contraseña de desarrollo a quien no tiene | Solo a los usuarios de `seed/users.json` |
 | Romper las demos de la 004 y la 005 | Se repiten con login al cerrar la spec |
+| El login no limita intentos y todos los usuarios sembrados comparten una contraseña | Aceptado para el laboratorio (usuarios sembrados, sin registro público). Mejora futura: límite de intentos por correo e IP y contraseña propia por usuario |
+| `GET /api/plans` muestra precio y horas incluidas de los tres planes a cualquier cliente | Pendiente de decidir con el industrial: o los planes son públicos, o el cliente solo ve el suyo |
+| La sesión viaja por HTTP en el laboratorio | El JWT va en la cabecera `Authorization`; con TLS en el Ingress (mejora futura) queda protegido en tránsito |
 
 ## Cómo se verifica
 
