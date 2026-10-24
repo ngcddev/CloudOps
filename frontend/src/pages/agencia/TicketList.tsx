@@ -75,7 +75,7 @@ export default function TicketList() {
   const [slaFilter, setSlaFilter] = useState<SlaState | "">("");
 
   useEffect(() => {
-    Promise.all([listClients(), listTickets({ viewer_role: "agencia" })])
+    Promise.all([listClients(), listTickets()])
       .then(async ([clientList, ticketData]) => {
         const clientDetails = await Promise.all(clientList.map((client) => getClient(client.id)));
         setClients(clientDetails);

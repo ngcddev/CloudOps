@@ -1,0 +1,70 @@
+# Puerta de seguridad de los sitios de clientes (spec 006). Se copia a .gitea/workflows/puerta.yaml de cada
+# repositorio de sitio con pipelines/sembrar-repos-sitios.sh; los scripts viajan en .gitea/puerta/.
+#
+# Corre al subir una etiqueta de versión (v1.1, v2...). Cada paso cuenta su resultado al Hub (reportar.sh);
+# si uno falla, los siguientes no corren y el último paso cierra la corrida igual. El Hub solo deja aprobar
+# una versión cuya corrida terminó en «ok». Los secretos se definen en la organización de Gitea
+# (pipelines/configurar-gitea.sh); ninguno va en este archivo.
+name: puerta-de-seguridad
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  puerta:
+    # Etiqueta del runner del laboratorio: una máquina con Docker, git, curl y bash fuera del PC A
+    runs-on: puerta
+    env:
+      SITE: ${{ gitea.event.repository.name }}
+      VERSION: ${{ gitea.ref_name }}
+      COMMIT_SHA: ${{ gitea.sha }}
+      ORG: ${{ gitea.repository_owner }}
+      HUB_URL: ${{ secrets.HUB_URL }}
+      HUB_PIPELINE_TOKEN: ${{ secrets.HUB_PIPELINE_TOKEN }}
+      REGISTRY: ${{ vars.REGISTRY }}
+      REGISTRY_IP: ${{ vars.REGISTRY_IP }}
+      DOCKER_NETWORK: ${{ vars.DOCKER_NETWORK }}
+      PUERTA: .gitea/puerta/puerta.sh
+    steps:
+      - name: Descargar la versión
+        run: |
+          git clone --quiet "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git checkout --quiet "$VERSION"
+          git fetch --quiet --tags
+
+      - name: Abrir la corrida en el Hub
+        run: bash "$PUERTA" inicio
+
+      - name: Secretos (Gitleaks)
+        run: bash "$PUERTA" secretos
+
+      - name: Construir la imagen
+        run: bash "$PUERTA" construir
+
+      - name: Vulnerabilidades críticas (Trivy)
+        run: bash "$PUERTA" vulnerabilidades
+
+      - name: Inventario de componentes (Syft)
+        run: bash "$PUERTA" sbom
+
+      - name: Subir y firmar (Cosign)
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: bash "$PUERTA" firmar
+
+      - name: Verificar la firma
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: bash "$PUERTA" verificar
+
+      - name: Cerrar la corrida en el Hub
+        if: ${{ always() }}
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: bash "$PUERTA" fin

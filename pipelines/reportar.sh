@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Cuenta al Hub qué pasó en la puerta de seguridad (spec 006, T07): POST /api/pipeline-events.
+#   reportar.sh inicio
+#   reportar.sh paso <control> <ok|fallo> "<resumen>" [imagen] [reporte.json]
+#   reportar.sh fin <ok|fallo> [digests.json]
+# Variables: HUB_URL, HUB_PIPELINE_TOKEN, SITE (repositorio del sitio), VERSION (tag), COMMIT_SHA, IMAGES
+# (imágenes que debe producir la versión, separadas por espacio; solo en `inicio`).
+# Falla (código distinto de 0) si el Hub no responde bien: sin que el Hub lo sepa, la versión no se publica.
+set -euo pipefail
+
+: "${HUB_URL:?Falta HUB_URL}"
+: "${HUB_PIPELINE_TOKEN:?Falta HUB_PIPELINE_TOKEN}"
+: "${SITE:?Falta SITE}"
+: "${VERSION:?Falta VERSION}"
+
+# jq_run: jq local si existe; si no, el de un contenedor (el runner solo necesita Docker)
+# shellcheck source=lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+
+evento="${1:?Uso: reportar.sh inicio | paso <control> <ok|fallo> <resumen> [imagen] [reporte] | fin <ok|fallo> [digests]}"
+base=(--arg event "$evento" --arg site "$SITE" --arg version "$VERSION" --arg commit "${COMMIT_SHA:-}")
+vacio=/dev/null  # entrada vacía para `jq -n`
+
+# El id de la corrida que abrió este pipeline queda en un archivo y viaja en cada evento posterior: si la versión se
+# vuelve a subir, los eventos del pipeline viejo no se mezclan con los de la corrida nueva
+archivo_corrida="${PUERTA_OUT:-.puerta}/run_id"
+run_id=""
+if [ "$evento" != "inicio" ] && [ -s "$archivo_corrida" ]; then run_id="$(cat "$archivo_corrida")"; fi
+base+=(--arg run "$run_id")
+corrida='(if $run != "" then ($run | tonumber) else null end)'
+
+case "$evento" in
+  inicio)
+    cuerpo="$(jq_run -n "${base[@]}" --arg images "${IMAGES:-}" \
+      '{event: $event, site: $site, version: $version, commit_sha: (if $commit != "" then $commit else null end),
+        images: ($images | split(" ") | map(select(. != "")))}' < "$vacio")"
+    ;;
+  paso)
+    control="${2:?Falta el control}"; estado="${3:?Falta el resultado (ok|fallo)}"; resumen="${4:-}"
+    imagen="${5:-}"; reporte="${6:-}"
+    if [ -n "$reporte" ] && [ -s "$reporte" ]; then
+      cuerpo="$(jq_run --slurp "${base[@]}" --arg step "$control" --arg status "$estado" --arg summary "$resumen" --arg image "$imagen" \
+        '{event: $event, site: $site, version: $version, step: $step, status: $status, summary: $summary,
+          image: (if $image != "" then $image else null end), run_id: '"$corrida"', report: .[0]}' < "$reporte")"
+    else
+      cuerpo="$(jq_run -n "${base[@]}" --arg step "$control" --arg status "$estado" --arg summary "$resumen" --arg image "$imagen" \
+        '{event: $event, site: $site, version: $version, step: $step, status: $status, summary: $summary,
+          image: (if $image != "" then $image else null end), run_id: '"$corrida"'}' < "$vacio")"
+    fi
+    ;;
+  fin)
+    estado="${2:?Falta el resultado (ok|fallo)}"; digests="${3:-}"
+    if [ -n "$digests" ] && [ -s "$digests" ]; then
+      cuerpo="$(jq_run --slurp "${base[@]}" --arg status "$estado" \
+        '{event: $event, site: $site, version: $version, status: $status, run_id: '"$corrida"', image_digests: .[0]}' < "$digests")"
+    else
+      cuerpo="$(jq_run -n "${base[@]}" --arg status "$estado" \
+        '{event: $event, site: $site, version: $version, status: $status, run_id: '"$corrida"'}' < "$vacio")"
+    fi
+    ;;
+  *) echo "Evento desconocido: $evento" >&2; exit 2 ;;
+esac
+
+# El cuerpo viaja por stdin (puede traer un SBOM de varios MB) y la respuesta vuelve en la salida.
+# Una caída de red de un segundo no debe tumbar la puerta: se reintenta si no hubo respuesta (000) o fue un 5xx.
+# Si un reintento llega después de que el Hub ya guardó el control (409 "ya se registró"), cuenta como hecho.
+intentos="${REPORTAR_INTENTOS:-5}"
+for intento in $(seq 1 "$intentos"); do
+  salida="$(printf '%s' "$cuerpo" | curl -sS -m 60 -w $'\n%{http_code}' \
+    -H "Authorization: Bearer ${HUB_PIPELINE_TOKEN}" -H 'Content-Type: application/json' \
+    -X POST "${HUB_URL%/}/api/pipeline-events" --data-binary @- 2>/dev/null)" || salida=$'\n000'
+  codigo="${salida##*$'\n'}"
+  respuesta="${salida%$'\n'*}"
+  case "$codigo" in
+    000|5??) [ "$intento" -lt "$intentos" ] && { echo "Hub sin respuesta (HTTP ${codigo}); reintento ${intento}/${intentos}…" >&2; sleep $((intento * 3)); continue; } ;;
+    409) [ "$intento" -gt 1 ] && [[ "$respuesta" == *"ya se registró"* ]] && { echo "Hub: ${evento} ${2:-} ya estaba registrado."; exit 0; } ;;
+  esac
+  break
+done
+
+if [ "${codigo:0:1}" != "2" ]; then
+  echo "El Hub rechazó el evento «${evento}» (HTTP ${codigo}): ${respuesta:0:400}" >&2
+  exit 1
+fi
+id="$(printf '%s' "$respuesta" | jq_run -r '.id')"
+estado_corrida="$(printf '%s' "$respuesta" | jq_run -r '.status')"
+if [ "$evento" = "inicio" ]; then
+  mkdir -p "$(dirname "$archivo_corrida")"
+  printf '%s' "$id" > "$archivo_corrida"
+fi
+echo "Hub: ${evento} ${2:-} registrado (corrida #${id}, estado ${estado_corrida})."

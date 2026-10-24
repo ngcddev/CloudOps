@@ -2,7 +2,7 @@
 # Construir desde esta carpeta: docker build -f Dockerfile.frontend --build-arg APP_VERSION=v1 -t hub/consultorio-web:v1 .
 # Al arrancar, la imagen reemplaza ${APP_VERSION} y ${API_UPSTREAM} en la plantilla de nginx.conf.
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.30-alpine
 ARG APP_VERSION=v1
 # API_UPSTREAM = host:puerto del backend; en docker compose se cambia por el servicio del cliente.
 ENV APP_VERSION=${APP_VERSION} \

@@ -1,4 +1,11 @@
 # Pruebas de planes, SLA y del detalle de los clientes semilla (spec 001 · CA-1, CA-3 y CA-4).
+import pytest
+
+
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
 
 
 def test_plans_come_from_the_seed(client, seeded):

@@ -1,19 +1,22 @@
-# Endpoints de solicitudes de cambio de versión: crear y rechazar (spec 005, T13).
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+# Endpoints de solicitudes de cambio de versión: crear, aprobar y rechazar (spec 005). Solo agencia y con
+# el actor tomado de la sesión (spec 007).
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
+from app.deps import require_agency
 from app.models.change_request import ChangeRequest
 from app.models.ticket import Ticket
 from app.models.user import User
 from app.integrations.gitea import GiteaClient, GiteaError, gitea_from_settings
 from app.schemas.change_request import (
-    ChangeRequestApprove,
     ChangeRequestCreate,
     ChangeRequestOut,
     ChangeRequestReject,
 )
+from app.services import audit
+from app.services import security_gate as gate
 from app.services.change_flow import step_event, transition
 from app.services.gitops_publish import (
     NothingToPublish,
@@ -22,7 +25,7 @@ from app.services.gitops_publish import (
     publish_version,
 )
 
-router = APIRouter(prefix="/api/change-requests", tags=["change-requests"])
+router = APIRouter(prefix="/api/change-requests", tags=["change-requests"], dependencies=[Depends(require_agency)])
 
 # Estados en los que un cambio sigue "en curso" y bloquea otro sobre el mismo servicio
 OPEN_STATUSES = ("pendiente", "aprobada", "en_validacion")
@@ -41,11 +44,6 @@ def get_change_or_404(db: Session, change_id: int) -> ChangeRequest:
     if change is None:
         raise HTTPException(status_code=404, detail="La solicitud de cambio no existe.")
     return change
-
-
-def require_user(db: Session, user_id: int | None, message: str) -> None:
-    if user_id is not None and db.get(User, user_id) is None:
-        raise HTTPException(status_code=404, detail=message)
 
 
 @router.get("", response_model=list[ChangeRequestOut])
@@ -72,14 +70,18 @@ def list_change_requests(
 
 
 @router.post("", response_model=ChangeRequestOut, status_code=status.HTTP_201_CREATED)
-def create_change_request(data: ChangeRequestCreate, db: Session = Depends(get_db)):
+def create_change_request(
+    data: ChangeRequestCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
     """Registra una solicitud de cambio de versión, vinculada a una solicitud de tipo `cambio`."""
     ticket = db.get(Ticket, data.ticket_id)
     if ticket is None:
         raise HTTPException(status_code=404, detail="La solicitud no existe.")
     if ticket.kind != "cambio":
         raise HTTPException(status_code=422, detail="La solicitud debe ser de tipo cambio.")
-    require_user(db, data.requested_by_id, "El usuario que pide el cambio no existe.")
 
     service = ticket.service
     if data.to_version == service.current_version:
@@ -98,33 +100,50 @@ def create_change_request(data: ChangeRequestCreate, db: Session = Depends(get_d
         from_version=service.current_version,
         to_version=data.to_version,
         status="pendiente",
-        requested_by_id=data.requested_by_id,
+        requested_by_id=actor.id,
     )
     db.add(change)
     db.flush()
     db.add(
         step_event(
-            change, None, data.requested_by_id,
+            change, None, actor.id,
             f"Recibimos su solicitud para cambiar el sitio de {change.from_version} a {change.to_version}.",
         )
     )
+    audit.record(
+        db, actor, "crear", "change_request", change.id,
+        {"ticket_id": ticket.id, "de": change.from_version, "a": change.to_version},
+        audit.request_ip(request),
+    )
+    # Una versión que ya falló la puerta de seguridad no espera aprobación: queda rechazada de una vez
+    current = gate.gate_status(db, service.id, change.to_version)
+    if current.status == gate.FALLO:
+        gate.reject_for_security(db, change, current.run)
     db.commit()
     db.refresh(change)
     return change
 
 
 @router.post("/{change_id}/reject", response_model=ChangeRequestOut)
-def reject_change_request(change_id: int, data: ChangeRequestReject, db: Session = Depends(get_db)):
+def reject_change_request(
+    change_id: int,
+    data: ChangeRequestReject,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
     """Rechaza una solicitud pendiente; el motivo es obligatorio."""
     change = get_change_or_404(db, change_id)
-    require_user(db, data.actor_id, "El usuario que rechaza no existe.")
 
     previous = change.status
     try:
         transition(change, "rechazada", reason=data.reason)
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    db.add(step_event(change, previous, data.actor_id, data.reason))
+    db.add(step_event(change, previous, actor.id, data.reason))
+    audit.record(
+        db, actor, "rechazar", "change_request", change.id, {"motivo": data.reason}, audit.request_ip(request)
+    )
     db.commit()
     db.refresh(change)
     return change
@@ -133,9 +152,10 @@ def reject_change_request(change_id: int, data: ChangeRequestReject, db: Session
 @router.post("/{change_id}/approve", response_model=ChangeRequestOut)
 def approve_change_request(
     change_id: int,
-    data: ChangeRequestApprove,
+    request: Request,
     db: Session = Depends(get_db),
     gitea: GiteaClient = Depends(get_gitea),
+    approver: User = Depends(require_agency),
 ):
     """Aprueba el cambio: escribe la versión en hub-gitops y lo deja en `en_validacion`.
 
@@ -143,16 +163,15 @@ def approve_change_request(
     confirma la publicación. Si Gitea falla, la solicitud sigue pendiente.
     """
     change = get_change_or_404(db, change_id)
-    approver = db.get(User, data.actor_id)
-    if approver is None:
-        raise HTTPException(status_code=404, detail="El usuario que aprueba no existe.")
-    if approver.role != "agencia":
-        raise HTTPException(status_code=403, detail="Solo la agencia puede aprobar cambios.")
     if change.status != "pendiente":
         raise HTTPException(
             status_code=409,
             detail=f"No se permite pasar de «{change.status}» a «aprobada».",
         )
+    # Puerta de seguridad (spec 006): solo se publica una versión cuyos controles pasaron
+    current = gate.gate_status(db, change.service_id, change.to_version)
+    if current.status != gate.OK:
+        raise HTTPException(status_code=409, detail=gate.not_approvable_message(change.to_version, current))
 
     try:
         kustomization_path(change.service.namespace)  # namespace que no es de un cliente: no se escribe nada
@@ -193,6 +212,10 @@ def approve_change_request(
         )
     )
     change.gitops_commit_sha = sha
+    audit.record(
+        db, approver, "aprobar", "change_request", change.id,
+        {"a": change.to_version, "commit": sha[:7]}, audit.request_ip(request),
+    )
     db.commit()
     db.refresh(change)
     return change

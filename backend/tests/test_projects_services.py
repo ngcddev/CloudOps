@@ -125,6 +125,12 @@ def test_duplicate_namespace_is_409(client, plan):
 import pytest  # noqa: E402
 
 
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
+
+
 @pytest.mark.parametrize(
     "namespace",
     ["panaderia", "cliente-", "Cliente-Luz", "cliente-x/../../hub/api", "cliente-../x", "cliente luz", "cliente--luz", "cliente-luz-"],

@@ -1,0 +1,13 @@
+# Configuración de Gitleaks para el monorepo (spec 006, T21 · RNF-06): reglas por defecto más un permiso
+# puntual. Se corre sobre toda la historia con:  gitleaks git .
+title = "CloudOps Client Hub"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores de desarrollo de .env.example: nunca son reales, y en k3s las claves salen de Secrets"
+# Solo este valor exacto; cualquier otra clave que aparezca (en .env.example o en otro archivo) sigue bloqueada
+regexes = [
+  '''clave-de-desarrollo-cambiala-en-produccion-0123456789''',
+]

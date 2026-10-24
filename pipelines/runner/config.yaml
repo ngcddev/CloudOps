@@ -1,0 +1,15 @@
+# Configuración del runner de la puerta de seguridad (spec 006, T02).
+log:
+  level: info
+
+runner:
+  file: .runner
+  # Una versión a la vez: construir una imagen y escanearla ya usa buena parte del equipo
+  capacity: 1
+  timeout: 30m
+
+host:
+  # Carpeta de trabajo con la MISMA ruta dentro del contenedor y en el Docker del equipo: los pasos montan
+  # el repositorio en los contenedores de las herramientas (`docker run -v <ruta>:/repo`) y esa ruta la resuelve
+  # el Docker del equipo, no el contenedor. Por eso docker-compose.yml monta esta carpeta en la misma ruta.
+  workdir_parent: /tmp/puerta-trabajo

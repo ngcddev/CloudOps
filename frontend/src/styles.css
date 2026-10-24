@@ -543,3 +543,68 @@ h4 {
 .change-fallida {
   border-width: 3px;
 }
+
+/* Inicio de sesión (spec 007): una tarjeta centrada, en blanco y negro */
+.login {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 24rem;
+}
+
+/* Sesión (spec 007): nombre de la persona y botón de salir, en la consola y en el portal */
+.session {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.sidebar .session {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.portal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--ink);
+}
+
+.portal-header .session {
+  margin-top: 0;
+}
+
+/* Puerta de seguridad (spec 006): controles de una versión, en blanco y negro */
+.plain-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.plain-list li {
+  margin-bottom: 0.35rem;
+}
+
+.security-checks summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-left: 0.5rem;
+  font: inherit;
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+}

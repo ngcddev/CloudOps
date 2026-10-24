@@ -2,6 +2,13 @@
 from sqlalchemy import event, select
 
 from app.models import ChangeRequest, Deployment, Service, Ticket, User
+import pytest
+
+
+@pytest.fixture
+def client(seeded, as_user):
+    """Estas pruebas operan como Sofía, técnica de la agencia sembrada (spec 007)."""
+    return as_user("sofia@forjadigital.test")
 
 
 def _contar_consultas(session_factory, llamada) -> int:
@@ -39,7 +46,7 @@ def test_el_estado_de_los_servicios_no_hace_consultas_por_servicio(client, sessi
 
     cantidad = _contar_consultas(session_factory, lambda: client.get("/api/services/status"))
 
-    assert cantidad <= 4  # servicios + último despliegue + cambios en curso
+    assert cantidad <= 6  # la sesión + servicios + último despliegue + cambios en curso + puerta de seguridad
     filas = client.get("/api/services/status").json()
     assert {f["open_change_to_version"] for f in filas} == {"v1.3"}
     assert {f["last_author"] for f in filas} == {"Sofía"}
@@ -68,7 +75,7 @@ def test_la_bandeja_de_cambios_no_hace_consultas_por_fila(client, session_factor
 
     cantidad = _contar_consultas(session_factory, lambda: client.get("/api/change-requests"))
 
-    assert cantidad <= 4  # la lista + quién pidió + quién aprobó + las solicitudes
+    assert cantidad <= 5  # la sesión + la lista + quién pidió + quién aprobó + las solicitudes
     lista = client.get("/api/change-requests").json()
     assert len(lista) == 3 and all(c["approved_by_name"] == tecnico.name for c in lista)
 

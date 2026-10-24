@@ -1,6 +1,7 @@
 // Marco de la consola de agencia: menú lateral de navegación y área de contenido.
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../auth";
 import MockDataNotice from "./MockDataNotice";
 
 // Secciones de la consola. Las que aún no existen se muestran deshabilitadas con la spec que las trae.
@@ -12,9 +13,18 @@ const sections: { label: string; to?: string; spec?: string }[] = [
   { label: "Incidentes", spec: "008" },
   { label: "Tableros", spec: "010" },
   { label: "Reportes", spec: "013" },
+  { label: "Bitácora", to: "/agencia/bitacora" },
 ];
 
 export default function AgencyLayout() {
+  const { user, mock, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="layout">
       <aside className="sidebar">
@@ -36,6 +46,14 @@ export default function AgencyLayout() {
             ))}
           </ul>
         </nav>
+        <div className="session">
+          <span>{user?.name}</span>
+          {!mock && (
+            <button type="button" className="button button-secondary" onClick={handleLogout}>
+              Cerrar sesión
+            </button>
+          )}
+        </div>
       </aside>
       <main className="content">
         <MockDataNotice />

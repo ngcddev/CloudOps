@@ -8,7 +8,9 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models import Agency, Client, Plan, Project, Service, SlaPolicy, Ticket, User
+from app.services.auth import hash_password
 from app.services.sla import due_dates
 
 # En el contenedor la carpeta se indica con SEED_DIR; en tu máquina se usa seed/ del repositorio.
@@ -22,6 +24,29 @@ def _read(name: str):
 def _decimal(value) -> Decimal | None:
     """Convierte un número del JSON a Decimal; null significa "por definir"."""
     return None if value is None else Decimal(str(value))
+
+
+def seed_passwords(db: Session) -> int:
+    """Da la contraseña de desarrollo (SEED_USER_PASSWORD) a los usuarios que aún no tienen una.
+
+    El seed solo corre con la base vacía; una base creada antes de la spec 007 tiene usuarios sin
+    contraseña y así podrían entrar sin borrar nada. Solo toca a los usuarios de seed/users.json y nunca
+    cambia la de quien ya tiene: un usuario creado después sin contraseña (o dado de baja) no la recibe.
+    Devuelve cuántos usuarios actualizó.
+    """
+    if not settings.seed_user_password:
+        return 0
+    seeded_emails = {item["email"] for item in _read("users.json")["users"]}
+    pending = db.scalars(
+        select(User).where(User.password_hash.is_(None), User.email.in_(seeded_emails))
+    ).all()
+    if not pending:
+        return 0
+    password_hash = hash_password(settings.seed_user_password)
+    for user in pending:
+        user.password_hash = password_hash
+    db.commit()
+    return len(pending)
 
 
 def seed_if_empty(db: Session) -> bool:
@@ -83,6 +108,9 @@ def seed_if_empty(db: Session) -> bool:
                 )
                 db.add(service)
 
+    # Todos los usuarios sembrados comparten la contraseña de desarrollo SEED_USER_PASSWORD (spec 007);
+    # solo se guarda su hash. Sin esa variable los usuarios quedan sin contraseña y no pueden entrar.
+    password_hash = hash_password(settings.seed_user_password) if settings.seed_user_password else None
     for item in _read("users.json")["users"]:
         client = None
         if item["role"] == "cliente":
@@ -96,6 +124,7 @@ def seed_if_empty(db: Session) -> bool:
                 email=item["email"],
                 role=item["role"],
                 client=client,
+                password_hash=password_hash,
             )
         )
     db.commit()

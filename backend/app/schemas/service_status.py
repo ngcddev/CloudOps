@@ -22,6 +22,9 @@ class ServiceStatusOut(BaseModel):
     open_change_id: int | None
     open_change_status: str | None
     open_change_to_version: str | None
+    # Puerta de seguridad de la versión activa (spec 006): sin_corrida, en_curso, ok o fallo
+    security_status: str
+    security_failed_step: str | None
 
 
 class DeploymentOut(BaseModel):

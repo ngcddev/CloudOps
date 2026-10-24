@@ -3,6 +3,13 @@ from sqlalchemy import select
 
 from app.models import Service
 from tests.test_change_approve import cambio, gitea, tecnico  # noqa: F401  (fixtures compartidos)
+import pytest
+
+
+@pytest.fixture
+def client(seeded, as_user):
+    """Estas pruebas operan como Sofía, técnica de la agencia sembrada (spec 007)."""
+    return as_user("sofia@forjadigital.test")
 
 
 def test_un_namespace_que_no_es_de_un_cliente_no_escribe_en_gitea(client, seeded, gitea, tecnico, cambio):  # noqa: F811
@@ -11,7 +18,7 @@ def test_un_namespace_que_no_es_de_un_cliente_no_escribe_en_gitea(client, seeded
     service.namespace = "cliente-x/../../hub/api"
     seeded.commit()
 
-    response = client.post(f"/api/change-requests/{cambio['id']}/approve", json={"actor_id": tecnico.id})
+    response = client.post(f"/api/change-requests/{cambio['id']}/approve")
 
     assert response.status_code == 422
     assert gitea.commits == []

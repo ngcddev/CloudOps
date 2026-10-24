@@ -1,10 +1,13 @@
 # Modelos de la base de datos: se importan aquí para que Base.metadata los conozca.
 from app.models.agency import Agency
+from app.models.audit_log import AuditLog
 from app.models.change_request import ChangeRequest
 from app.models.client import Client
 from app.models.deployment import Deployment
 from app.models.plan import Plan
 from app.models.project import Project
+from app.models.security_check import SecurityCheck
+from app.models.security_run import SecurityRun
 from app.models.service import Service
 from app.models.sla_policy import SlaPolicy
 from app.models.ticket import Ticket
@@ -14,11 +17,14 @@ from app.models.work_log import WorkLog
 
 __all__ = [
 	"Agency",
+	"AuditLog",
 	"ChangeRequest",
 	"Client",
 	"Deployment",
 	"Plan",
 	"Project",
+	"SecurityCheck",
+	"SecurityRun",
 	"Service",
 	"SlaPolicy",
 	"Ticket",
