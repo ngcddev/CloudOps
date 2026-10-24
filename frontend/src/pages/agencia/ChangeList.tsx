@@ -2,12 +2,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import SecurityChecks, { gateSummary } from "../../components/SecurityChecks";
 import {
   approveChangeRequest,
+  getChangeGate,
   listChangeRequests,
   listServicesStatus,
   rejectChangeRequest,
   type ChangeRequest,
+  type Gate,
   type ChangeStatus,
   type ServiceVersionStatus,
 } from "../../api";
@@ -29,6 +32,8 @@ const REFRESH_MS = 5000;
 export default function ChangeList() {
   const [changes, setChanges] = useState<ChangeRequest[] | null>(null);
   const [services, setServices] = useState<ServiceVersionStatus[]>([]);
+  // Puerta de seguridad de la versión destino de cada cambio (spec 006)
+  const [gates, setGates] = useState<Map<number, Gate>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [rejecting, setRejecting] = useState<number | null>(null);
@@ -37,8 +42,10 @@ export default function ChangeList() {
   const load = useCallback(async () => {
     try {
       const [changeData, serviceData] = await Promise.all([listChangeRequests(), listServicesStatus()]);
+      const gateData = await Promise.all(changeData.map((change) => getChangeGate(change.id)));
       setChanges(changeData);
       setServices(serviceData);
+      setGates(new Map(changeData.map((change, index) => [change.id, gateData[index]])));
       setError(null);
     } catch (loadError) {
       setError((loadError as Error).message);
@@ -49,7 +56,10 @@ export default function ChangeList() {
     void load();
   }, [load]);
 
-  const waiting = changes?.some((change) => change.status === "en_validacion" || change.status === "aprobada");
+  // Se vuelve a leer mientras algo está en camino: una publicación o los controles de seguridad corriendo
+  const waiting =
+    changes?.some((change) => change.status === "en_validacion" || change.status === "aprobada") ||
+    changes?.some((change) => change.status === "pendiente" && gates.get(change.id)?.status === "en_curso");
   useEffect(() => {
     if (!waiting) return;
     const timer = window.setInterval(() => void load(), REFRESH_MS);
@@ -116,6 +126,7 @@ export default function ChangeList() {
               <th>Cambio</th>
               <th>Versión</th>
               <th>Estado</th>
+              <th>Seguridad</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -123,6 +134,8 @@ export default function ChangeList() {
             {changes.map((change) => {
               const service = serviceById.get(change.service_id);
               const status = STATUS_TEXT[change.status];
+              const gate = gates.get(change.id);
+              const canApprove = gate?.status === "ok";
               return (
                 <tr key={change.id}>
                   <td>
@@ -153,13 +166,15 @@ export default function ChangeList() {
                     {change.deployed_at && <div className="muted">Publicada {formatDateTime(change.deployed_at)}</div>}
                     {change.rejection_reason && <div className="muted">Motivo: {change.rejection_reason}</div>}
                   </td>
+                  <td>{gate ? <SecurityChecks gate={gate} /> : <span className="muted">—</span>}</td>
                   <td>
                     {change.status === "pendiente" && rejecting !== change.id && (
                       <div className="form-actions">
                         <button
                           type="button"
                           className="button"
-                          disabled={busyId === change.id}
+                          disabled={busyId === change.id || !canApprove}
+                          title={canApprove || !gate ? undefined : gateSummary(gate.status, gate.failed_step)}
                           onClick={() => void handleApprove(change)}
                         >
                           Aprobar
@@ -197,6 +212,9 @@ export default function ChangeList() {
                           </button>
                         </div>
                       </form>
+                    )}
+                    {change.status === "pendiente" && rejecting !== change.id && gate && !canApprove && (
+                      <div className="muted">Se puede aprobar cuando los controles de seguridad pasen.</div>
                     )}
                     {change.status !== "pendiente" && <span className="muted">—</span>}
                   </td>

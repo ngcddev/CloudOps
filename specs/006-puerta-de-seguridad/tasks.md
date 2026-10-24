@@ -40,7 +40,7 @@
 ## Pantallas
 
 - [x] T18 · Agregar a `frontend/src/api.ts` los tipos y llamadas de la puerta — **Verifica:** `tsc` sin errores. [ngcddev]
-- [ ] T19 · Mostrar en `/agencia/cambios` los controles de la versión destino (✓ / ✗ / … con resumen y "Ver reporte") y deshabilitar "Aprobar" con el motivo si la puerta no está `ok` — **Verifica:** un cambio hacia una versión en curso muestra "…" y "Aprobar" deshabilitado; al terminar en `ok` se habilita sin recargar. [ ]
+- [x] T19 · Mostrar en `/agencia/cambios` los controles de la versión destino (✓ / ✗ / … con resumen y "Ver reporte") y deshabilitar "Aprobar" con el motivo si la puerta no está `ok` — **Verifica:** un cambio hacia una versión en curso muestra "…" y "Aprobar" deshabilitado; al terminar en `ok` se habilita sin recargar. [ngcddev]
 - [ ] T20 · Agregar a `/agencia/servicios` la columna "Controles de la versión activa" — **Verifica:** tras la demo, El Tornillo muestra ✓ en los 6 controles. [ ]
 
 ## Plataforma y repositorio
