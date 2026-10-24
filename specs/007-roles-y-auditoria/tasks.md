@@ -43,7 +43,7 @@
 
 ## Despliegue en k3s
 
-- [ ] T20 · Crear el `Secret` `hub-auth` (`JWT_SECRET` y `SEED_USER_PASSWORD` al azar) desde `gitops/hub/crear-secretos.sh`, pasarlo a la API en `gitops/hub/api.yaml` y publicar las imágenes nuevas de `hub-api` y `hub-web` — **Verifica:** `http://hub.local` pide entrar y acepta al usuario de La Sazón con la contraseña del `Secret`; `git grep` no encuentra los valores en el repo. [ ]
+- [x] T20 · Crear el `Secret` `hub-auth` (`JWT_SECRET` y `SEED_USER_PASSWORD` al azar) desde `gitops/hub/crear-secretos.sh`, pasarlo a la API en `gitops/hub/api.yaml` y publicar las imágenes nuevas de `hub-api` y `hub-web` — **Verifica:** `http://hub.local` pide entrar y acepta al usuario de La Sazón con la contraseña del `Secret`; `git grep` no encuentra los valores en el repo. [ngcddev]
 
 ## Cierre
 

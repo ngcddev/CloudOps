@@ -30,6 +30,16 @@ backend/
 
 Se leen de `.env` (copiado de [`.env.example`](../.env.example)). La principal es `DATABASE_URL`.
 
+Desde la spec 007 la API pide iniciar sesión y exige dos variables más. Si ya tenías un `.env` de antes,
+agrégalas desde `.env.example`; sin `JWT_SECRET` la API no arranca:
+
+| Variable | Para qué |
+|---|---|
+| `JWT_SECRET` | Clave con la que se firman las sesiones (60 min) |
+| `SEED_USER_PASSWORD` | Contraseña de desarrollo de todos los usuarios sembrados (`sofia@forjadigital.test`, `contacto@lasazon.test`, …); en la base solo se guarda su hash |
+
+Una base creada antes de la 007 no se pierde: al arrancar, la API da esa contraseña a los usuarios que no tienen.
+
 ## Comandos
 
 | Qué | Comando |
