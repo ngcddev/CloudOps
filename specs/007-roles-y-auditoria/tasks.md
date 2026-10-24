@@ -15,7 +15,7 @@
 
 ## Sesión en la API
 
-- [ ] T04 · Crear `POST /api/auth/login` y `GET /api/auth/me` — **Verifica:** desde `/docs`, el correo de La Sazón con la contraseña de desarrollo devuelve un token y `me` responde rol `cliente` y su `client_id`; contraseña errada o usuario inactivo → 401. [ ]
+- [x] T04 · Crear `POST /api/auth/login` y `GET /api/auth/me` — **Verifica:** desde `/docs`, el correo de La Sazón con la contraseña de desarrollo devuelve un token y `me` responde rol `cliente` y su `client_id`; contraseña errada o usuario inactivo → 401. [ngcddev]
 - [x] T05 · Escribir `deps.py` con `current_user`, `require_role` y `client_scope` — **Verifica:** `pytest` con una ruta de prueba: sin token 401, cliente en ruta de agencia 403, agencia pasa. [ngcddev]
 - [ ] T06 · Agregar a `conftest.py` las fixtures `as_agency` y `as_client` (cliente HTTP con token) y pasar las pruebas existentes a usarlas — **Verifica:** `docker compose exec api pytest` sigue en verde. [ ]
 
