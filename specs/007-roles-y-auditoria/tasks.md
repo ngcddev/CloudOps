@@ -10,7 +10,7 @@
 ## Usuarios y contraseñas
 
 - [x] T01 · Sumar a `users` los campos `password_hash`, `is_active` y `last_login_at` con migración — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores. [ngcddev]
-- [ ] T02 · Agregar un segundo usuario de agencia a `seed/users.json` y hacer que el seed guarde el hash de `SEED_USER_PASSWORD` (nuevo en `.env.example`) para todos — **Verifica:** arrancar de cero deja 5 usuarios con `password_hash` empezando por `$2b$` y `git grep` no encuentra contraseñas en claro fuera de `.env.example`. [ ]
+- [x] T02 · Agregar un segundo usuario de agencia a `seed/users.json` y hacer que el seed guarde el hash de `SEED_USER_PASSWORD` (nuevo en `.env.example`) para todos — **Verifica:** arrancar de cero deja 5 usuarios con `password_hash` empezando por `$2b$` y `git grep` no encuentra contraseñas en claro fuera de `.env.example`. [ngcddev]
 - [x] T03 · Escribir `services/auth.py` con `hash_password`, `verify_password`, `create_token` y `decode_token` (`PyJWT` y `bcrypt` con versión fija; `JWT_SECRET` obligatorio en `config.py`, `.env.example` y `docker-compose.yml`) — **Verifica:** `pytest`: la contraseña correcta valida, la incorrecta no, y un token vencido o firmado con otra clave se rechaza. [ngcddev]
 
 ## Sesión en la API

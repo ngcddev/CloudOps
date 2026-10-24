@@ -8,7 +8,9 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models import Agency, Client, Plan, Project, Service, SlaPolicy, Ticket, User
+from app.services.auth import hash_password
 from app.services.sla import due_dates
 
 # En el contenedor la carpeta se indica con SEED_DIR; en tu máquina se usa seed/ del repositorio.
@@ -83,6 +85,9 @@ def seed_if_empty(db: Session) -> bool:
                 )
                 db.add(service)
 
+    # Todos los usuarios sembrados comparten la contraseña de desarrollo SEED_USER_PASSWORD (spec 007);
+    # solo se guarda su hash. Sin esa variable los usuarios quedan sin contraseña y no pueden entrar.
+    password_hash = hash_password(settings.seed_user_password) if settings.seed_user_password else None
     for item in _read("users.json")["users"]:
         client = None
         if item["role"] == "cliente":
@@ -96,6 +101,7 @@ def seed_if_empty(db: Session) -> bool:
                 email=item["email"],
                 role=item["role"],
                 client=client,
+                password_hash=password_hash,
             )
         )
     db.commit()
