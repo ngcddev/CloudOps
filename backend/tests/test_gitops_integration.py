@@ -19,6 +19,13 @@ from app.services.kustomization import get_tags
 from tests.fake_argocd import FakeArgoCD
 from tests.fake_gitea import FakeGitea
 
+
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
+
+
 PATH = "clients/ferreteria/kustomization.yaml"
 KUSTOMIZATION = (
     "apiVersion: kustomize.config.k8s.io/v1beta1\n"

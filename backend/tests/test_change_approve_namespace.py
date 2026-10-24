@@ -3,6 +3,13 @@ from sqlalchemy import select
 
 from app.models import Service
 from tests.test_change_approve import cambio, gitea, tecnico  # noqa: F401  (fixtures compartidos)
+import pytest
+
+
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
 
 
 def test_un_namespace_que_no_es_de_un_cliente_no_escribe_en_gitea(client, seeded, gitea, tecnico, cambio):  # noqa: F811

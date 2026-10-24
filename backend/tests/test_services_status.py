@@ -8,6 +8,12 @@ from app.models import ChangeRequest, Deployment, Service, Ticket, User
 
 
 @pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
+
+
+@pytest.fixture
 def ferreteria(seeded) -> Service:
     return seeded.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))
 

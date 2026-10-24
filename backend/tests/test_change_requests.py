@@ -6,6 +6,12 @@ from app.models import Service, TicketEvent, User
 
 
 @pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
+
+
+@pytest.fixture
 def ferreteria(seeded):
     """El servicio de El Tornillo, con la semilla cargada."""
     return seeded.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))

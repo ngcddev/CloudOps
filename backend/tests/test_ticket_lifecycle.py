@@ -1,15 +1,21 @@
 # Prueba punta a punta del ciclo de una solicitud (spec 004, T14).
 from sqlalchemy import select
 
-from app.models import Client, Service
+from app.models import Service
 from app.seed import seed_if_empty
+import pytest
 
 
-def test_ciclo_completo_de_solicitud_desde_cliente_hasta_resuelto(client, session_factory):
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
+
+
+def test_ciclo_completo_de_solicitud_desde_cliente_hasta_resuelto(client, as_user, session_factory):
     with session_factory() as db:
         seed_if_empty(db)
         service = db.scalar(select(Service).order_by(Service.id))
-        client_id = db.scalar(select(Client.id).order_by(Client.id))
 
     created = client.post(
         "/api/tickets",
@@ -59,9 +65,6 @@ def test_ciclo_completo_de_solicitud_desde_cliente_hasta_resuelto(client, sessio
     assert all(event["created_at"] for event in agency_body["events"])
     assert all(event["actor_id"] == 1 for event in agency_body["events"])
 
-    client_detail = client.get(
-        f"/api/tickets/{ticket_id}",
-        params={"viewer_role": "cliente", "client_id": client_id},
-    )
+    client_detail = as_user("contacto@lasazon.test").get(f"/api/tickets/{ticket_id}")
     assert client_detail.status_code == 200
     assert client_detail.json()["status"] == "Cerrado"

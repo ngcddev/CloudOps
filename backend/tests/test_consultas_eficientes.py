@@ -2,6 +2,13 @@
 from sqlalchemy import event, select
 
 from app.models import ChangeRequest, Deployment, Service, Ticket, User
+import pytest
+
+
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
 
 
 def _contar_consultas(session_factory, llamada) -> int:

@@ -1,8 +1,15 @@
 # Pruebas de creación, bandeja y detalle de solicitudes (spec 004, T09).
 from sqlalchemy import select
 
-from app.models import Client, Service, Ticket, TicketEvent
+from app.models import Client, Service, Ticket, TicketEvent, User
 from app.seed import seed_if_empty
+import pytest
+
+
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
 
 
 def _seed_service(session_factory):
@@ -11,6 +18,11 @@ def _seed_service(session_factory):
         service = db.scalar(select(Service).order_by(Service.id))
         client = db.scalar(select(Client).order_by(Client.id))
         return service.id, client.id
+
+
+def _email_del_cliente(session_factory, client_id: int) -> str:
+    with session_factory() as db:
+        return db.scalar(select(User.email).where(User.client_id == client_id))
 
 
 def _seeded_ticket_ids(session_factory) -> set[int]:
@@ -207,7 +219,7 @@ def test_horas_negativas_responden_422(client, session_factory):
     assert response.json()["detail"][0]["msg"] == "Las horas deben ser mayores que cero."
 
 
-def test_cliente_no_ve_eventos_internos_y_recibe_estado_simple(client, session_factory):
+def test_cliente_no_ve_eventos_internos_y_recibe_estado_simple(client, as_user, session_factory):
     service_id, client_id = _seed_service(session_factory)
     ticket_id = client.post(
         "/api/tickets",
@@ -222,26 +234,21 @@ def test_cliente_no_ve_eventos_internos_y_recibe_estado_simple(client, session_f
         )
         db.commit()
 
-    response = client.get(
-        f"/api/tickets/{ticket_id}",
-        params={"viewer_role": "cliente", "client_id": client_id},
-    )
+    response = as_user(_email_del_cliente(session_factory, client_id)).get(f"/api/tickets/{ticket_id}")
 
     assert response.status_code == 200
     assert response.json()["status"] == "Abierto"
     assert [event["note"] for event in response.json()["events"]] == ["Visible"]
 
 
-def test_cliente_no_puede_consultar_ticket_de_otro_cliente(client, session_factory):
+def test_cliente_no_puede_consultar_ticket_de_otro_cliente(client, as_user, session_factory):
     service_id, _ = _seed_service(session_factory)
     ticket_id = client.post(
         "/api/tickets",
         json={"service_id": service_id, "title": "Privado", "description": "Prueba"},
     ).json()["id"]
 
-    response = client.get(
-        f"/api/tickets/{ticket_id}",
-        params={"viewer_role": "cliente", "client_id": 999},
-    )
+    # El ticket es de La Sazón; Marta es de La Sazón, así que consulta con El Tornillo
+    response = as_user("contacto@eltornillo.test").get(f"/api/tickets/{ticket_id}")
 
     assert response.status_code == 404

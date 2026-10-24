@@ -296,6 +296,12 @@ def test_si_no_se_puede_leer_la_rama_no_se_reconcilia_pero_la_vuelta_sigue(seede
 from datetime import timedelta  # noqa: E402
 
 
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
+
+
 def _aprobado_hace(db, change, minutos: int):
     change.approved_at = AHORA - timedelta(minutes=minutos)
     db.commit()

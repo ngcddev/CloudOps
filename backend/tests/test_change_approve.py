@@ -10,6 +10,12 @@ from app.routers.change_requests import get_gitea
 from tests.fake_gitea import FakeGitea
 
 
+@pytest.fixture
+def client(as_agency):
+    """Estas pruebas operan como técnico de la agencia (spec 007); los permisos se prueban con as_client y anonymous."""
+    return as_agency
+
+
 def _kustomization(cliente: str, imagen: str = "") -> str:
     imagen = imagen or cliente
     return (
@@ -213,14 +219,13 @@ def test_si_el_ultimo_commit_no_es_de_este_cambio_sigue_siendo_409(client, gitea
     assert response.status_code == 409
 
 
-def test_el_cliente_no_ve_jerga_en_el_historial_del_cambio(client, seeded, gitea, tecnico, cambio):
+def test_el_cliente_no_ve_jerga_en_el_historial_del_cambio(client, as_user, seeded, gitea, tecnico, cambio):
     client.post(f"/api/change-requests/{cambio['id']}/approve", json={"actor_id": tecnico.id})
     ticket = seeded.get(Ticket, cambio["ticket_id"])
     client_id = ticket.service.project.client_id
 
-    vista = client.get(
-        f"/api/tickets/{ticket.id}", params={"viewer_role": "cliente", "client_id": client_id}
-    ).json()
+    dueno = seeded.scalar(select(User).where(User.client_id == client_id))
+    vista = as_user(dueno.email).get(f"/api/tickets/{ticket.id}").json()
 
     cambios = [e for e in vista["events"] if e["type"] == "cambio"]
     assert [(e["from_value"], e["to_value"]) for e in cambios] == [(None, "Pendiente"), ("Pendiente", "Aprobada")]

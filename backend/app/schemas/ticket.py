@@ -8,7 +8,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class TicketCreate(BaseModel):
     service_id: int
-    created_by_id: int | None = None
     title: str = Field(max_length=200)
     description: str
     kind: Literal["solicitud", "cambio"] = "solicitud"
