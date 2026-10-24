@@ -2,12 +2,14 @@
 # Crea en el clúster los Secrets del Hub (specs 003 T16 y 007 T20):
 #   hub-db    credenciales de PostgreSQL
 #   hub-auth  JWT_SECRET (firma de las sesiones) y SEED_USER_PASSWORD (contraseña de los usuarios sembrados)
+#   hub-pipeline  PIPELINE_TOKEN (con él la puerta de seguridad de Gitea Actions cuenta sus resultados al Hub, spec 006)
 # Los valores se generan al azar y solo existen en el clúster: no se escriben en el repo ni en la
 # pantalla. Si un Secret ya existe no se toca (cambiar hub-db con la base ya creada la dejaría fuera;
 # cambiar hub-auth cierra las sesiones abiertas).
 # Para recuperar un valor:
 #   kubectl -n hub get secret hub-db -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d
 #   kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d
+#   kubectl -n hub get secret hub-pipeline -o jsonpath='{.data.PIPELINE_TOKEN}' | base64 -d
 # Para cambiar la contraseña de los usuarios sembrados: borrar hub-auth, volver a correr el script y
 # reiniciar la API (`kubectl -n hub rollout restart deploy/api`); la API solo da contraseña a quien no tiene.
 set -euo pipefail
@@ -48,4 +50,11 @@ else
     --from-literal=SEED_USER_PASSWORD="$(clave 16)"
   echo "Secret hub-auth creado en $NS."
   echo "La contraseña de los usuarios sembrados está solo en el clúster; ver arriba cómo recuperarla."
+fi
+
+if existe hub-pipeline; then
+  echo "El Secret hub-pipeline ya existe en $NS: no se cambia."
+else
+  kubectl -n "$NS" create secret generic hub-pipeline --from-literal=PIPELINE_TOKEN="$(clave 40)"
+  echo "Secret hub-pipeline creado en $NS. Para cargarlo en Gitea: bash pipelines/configurar-gitea.sh (lo lee solo)."
 fi

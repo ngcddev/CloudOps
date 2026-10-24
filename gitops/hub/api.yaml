@@ -44,6 +44,11 @@ spec:
             - name: SEED_USER_PASSWORD
               valueFrom:
                 secretKeyRef: { name: hub-auth, key: SEED_USER_PASSWORD }
+            # Puerta de seguridad (spec 006): token con el que el pipeline de Gitea Actions cuenta sus resultados.
+            # Sin el Secret hub-pipeline la API arranca igual, pero no acepta eventos (nada se puede aprobar).
+            - name: PIPELINE_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hub-pipeline, key: PIPELINE_TOKEN, optional: true }
             # Gitea y Argo CD (spec 005): el Hub escribe en hub-gitops y lee el estado de Argo CD.
             # Los tokens vienen del Secret hub-gitops-tokens (ver crear-tokens.sh); sin él la API
             # arranca igual y los cambios por GitOps quedan sin conexión.
