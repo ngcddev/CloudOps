@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (DevSecOps / SRE, Backend, Frontend)
 >
-> **Módulo:** 3 · **Requerimientos:** RF-08, RF-09, RNF-05, RNF-06 · **Depende de:** 005 · **Estado:** En curso
+> **Módulo:** 3 · **Requerimientos:** RF-08, RF-09, RNF-05, RNF-06 · **Depende de:** 005 · **Estado:** Terminada
 
 ## Qué y por qué
 
@@ -43,7 +43,7 @@ técnico la sube, y el Hub solo deja aprobar las versiones que la pasaron.
   solicitud de cambio hacia una versión que falló pasa a `rechazada` con el control que falló; el
   cliente ve el texto del [glosario](../../docs/glosario.md) para ese control.
 - [x] CA-6. El Hub no deja aprobar una versión que no pasó la puerta (o que aún no termina) y lo dice.
-- [ ] CA-7. Un Pod que intenta correr como root es rechazado por la plataforma.
+- [x] CA-7. Un Pod que intenta correr como root es rechazado por la plataforma.
 - [x] CA-8. Ningún secreto del proyecto está en el repositorio; se usan variables de entorno y
   secretos de la plataforma.
 
