@@ -39,16 +39,33 @@ def db(session_factory) -> Session:
 
 
 @pytest.fixture
-def client(session_factory):
-    """Cliente HTTP contra la app, apuntando a la base en memoria."""
+def api_db(session_factory):
+    """Apunta la app a la base en memoria. Lo usan `client` y las fixtures de sesión."""
 
     def override_get_db():
         with session_factory() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
+    yield
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client(api_db):
+    """Cliente HTTP SIN sesión contra la app, apuntando a la base en memoria.
+
+    Los módulos de pruebas de rutas protegidas (spec 007) lo redefinen para que entregue la sesión
+    de la agencia: `def client(as_agency): return as_agency`. Las pruebas de 401/403/404 usan
+    `anonymous`, `as_client` o `as_user`.
+    """
+    return TestClient(app)
+
+
+@pytest.fixture
+def anonymous(api_db):
+    """Cliente HTTP sin sesión (no se redefine en ningún módulo)."""
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -89,7 +106,7 @@ def _authenticated(session_factory, email: str, role: str, client_id: int | None
 
 
 @pytest.fixture
-def as_user(client, session_factory):
+def as_user(api_db, session_factory):
     """Fábrica: `as_user("correo@x.test")` devuelve un cliente HTTP con la sesión de ese usuario sembrado."""
 
     def make(email: str) -> TestClient:
@@ -102,12 +119,12 @@ def as_user(client, session_factory):
 
 
 @pytest.fixture
-def as_agency(client, session_factory):
+def as_agency(api_db, session_factory):
     """Cliente HTTP con la sesión de un técnico de la agencia (se crea si no hay semilla)."""
     return _authenticated(session_factory, "sofia@forjadigital.test", "agencia")
 
 
 @pytest.fixture
-def as_client(client, seeded, as_user):
+def as_client(api_db, seeded, as_user):
     """Cliente HTTP con la sesión de Marta Ríos, de La Sazón (usa la semilla)."""
     return as_user("contacto@lasazon.test")
