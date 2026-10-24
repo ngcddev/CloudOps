@@ -40,8 +40,9 @@ Valores de `action` (se muestran con su etiqueta en la bitácora):
 
 | `entity` | `action` | Dónde se registra |
 |---|---|---|
-| `ticket` | `cambiar_prioridad` · `asignar` · `cambiar_estado` | `routers/tickets.py` |
+| `ticket` | `cambiar_prioridad` · `asignar` · `cambiar_estado` · `registrar_horas` | `routers/tickets.py` |
 | `client` | `crear` · `editar` | `routers/clients.py` |
+| `project` · `service` | `crear` | `routers/clients.py` |
 | `change_request` | `crear` · `aprobar` · `rechazar` | `routers/change_requests.py` |
 | `change_request` | `desplegar` · `fallar` (usuario nulo = "Sistema") | `services/deploy_watch.py` |
 
@@ -120,6 +121,8 @@ cambio `desplegada` o `fallida`.
 | Olvidar el filtro por cliente en un endpoint nuevo | Prueba que recorre las rutas de la app y exige 401 sin token; prueba con usuario de otro cliente por recurso |
 | Las pruebas existentes de 001, 004 y 005 se rompen al exigir sesión | Fixtures `as_agency` / `as_client` en `conftest.py` antes de proteger los routers |
 | `deploy_watch` corre sin petición ni usuario | `audit.record` acepta `user=None` ("Sistema") |
+| La IP de la bitácora la escribe quien llama | `request_ip` usa la última entrada de `X-Forwarded-For` (la que agrega Traefik), no la primera |
+| Un reinicio da la contraseña de desarrollo a quien no tiene | Solo a los usuarios de `seed/users.json` |
 | Romper las demos de la 004 y la 005 | Se repiten con login al cerrar la spec |
 
 ## Cómo se verifica

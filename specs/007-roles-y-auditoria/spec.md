@@ -45,7 +45,8 @@ Esta spec cambia eso por una sesión real y deja una bitácora que las specs sig
 - [x] CA-5. Las acciones quedan a nombre del usuario de la sesión: la petición ya no trae quién la
   hace, y nadie puede aprobar, rechazar ni registrar nada en nombre de otro.
 - [x] CA-6. Quedan en la bitácora, con usuario (o "Sistema"), acción, objeto y hora: cambiar
-  prioridad, asignar y cambiar el estado de una solicitud; crear y editar un cliente; registrar,
+  prioridad, asignar, cambiar el estado y registrar horas en una solicitud; crear y editar un cliente
+  y crear sus proyectos y servicios; registrar,
   aprobar y rechazar un cambio; y la publicación confirmada o fallida de un cambio. Las specs
   siguientes registran sus acciones en la misma bitácora.
 - [x] CA-7. La bitácora no se puede editar ni borrar desde la aplicación.

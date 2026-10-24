@@ -50,3 +50,17 @@ def test_seed_passwords_da_contrasena_solo_a_quien_no_tiene(seeded):
     assert verify_password("clave-de-desarrollo", sofia.password_hash)
     assert marta.password_hash == "hash-propio-de-marta"
     assert seed_passwords(seeded) == 0
+
+
+def test_seed_passwords_no_toca_a_usuarios_que_no_son_de_la_semilla(seeded):
+    from app.models import User
+    from app.seed import seed_passwords
+
+    ajeno = User(name="Externo", email="externo@x.test", role="cliente", client_id=None)
+    seeded.add(ajeno)
+    seeded.commit()
+
+    assert seed_passwords(seeded) == 0
+
+    seeded.refresh(ajeno)
+    assert ajeno.password_hash is None

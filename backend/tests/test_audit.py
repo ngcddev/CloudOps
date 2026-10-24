@@ -40,3 +40,43 @@ def test_sin_usuario_la_accion_es_del_sistema(db):
 
     log = db.scalar(select(AuditLog))
     assert log.user_id is None
+
+
+# --- Correcciones de la revisión de código ---
+
+
+def test_la_ip_es_la_que_agrega_el_proxy_no_la_que_escribe_el_cliente(as_agency, seeded):
+    as_agency.post(
+        "/api/clients", json={"name": "Panadería Luz"},
+        headers={"X-Forwarded-For": "6.6.6.6, 10.1.2.3"},
+    )
+
+    log = seeded.scalar(select(AuditLog))
+    assert log.ip == "10.1.2.3"
+
+
+def test_sin_proxy_la_ip_es_la_de_la_conexion(as_agency, seeded):
+    as_agency.post("/api/clients", json={"name": "Panadería Luz"})
+
+    assert seeded.scalar(select(AuditLog)).ip == "testclient"
+
+
+def test_registrar_horas_y_crear_proyectos_y_servicios_quedan_en_la_bitacora(as_agency, seeded):
+    from app.models import Client, Plan, Ticket
+
+    cliente = seeded.scalar(select(Client).order_by(Client.id))
+    ticket = seeded.scalar(select(Ticket).order_by(Ticket.id))
+    plan = seeded.scalar(select(Plan).order_by(Plan.id))
+
+    as_agency.post(f"/api/tickets/{ticket.id}/work-logs", json={"hours": 1.5})
+    proyecto = as_agency.post(f"/api/clients/{cliente.id}/projects", json={"name": "Sitio nuevo"}).json()
+    as_agency.post(
+        f"/api/projects/{proyecto['id']}/services",
+        json={"name": "Web", "host": "nuevo.hub.local", "template": "landing", "namespace": "cliente-nuevo", "plan_id": plan.id},
+    )
+
+    logs = seeded.scalars(select(AuditLog).order_by(AuditLog.id)).all()
+    assert [(log.action, log.entity) for log in logs] == [
+        ("registrar_horas", "ticket"), ("crear", "project"), ("crear", "service"),
+    ]
+    assert logs[0].details == {"horas": 1.5}

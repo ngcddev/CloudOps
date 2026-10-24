@@ -33,8 +33,12 @@ def record(
 
 
 def request_ip(request: Request) -> str | None:
-    """IP de quien hizo la petición (la del proxy si el Ingress la reenvía)."""
+    """IP de quien hizo la petición.
+
+    Detrás del Ingress (Traefik) la IP real es la ÚLTIMA de X-Forwarded-For: el proxy la agrega al final y
+    lo que venga antes lo pudo escribir quien llama. Sin la cabecera se usa la conexión directa.
+    """
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        return forwarded.split(",")[-1].strip()
     return request.client.host if request.client else None

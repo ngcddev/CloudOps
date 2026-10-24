@@ -8,6 +8,8 @@ import { formatDateTime } from "../../format";
 const ENTITY_LABELS: Record<string, string> = {
   ticket: "Solicitud",
   client: "Cliente",
+  project: "Proyecto",
+  service: "Servicio",
   change_request: "Cambio de versión",
   incident: "Incidente",
 };
@@ -16,6 +18,7 @@ const ACTION_LABELS: Record<string, string> = {
   cambiar_prioridad: "Cambió la prioridad",
   asignar: "Asignó responsable",
   cambiar_estado: "Cambió el estado",
+  registrar_horas: "Registró horas",
   crear: "Creó",
   editar: "Editó",
   aprobar: "Aprobó",
@@ -37,6 +40,9 @@ const DETAIL_LABELS: Record<string, string> = {
   name: "Nombre",
   campos: "Campos",
   ticket_id: "Solicitud",
+  horas: "Horas",
+  cliente: "Cliente",
+  host: "Dirección",
   sincronizacion: "Sincronización",
   salud: "Salud",
 };

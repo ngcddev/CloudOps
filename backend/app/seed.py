@@ -30,12 +30,16 @@ def seed_passwords(db: Session) -> int:
     """Da la contraseña de desarrollo (SEED_USER_PASSWORD) a los usuarios que aún no tienen una.
 
     El seed solo corre con la base vacía; una base creada antes de la spec 007 tiene usuarios sin
-    contraseña y así podrían entrar sin borrar nada. Nunca cambia la de quien ya tiene. Devuelve
-    cuántos usuarios actualizó.
+    contraseña y así podrían entrar sin borrar nada. Solo toca a los usuarios de seed/users.json y nunca
+    cambia la de quien ya tiene: un usuario creado después sin contraseña (o dado de baja) no la recibe.
+    Devuelve cuántos usuarios actualizó.
     """
     if not settings.seed_user_password:
         return 0
-    pending = db.scalars(select(User).where(User.password_hash.is_(None))).all()
+    seeded_emails = {item["email"] for item in _read("users.json")["users"]}
+    pending = db.scalars(
+        select(User).where(User.password_hash.is_(None), User.email.in_(seeded_emails))
+    ).all()
     if not pending:
         return 0
     password_hash = hash_password(settings.seed_user_password)

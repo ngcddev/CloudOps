@@ -68,8 +68,10 @@ def _check_client_access(ticket: Ticket, user: User) -> None:
         raise HTTPException(status_code=404, detail="La solicitud no existe.")
 
 
-def _present_ticket(ticket: Ticket, user: User, detail: bool = False):
-    _check_client_access(ticket, user)
+def _present_ticket(ticket: Ticket, user: User, detail: bool = False, check_scope: bool = True):
+    # La lista ya filtra por cliente en SQL: repetir la comprobación fila por fila sumaría consultas
+    if check_scope:
+        _check_client_access(ticket, user)
     result = TicketDetail.model_validate(ticket) if detail else TicketOut.model_validate(ticket)
     if user.role == "cliente":
         result.status = CLIENT_STATUS_LABELS.get(result.status, result.status)
@@ -120,7 +122,7 @@ def list_tickets(
     if priority is not None:
         query = query.where(Ticket.priority == priority)
     tickets = db.scalars(query.order_by(Ticket.id)).all()
-    return [_present_ticket(ticket, user) for ticket in tickets]
+    return [_present_ticket(ticket, user, check_scope=False) for ticket in tickets]
 
 
 @router.get("/{ticket_id}", response_model=TicketDetail)
@@ -257,6 +259,7 @@ def transition_ticket(
 def create_work_log(
     ticket_id: int,
     data: WorkLogCreate,
+    request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_agency),
 ):
@@ -266,6 +269,10 @@ def create_work_log(
 
     work_log = WorkLog(ticket_id=ticket_id, user_id=user.id, **data.model_dump())
     db.add(work_log)
+    audit.record(
+        db, user, "registrar_horas", "ticket", ticket_id,
+        {"horas": float(data.hours)}, audit.request_ip(request),
+    )
     db.commit()
     db.refresh(work_log)
     return work_log

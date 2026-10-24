@@ -106,13 +106,19 @@ def update_client(
 def create_project(
     client_id: int,
     data: ProjectCreate,
+    request: Request,
     db: Session = Depends(get_db),
-    _: User = Depends(require_agency),
+    user: User = Depends(require_agency),
 ):
     """Crea un proyecto perteneciente al cliente indicado."""
     client = _get_or_404(db, client_id)
     project = Project(client_id=client.id, **data.model_dump())
     db.add(project)
+    db.flush()
+    audit.record(
+        db, user, "crear", "project", project.id,
+        {"cliente": client.name, "name": project.name}, audit.request_ip(request),
+    )
     db.commit()
     db.refresh(project)
     return project
@@ -122,8 +128,9 @@ def create_project(
 def create_service(
     project_id: int,
     data: ServiceCreate,
+    request: Request,
     db: Session = Depends(get_db),
-    _: User = Depends(require_agency),
+    user: User = Depends(require_agency),
 ):
     """Crea un servicio y verifica que el plan exista."""
     project = db.get(Project, project_id)
@@ -139,6 +146,12 @@ def create_service(
         raise HTTPException(status_code=409, detail="Ya existe un servicio con ese namespace.")
     service = Service(project_id=project.id, plan_id=plan.id, **data.model_dump(exclude={"plan_id"}))
     db.add(service)
+    db.flush()
+    audit.record(
+        db, user, "crear", "service", service.id,
+        {"name": service.name, "host": service.host, "namespace": service.namespace},
+        audit.request_ip(request),
+    )
     db.commit()
     db.refresh(service)
     return service
