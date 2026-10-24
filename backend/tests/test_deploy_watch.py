@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import select
 
 from app.integrations.argocd import AppStatus, ArgoCDError
-from app.models import ChangeRequest, Deployment, Service, Ticket, TicketEvent, User
+from app.models import AuditLog, ChangeRequest, Deployment, Service, Ticket, TicketEvent, User
 from app.services import deploy_watch
 from app.services.deploy_watch import check_cycle, is_published
 
@@ -355,3 +355,26 @@ def test_tras_fallar_se_puede_pedir_otro_cambio_para_el_sitio(client, seeded, en
     response = client.post("/api/change-requests", json={"ticket_id": ticket["id"], "to_version": "v1.2"})
 
     assert response.status_code == 201
+
+
+def test_publicar_queda_en_la_bitacora_a_nombre_del_sistema(seeded, en_validacion):
+    check_cycle(seeded, ArgoSimulado(**{"cliente-ferreteria": AppStatus("Synced", "Healthy", SHA)}), now=AHORA)
+
+    log = seeded.scalar(select(AuditLog))
+    assert (log.action, log.entity, log.entity_id, log.user_id) == ("desplegar", "change_request", en_validacion.id, None)
+    assert log.details == {"a": "v1.1", "commit": SHA[:7]}
+
+
+def test_fallar_queda_en_la_bitacora_a_nombre_del_sistema(seeded, en_validacion):
+    _aprobado_hace(seeded, en_validacion, 11)
+    check_cycle(seeded, ArgoSimulado(**{FERRETERIA: AppStatus("Synced", "Degraded", SHA)}), now=AHORA)
+
+    log = seeded.scalar(select(AuditLog))
+    assert (log.action, log.entity_id, log.user_id) == ("fallar", en_validacion.id, None)
+    assert log.details["salud"] == "Degraded"
+
+
+def test_si_todavia_no_se_publica_no_hay_registro_en_la_bitacora(seeded, en_validacion):
+    check_cycle(seeded, ArgoSimulado(**{FERRETERIA: AppStatus("OutOfSync", "Healthy", SHA)}), now=AHORA)
+
+    assert seeded.scalar(select(AuditLog)) is None

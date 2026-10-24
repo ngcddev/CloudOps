@@ -15,6 +15,7 @@ from app.integrations.gitea import GiteaError
 from app.models.change_request import ChangeRequest
 from app.models.deployment import Deployment
 from app.models.service import Service
+from app.services import audit
 from app.services.change_flow import step_event, transition
 from app.services.gitops_publish import kustomization_path
 from app.services.kustomization import get_tags
@@ -138,6 +139,11 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
                         "El cambio #%s de %s no quedó publicado a tiempo (sincronización %s, salud %s)",
                         change.id, service.namespace, status.sync, status.health,
                     )
+                    # Lo hace el sistema, no una persona (spec 007)
+                    audit.record(
+                        db, None, "fallar", "change_request", change.id,
+                        {"a": change.to_version, "sincronizacion": status.sync, "salud": status.health},
+                    )
                     db.add(
                         step_event(
                             change, "en_validacion", change.approved_by_id,
@@ -149,6 +155,10 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
             transition(change, "desplegada", actor_id=change.approved_by_id, now=timestamp)
             service.current_version = change.to_version
             service.stable_version = change.to_version
+            audit.record(
+                db, None, "desplegar", "change_request", change.id,
+                {"a": change.to_version, "commit": (change.gitops_commit_sha or "")[:7]},
+            )
             db.add(
                 Deployment(
                     service_id=service.id,
