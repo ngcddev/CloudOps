@@ -37,6 +37,15 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
 
         service_columns = {c["name"] for c in inspect(connection).get_columns("services")}
         assert {"current_version", "stable_version", "sync_status", "health_status"} <= service_columns
+        assert {"password_hash", "is_active", "last_login_at"} <= {
+            c["name"] for c in inspect(connection).get_columns("users")
+        }
+
+        # 0005 (spec 007): quita las columnas de sesión de users
+        command.downgrade(_config(connection), "-1")
+        user_columns = {c["name"] for c in inspect(connection).get_columns("users")}
+        assert not {"password_hash", "is_active", "last_login_at"} & user_columns
+        assert "email" in user_columns
 
         # 0004 (spec 005): quita las tablas de cambios y las columnas nuevas de services
         command.downgrade(_config(connection), "-1")

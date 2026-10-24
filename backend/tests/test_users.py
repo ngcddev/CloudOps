@@ -15,4 +15,6 @@ def test_seed_carga_un_usuario_de_agencia_y_tres_de_clientes(seeded):
 def test_tabla_users_tiene_la_estructura_de_t02(seeded):
     columns = {column["name"] for column in inspect(seeded.bind).get_columns("users")}
 
-    assert columns == {"id", "name", "email", "role", "client_id"}
+    assert columns == {
+        "id", "name", "email", "role", "client_id", "password_hash", "is_active", "last_login_at",
+    }
