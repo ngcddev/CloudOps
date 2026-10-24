@@ -49,9 +49,9 @@
 
 ## Integración
 
-- [ ] T22 · Publicar en k3s el Hub con la puerta (`PIPELINE_TOKEN` en un `Secret` y en `gitops/hub/api.yaml`) y pasar por la puerta los tags `v1`, `v1.1` y `v2` existentes — **Verifica:** `/agencia/servicios` muestra ✓ en la versión activa de los 3 sitios y `cosign verify` valida `restaurante:v2`. [ ]
-- [ ] T23 · Repetir la prueba de root de la 003 (`bash gitops/pruebas/pod-security.sh ferreteria`) en `cliente-ferreteria` — **Verifica:** el Pod root es rechazado con el mensaje de la política `restricted` (CA-7). [ ]
+- [ ] T22 · Publicar en k3s el Hub con la puerta (`PIPELINE_TOKEN` en un `Secret` y en `gitops/hub/api.yaml`) y pasar por la puerta los tags `v1`, `v1.1` y `v2` existentes — **Verifica:** `/agencia/servicios` muestra ✓ en la versión activa de los 3 sitios y `cosign verify` valida `restaurante:v2`. *Hecho: Secret hub-pipeline (crear-secretos.sh), PIPELINE_TOKEN en gitops/hub/api.yaml, la consola con la puerta y las pruebas. Falta publicar las imágenes nuevas de hub-api y hub-web, correr pipelines/sembrar-repos-sitios.sh en el clúster y comprobar que la versión activa de los 3 sitios queda con ✓.* [ngcddev]
+- [ ] T23 · Repetir la prueba de root de la 003 (`bash gitops/pruebas/pod-security.sh ferreteria`) en `cliente-ferreteria` — **Verifica:** el Pod root es rechazado con el mensaje de la política `restricted` (CA-7). *gitops/pruebas/demo-006.sh ya lo corre (paso 4) cuando hay kubectl; falta ejecutarlo en el clúster (pod-security.sh ferreteria).* [ngcddev]
 
 ## Cierre
 
-- [ ] T24 · Demo: versión de El Tornillo con contraseña → "rechazada por seguridad" y el cliente ve el texto del glosario; versión limpia → pasa los 6 controles, se aprueba y se publica; se abre su evidencia; un Pod root es rechazado — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [ ] T24 · Demo: versión de El Tornillo con contraseña → "rechazada por seguridad" y el cliente ve el texto del glosario; versión limpia → pasa los 6 controles, se aprueba y se publica; se abre su evidencia; un Pod root es rechazado — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). *gitops/pruebas/demo-006.sh recorre la demo y pasa completa en el laboratorio local (Gitea, runner y Hub reales): secreto rechazado con el texto del glosario, versión limpia aprobada con su commit en hub-gitops y SBOM descargable. Falta correrla en el clúster (incluye el Pod root, CA-7).* [ngcddev]

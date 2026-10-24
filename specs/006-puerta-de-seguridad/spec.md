@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (DevSecOps / SRE, Backend, Frontend)
 >
-> **Módulo:** 3 · **Requerimientos:** RF-08, RF-09, RNF-05, RNF-06 · **Depende de:** 005 · **Estado:** Tareas listas
+> **Módulo:** 3 · **Requerimientos:** RF-08, RF-09, RNF-05, RNF-06 · **Depende de:** 005 · **Estado:** En curso
 
 ## Qué y por qué
 
@@ -33,18 +33,18 @@ técnico la sube, y el Hub solo deja aprobar las versiones que la pasaron.
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Una versión con una contraseña o token en sus cambios es **bloqueada** antes de construir
+- [x] CA-1. Una versión con una contraseña o token en sus cambios es **bloqueada** antes de construir
   la imagen.
-- [ ] CA-2. Una imagen con vulnerabilidades **críticas** es bloqueada.
-- [ ] CA-3. Una imagen sin firma válida no pasa la verificación y **no se puede publicar**.
-- [ ] CA-4. Cada imagen que pasa la puerta tiene guardado su inventario de componentes (SBOM) y los
+- [x] CA-2. Una imagen con vulnerabilidades **críticas** es bloqueada.
+- [x] CA-3. Una imagen sin firma válida no pasa la verificación y **no se puede publicar**.
+- [x] CA-4. Cada imagen que pasa la puerta tiene guardado su inventario de componentes (SBOM) y los
   reportes de los demás controles, y se pueden abrir desde el Hub.
-- [ ] CA-5. El Hub muestra los controles de cada versión (pasó / falló, con un resumen). Una
+- [x] CA-5. El Hub muestra los controles de cada versión (pasó / falló, con un resumen). Una
   solicitud de cambio hacia una versión que falló pasa a `rechazada` con el control que falló; el
   cliente ve el texto del [glosario](../../docs/glosario.md) para ese control.
-- [ ] CA-6. El Hub no deja aprobar una versión que no pasó la puerta (o que aún no termina) y lo dice.
+- [x] CA-6. El Hub no deja aprobar una versión que no pasó la puerta (o que aún no termina) y lo dice.
 - [ ] CA-7. Un Pod que intenta correr como root es rechazado por la plataforma.
-- [ ] CA-8. Ningún secreto del proyecto está en el repositorio; se usan variables de entorno y
+- [x] CA-8. Ningún secreto del proyecto está en el repositorio; se usan variables de entorno y
   secretos de la plataforma.
 
 ## Fuera de alcance
