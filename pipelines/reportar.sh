@@ -53,12 +53,22 @@ case "$evento" in
   *) echo "Evento desconocido: $evento" >&2; exit 2 ;;
 esac
 
-# El cuerpo viaja por stdin (puede traer un SBOM de varios MB) y la respuesta vuelve en la salida
-salida="$(printf '%s' "$cuerpo" | curl -sS -m 60 -w $'\n%{http_code}' \
-  -H "Authorization: Bearer ${HUB_PIPELINE_TOKEN}" -H 'Content-Type: application/json' \
-  -X POST "${HUB_URL%/}/api/pipeline-events" --data-binary @-)" || salida=$'\n000'
-codigo="${salida##*$'\n'}"
-respuesta="${salida%$'\n'*}"
+# El cuerpo viaja por stdin (puede traer un SBOM de varios MB) y la respuesta vuelve en la salida.
+# Una caída de red de un segundo no debe tumbar la puerta: se reintenta si no hubo respuesta (000) o fue un 5xx.
+# Si un reintento llega después de que el Hub ya guardó el control (409 "ya se registró"), cuenta como hecho.
+intentos="${REPORTAR_INTENTOS:-5}"
+for intento in $(seq 1 "$intentos"); do
+  salida="$(printf '%s' "$cuerpo" | curl -sS -m 60 -w $'\n%{http_code}' \
+    -H "Authorization: Bearer ${HUB_PIPELINE_TOKEN}" -H 'Content-Type: application/json' \
+    -X POST "${HUB_URL%/}/api/pipeline-events" --data-binary @- 2>/dev/null)" || salida=$'\n000'
+  codigo="${salida##*$'\n'}"
+  respuesta="${salida%$'\n'*}"
+  case "$codigo" in
+    000|5??) [ "$intento" -lt "$intentos" ] && { echo "Hub sin respuesta (HTTP ${codigo}); reintento ${intento}/${intentos}…" >&2; sleep $((intento * 3)); continue; } ;;
+    409) [ "$intento" -gt 1 ] && [[ "$respuesta" == *"ya se registró"* ]] && { echo "Hub: ${evento} ${2:-} ya estaba registrado."; exit 0; } ;;
+  esac
+  break
+done
 
 if [ "${codigo:0:1}" != "2" ]; then
   echo "El Hub rechazó el evento «${evento}» (HTTP ${codigo}): ${respuesta:0:400}" >&2

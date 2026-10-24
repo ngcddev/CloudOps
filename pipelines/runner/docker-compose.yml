@@ -7,7 +7,7 @@
 #
 # El token sale de Gitea: Administración del sitio → Actions → Runners → «Crear nuevo runner» (o de la API:
 # GET /api/v1/admin/runners/registration-token). No se guarda en el repositorio.
-# Si el nombre de Gitea solo se resuelve con una entrada de hosts, agrégala en `extra_hosts` (abajo).
+# Gitea y el Hub se resuelven con `extra_hosts` (abajo); cambia HUB_HOST_IP si el runner no está en el equipo del clúster.
 services:
   runner:
     build: .
@@ -26,9 +26,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Misma ruta dentro y fuera (ver config.yaml)
       - /tmp/puerta-trabajo:/tmp/puerta-trabajo
-    # Ejemplo para un Gitea que solo se resuelve por hosts:
-    # extra_hosts:
-    #   - "gitea.hub.local:172.30.0.1"
+    # Gitea y el Hub solo se resuelven por el archivo hosts del equipo: dentro del contenedor se apuntan a la
+    # IP donde se publican. 172.30.0.1 es el puente de k3d cuando el runner corre en el mismo equipo que el
+    # clúster; si el runner está en otro equipo, pon la IP del PC A en HUB_HOST_IP.
+    extra_hosts:
+      - "gitea.hub.local:${HUB_HOST_IP:-172.30.0.1}"
+      - "hub.local:${HUB_HOST_IP:-172.30.0.1}"
 
 volumes:
   runner_datos:
