@@ -38,7 +38,7 @@ export default function PortalTicketList() {
       return;
     }
 
-    listTickets({ client_id: Number(selectedClientId), viewer_role: "cliente" })
+    listTickets({ client_id: Number(selectedClientId) })
       .then(setTickets)
       .catch((loadError: Error) => setError(loadError.message));
   }, [selectedClientId]);
@@ -80,12 +80,11 @@ export default function PortalTicketList() {
       setNotice(null);
       await createTicket({
         service_id: Number(selectedServiceId),
-        created_by_id: 1,
         title: form.title.trim(),
         description: form.description.trim(),
         kind: form.kind,
       });
-      const refreshed = await listTickets({ client_id: Number(selectedClientId), viewer_role: "cliente" });
+      const refreshed = await listTickets({ client_id: Number(selectedClientId) });
       setTickets(refreshed);
       setForm({ title: "", description: "", kind: "solicitud" });
       setNotice("Solicitud creada correctamente.");
