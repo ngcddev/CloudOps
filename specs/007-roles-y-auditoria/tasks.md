@@ -21,7 +21,7 @@
 
 ## Bitácora
 
-- [ ] T07 · Crear la tabla `audit_logs` con migración (`user_id` nullable; trigger que rechaza `UPDATE` y `DELETE` en PostgreSQL) y `services/audit.py` con `record(...)` — **Verifica:** `alembic upgrade head` sin errores y un `UPDATE audit_logs ...` en `psql` falla con el mensaje del trigger. [ ]
+- [x] T07 · Crear la tabla `audit_logs` con migración (`user_id` nullable; trigger que rechaza `UPDATE` y `DELETE` en PostgreSQL) y `services/audit.py` con `record(...)` — **Verifica:** `alembic upgrade head` sin errores y un `UPDATE audit_logs ...` en `psql` falla con el mensaje del trigger. [ngcddev]
 
 ## Proteger lo que ya existe
 
