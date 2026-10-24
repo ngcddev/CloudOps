@@ -5,8 +5,11 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.change_request import ChangeRequest
 from app.models.security_check import SecurityCheck
 from app.models.security_run import SecurityRun
+from app.services import audit
+from app.services.change_flow import step_event, transition
 
 # Controles de la puerta, en el orden en que corren
 STEP_SECRETS = "secretos"
@@ -45,6 +48,21 @@ STEP_LABELS = {
     "verificacion": "verificación de la firma",
     "pipeline": "ejecución del pipeline",
 }
+
+
+# Lo que ve el cliente cuando una actualización se detiene: textos del glosario (docs/glosario.md), sin jerga
+_TEXT_SENSITIVE = "Una actualización fue detenida porque contenía información sensible."
+_TEXT_ORIGIN = "Una actualización fue detenida porque no pasó la verificación de origen."
+_TEXT_GENERIC = "Una actualización fue detenida antes de publicarse por controles de seguridad."
+CLIENT_TEXT = {
+    "secretos": _TEXT_SENSITIVE,
+    "firma": _TEXT_ORIGIN,
+    "verificacion": _TEXT_ORIGIN,
+}
+
+
+def client_text(step: str | None) -> str:
+    return CLIENT_TEXT.get(step or "", _TEXT_GENERIC)
 
 
 def not_approvable_message(version: str, gate: "Gate") -> str:
@@ -148,4 +166,43 @@ def close_run(
     run.image_digests = image_digests
     run.finished_at = datetime.now(timezone.utc)
     db.flush()
+    if run.status == FALLO:
+        for change in pending_changes_for(db, run):
+            reject_for_security(db, change, run)
     return run
+
+
+def pending_changes_for(db: Session, run: SecurityRun) -> list[ChangeRequest]:
+    """Solicitudes de cambio aún pendientes hacia la versión de esta corrida."""
+    return list(
+        db.scalars(
+            select(ChangeRequest).where(
+                ChangeRequest.service_id == run.service_id,
+                ChangeRequest.to_version == run.version,
+                ChangeRequest.status == "pendiente",
+            )
+        )
+    )
+
+
+def reject_for_security(db: Session, change: ChangeRequest, run: SecurityRun) -> None:
+    """Rechaza la solicitud porque su versión no pasó la puerta, a nombre del sistema.
+
+    El cliente ve el texto del glosario; el detalle técnico queda en una nota interna.
+    """
+    step = run.failed_step or "pipeline"
+    label = STEP_LABELS.get(step, step)
+    reason = f"Detenida por controles de seguridad: {label}"
+    transition(change, "rechazada", reason=reason)
+    db.add(step_event(change, "pendiente", None, client_text(step)))
+    db.add(
+        step_event(
+            change, "pendiente", None,
+            f"La versión {run.version} no pasó la puerta de seguridad (corrida #{run.id}): {label}.",
+            internal=True,
+        )
+    )
+    audit.record(
+        db, None, "rechazar", "change_request", change.id,
+        {"motivo": reason, "control": step, "corrida": run.id},
+    )

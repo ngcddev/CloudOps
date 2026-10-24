@@ -115,6 +115,10 @@ def create_change_request(
         {"ticket_id": ticket.id, "de": change.from_version, "a": change.to_version},
         audit.request_ip(request),
     )
+    # Una versión que ya falló la puerta de seguridad no espera aprobación: queda rechazada de una vez
+    current = gate.gate_status(db, service.id, change.to_version)
+    if current.status == gate.FALLO:
+        gate.reject_for_security(db, change, current.run)
     db.commit()
     db.refresh(change)
     return change
