@@ -58,8 +58,23 @@ class IncidentEventOut(BaseModel):
     created_at: datetime
 
 
+class LastChangeOut(BaseModel):
+    """Última publicación del servicio, para revisar si la falla vino de ahí."""
+
+    version: str
+    author: str
+    source: str
+    deployed_at: datetime
+    change_request_id: int | None
+    commit_sha: str | None
+    commit_url: str | None
+
+
 class IncidentDetail(IncidentOut):
     events: list[IncidentEventOut]
+    # Grafana Explore con los registros del sitio; nulo si no hay GRAFANA_URL
+    logs_url: str | None
+    last_change: LastChangeOut | None
 
 
 class IncidentNoteIn(BaseModel):
