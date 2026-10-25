@@ -45,3 +45,30 @@ class IncidentOut(BaseModel):
     response_state: str
     resolution_state: str
     created_at: datetime
+
+
+class IncidentEventOut(BaseModel):
+    """Un punto de la línea de tiempo: detectado, tomado, nota, recuperado o cerrado."""
+
+    id: int
+    type: str
+    message: str | None
+    # Nombre del usuario o «Sistema» si lo registró el monitoreo
+    actor_name: str
+    created_at: datetime
+
+
+class IncidentDetail(IncidentOut):
+    events: list[IncidentEventOut]
+
+
+class IncidentNoteIn(BaseModel):
+    message: str = Field(max_length=2000)
+
+    @field_validator("message")
+    @classmethod
+    def _nota_obligatoria(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("La nota no puede estar vacía.")
+        return value
