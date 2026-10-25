@@ -13,7 +13,7 @@ from app.models.incident_event import IncidentEvent
 from app.models.project import Project
 from app.models.service import Service
 from app.models.user import User
-from app.schemas.incident import IncidentCreate, IncidentDetail, IncidentOut
+from app.schemas.incident import IncidentCreate, IncidentDetail, IncidentNoteIn, IncidentOut
 from app.services import audit
 from app.services import incident_flow
 from app.services.incident_flow import IncidentFlowError, add_event
@@ -177,5 +177,22 @@ def acknowledge_incident(
         raise HTTPException(status_code=409, detail=str(error)) from error
     add_event(incident, "tomado", f"Tomado por {actor.name}.", actor, at=now)
     audit.record(db, actor, "tomar", "incident", incident.id, None, audit.request_ip(request))
+    db.commit()
+    return present_detail(_load(db, incident_id), now)
+
+
+@router.post("/{incident_id}/notes", response_model=IncidentDetail, status_code=status.HTTP_201_CREATED)
+def add_note(
+    incident_id: int,
+    data: IncidentNoteIn,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
+    """Agrega una nota del técnico a la línea de tiempo (lo que revisó, lo que probó)."""
+    incident = _load(db, incident_id)
+    if incident.status == "cerrado":
+        raise HTTPException(status_code=409, detail="El incidente ya está cerrado.")
+    now = utcnow()
+    add_event(incident, "nota", data.message, actor, at=now)
     db.commit()
     return present_detail(_load(db, incident_id), now)
