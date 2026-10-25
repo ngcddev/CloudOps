@@ -29,6 +29,16 @@ TABLES = {
 }
 
 
+ROLLBACK_COLUMNS = {
+    "rollback_from_version",
+    "rollback_to_version",
+    "rollback_commit_sha",
+    "rollback_by_id",
+    "rollback_at",
+    "rollback_confirmed_at",
+}
+
+
 def _config(connection) -> Config:
     config = Config(str(BACKEND / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND / "alembic"))
@@ -47,6 +57,15 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
         assert {"password_hash", "is_active", "last_login_at"} <= {
             c["name"] for c in inspect(connection).get_columns("users")
         }
+
+        # 0009 (spec 009): quita las columnas del rollback; los incidentes de la 008 siguen ahí
+        incident_columns = {c["name"] for c in inspect(connection).get_columns("incidents")}
+        assert ROLLBACK_COLUMNS <= incident_columns
+        command.downgrade(_config(connection), "-1")
+        incident_columns = {c["name"] for c in inspect(connection).get_columns("incidents")}
+        assert not ROLLBACK_COLUMNS & incident_columns
+        assert {"incidents", "incident_events"} <= set(inspect(connection).get_table_names())
+        assert "mitigated_at" in incident_columns
 
         # 0008 (spec 008): quita los incidentes y su línea de tiempo
         command.downgrade(_config(connection), "-1")
