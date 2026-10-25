@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     # Vacías = el incidente se muestra sin esos enlaces.
     grafana_url: str = ""
     gitea_public_url: str = ""
+    # Webhook de Alertmanager (spec 008): token propio, distinto al de las sesiones y al del pipeline.
+    # Vacío = la API arranca pero no acepta avisos.
+    alertmanager_token: str = ""
+    # Segundos que la regla SitioCaido espera antes de avisar (su `for: 30s` en observability/). El Hub los
+    # resta del `startsAt` para que el incidente empiece a la hora real de la caída. Si cambia uno, cambia el otro.
+    alert_confirm_seconds: int = 30
 
 
 settings = Settings()
