@@ -13,7 +13,18 @@ from app.config import settings
 from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
-from app.routers import audit_logs, auth, catalog, change_requests, clients, pipeline, security, services, tickets
+from app.routers import (
+    audit_logs,
+    auth,
+    catalog,
+    change_requests,
+    clients,
+    incidents,
+    pipeline,
+    security,
+    services,
+    tickets,
+)
 from app.seed import seed_if_empty, seed_passwords
 from app.services.deploy_watch import watch_forever
 
@@ -49,6 +60,7 @@ app.include_router(change_requests.router)
 app.include_router(services.router)
 app.include_router(pipeline.router)
 app.include_router(security.router)
+app.include_router(incidents.router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
 _CAMPOS = {
@@ -69,6 +81,9 @@ _CAMPOS = {
     "reason": "motivo",
     "to_version": "versión destino",
     "ticket_id": "solicitud",
+    "priority": "prioridad",
+    "title": "título",
+    "service_id": "servicio",
 }
 
 
