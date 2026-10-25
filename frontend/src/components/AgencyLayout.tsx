@@ -10,7 +10,7 @@ const sections: { label: string; to?: string; spec?: string }[] = [
   { label: "Solicitudes", to: "/agencia/tickets" },
   { label: "Cambios", to: "/agencia/cambios" },
   { label: "Servicios", to: "/agencia/servicios" },
-  { label: "Incidentes", spec: "008" },
+  { label: "Incidentes", to: "/agencia/incidentes" },
   { label: "Tableros", spec: "010" },
   { label: "Reportes", spec: "013" },
   { label: "Bitácora", to: "/agencia/bitacora" },

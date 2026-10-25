@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: gitea.hub.local/forja-digital/hub-api:v1.2
+          image: gitea.hub.local/forja-digital/hub-api:v1.3
           ports:
             - name: http
               containerPort: 8000
@@ -61,6 +61,14 @@ spec:
             - name: ARGOCD_TOKEN
               valueFrom:
                 secretKeyRef: { name: hub-gitops-tokens, key: ARGOCD_TOKEN, optional: true }
+            # Webhook de Alertmanager (spec 008): token del Secret hub-alertmanager (ver crear-secretos.sh).
+            # Sin el Secret la API arranca igual, pero no acepta avisos de caída.
+            - name: ALERTMANAGER_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hub-alertmanager, key: token, optional: true }
+            # Enlaces del detalle del incidente (spec 008): direcciones que abre el navegador del técnico
+            - { name: GRAFANA_URL, value: "http://grafana.hub.local" }
+            - { name: GITEA_PUBLIC_URL, value: "http://gitea.hub.local" }
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

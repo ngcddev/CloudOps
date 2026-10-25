@@ -1,0 +1,18 @@
+# Service traefik-metrics (spec 008, T27): k3s ya instala Traefik con las métricas de Prometheus en el
+# puerto 9100 (entrypoint `metrics`), pero no las expone en ningún Service. Este las deja al alcance de
+# Prometheus para que la spec 010 mida peticiones y errores por sitio (traefik_service_requests_total).
+# El selector son las etiquetas del chart de Traefik de k3s (release traefik en kube-system).
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-metrics
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+spec:
+  selector:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik-kube-system
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: metrics

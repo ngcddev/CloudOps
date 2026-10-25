@@ -1,0 +1,11 @@
+# Blackbox Exporter (spec 008, T21): hace la petición a /health de cada sitio cuando Prometheus se lo pide.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - deployment.yaml
+configMapGenerator:
+  # El sufijo con el hash reinicia el Pod cuando cambia la configuración
+  - name: blackbox-config
+    files:
+      - blackbox.yml

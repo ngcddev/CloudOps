@@ -9,6 +9,7 @@ import {
   type ServiceVersionStatus,
 } from "../../api";
 import { gateSummary } from "../../components/SecurityChecks";
+import StatusBadge from "../../components/StatusBadge";
 import { formatDateTime } from "../../format";
 
 // Lo que informa Argo CD, en texto de la consola con ícono (el estado nunca se comunica con color)
@@ -89,6 +90,7 @@ export default function ServiceList() {
           <thead>
             <tr>
               <th>Cliente</th>
+              <th>Disponibilidad</th>
               <th>Versión activa</th>
               <th>Sincronización</th>
               <th>Salud</th>
@@ -104,6 +106,9 @@ export default function ServiceList() {
                   <td>
                     <strong>{row.client_name}</strong>
                     <div className="muted">{row.host}</div>
+                  </td>
+                  <td>
+                    <StatusBadge status={row.service_status} />
                   </td>
                   <td>
                     <strong>{row.current_version}</strong>
@@ -145,7 +150,7 @@ export default function ServiceList() {
                 </tr>
                 {history?.serviceId === row.service_id && (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={8}>
                       {history.items.length === 0 ? (
                         <span className="muted">Este sitio todavía no tiene cambios publicados.</span>
                       ) : (

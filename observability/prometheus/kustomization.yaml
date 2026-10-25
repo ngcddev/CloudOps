@@ -1,0 +1,16 @@
+# Prometheus (spec 008, T22): sondea los sitios a través de Blackbox y guarda probe_success un mes.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - rbac.yaml
+  - pvc.yaml
+  - deployment.yaml
+configMapGenerator:
+  - name: prometheus-config
+    files:
+      - prometheus.yml
+  # Reglas de alerta (T23): montadas aparte en /etc/prometheus/reglas
+  - name: prometheus-reglas
+    files:
+      - reglas/sitios.yml

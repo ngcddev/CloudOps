@@ -1,0 +1,6 @@
+# Métricas de Traefik (spec 008, T27): Service en kube-system, donde k3s instala Traefik.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+resources:
+  - service.yaml

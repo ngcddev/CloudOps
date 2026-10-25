@@ -25,6 +25,10 @@ const ACTION_LABELS: Record<string, string> = {
   rechazar: "Rechazó",
   desplegar: "Publicó",
   fallar: "No se pudo publicar",
+  // Incidentes (spec 008)
+  tomar: "Tomó",
+  mitigar: "Mitigó",
+  cerrar: "Cerró",
 };
 
 // Las fechas del filtro son días de Colombia (UTC-5, sin horario de verano)
@@ -45,6 +49,10 @@ const DETAIL_LABELS: Record<string, string> = {
   host: "Dirección",
   sincronizacion: "Sincronización",
   salud: "Salud",
+  // Incidentes (spec 008)
+  prioridad: "Prioridad",
+  servicio: "Servicio",
+  origen: "Origen",
 };
 
 function describe(details: AuditLog["details"]): string {

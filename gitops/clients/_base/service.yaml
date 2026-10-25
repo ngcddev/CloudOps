@@ -1,8 +1,12 @@
 # Service del sitio (spec 003 T09): solo lista como destino a los Pods que están Ready.
+# La anotación hub/probe (spec 008) hace que Prometheus lo descubra y Blackbox sondee su /health: un
+# cliente nuevo queda monitoreado sin tocar la configuración del monitoreo.
 apiVersion: v1
 kind: Service
 metadata:
   name: web
+  annotations:
+    hub/probe: "true"
 spec:
   selector:
     app: web

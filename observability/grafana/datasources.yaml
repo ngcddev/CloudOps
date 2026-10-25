@@ -1,0 +1,20 @@
+# Fuentes de datos de Grafana provisionadas al arrancar (spec 008, T26).
+# Los uid son fijos: el enlace «Registros del sitio» del Hub abre Explore con la fuente `loki`
+# (backend/app/services/incident_links.py) y los dashboards de la 010 usarán `prometheus`.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus.monitoring.svc:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 5s
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki.monitoring.svc:3100
+    editable: false

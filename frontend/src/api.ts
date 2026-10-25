@@ -694,6 +694,8 @@ export interface ServiceVersionStatus {
   // Puerta de seguridad de la versión activa (spec 006)
   security_status: GateStatus;
   security_failed_step: SecurityStep | "pipeline" | null;
+  // Monitoreo (spec 008): caido mientras tenga un incidente de alerta abierto
+  service_status: ServiceStatus;
 }
 
 export interface Deployment {
@@ -823,6 +825,14 @@ export async function rejectChangeRequest(id: number, reason: string): Promise<C
   });
 }
 
+// En datos de prueba, igual que la API: caído si tiene un incidente de alerta abierto (spec 008)
+function mockServiceStatus(serviceId: number): ServiceStatus {
+  ensureMockIncidents();
+  return incidentMock.incidents.some((i) => i.service_id === serviceId && i.source === "alerta" && i.status === "abierto")
+    ? "caido"
+    : "operativo";
+}
+
 export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
   if ((await detectMode()) === "mock") {
     return mockServices().map(({ client, service }) => {
@@ -848,6 +858,7 @@ export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
         open_change_to_version: open?.to_version ?? null,
         security_status: "ok" as GateStatus,
         security_failed_step: null,
+        service_status: mockServiceStatus(service.id),
       };
     });
   }
@@ -1012,4 +1023,269 @@ export async function downloadCheckReport(checkId: number): Promise<void> {
   link.click();
   // Se revoca después: en algunos navegadores revocar de inmediato cancela la descarga
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// ---------- Incidentes (spec 008) ----------
+
+export type IncidentStatus = "abierto" | "mitigado" | "cerrado";
+export type IncidentSource = "alerta" | "manual";
+export type IncidentEventType = "detectado" | "tomado" | "nota" | "recuperado" | "cerrado";
+// Estado de un reloj del SLA (spec 008, CA-4)
+export type ClockState = "a_tiempo" | "en_riesgo" | "vencido" | "cumplido";
+
+export interface Incident {
+  id: number;
+  service_id: number;
+  client_id: number;
+  client_name: string;
+  service_name: string;
+  namespace: string;
+  priority: TicketPriority;
+  status: IncidentStatus;
+  source: IncidentSource;
+  title: string;
+  started_at: string;
+  acknowledged_at: string | null;
+  mitigated_at: string | null;
+  closed_at: string | null;
+  response_due_at: string;
+  resolution_due_at: string;
+  assignee_id: number | null;
+  assignee_name: string | null;
+  root_cause: string | null;
+  response_state: ClockState;
+  resolution_state: ClockState;
+  created_at: string;
+}
+
+export interface IncidentEvent {
+  id: number;
+  type: IncidentEventType;
+  message: string | null;
+  // Nombre del técnico o «Sistema» si lo registró el monitoreo
+  actor_name: string;
+  created_at: string;
+}
+
+// Última publicación del servicio, para revisar si la falla vino de ahí
+export interface IncidentLastChange {
+  version: string;
+  author: string;
+  source: "cambio" | "rollback";
+  deployed_at: string;
+  change_request_id: number | null;
+  commit_sha: string | null;
+  commit_url: string | null;
+}
+
+export interface IncidentDetail extends Incident {
+  events: IncidentEvent[];
+  logs_url: string | null;
+  last_change: IncidentLastChange | null;
+}
+
+export interface IncidentInput {
+  service_id: number;
+  priority: TicketPriority;
+  title: string;
+}
+
+export interface IncidentFilters {
+  status?: IncidentStatus;
+  client_id?: number;
+  priority?: TicketPriority;
+}
+
+// Minutos de respuesta y solución por prioridad. En datos de prueba se cuentan 24/7; la API real usa el
+// horario del plan para P2–P4 (spec 004).
+const MOCK_SLA_MINUTES: Record<TicketPriority, [number, number]> = {
+  P1: [15, 240],
+  P2: [60, 480],
+  P3: [240, 1440],
+  P4: [480, 4320],
+};
+
+// Igual que clock_state del backend: en_riesgo desde el 80 % del plazo; con done el reloj está detenido
+export function clockState(start: string, due: string, done: string | null, now: number = Date.now()): ClockState {
+  const startMs = Date.parse(start);
+  const dueMs = Date.parse(due);
+  if (done) return Date.parse(done) <= dueMs ? "cumplido" : "vencido";
+  if (now >= dueMs) return "vencido";
+  return (now - startMs) * 5 >= (dueMs - startMs) * 4 ? "en_riesgo" : "a_tiempo";
+}
+
+// Igual que la API: la respuesta se detiene en lo primero que pase entre tomar y mitigar el incidente
+export function responseStoppedAt(incident: Pick<Incident, "acknowledged_at" | "mitigated_at">): string | null {
+  const stops = [incident.acknowledged_at, incident.mitigated_at].filter((t): t is string => t !== null);
+  if (stops.length === 0) return null;
+  return stops.reduce((first, t) => (Date.parse(t) < Date.parse(first) ? t : first));
+}
+
+// Incidentes de prueba en memoria: uno de alerta de La Sazón que empezó hace 3 minutos
+const incidentMock = (() => {
+  const incidents: IncidentDetail[] = [];
+  let nextId = 1;
+  return {
+    incidents,
+    newId: () => nextId++,
+  };
+})();
+
+function addMockMinutes(iso: string, minutes: number): string {
+  return new Date(Date.parse(iso) + minutes * 60_000).toISOString();
+}
+
+function newMockIncident(serviceId: number, priority: TicketPriority, title: string, source: IncidentSource, startedAt: string): IncidentDetail {
+  const found = mockServices().find(({ service }) => service.id === serviceId);
+  if (!found) throw new ApiError("El servicio no existe.", 404);
+  const [response, resolution] = MOCK_SLA_MINUTES[priority];
+  const incident: IncidentDetail = {
+    id: incidentMock.newId(),
+    service_id: serviceId,
+    client_id: found.client.id,
+    client_name: found.client.name,
+    service_name: found.service.name,
+    namespace: found.service.namespace,
+    priority,
+    status: "abierto",
+    source,
+    title,
+    started_at: startedAt,
+    acknowledged_at: null,
+    mitigated_at: null,
+    closed_at: null,
+    response_due_at: addMockMinutes(startedAt, response),
+    resolution_due_at: addMockMinutes(startedAt, resolution),
+    assignee_id: null,
+    assignee_name: null,
+    root_cause: null,
+    response_state: "a_tiempo",
+    resolution_state: "a_tiempo",
+    created_at: startedAt,
+    events: [],
+    logs_url: null,
+    last_change: null,
+  };
+  incident.events.push({
+    id: incidentMock.newId(),
+    type: "detectado",
+    message: source === "alerta" ? "El monitoreo detectó que el sitio no responde." : `Abierto a mano por ${MOCK_USER_NAME}.`,
+    actor_name: source === "alerta" ? "Sistema" : MOCK_USER_NAME,
+    created_at: startedAt,
+  });
+  incidentMock.incidents.unshift(incident);
+  return incident;
+}
+
+function ensureMockIncidents() {
+  if (incidentMock.incidents.length > 0) return;
+  const restaurante = mockServices().find(({ service }) => service.namespace === "cliente-restaurante");
+  if (restaurante) {
+    newMockIncident(restaurante.service.id, "P1", "El sitio de restaurante no responde", "alerta", addMockMinutes(new Date().toISOString(), -3));
+  }
+}
+
+// Devuelve una copia con los relojes calculados a la hora actual, como lo hace la API
+function withClocks(incident: IncidentDetail): IncidentDetail {
+  return {
+    ...incident,
+    events: [...incident.events],
+    response_state: clockState(incident.started_at, incident.response_due_at, responseStoppedAt(incident)),
+    resolution_state: clockState(incident.started_at, incident.resolution_due_at, incident.mitigated_at),
+  };
+}
+
+function findMockIncident(id: number): IncidentDetail {
+  ensureMockIncidents();
+  const incident = incidentMock.incidents.find((item) => item.id === id);
+  if (!incident) throw new ApiError("El incidente no existe.", 404);
+  return incident;
+}
+
+function addMockIncidentEvent(incident: IncidentDetail, type: IncidentEventType, message: string) {
+  incident.events.push({ id: incidentMock.newId(), type, message, actor_name: MOCK_USER_NAME, created_at: new Date().toISOString() });
+}
+
+export async function listIncidents(filters: IncidentFilters = {}): Promise<Incident[]> {
+  if ((await detectMode()) === "mock") {
+    ensureMockIncidents();
+    return incidentMock.incidents
+      .filter((i) => !filters.status || i.status === filters.status)
+      .filter((i) => !filters.client_id || i.client_id === filters.client_id)
+      .filter((i) => !filters.priority || i.priority === filters.priority)
+      .map(withClocks);
+  }
+  const query = new URLSearchParams();
+  if (filters.status) query.set("status", filters.status);
+  if (filters.client_id) query.set("client_id", String(filters.client_id));
+  if (filters.priority) query.set("priority", filters.priority);
+  return request<Incident[]>(`/incidents${query.size ? `?${query.toString()}` : ""}`);
+}
+
+export async function getIncident(id: number): Promise<IncidentDetail> {
+  if ((await detectMode()) === "mock") return withClocks(findMockIncident(id));
+  return request<IncidentDetail>(`/incidents/${id}`);
+}
+
+export async function createIncident(input: IncidentInput): Promise<Incident> {
+  if ((await detectMode()) === "mock") {
+    ensureMockIncidents();
+    requireText(input.title, "El título es obligatorio.");
+    return withClocks(newMockIncident(input.service_id, input.priority, input.title.trim(), "manual", new Date().toISOString()));
+  }
+  return request<Incident>("/incidents", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function acknowledgeIncident(id: number): Promise<IncidentDetail> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(id);
+    if (incident.acknowledged_at) throw new ApiError("El incidente ya fue tomado.", 409);
+    if (incident.status === "cerrado") throw new ApiError("El incidente ya está cerrado.", 409);
+    incident.acknowledged_at = new Date().toISOString();
+    incident.assignee_id = MOCK_USER_ID;
+    incident.assignee_name = MOCK_USER_NAME;
+    addMockIncidentEvent(incident, "tomado", `Tomado por ${MOCK_USER_NAME}.`);
+    return withClocks(incident);
+  }
+  return request<IncidentDetail>(`/incidents/${id}/acknowledge`, { method: "POST" });
+}
+
+export async function addIncidentNote(id: number, message: string): Promise<IncidentDetail> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(id);
+    requireText(message, "La nota no puede estar vacía.");
+    if (incident.status === "cerrado") throw new ApiError("El incidente ya está cerrado.", 409);
+    addMockIncidentEvent(incident, "nota", message.trim());
+    return withClocks(incident);
+  }
+  return request<IncidentDetail>(`/incidents/${id}/notes`, { method: "POST", body: JSON.stringify({ message }) });
+}
+
+export async function mitigateIncident(id: number): Promise<IncidentDetail> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(id);
+    if (incident.source !== "manual") {
+      throw new ApiError("Un incidente de alerta se mitiga solo cuando el monitoreo ve el sitio sano.", 409);
+    }
+    if (incident.status !== "abierto") throw new ApiError(`No se permite pasar de «${incident.status}» a «mitigado».`, 409);
+    incident.status = "mitigado";
+    incident.mitigated_at = new Date().toISOString();
+    addMockIncidentEvent(incident, "recuperado", `Mitigado a mano por ${MOCK_USER_NAME}.`);
+    return withClocks(incident);
+  }
+  return request<IncidentDetail>(`/incidents/${id}/mitigate`, { method: "POST" });
+}
+
+export async function closeIncident(id: number, rootCause: string): Promise<IncidentDetail> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(id);
+    requireText(rootCause, "Para cerrar el incidente hay que escribir la causa raíz.");
+    if (incident.status !== "mitigado") throw new ApiError(`No se permite pasar de «${incident.status}» a «cerrado».`, 409);
+    incident.status = "cerrado";
+    incident.root_cause = rootCause.trim();
+    incident.closed_at = new Date().toISOString();
+    addMockIncidentEvent(incident, "cerrado", `Cerrado por ${MOCK_USER_NAME}. Causa raíz: ${incident.root_cause}`);
+    return withClocks(incident);
+  }
+  return request<IncidentDetail>(`/incidents/${id}/close`, { method: "POST", body: JSON.stringify({ root_cause: rootCause }) });
 }

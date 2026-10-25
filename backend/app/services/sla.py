@@ -1,4 +1,4 @@
-# Cálculo de fechas límite y estado del SLA (spec 004, T06-T08).
+# Cálculo de fechas límite y estado del SLA de solicitudes (spec 004, T06-T08) e incidentes (spec 008, T03).
 import re
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -40,29 +40,65 @@ def due_dates(created_at: datetime, priority: str, plan: Plan) -> tuple[datetime
     )
 
 
+def clock_state(start: datetime, due: datetime, done_at: datetime | None, now: datetime | None = None) -> str:
+    """Estado de un reloj de SLA: a_tiempo, en_riesgo (≥ 80 % del plazo), vencido o cumplido.
+
+    Con `done_at` el reloj está detenido: `cumplido` si se hizo a tiempo y `vencido` si no.
+    """
+    start = _require_aware(start, "start").astimezone(timezone.utc)
+    due = _require_aware(due, "due_at").astimezone(timezone.utc)
+    total = due - start
+    if total <= timedelta(0):
+        raise ValueError("La fecha límite debe ser posterior al inicio del reloj.")
+    if done_at is not None:
+        done_at = _require_aware(done_at, "done_at").astimezone(timezone.utc)
+        return "cumplido" if done_at <= due else "vencido"
+
+    current = _require_aware(now or datetime.now(timezone.utc), "now").astimezone(timezone.utc)
+    if current >= due:
+        return "vencido"
+    if (current - start) * 5 >= total * 4:
+        return "en_riesgo"
+    return "a_tiempo"
+
+
 def sla_state(ticket, now: datetime | None = None) -> str:
     """Devuelve a_tiempo, en_riesgo o vencido para el plazo activo del ticket."""
     created_at = _require_aware(ticket.created_at, "created_at")
-    current = _require_aware(now or datetime.now(timezone.utc), "now")
     if ticket.first_response_at is None:
         due_at = ticket.response_due_at
     else:
         due_at = ticket.resolution_due_at
     if due_at is None:
         raise ValueError("El ticket no tiene una fecha límite para calcular el SLA.")
+    try:
+        return clock_state(created_at, due_at, None, now)
+    except ValueError as error:
+        if "posterior" in str(error):
+            raise ValueError("La fecha límite debe ser posterior a la creación del ticket.") from None
+        raise
 
-    created_at = created_at.astimezone(timezone.utc)
-    current = current.astimezone(timezone.utc)
-    due_at = _require_aware(due_at, "due_at").astimezone(timezone.utc)
-    total = due_at - created_at
-    elapsed = current - created_at
-    if total <= timedelta(0):
-        raise ValueError("La fecha límite debe ser posterior a la creación del ticket.")
-    if current >= due_at:
-        return "vencido"
-    if elapsed * 5 >= total * 4:
-        return "en_riesgo"
-    return "a_tiempo"
+
+def incident_clocks(incident, now: datetime | None = None) -> tuple[str, str]:
+    """Estado de los dos relojes de un incidente: (respuesta, solución).
+
+    La respuesta se cumple al tomarlo y la solución al mitigarlo (spec 008, CA-4); con el incidente
+    mitigado los dos relojes quedan detenidos: la respuesta se detiene en lo primero que pase entre
+    tomarlo y mitigarlo.
+    """
+    started_at = _as_utc(incident.started_at)
+    stops = [t for t in (_as_utc(incident.acknowledged_at), _as_utc(incident.mitigated_at)) if t is not None]
+    responded_at = min(stops) if stops else None
+    response = clock_state(started_at, _as_utc(incident.response_due_at), responded_at, now)
+    resolution = clock_state(started_at, _as_utc(incident.resolution_due_at), _as_utc(incident.mitigated_at), now)
+    return response, resolution
+
+
+def _as_utc(value: datetime | None) -> datetime | None:
+    """SQLite devuelve las fechas sin zona; se guardan siempre en UTC, así que se les pone."""
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 def _require_aware(value: datetime | None, field_name: str) -> datetime:

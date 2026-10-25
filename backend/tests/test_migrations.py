@@ -3,7 +3,9 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect
+import pytest
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.exc import IntegrityError
 
 BACKEND = Path(__file__).resolve().parents[1]
 TABLES = {
@@ -22,6 +24,8 @@ TABLES = {
     "audit_logs",
     "security_runs",
     "security_checks",
+    "incidents",
+    "incident_events",
 }
 
 
@@ -43,6 +47,11 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
         assert {"password_hash", "is_active", "last_login_at"} <= {
             c["name"] for c in inspect(connection).get_columns("users")
         }
+
+        # 0008 (spec 008): quita los incidentes y su línea de tiempo
+        command.downgrade(_config(connection), "-1")
+        assert not {"incidents", "incident_events"} & set(inspect(connection).get_table_names())
+        assert "security_runs" in set(inspect(connection).get_table_names())
 
         # 0007 (spec 006): quita las corridas y los controles de seguridad
         command.downgrade(_config(connection), "-1")
@@ -74,3 +83,32 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
 
         command.downgrade(_config(connection), "base")
         assert not TABLES & set(inspect(connection).get_table_names())
+
+
+def _insert_incident(connection, fingerprint: str | None, status: str = "abierto") -> None:
+    connection.execute(
+        text(
+            "INSERT INTO incidents (service_id, priority, status, source, fingerprint, title, started_at,"
+            " response_due_at, resolution_due_at)"
+            " VALUES (1, 'P1', :status, 'alerta', :fingerprint, 'Sitio caído', :at, :at, :at)"
+        ),
+        {"status": status, "fingerprint": fingerprint, "at": "2026-10-24 14:00:00+00:00"},
+    )
+
+
+def test_0008_no_deja_dos_incidentes_abiertos_con_el_mismo_fingerprint():
+    """El índice único parcial de la migración 0008 (spec 008, T01 · CA-3)."""
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        command.upgrade(_config(connection), "head")
+        _insert_incident(connection, "abc123")
+        _insert_incident(connection, "otro")
+        # Uno ya mitigado con la misma huella no estorba: la falla volvió y es un incidente nuevo
+        _insert_incident(connection, "otro", status="mitigado")
+        # Los manuales no tienen huella y pueden ser varios
+        _insert_incident(connection, None)
+        _insert_incident(connection, None)
+
+        with pytest.raises(IntegrityError):
+            with connection.begin_nested():
+                _insert_incident(connection, "abc123")

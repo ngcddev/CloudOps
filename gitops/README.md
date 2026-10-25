@@ -47,7 +47,7 @@ PowerShell como administrador; en Linux, `/etc/hosts`). Se usan entradas explíc
 puede resolverse por mDNS.
 
 ```
-127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local backstage.hub.local
+127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local backstage.hub.local grafana.hub.local
 ```
 
 Cambia `127.0.0.1` por la IP fija del PC A cuando se entre desde otro equipo.

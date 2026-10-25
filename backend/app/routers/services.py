@@ -8,6 +8,7 @@ from app.deps import require_agency
 from app.models.change_request import ChangeRequest
 from app.models.client import Client
 from app.models.deployment import Deployment
+from app.models.incident import Incident
 from app.models.project import Project
 from app.models.security_run import SecurityRun
 from app.models.service import Service
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/api/services", tags=["services"], dependencies=[Depe
 
 @router.get("/status", response_model=list[ServiceStatusOut])
 def services_status(db: Session = Depends(get_db)):
-    """Versión activa, sincronización, salud y último autor de cada servicio."""
+    """Versión activa, sincronización, salud, último autor y si está caído, de cada servicio."""
     rows = db.execute(
         select(Service, Client).join(Project, Service.project_id == Project.id)
         .join(Client, Project.client_id == Client.id).order_by(Service.id)
@@ -49,6 +50,10 @@ def services_status(db: Session = Depends(get_db)):
             )
         )
     }
+    # Monitoreo (spec 008): servicios con un incidente de alerta abierto, en una sola consulta
+    down = set(
+        db.scalars(select(Incident.service_id).where(Incident.source == "alerta", Incident.status == "abierto"))
+    )
     result = []
     for service, client in rows:
         last = last_by_service.get(service.id)
@@ -73,6 +78,7 @@ def services_status(db: Session = Depends(get_db)):
                 open_change_to_version=open_change.to_version if open_change else None,
                 security_status=run.status if run else "sin_corrida",
                 security_failed_step=run.failed_step if run else None,
+                service_status="caido" if service.id in down else "operativo",
             )
         )
     return result

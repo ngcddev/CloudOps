@@ -1,10 +1,10 @@
 # Pruebas del estado de los servicios y el historial de versiones (spec 005, T16 · CA-4).
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import select
 
-from app.models import ChangeRequest, Deployment, Service, Ticket, User
+from app.models import ChangeRequest, Deployment, Incident, Service, Ticket, User
 
 
 @pytest.fixture
@@ -134,3 +134,28 @@ def test_una_version_activa_que_fallo_la_puerta_dice_cual_control(client, seeded
     assert (por_ns["cliente-restaurante"]["security_status"], por_ns["cliente-restaurante"]["security_failed_step"]) == (
         "fallo", "secretos",
     )
+
+
+def _incident(db, namespace: str, source: str, status: str) -> None:
+    service = db.scalar(select(Service).where(Service.namespace == namespace))
+    start = datetime(2026, 10, 24, 14, 0, tzinfo=timezone.utc)
+    db.add(Incident(
+        service_id=service.id, priority="P1", status=status, source=source,
+        fingerprint="fp" if source == "alerta" else None, title="Falla", started_at=start,
+        response_due_at=start + timedelta(minutes=15), resolution_due_at=start + timedelta(hours=4),
+    ))
+    db.commit()
+
+
+def test_un_servicio_con_incidente_de_alerta_abierto_esta_caido(client, seeded):
+    _incident(seeded, "cliente-restaurante", "alerta", "abierto")
+    # Un incidente manual o uno ya mitigado no tumban el servicio
+    _incident(seeded, "cliente-ferreteria", "manual", "abierto")
+
+    estados = {s["namespace"]: s["service_status"] for s in client.get("/api/services/status").json()}
+
+    assert estados == {
+        "cliente-restaurante": "caido",
+        "cliente-ferreteria": "operativo",
+        "cliente-consultorio": "operativo",
+    }

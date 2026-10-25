@@ -1,0 +1,31 @@
+# Permisos de Alloy (spec 008, T25): listar Pods y leer sus registros por la API de Kubernetes.
+# Es un componente de plataforma leyendo dentro del clúster; el Hub sigue sin hablar con Kubernetes.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: alloy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: alloy-leer-registros
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: alloy-leer-registros
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: alloy-leer-registros
+subjects:
+  - kind: ServiceAccount
+    name: alloy
+    namespace: monitoring

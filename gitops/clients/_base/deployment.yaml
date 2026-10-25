@@ -10,6 +10,12 @@ metadata:
     app: web
 spec:
   replicas: 1
+  # Recreate (spec 008, decisión 1): al publicar se apaga la versión anterior antes de arrancar la nueva.
+  # Con RollingUpdate el Pod viejo seguía atendiendo mientras el nuevo no quedaba Ready, así que una v2
+  # rota nunca tumbaba el sitio y no había caída que detectar ni MTTR que medir. Costo: toda publicación,
+  # incluso la sana, deja el sitio sin respuesta unos segundos; la alerta espera 30 s para no confundirlo.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: web

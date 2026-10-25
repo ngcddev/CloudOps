@@ -25,6 +25,8 @@ class ServiceStatusOut(BaseModel):
     # Puerta de seguridad de la versión activa (spec 006): sin_corrida, en_curso, ok o fallo
     security_status: str
     security_failed_step: str | None
+    # Monitoreo (spec 008): `caido` si hay un incidente de alerta abierto, si no `operativo`
+    service_status: str
 
 
 class DeploymentOut(BaseModel):
