@@ -1,0 +1,13 @@
+# Estado local de OpenTofu/Terraform y copias de respaldo.
+state/
+*.tfstate
+*.tfstate.*
+
+# Credenciales y configuración local del clúster.
+.kubeconfig
+
+# Variables locales; se versionan únicamente los archivos de ejemplo.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
