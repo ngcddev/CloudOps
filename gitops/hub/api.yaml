@@ -61,6 +61,11 @@ spec:
             - name: ARGOCD_TOKEN
               valueFrom:
                 secretKeyRef: { name: hub-gitops-tokens, key: ARGOCD_TOKEN, optional: true }
+            # Webhook de Alertmanager (spec 008): token del Secret hub-alertmanager (ver crear-secretos.sh).
+            # Sin el Secret la API arranca igual, pero no acepta avisos de caída.
+            - name: ALERTMANAGER_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hub-alertmanager, key: token, optional: true }
             # Enlaces del detalle del incidente (spec 008): direcciones que abre el navegador del técnico
             - { name: GRAFANA_URL, value: "http://grafana.hub.local" }
             - { name: GITEA_PUBLIC_URL, value: "http://gitea.hub.local" }
