@@ -1,0 +1,11 @@
+# Volumen de Prometheus (spec 008, T22): los datos del mes sobreviven a un reinicio del Pod.
+# La 010 calcula la disponibilidad del mes con ellos. Usa el aprovisionador local-path de k3s.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
