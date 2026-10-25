@@ -1172,7 +1172,8 @@ function withClocks(incident: IncidentDetail): IncidentDetail {
   return {
     ...incident,
     events: [...incident.events],
-    response_state: clockState(incident.started_at, incident.response_due_at, incident.acknowledged_at),
+    // Igual que la API: mitigar sin haberlo tomado también detiene la respuesta
+    response_state: clockState(incident.started_at, incident.response_due_at, incident.acknowledged_at ?? incident.mitigated_at),
     resolution_state: clockState(incident.started_at, incident.resolution_due_at, incident.mitigated_at),
   };
 }
