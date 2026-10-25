@@ -1,0 +1,44 @@
+{
+  "receiver": "hub",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "SitioCaido",
+        "client": "desconocido",
+        "instance": "http://web.cliente-desconocido.svc.cluster.local/health",
+        "job": "sitios",
+        "namespace": "cliente-desconocido",
+        "priority": "P1",
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "El sitio de desconocido no responde"
+      },
+      "startsAt": "2026-10-24T19:00:30.000Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus.monitoring.svc:9090/graph?g0.expr=probe_success%7Bjob%3D%22sitios%22%7D+%3D%3D+0&g0.tab=1",
+      "fingerprint": "9a8b7c6d5e4f3a21"
+    }
+  ],
+  "groupLabels": {
+    "alertname": "SitioCaido"
+  },
+  "commonLabels": {
+    "alertname": "SitioCaido",
+    "client": "desconocido",
+    "instance": "http://web.cliente-desconocido.svc.cluster.local/health",
+    "job": "sitios",
+    "namespace": "cliente-desconocido",
+    "priority": "P1",
+    "severity": "critical"
+  },
+  "commonAnnotations": {
+    "summary": "El sitio de desconocido no responde"
+  },
+  "externalURL": "http://alertmanager.monitoring.svc:9093",
+  "version": "4",
+  "groupKey": "{}:{alertname=\"SitioCaido\"}",
+  "truncatedAlerts": 0
+}
