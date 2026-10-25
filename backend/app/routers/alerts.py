@@ -35,7 +35,7 @@ def alertmanager_webhook(payload: AlertmanagerPayload, db: Session = Depends(get
         if alert.status == "firing":
             result, incident_id = incident_alerts.open_from_alert(db, alert, settings.alert_confirm_seconds)
         else:
-            result, incident_id = "ignorado", None
+            result, incident_id = incident_alerts.resolve_from_alert(db, alert)
         results.append(AlertResult(fingerprint=alert.fingerprint, result=result, incident_id=incident_id))
     db.commit()
     return AlertmanagerResponse(results=results)
