@@ -47,3 +47,8 @@ scrape_configs:
         target_label: client
       - target_label: __address__
         replacement: blackbox.monitoring.svc:9115
+
+  # Peticiones y errores por sitio que ve Traefik (T27); los usa la spec 010
+  - job_name: traefik
+    static_configs:
+      - targets: ["traefik-metrics.kube-system.svc:9100"]
