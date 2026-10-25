@@ -72,3 +72,15 @@ class IncidentNoteIn(BaseModel):
         if not value:
             raise ValueError("La nota no puede estar vacía.")
         return value
+
+
+class IncidentCloseIn(BaseModel):
+    root_cause: str = Field(max_length=2000)
+
+    @field_validator("root_cause")
+    @classmethod
+    def _causa_obligatoria(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Para cerrar el incidente hay que escribir la causa raíz.")
+        return value
