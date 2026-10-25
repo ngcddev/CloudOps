@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (DevSecOps / SRE, Backend, Frontend) · Industrial valida el cálculo del SLA
 >
-> **Módulo:** 4 (los incidentes manuales y sus pantallas pueden adelantarse) · **Requerimientos:** RF-11, RF-12, RF-13, RNF-07 · **Depende de:** 000, 003, 004, 005, 007 · **Estado:** Tareas listas
+> **Módulo:** 4 (los incidentes manuales y sus pantallas pueden adelantarse) · **Requerimientos:** RF-11, RF-12, RF-13, RNF-07 · **Depende de:** 000, 003, 004, 005, 007 · **Estado:** En curso
 
 ## Qué y por qué
 
