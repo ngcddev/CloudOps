@@ -32,11 +32,11 @@ cuando T24 deje Alertmanager funcionando.
 
 ## Backend · webhook de Alertmanager
 
-- [ ] T09 · Guardar en `backend/tests/fixtures/` payloads de Alertmanager (v4) de `SitioCaido`: `firing`, `firing` repetido y `resolved` — **Verifica:** son JSON válidos con `status`, `alerts[].labels.namespace`, `startsAt`, `endsAt` y `fingerprint`. [ ]
-- [ ] T10 · Crear `POST /api/alerts/alertmanager` con `ALERTMANAGER_TOKEN` (en `config.py` y `.env.example`) que abre el incidente P1 con `started_at = startsAt − ALERT_CONFIRM_SECONDS`, evento `detectado` y servicio `caido` — **Verifica:** `pytest` con el payload `firing`: un incidente `alerta` P1 de La Sazón con su hora de inicio 30 s antes de `startsAt`; sin token o con otro → 401. [ ]
-- [ ] T11 · Deduplicar por `fingerprint`: un `firing` repetido no crea otro incidente; uno que llega después de un `mitigado` sí — **Verifica:** `pytest` envía el mismo `firing` 3 veces y queda 1 incidente; tras el `resolved`, un `firing` nuevo crea el segundo. [ ]
-- [ ] T12 · Procesar `resolved`: `mitigated_at = endsAt`, estado `mitigado`, evento `recuperado` y servicio `operativo`; servicio o fingerprint desconocido responde 200 con aviso en el log — **Verifica:** `pytest` con los payloads de T09 y uno con `namespace` inexistente. [ ]
-- [ ] T13 · Agregar la prueba punta a punta del ciclo de alerta (firing → incidente → tomar → resolved → cerrar) y comprobar que la prueba de rutas protegidas sigue en verde con la ruta nueva — **Verifica:** `docker compose exec api pytest` en verde. [ ]
+- [x] T09 · Guardar en `backend/tests/fixtures/` payloads de Alertmanager (v4) de `SitioCaido`: `firing`, `firing` repetido y `resolved` — **Verifica:** son JSON válidos con `status`, `alerts[].labels.namespace`, `startsAt`, `endsAt` y `fingerprint`. [sebastian-debug]
+- [x] T10 · Crear `POST /api/alerts/alertmanager` con `ALERTMANAGER_TOKEN` (en `config.py` y `.env.example`) que abre el incidente P1 con `started_at = startsAt − ALERT_CONFIRM_SECONDS`, evento `detectado` y servicio `caido` — **Verifica:** `pytest` con el payload `firing`: un incidente `alerta` P1 de La Sazón con su hora de inicio 30 s antes de `startsAt`; sin token o con otro → 401. [sebastian-debug]
+- [x] T11 · Deduplicar por `fingerprint`: un `firing` repetido no crea otro incidente; uno que llega después de un `mitigado` sí — **Verifica:** `pytest` envía el mismo `firing` 3 veces y queda 1 incidente; tras el `resolved`, un `firing` nuevo crea el segundo. [sebastian-debug]
+- [x] T12 · Procesar `resolved`: `mitigated_at = endsAt`, estado `mitigado`, evento `recuperado` y servicio `operativo`; servicio o fingerprint desconocido responde 200 con aviso en el log — **Verifica:** `pytest` con los payloads de T09 y uno con `namespace` inexistente. [sebastian-debug]
+- [x] T13 · Agregar la prueba punta a punta del ciclo de alerta (firing → incidente → tomar → resolved → cerrar) y comprobar que la prueba de rutas protegidas sigue en verde con la ruta nueva — **Verifica:** `docker compose exec api pytest` en verde. [sebastian-debug]
 
 ## Frontend
 
