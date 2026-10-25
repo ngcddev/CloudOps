@@ -694,6 +694,8 @@ export interface ServiceVersionStatus {
   // Puerta de seguridad de la versión activa (spec 006)
   security_status: GateStatus;
   security_failed_step: SecurityStep | "pipeline" | null;
+  // Monitoreo (spec 008): caido mientras tenga un incidente de alerta abierto
+  service_status: ServiceStatus;
 }
 
 export interface Deployment {
@@ -823,6 +825,14 @@ export async function rejectChangeRequest(id: number, reason: string): Promise<C
   });
 }
 
+// En datos de prueba, igual que la API: caído si tiene un incidente de alerta abierto (spec 008)
+function mockServiceStatus(serviceId: number): ServiceStatus {
+  ensureMockIncidents();
+  return incidentMock.incidents.some((i) => i.service_id === serviceId && i.source === "alerta" && i.status === "abierto")
+    ? "caido"
+    : "operativo";
+}
+
 export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
   if ((await detectMode()) === "mock") {
     return mockServices().map(({ client, service }) => {
@@ -848,6 +858,7 @@ export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
         open_change_to_version: open?.to_version ?? null,
         security_status: "ok" as GateStatus,
         security_failed_step: null,
+        service_status: mockServiceStatus(service.id),
       };
     });
   }
