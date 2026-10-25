@@ -8,6 +8,7 @@ import {
   closeIncident,
   getIncident,
   mitigateIncident,
+  responseStoppedAt,
   type IncidentDetail as IncidentDetailData,
   type IncidentEventType,
 } from "../../api";
@@ -119,10 +120,10 @@ export default function IncidentDetail() {
         <h2>Reloj del SLA</h2>
         <div className="detail-grid">
           <SlaClock
-            label="Respuesta (al tomarlo)"
+            label="Respuesta (al tomarlo o mitigarlo)"
             start={incident.started_at}
             due={incident.response_due_at}
-            done={incident.acknowledged_at ?? incident.mitigated_at}
+            done={responseStoppedAt(incident)}
           />
           <SlaClock
             label="Solución (al mitigarlo)"
