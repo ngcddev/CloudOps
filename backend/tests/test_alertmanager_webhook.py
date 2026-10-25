@@ -72,3 +72,46 @@ def test_sin_token_configurado_no_acepta_avisos(anonymous, seeded, monkeypatch):
 
 def test_el_token_de_sesion_o_del_pipeline_no_sirve(anonymous, seeded):
     assert send(anonymous, "firing", token=settings.pipeline_token).status_code == 401
+
+
+def test_el_mismo_firing_tres_veces_deja_un_solo_incidente(anonymous, seeded, session_factory):
+    first = send(anonymous, "firing").json()["results"][0]
+    for name in ("firing_repetido", "firing"):
+        repeated = send(anonymous, name).json()["results"][0]
+        assert (repeated["result"], repeated["incident_id"]) == ("duplicado", first["incident_id"])
+
+    assert len(incidents(session_factory)) == 1
+    with session_factory() as db:
+        assert len(list(db.scalars(select(AuditLog).where(AuditLog.entity == "incident")))) == 1
+
+
+def test_un_firing_despues_de_mitigado_abre_un_incidente_nuevo(anonymous, seeded, session_factory):
+    send(anonymous, "firing")
+    with session_factory() as db:
+        db.scalar(select(Incident)).status = "mitigado"
+        db.commit()
+
+    assert send(anonymous, "firing").json()["results"][0]["result"] == "creado"
+    assert [i.status for i in incidents(session_factory)] == ["mitigado", "abierto"]
+
+
+def test_dos_avisos_simultaneos_no_rompen_el_indice_unico(anonymous, seeded, session_factory, monkeypatch):
+    from app.services import incident_alerts
+
+    send(anonymous, "firing")
+    # Simula la carrera: el segundo aviso no alcanza a ver el incidente que el primero acaba de guardar
+    real = incident_alerts._open_incident
+    calls = {"n": 0}
+
+    def blind_first(db, fingerprint):
+        calls["n"] += 1
+        return None if calls["n"] == 1 else real(db, fingerprint)
+
+    monkeypatch.setattr(incident_alerts, "_open_incident", blind_first)
+
+    response = send(anonymous, "firing_repetido")
+
+    assert response.status_code == 200
+    assert response.json()["results"][0]["result"] == "duplicado"
+    assert calls["n"] == 2  # la primera consulta no lo vio y el índice único lo frenó
+    assert len(incidents(session_factory)) == 1
