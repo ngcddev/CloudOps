@@ -1,4 +1,4 @@
-# Cálculo de fechas límite y estado del SLA de solicitudes (spec 004, T06-T08) y reloj genérico clock_state (spec 008, T03).
+# Cálculo de fechas límite y estado del SLA de solicitudes (spec 004, T06-T08) e incidentes (spec 008, T03).
 import re
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -77,6 +77,25 @@ def sla_state(ticket, now: datetime | None = None) -> str:
         if "posterior" in str(error):
             raise ValueError("La fecha límite debe ser posterior a la creación del ticket.") from None
         raise
+
+
+def incident_clocks(incident, now: datetime | None = None) -> tuple[str, str]:
+    """Estado de los dos relojes de un incidente: (respuesta, solución).
+
+    La respuesta se cumple al tomarlo y la solución al mitigarlo (spec 008, CA-4); con el incidente
+    mitigado los dos relojes quedan detenidos.
+    """
+    started_at = _as_utc(incident.started_at)
+    response = clock_state(started_at, _as_utc(incident.response_due_at), _as_utc(incident.acknowledged_at), now)
+    resolution = clock_state(started_at, _as_utc(incident.resolution_due_at), _as_utc(incident.mitigated_at), now)
+    return response, resolution
+
+
+def _as_utc(value: datetime | None) -> datetime | None:
+    """SQLite devuelve las fechas sin zona; se guardan siempre en UTC, así que se les pone."""
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 def _require_aware(value: datetime | None, field_name: str) -> datetime:

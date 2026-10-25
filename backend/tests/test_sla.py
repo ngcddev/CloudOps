@@ -126,7 +126,7 @@ def test_sla_state_cambia_a_solucion_despues_de_la_primera_respuesta():
 
 # --- Reloj genérico e incidentes (spec 008, T03) ---
 
-from app.services.sla import clock_state  # noqa: E402
+from app.services.sla import clock_state, incident_clocks  # noqa: E402
 
 INICIO = datetime(2026, 10, 24, 14, 0, tzinfo=timezone.utc)
 
@@ -144,3 +144,41 @@ def test_clock_state_corriendo():
     assert clock_state(INICIO, due, None, INICIO + timedelta(minutes=5)) == "a_tiempo"
     assert clock_state(INICIO, due, None, INICIO + timedelta(minutes=12)) == "en_riesgo"
     assert clock_state(INICIO, due, None, due) == "vencido"
+
+
+def make_incident(acknowledged_at=None, mitigated_at=None):
+    from app.models.incident import Incident
+
+    response_due_at, resolution_due_at = due_dates(INICIO, "P1", make_plan("lun-vie 08:00-18:00"))
+    return Incident(
+        service_id=1, priority="P1", status="abierto", source="alerta", title="Sitio caído",
+        started_at=INICIO, response_due_at=response_due_at, resolution_due_at=resolution_due_at,
+        acknowledged_at=acknowledged_at, mitigated_at=mitigated_at,
+    )
+
+
+def test_incidente_tomado_a_los_10_min_y_mitigado_a_las_5_h():
+    incident = make_incident(INICIO + timedelta(minutes=10), INICIO + timedelta(hours=5))
+
+    assert incident_clocks(incident) == ("cumplido", "vencido")
+
+
+def test_incidente_p1_es_24_7_aunque_el_plan_sea_en_horario_habil():
+    incident = make_incident()
+
+    assert incident.response_due_at == INICIO + timedelta(minutes=15)
+    assert incident.resolution_due_at == INICIO + timedelta(hours=4)
+    assert incident_clocks(incident, INICIO + timedelta(minutes=13)) == ("en_riesgo", "a_tiempo")
+
+
+def test_incidente_sin_tomar_y_vencida_la_respuesta():
+    incident = make_incident()
+
+    assert incident_clocks(incident, INICIO + timedelta(minutes=20)) == ("vencido", "a_tiempo")
+
+
+def test_incidente_con_fechas_sin_zona_de_sqlite():
+    incident = make_incident(datetime(2026, 10, 24, 14, 5), None)
+    incident.started_at = datetime(2026, 10, 24, 14, 0)
+
+    assert incident_clocks(incident, INICIO + timedelta(minutes=30))[0] == "cumplido"
