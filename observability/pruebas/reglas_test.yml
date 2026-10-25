@@ -1,0 +1,41 @@
+# Pruebas unitarias de la regla SitioCaido con promtool test rules (spec 008, T23).
+# Las corre observability/pruebas/validar.sh.
+rule_files:
+  - ../prometheus/reglas/sitios.yml
+
+evaluation_interval: 5s
+
+tests:
+  # Una publicación sana: el sitio no responde 20 s y vuelve. No hay alerta (CA-9).
+  - interval: 5s
+    input_series:
+      - series: 'probe_success{job="sitios", client="ferreteria", namespace="cliente-ferreteria"}'
+        values: "1 1 0 0 0 0 1 1 1 1 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 30s
+        alertname: SitioCaido
+        exp_alerts: []
+      - eval_time: 75s
+        alertname: SitioCaido
+        exp_alerts: []
+
+  # La v2 rota: el sitio deja de responder y no vuelve. A los 30 s de caído la alerta dispara (CA-2).
+  - interval: 5s
+    input_series:
+      - series: 'probe_success{job="sitios", client="restaurante", namespace="cliente-restaurante"}'
+        values: "1 1 0 0 0 0 0 0 0 0 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 35s
+        alertname: SitioCaido
+        exp_alerts: []
+      - eval_time: 40s
+        alertname: SitioCaido
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              priority: P1
+              job: sitios
+              client: restaurante
+              namespace: cliente-restaurante
+            exp_annotations:
+              summary: "El sitio de restaurante no responde"
