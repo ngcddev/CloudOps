@@ -15,7 +15,8 @@ from app.models.service import Service
 from app.models.user import User
 from app.schemas.incident import IncidentCreate, IncidentDetail, IncidentOut
 from app.services import audit
-from app.services.incident_flow import add_event
+from app.services import incident_flow
+from app.services.incident_flow import IncidentFlowError, add_event
 from app.services.sla import due_dates, incident_clocks
 
 router = APIRouter(prefix="/api/incidents", tags=["incidentes"], dependencies=[Depends(require_agency)])
@@ -158,3 +159,23 @@ def present_detail(incident: Incident, now: datetime | None = None) -> dict:
 def get_incident(incident_id: int, db: Session = Depends(get_db)):
     """Detalle del incidente con su línea de tiempo y el estado de los relojes del SLA."""
     return present_detail(_load(db, incident_id))
+
+
+@router.post("/{incident_id}/acknowledge", response_model=IncidentDetail)
+def acknowledge_incident(
+    incident_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
+    """Tomar el incidente: cumple el reloj de respuesta y deja al técnico como responsable."""
+    incident = _load(db, incident_id)
+    now = utcnow()
+    try:
+        incident_flow.acknowledge(incident, actor, now)
+    except IncidentFlowError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    add_event(incident, "tomado", f"Tomado por {actor.name}.", actor, at=now)
+    audit.record(db, actor, "tomar", "incident", incident.id, None, audit.request_ip(request))
+    db.commit()
+    return present_detail(_load(db, incident_id), now)
