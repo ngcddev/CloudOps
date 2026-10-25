@@ -226,6 +226,11 @@ h3 {
   color: var(--paper);
 }
 
+/* Incidente mitigado (spec 008): el servicio volvió y falta cerrarlo con la causa raíz */
+.status-mitigado {
+  background: #ededed;
+}
+
 .sla-a_tiempo {
   border-color: var(--ink);
   background: #f5f5f5;
