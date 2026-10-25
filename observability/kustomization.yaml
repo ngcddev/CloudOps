@@ -10,3 +10,4 @@ resources:
   - alertmanager
   - loki
   - alloy
+  - grafana
