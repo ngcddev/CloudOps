@@ -6,6 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
+from app.integrations.argocd import AppStatus, ArgoCDClient, ArgoCDError, argocd_from_settings
+from app.integrations.gitea import GiteaClient, GiteaError
 from app.db import get_db
 from app.deps import require_agency
 from app.models.client import Client
@@ -14,11 +16,27 @@ from app.models.incident_event import IncidentEvent
 from app.models.project import Project
 from app.models.service import Service
 from app.models.user import User
-from app.schemas.incident import IncidentCloseIn, IncidentCreate, IncidentDetail, IncidentNoteIn, IncidentOut
+from app.routers.change_requests import get_gitea
+from app.schemas.incident import (
+    ClientMessageOut,
+    IncidentCloseIn,
+    IncidentCreate,
+    IncidentDetail,
+    IncidentNoteIn,
+    IncidentOut,
+    RollbackPlanOut,
+)
 from app.services import audit
-from app.services import incident_flow
-from app.services.incident_flow import IncidentFlowError, add_event
-from app.services.incident_links import build_links
+from app.services import incident_alerts, incident_flow, rollback
+from app.services.gitops_publish import (
+    NothingToPublish,
+    find_existing_rollback,
+    kustomization_path,
+    publish_rollback,
+)
+from app.services.messages import client_message
+from app.services.incident_flow import IncidentFlowError, add_event, mttr_minutes
+from app.services.incident_links import build_links, commit_url
 from app.services.sla import due_dates, incident_clocks
 
 router = APIRouter(prefix="/api/incidents", tags=["incidentes"], dependencies=[Depends(require_agency)])
@@ -70,6 +88,7 @@ def present(incident: Incident, now: datetime | None = None) -> dict:
         "root_cause": incident.root_cause,
         "response_state": response_state,
         "resolution_state": resolution_state,
+        "mttr_minutes": mttr_minutes(incident),
         "created_at": _as_utc(incident.created_at),
     }
 
@@ -133,7 +152,7 @@ def _load(db: Session, incident_id: int) -> Incident:
     """Incidente con su línea de tiempo y quién hizo cada evento, o 404."""
     incident = db.scalar(
         _base_query()
-        .options(selectinload(Incident.events).selectinload(IncidentEvent.actor))
+        .options(selectinload(Incident.events).selectinload(IncidentEvent.actor), selectinload(Incident.rollback_by))
         .where(Incident.id == incident_id)
     )
     if incident is None:
@@ -141,10 +160,45 @@ def _load(db: Session, incident_id: int) -> Incident:
     return incident
 
 
-def present_detail(db: Session, incident: Incident, now: datetime | None = None) -> dict:
-    """Detalle del incidente: los datos de la lista, la línea de tiempo en orden y los enlaces."""
+def get_argocd() -> ArgoCDClient | None:
+    """Cliente de Argo CD para ver el avance del rollback; None si no está configurado (las pruebas lo reemplazan)."""
+    try:
+        return argocd_from_settings()
+    except ArgoCDError:
+        return None
+
+
+def _app_status(argocd: ArgoCDClient | None, incident: Incident) -> AppStatus | None:
+    """Estado de Argo CD del sitio, solo mientras hay un rollback sin confirmar; un fallo no tumba el detalle."""
+    if argocd is None or not rollback.in_progress(incident):
+        return None
+    try:
+        return argocd.get_application(incident.service.namespace)
+    except ArgoCDError:
+        return None
+
+
+def present_rollback(incident: Incident, app_status: AppStatus | None) -> dict:
+    """Bloque `rollback` del detalle: avance, versiones, quién lo pidió y el commit en Gitea."""
+    return {
+        "status": rollback.status(incident, app_status),
+        "from_version": incident.rollback_from_version,
+        "to_version": incident.rollback_to_version,
+        "by_name": incident.rollback_by.name if incident.rollback_by else None,
+        "at": _as_utc(incident.rollback_at),
+        "confirmed_at": _as_utc(incident.rollback_confirmed_at),
+        "commit_sha": incident.rollback_commit_sha,
+        "commit_url": commit_url(settings.gitea_public_url, settings.gitea_repo, incident.rollback_commit_sha),
+    }
+
+
+def present_detail(
+    db: Session, incident: Incident, now: datetime | None = None, app_status: AppStatus | None = None
+) -> dict:
+    """Detalle del incidente: los datos de la lista, la línea de tiempo en orden, los enlaces y el rollback."""
     data = present(incident, now)
     data.update(build_links(db, incident, settings.grafana_url, settings.gitea_public_url, settings.gitea_repo))
+    data["rollback"] = present_rollback(incident, app_status)
     data["events"] = [
         {
             "id": event.id,
@@ -159,9 +213,93 @@ def present_detail(db: Session, incident: Incident, now: datetime | None = None)
 
 
 @router.get("/{incident_id}", response_model=IncidentDetail)
-def get_incident(incident_id: int, db: Session = Depends(get_db)):
-    """Detalle del incidente con su línea de tiempo y el estado de los relojes del SLA."""
-    return present_detail(db, _load(db, incident_id))
+def get_incident(
+    incident_id: int, db: Session = Depends(get_db), argocd: ArgoCDClient | None = Depends(get_argocd)
+):
+    """Detalle del incidente con su línea de tiempo, el estado de los relojes del SLA y el avance del rollback."""
+    incident = _load(db, incident_id)
+    return present_detail(db, incident, app_status=_app_status(argocd, incident))
+
+
+@router.get("/{incident_id}/rollback-plan", response_model=RollbackPlanOut)
+def get_rollback_plan(incident_id: int, db: Session = Depends(get_db)):
+    """Versión actual, versión a la que se vuelve y si el botón está activo (con la razón si no lo está)."""
+    return rollback.plan(db, _load(db, incident_id))
+
+
+@router.post("/{incident_id}/rollback", response_model=IncidentDetail)
+def rollback_incident(
+    incident_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    gitea: GiteaClient = Depends(get_gitea),
+    actor: User = Depends(require_agency),
+):
+    """Pide el rollback: escribe en hub-gitops el commit que deja el sitio en la última versión estable.
+
+    El Hub no toca el clúster ni acepta el actor en el cuerpo: el commit y la bitácora salen a nombre de
+    la sesión, y Argo CD hace el resto (principios 3 y 5). Un solo rollback a la vez por servicio (CA-8).
+    """
+    # Bloquea la fila del incidente (en PostgreSQL) mientras se decide: dos clics o dos técnicos se turnan
+    db.execute(select(Incident.id).where(Incident.id == incident_id).with_for_update())
+    incident = _load(db, incident_id)
+    reason = rollback.block_reason(db, incident)
+    if reason is not None:
+        raise HTTPException(status_code=409, detail=reason)
+    service = incident.service
+    broken_version = rollback.running_version(db, service)
+    target = rollback.rollback_target(db, service)
+    try:
+        kustomization_path(service.namespace)  # namespace que no es de un cliente: no se escribe nada
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    try:
+        sha = publish_rollback(gitea, service.namespace, target, incident.id, actor.name, actor.email)
+    except NothingToPublish as error:
+        # O un rollback anterior que escribió en Gitea y no alcanzó a guardarse (se adopta), o alguien que
+        # revirtió a mano: entonces solo falta esperar a Argo CD
+        try:
+            sha = find_existing_rollback(gitea, service.namespace, target, incident.id)
+        except GiteaError as gitea_error:
+            raise HTTPException(status_code=502, detail=f"No se pudo escribir en Gitea: {gitea_error}") from gitea_error
+        if sha is None:
+            raise HTTPException(
+                status_code=409,
+                detail=f"El repositorio ya tiene la versión {target}; solo falta esperar a que Argo CD sincronice.",
+            ) from error
+    except GiteaError as error:
+        # Incluye la segunda escritura de un doble clic: Gitea la rechaza porque el blob ya cambió
+        raise HTTPException(status_code=502, detail=f"No se pudo escribir en Gitea: {error}") from error
+
+    now = utcnow()
+    incident.rollback_from_version = broken_version
+    incident.rollback_to_version = target
+    incident.rollback_commit_sha = sha
+    incident.rollback_by_id = actor.id
+    incident.rollback_at = now
+    add_event(
+        incident, "rollback_enviado",
+        f"{actor.name} pidió volver de {broken_version} a {target}; commit {sha[:7]} en hub-gitops.",
+        actor, at=now,
+    )
+    failed_change = rollback.fail_pending_change(db, incident, broken_version, actor, now)
+    audit.record(
+        db, actor, "rollback", "incident", incident.id,
+        {"desde": broken_version, "hacia": target, "commit": sha[:7], "cambio_fallido": failed_change},
+        audit.request_ip(request),
+    )
+    db.commit()
+    return present_detail(db, _load(db, incident_id), now)
+
+
+@router.get("/{incident_id}/client-message", response_model=ClientMessageOut)
+def get_client_message(incident_id: int, db: Session = Depends(get_db)):
+    """Mensaje para el cliente con las horas reales; solo cuando el incidente ya se mitigó y nunca se envía solo."""
+    try:
+        return {"message": client_message(_load(db, incident_id))}
+    except IncidentFlowError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.post("/{incident_id}/acknowledge", response_model=IncidentDetail)
@@ -208,15 +346,26 @@ def mitigate_incident(
     db: Session = Depends(get_db),
     actor: User = Depends(require_agency),
 ):
-    """Mitiga a mano un incidente manual; detiene el reloj de solución con la hora actual."""
+    """Mitiga a mano un incidente manual, o uno de alerta cuyo rollback ya se confirmó; detiene el reloj de solución."""
     incident = _load(db, incident_id)
     now = utcnow()
     try:
         incident_flow.mitigate(incident, now)
     except IncidentFlowError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    add_event(incident, "recuperado", f"Mitigado a mano por {actor.name}.", actor, at=now)
-    audit.record(db, actor, "mitigar", "incident", incident.id, {"origen": "manual"}, audit.request_ip(request))
+    by_rollback = incident.source == "alerta"
+    message = (
+        f"Mitigado a mano por {actor.name}: el rollback ya se confirmó en Argo CD."
+        if by_rollback
+        else f"Mitigado a mano por {actor.name}."
+    )
+    add_event(incident, "recuperado", message, actor, at=now)
+    if by_rollback:
+        incident_alerts.restore_service(db, incident)  # el sitio vuelve a `operativo` (CA-4)
+    audit.record(
+        db, actor, "mitigar", "incident", incident.id,
+        {"origen": "rollback_confirmado" if by_rollback else "manual"}, audit.request_ip(request),
+    )
     db.commit()
     return present_detail(db, _load(db, incident_id), now)
 

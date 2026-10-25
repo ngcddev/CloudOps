@@ -29,6 +29,9 @@ const ACTION_LABELS: Record<string, string> = {
   tomar: "Tomó",
   mitigar: "Mitigó",
   cerrar: "Cerró",
+  // Rollback (spec 009)
+  rollback: "Pidió el rollback",
+  confirmar_rollback: "Confirmó el rollback",
 };
 
 // Las fechas del filtro son días de Colombia (UTC-5, sin horario de verano)
@@ -53,6 +56,10 @@ const DETAIL_LABELS: Record<string, string> = {
   prioridad: "Prioridad",
   servicio: "Servicio",
   origen: "Origen",
+  // Rollback (spec 009)
+  desde: "Desde",
+  hacia: "Hacia",
+  cambio_fallido: "Cambio fallido",
 };
 
 function describe(details: AuditLog["details"]): string {
