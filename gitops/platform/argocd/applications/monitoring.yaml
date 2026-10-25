@@ -1,0 +1,26 @@
+# Application de Argo CD de la observabilidad (spec 008, T28): reconcilia observability/ de hub-gitops.
+# Casi todo va en el namespace monitoring; el Service traefik-metrics va en kube-system y los permisos
+# de lectura de Prometheus y Alloy son de todo el clúster (cada manifiesto fija su namespace).
+# Antes de aplicarla, subir la carpeta:  bash gitops/platform/gitea/actualizar-hub-gitops.sh observability
+# y crear los Secrets:                  bash gitops/hub/crear-secretos.sh
+# Se aplica una vez:                     kubectl apply -f gitops/platform/argocd/applications/monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+spec:
+  project: default
+  source:
+    repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+    targetRevision: main
+    path: observability
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true      # lo que sale de Git sale del clúster
+      selfHeal: true   # un cambio manual en el clúster se revierte a lo que dice Git
