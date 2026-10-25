@@ -205,3 +205,15 @@ def test_un_incidente_de_alerta_no_se_mitiga_a_mano(client, seeded, session_fact
 
     assert client.post(f"/api/incidents/{alert_id}/mitigate").status_code == 409
     assert _audit_actions(session_factory, alert_id) == []
+
+
+def test_el_detalle_trae_el_enlace_a_los_registros(client, seeded, session_factory, clock, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "grafana_url", "http://grafana.hub.local")
+    incident = _open(client, session_factory)
+
+    detail = client.get(f"/api/incidents/{incident['id']}").json()
+
+    assert detail["logs_url"].startswith("http://grafana.hub.local/explore?")
+    assert detail["last_change"] is None
