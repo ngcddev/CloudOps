@@ -1,4 +1,4 @@
-# Cálculo de fechas límite y estado del SLA (spec 004, T06-T08).
+# Cálculo de fechas límite y estado del SLA de solicitudes (spec 004, T06-T08) y reloj genérico clock_state (spec 008, T03).
 import re
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -40,29 +40,43 @@ def due_dates(created_at: datetime, priority: str, plan: Plan) -> tuple[datetime
     )
 
 
+def clock_state(start: datetime, due: datetime, done_at: datetime | None, now: datetime | None = None) -> str:
+    """Estado de un reloj de SLA: a_tiempo, en_riesgo (≥ 80 % del plazo), vencido o cumplido.
+
+    Con `done_at` el reloj está detenido: `cumplido` si se hizo a tiempo y `vencido` si no.
+    """
+    start = _require_aware(start, "start").astimezone(timezone.utc)
+    due = _require_aware(due, "due_at").astimezone(timezone.utc)
+    total = due - start
+    if total <= timedelta(0):
+        raise ValueError("La fecha límite debe ser posterior al inicio del reloj.")
+    if done_at is not None:
+        done_at = _require_aware(done_at, "done_at").astimezone(timezone.utc)
+        return "cumplido" if done_at <= due else "vencido"
+
+    current = _require_aware(now or datetime.now(timezone.utc), "now").astimezone(timezone.utc)
+    if current >= due:
+        return "vencido"
+    if (current - start) * 5 >= total * 4:
+        return "en_riesgo"
+    return "a_tiempo"
+
+
 def sla_state(ticket, now: datetime | None = None) -> str:
     """Devuelve a_tiempo, en_riesgo o vencido para el plazo activo del ticket."""
     created_at = _require_aware(ticket.created_at, "created_at")
-    current = _require_aware(now or datetime.now(timezone.utc), "now")
     if ticket.first_response_at is None:
         due_at = ticket.response_due_at
     else:
         due_at = ticket.resolution_due_at
     if due_at is None:
         raise ValueError("El ticket no tiene una fecha límite para calcular el SLA.")
-
-    created_at = created_at.astimezone(timezone.utc)
-    current = current.astimezone(timezone.utc)
-    due_at = _require_aware(due_at, "due_at").astimezone(timezone.utc)
-    total = due_at - created_at
-    elapsed = current - created_at
-    if total <= timedelta(0):
-        raise ValueError("La fecha límite debe ser posterior a la creación del ticket.")
-    if current >= due_at:
-        return "vencido"
-    if elapsed * 5 >= total * 4:
-        return "en_riesgo"
-    return "a_tiempo"
+    try:
+        return clock_state(created_at, due_at, None, now)
+    except ValueError as error:
+        if "posterior" in str(error):
+            raise ValueError("La fecha límite debe ser posterior a la creación del ticket.") from None
+        raise
 
 
 def _require_aware(value: datetime | None, field_name: str) -> datetime:

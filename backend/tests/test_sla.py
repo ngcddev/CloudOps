@@ -123,3 +123,24 @@ def test_sla_state_cambia_a_solucion_despues_de_la_primera_respuesta():
     )
 
     assert sla_state(ticket, datetime(2026, 10, 4, 17, 12, tzinfo=timezone.utc)) == "en_riesgo"
+
+# --- Reloj genérico e incidentes (spec 008, T03) ---
+
+from app.services.sla import clock_state  # noqa: E402
+
+INICIO = datetime(2026, 10, 24, 14, 0, tzinfo=timezone.utc)
+
+
+def test_clock_state_cumplido_si_se_hizo_antes_del_limite():
+    assert clock_state(INICIO, INICIO + timedelta(minutes=15), INICIO + timedelta(minutes=10)) == "cumplido"
+
+
+def test_clock_state_vencido_si_se_hizo_despues_del_limite():
+    assert clock_state(INICIO, INICIO + timedelta(hours=4), INICIO + timedelta(hours=5)) == "vencido"
+
+
+def test_clock_state_corriendo():
+    due = INICIO + timedelta(minutes=15)
+    assert clock_state(INICIO, due, None, INICIO + timedelta(minutes=5)) == "a_tiempo"
+    assert clock_state(INICIO, due, None, INICIO + timedelta(minutes=12)) == "en_riesgo"
+    assert clock_state(INICIO, due, None, due) == "vencido"
