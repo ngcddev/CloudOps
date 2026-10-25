@@ -4,6 +4,8 @@ from app.models.audit_log import AuditLog
 from app.models.change_request import ChangeRequest
 from app.models.client import Client
 from app.models.deployment import Deployment
+from app.models.incident import Incident
+from app.models.incident_event import IncidentEvent
 from app.models.plan import Plan
 from app.models.project import Project
 from app.models.security_check import SecurityCheck
@@ -21,6 +23,8 @@ __all__ = [
 	"ChangeRequest",
 	"Client",
 	"Deployment",
+	"Incident",
+	"IncidentEvent",
 	"Plan",
 	"Project",
 	"SecurityCheck",
