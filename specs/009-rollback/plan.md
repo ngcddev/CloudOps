@@ -24,6 +24,10 @@
    anterior de `deployments` (la que corría antes de la actual).
 3. Si no hay ninguna → botón deshabilitado: «No hay una versión anterior a la que volver».
 
+«Versión actual» es la que tiene Git, no la que dice el Hub: un cambio `en_validacion` ya escribió su commit, así que
+su `to_version` cuenta como la actual (`rollback.running_version`). Sin esto, durante los primeros minutos de la v2 rota
+el Hub aún diría v1 y no habría a dónde volver.
+
 También se rechaza (409) si el `kustomization.yaml` de Git ya tiene la versión de destino: alguien
 revirtió a mano y lo único que falta es esperar a Argo CD. La versión de destino ya corrió en el
 clúster, así que no se vuelve a pasar por la puerta de seguridad: recuperar es el camino de salida y no
@@ -58,7 +62,8 @@ debe depender de que el pipeline funcione.
 5. **MTTR:** `mttr_minutes(incidente) = (mitigated_at − started_at)` en minutos con un decimal. Se
    calcula, no se guarda: así no puede desalinearse y lo reutilizan la 010 y la 013.
 
-Estado del rollback en la API (`rollback.status`), derivado y no guardado: `sin_rollback` →
+Estado del rollback en la API (`rollback.status`), derivado y no guardado (al pedir el detalle el Hub lee la
+revisión de Argo CD con la dependencia `get_argocd`; si Argo CD no responde, el estado se queda en `enviado`): `sin_rollback` →
 `enviado` (hay commit y Argo CD aún no está en esa revisión) → `sincronizando` (Argo CD en esa revisión
 pero sin salud) → `recuperado` (`rollback_confirmed_at`).
 
@@ -74,7 +79,7 @@ suma los tipos `rollback_enviado`, `rollback_confirmado` y `mensaje_cliente`. No
 *«Detectamos una falla temporal en su sitio a las {hora}. Activamos la recuperación y a las {hora_fin} el
 servicio volvió a funcionar. Tiempo total: {min} minutos.»* Las horas salen de `started_at` y
 `mitigated_at` en America/Bogota. `GET /api/incidents/{id}/client-message` responde 409 mientras el
-incidente no esté `mitigado`. Es un texto determinista (no es IA) pero se trata igual que un borrador:
+incidente no esté `mitigado`. La duración sale de las horas mostradas al minuto (14:00 → 14:07 = «7 minutos» aunque el MTTR exacto sea 7,5). Es un texto determinista (no es IA) pero se trata igual que un borrador:
 se muestra en el detalle con «Copiar» y la agencia decide si lo envía (principio 6).
 
 ## API y pantalla
@@ -95,7 +100,7 @@ vuelve a leer cada 5 s mientras no esté recuperado), el MTTR y, ya mitigado, el
 
 | Riesgo | Respuesta |
 |---|---|
-| Dos rollbacks a la vez (doble clic o dos técnicos) | 409 si ya hay `rollback_commit_sha` sin confirmar; el botón se bloquea; Gitea además rechaza la segunda escritura con otro `sha` de blob |
+| Dos rollbacks a la vez (doble clic o dos técnicos) | 409 si ya hay `rollback_commit_sha` sin confirmar (en ese incidente o en otro del mismo servicio); la fila se bloquea con `FOR UPDATE`; el botón se bloquea; Gitea además rechaza la segunda escritura con otro `sha` de blob |
 | La versión estable ya no está en el registro | Antes de escribir, el Hub no la verifica (no habla con el registro); si Argo CD no la puede bajar el estado queda `sincronizando` y se ve en la consola; mejora futura: comprobar la imagen |
 | `resolved` llega antes que Argo CD | Gana la sonda: `mitigated_at` es el primer sondeo sano; la confirmación del rollback llega después y solo completa el historial |
 | La versión de destino también está rota | El incidente sigue `abierto` (la sonda no vuelve a verde) y se puede escalar a mano |
