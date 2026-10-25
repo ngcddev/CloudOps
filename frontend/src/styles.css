@@ -241,6 +241,30 @@ h3 {
   color: var(--paper);
 }
 
+/* Reloj del SLA de un incidente (spec 008): detenido y a tiempo */
+.sla-cumplido {
+  border-style: double;
+  border-width: 3px;
+}
+
+.sla-clock {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sla-clock-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #555;
+}
+
+.sla-clock-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
 .ticket-meta {
   display: flex;
   flex-wrap: wrap;
