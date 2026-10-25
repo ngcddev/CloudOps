@@ -40,11 +40,11 @@ cuando T24 deje Alertmanager funcionando.
 
 ## Frontend
 
-- [ ] T14 · Agregar a `frontend/src/api.ts` los tipos y llamadas de incidentes, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. [ ]
-- [ ] T15 · Crear `components/SlaClock.tsx`, que cuenta cada segundo hasta la fecha límite activa y muestra «a tiempo», «en riesgo», «vencido» o «cumplido» con texto e ícono — **Verifica:** con un incidente de prueba que vence en 1 min, el texto cambia sin recargar. [ ]
-- [ ] T16 · Crear `/agencia/incidentes` con la lista, filtros y «Nuevo incidente», y habilitar «Incidentes» en el menú de la consola — **Verifica:** crear un P2 manual de El Tornillo lo muestra en la lista con su reloj. [ ]
-- [ ] T17 · Crear `/agencia/incidentes/:id` con reloj, línea de tiempo, enlaces y los botones tomar, nota, mitigar (solo manual) y cerrar (pide causa raíz) — **Verifica:** el ciclo manual completo se hace desde la pantalla y la línea de tiempo se actualiza sin recargar (CA-8). [ ]
-- [ ] T18 · Mostrar «No disponible» y «Operativo» en `/agencia/servicios` con texto e ícono — **Verifica:** un servicio con incidente abierto aparece «✗ No disponible». [ ]
+- [x] T14 · Agregar a `frontend/src/api.ts` los tipos y llamadas de incidentes, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. [sebastian-debug]
+- [x] T15 · Crear `components/SlaClock.tsx`, que cuenta cada segundo hasta la fecha límite activa y muestra «a tiempo», «en riesgo», «vencido» o «cumplido» con texto e ícono — **Verifica:** con un incidente de prueba que vence en 1 min, el texto cambia sin recargar. [sebastian-debug]
+- [x] T16 · Crear `/agencia/incidentes` con la lista, filtros y «Nuevo incidente», y habilitar «Incidentes» en el menú de la consola — **Verifica:** crear un P2 manual de El Tornillo lo muestra en la lista con su reloj. [sebastian-debug]
+- [x] T17 · Crear `/agencia/incidentes/:id` con reloj, línea de tiempo, enlaces y los botones tomar, nota, mitigar (solo manual) y cerrar (pide causa raíz) — **Verifica:** el ciclo manual completo se hace desde la pantalla y la línea de tiempo se actualiza sin recargar (CA-8). [sebastian-debug]
+- [x] T18 · Mostrar «No disponible» y «Operativo» en `/agencia/servicios` con texto e ícono — **Verifica:** un servicio con incidente abierto aparece «✗ No disponible». [sebastian-debug]
 
 ## Plataforma
 
