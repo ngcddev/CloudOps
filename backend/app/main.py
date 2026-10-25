@@ -84,6 +84,7 @@ _CAMPOS = {
     "priority": "prioridad",
     "title": "título",
     "service_id": "servicio",
+    "message": "nota",
 }
 
 
