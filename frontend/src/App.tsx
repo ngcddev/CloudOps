@@ -10,6 +10,7 @@ import ClientForm from "./pages/agencia/ClientForm";
 import AuditLogList from "./pages/agencia/AuditLogList";
 import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
+import IncidentList from "./pages/agencia/IncidentList";
 import ServiceList from "./pages/agencia/ServiceList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="bitacora" element={<AuditLogList />} />
           <Route path="cambios" element={<ChangeList />} />
           <Route path="servicios" element={<ServiceList />} />
+          <Route path="incidentes" element={<IncidentList />} />
           <Route path="tickets" element={<TicketList />} />
           <Route path="tickets/:id" element={<TicketDetail />} />
           <Route path="*" element={<NotFound />} />
