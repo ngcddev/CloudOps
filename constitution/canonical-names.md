@@ -62,3 +62,11 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 | Repo GitOps | `forja-digital/hub-gitops` |
 | Argo CD | `argocd.hub.local` |
 | Backstage (catálogo, opcional) | `backstage.hub.local` |
+
+## Observabilidad (módulo 4)
+
+| Qué | Dirección / nombre |
+|---|---|
+| Grafana | `grafana.hub.local` (namespace `monitoring`) |
+| Prometheus, Alertmanager, Loki, Blackbox | Solo dentro del clúster: `<componente>.monitoring.svc` |
+| Alerta de sitio caído | `SitioCaido` (prioridad P1) |
