@@ -51,14 +51,33 @@ def acknowledge(incident: Incident, user: User, now: datetime | None = None) -> 
 def mitigate(incident: Incident, now: datetime | None = None, by_alert: bool = False) -> Incident:
     """Marca el servicio como recuperado.
 
-    A mano solo vale para los incidentes `manual`: los de alerta los mitiga el aviso `resolved`, con la
-    hora real del primer sondeo sano (principio 7).
+    A mano vale para los incidentes `manual` y para los de alerta cuyo rollback ya se confirmó en Argo CD
+    (spec 009, CA-9: la sonda estaba apagada o la alerta ya se cerró). Si no, los de alerta los mitiga el
+    aviso `resolved`, con la hora real del primer sondeo sano (principio 7).
     """
-    if not by_alert and incident.source != "manual":
-        raise IncidentFlowError("Un incidente de alerta se mitiga solo cuando el monitoreo ve el sitio sano.")
+    if not by_alert and incident.source != "manual" and incident.rollback_confirmed_at is None:
+        raise IncidentFlowError(
+            "Un incidente de alerta se mitiga solo cuando el monitoreo ve el sitio sano "
+            "(o a mano, cuando su rollback ya se confirmó en Argo CD)."
+        )
     _move(incident, "mitigado")
     incident.mitigated_at = _now(now)
     return incident
+
+
+def mttr_minutes(incident: Incident) -> float | None:
+    """Minutos entre el inicio real de la falla y su mitigación, con un decimal; None si sigue abierto.
+
+    Se calcula al leer y no se guarda, así no se desalinea de las horas (principio 7); lo reutilizan las
+    specs 010 y 013.
+    """
+    if incident.mitigated_at is None:
+        return None
+    started = incident.started_at.replace(tzinfo=timezone.utc) if incident.started_at.tzinfo is None else incident.started_at
+    mitigated = (
+        incident.mitigated_at.replace(tzinfo=timezone.utc) if incident.mitigated_at.tzinfo is None else incident.mitigated_at
+    )
+    return round((mitigated - started).total_seconds() / 60, 1)
 
 
 def close(incident: Incident, root_cause: str | None, now: datetime | None = None) -> Incident:

@@ -100,6 +100,16 @@ def resolve_from_alert(db: Session, alert: AlertmanagerAlert) -> tuple[str, int 
     recovered_at = alert.ends_at if alert.ends_at is not None and alert.ends_at > started_at else datetime.now(timezone.utc)
     incident_flow.mitigate(incident, recovered_at, by_alert=True)
     add_event(incident, "recuperado", "El monitoreo vio el sitio responder de nuevo.", None, at=recovered_at)
+    restore_service(db, incident)
+    audit.record(db, None, "mitigar", "incident", incident.id, {"origen": "alerta"})
+    return "mitigado", incident.id
+
+
+def restore_service(db: Session, incident: Incident) -> None:
+    """El servicio vuelve a `operativo` si no le queda otro incidente de alerta abierto.
+
+    Lo usan el aviso `resolved` y la mitigación a mano de un incidente de alerta (spec 009, CA-4 y CA-9).
+    """
     db.flush()
     still_down = db.scalar(
         select(Incident.id).where(
@@ -108,5 +118,3 @@ def resolve_from_alert(db: Session, alert: AlertmanagerAlert) -> tuple[str, int 
     )
     if still_down is None:
         incident.service.status = "operativo"
-    audit.record(db, None, "mitigar", "incident", incident.id, {"origen": "alerta"})
-    return "mitigado", incident.id
