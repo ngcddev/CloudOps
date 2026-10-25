@@ -10,3 +10,7 @@ configMapGenerator:
   - name: prometheus-config
     files:
       - prometheus.yml
+  # Reglas de alerta (T23): montadas aparte en /etc/prometheus/reglas
+  - name: prometheus-reglas
+    files:
+      - reglas/sitios.yml

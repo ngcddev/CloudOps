@@ -56,12 +56,18 @@ spec:
             - name: config
               mountPath: /etc/prometheus/config
               readOnly: true
+            - name: reglas
+              mountPath: /etc/prometheus/reglas
+              readOnly: true
             - name: data
               mountPath: /prometheus
       volumes:
         - name: config
           configMap:
             name: prometheus-config
+        - name: reglas
+          configMap:
+            name: prometheus-reglas
         - name: data
           persistentVolumeClaim:
             claimName: prometheus-data

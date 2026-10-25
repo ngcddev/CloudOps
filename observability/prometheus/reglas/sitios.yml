@@ -1,0 +1,16 @@
+# Reglas de alerta de los sitios (spec 008, T23).
+# SitioCaido: el /health del sitio no responde 2xx durante 30 s seguidos. Los 30 s descartan el
+# reinicio normal de una publicación sana (CA-9) y son los mismos ALERT_CONFIRM_SECONDS del Hub, que
+# los resta del startsAt para fijar la hora real de la caída. Si cambia uno, cambia el otro.
+groups:
+  - name: sitios
+    interval: 5s
+    rules:
+      - alert: SitioCaido
+        expr: probe_success{job="sitios"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          priority: P1
+        annotations:
+          summary: "El sitio de {{ $labels.client }} no responde"
