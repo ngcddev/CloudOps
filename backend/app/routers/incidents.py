@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.config import settings
 from app.db import get_db
 from app.deps import require_agency
 from app.models.client import Client
@@ -17,6 +18,7 @@ from app.schemas.incident import IncidentCloseIn, IncidentCreate, IncidentDetail
 from app.services import audit
 from app.services import incident_flow
 from app.services.incident_flow import IncidentFlowError, add_event
+from app.services.incident_links import build_links
 from app.services.sla import due_dates, incident_clocks
 
 router = APIRouter(prefix="/api/incidents", tags=["incidentes"], dependencies=[Depends(require_agency)])
@@ -139,9 +141,10 @@ def _load(db: Session, incident_id: int) -> Incident:
     return incident
 
 
-def present_detail(incident: Incident, now: datetime | None = None) -> dict:
-    """Detalle del incidente: los datos de la lista más la línea de tiempo en orden."""
+def present_detail(db: Session, incident: Incident, now: datetime | None = None) -> dict:
+    """Detalle del incidente: los datos de la lista, la línea de tiempo en orden y los enlaces."""
     data = present(incident, now)
+    data.update(build_links(db, incident, settings.grafana_url, settings.gitea_public_url, settings.gitea_repo))
     data["events"] = [
         {
             "id": event.id,
@@ -158,7 +161,7 @@ def present_detail(incident: Incident, now: datetime | None = None) -> dict:
 @router.get("/{incident_id}", response_model=IncidentDetail)
 def get_incident(incident_id: int, db: Session = Depends(get_db)):
     """Detalle del incidente con su línea de tiempo y el estado de los relojes del SLA."""
-    return present_detail(_load(db, incident_id))
+    return present_detail(db, _load(db, incident_id))
 
 
 @router.post("/{incident_id}/acknowledge", response_model=IncidentDetail)
@@ -178,7 +181,7 @@ def acknowledge_incident(
     add_event(incident, "tomado", f"Tomado por {actor.name}.", actor, at=now)
     audit.record(db, actor, "tomar", "incident", incident.id, None, audit.request_ip(request))
     db.commit()
-    return present_detail(_load(db, incident_id), now)
+    return present_detail(db, _load(db, incident_id), now)
 
 
 @router.post("/{incident_id}/notes", response_model=IncidentDetail, status_code=status.HTTP_201_CREATED)
@@ -195,7 +198,7 @@ def add_note(
     now = utcnow()
     add_event(incident, "nota", data.message, actor, at=now)
     db.commit()
-    return present_detail(_load(db, incident_id), now)
+    return present_detail(db, _load(db, incident_id), now)
 
 
 @router.post("/{incident_id}/mitigate", response_model=IncidentDetail)
@@ -215,7 +218,7 @@ def mitigate_incident(
     add_event(incident, "recuperado", f"Mitigado a mano por {actor.name}.", actor, at=now)
     audit.record(db, actor, "mitigar", "incident", incident.id, {"origen": "manual"}, audit.request_ip(request))
     db.commit()
-    return present_detail(_load(db, incident_id), now)
+    return present_detail(db, _load(db, incident_id), now)
 
 
 @router.post("/{incident_id}/close", response_model=IncidentDetail)
@@ -236,4 +239,4 @@ def close_incident(
     add_event(incident, "cerrado", f"Cerrado por {actor.name}. Causa raíz: {incident.root_cause}", actor, at=now)
     audit.record(db, actor, "cerrar", "incident", incident.id, None, audit.request_ip(request))
     db.commit()
-    return present_detail(_load(db, incident_id), now)
+    return present_detail(db, _load(db, incident_id), now)
