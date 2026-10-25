@@ -31,6 +31,11 @@ def version_commit_message(client: str, tag: str, change_id: int) -> str:
     return f"chore({client}): versión {tag} (cambio #{change_id})"
 
 
+def rollback_commit_message(client: str, tag: str, incident_id: int) -> str:
+    """Mensaje del commit de rollback: `revert(<cliente>): volver a <tag> (incidente #<id>)` (spec 009)."""
+    return f"revert({client}): volver a {tag} (incidente #{incident_id})"
+
+
 class GiteaClient:
     def __init__(
         self,
