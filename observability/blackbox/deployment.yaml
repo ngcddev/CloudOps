@@ -1,0 +1,69 @@
+# Blackbox Exporter (spec 008, T21): sin estado, sin root y con poca memoria.
+# Prometheus lo llama en blackbox.monitoring.svc:9115/probe?target=<url>&module=http_2xx.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox
+  labels:
+    app: blackbox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox
+  template:
+    metadata:
+      labels:
+        app: blackbox
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: blackbox
+          image: prom/blackbox-exporter:v0.27.0
+          args:
+            - --config.file=/etc/blackbox/blackbox.yml
+          ports:
+            - name: http
+              containerPort: 9115
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+          readinessProbe:
+            httpGet: { path: /-/healthy, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /-/healthy, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: blackbox-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox
+  labels:
+    app: blackbox
+spec:
+  selector:
+    app: blackbox
+  ports:
+    - name: http
+      port: 9115
+      targetPort: http

@@ -1,0 +1,8 @@
+# Pila de observabilidad del clúster (spec 008): monitoreo de los sitios, alertas, registros y Grafana.
+# Argo CD la reconcilia desde la carpeta observability de hub-gitops (Application `monitoring`).
+# Cada componente fija su namespace en su propia kustomization (casi todo va en `monitoring`).
+# Sin Helm: todo queda escrito aquí y se revisa en un PR.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - blackbox

@@ -1,0 +1,11 @@
+# Módulos de sondeo de Blackbox Exporter (spec 008, T21).
+# http_2xx: el sitio está arriba si /health responde 2xx en menos de 4 s (un 500 o un timeout = caído).
+modules:
+  http_2xx:
+    prober: http
+    timeout: 4s
+    http:
+      preferred_ip_protocol: ip4
+      # Sin códigos explícitos vale cualquier 2xx
+      valid_status_codes: []
+      follow_redirects: true
