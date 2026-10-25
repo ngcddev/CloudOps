@@ -85,6 +85,7 @@ _CAMPOS = {
     "title": "título",
     "service_id": "servicio",
     "message": "nota",
+    "root_cause": "causa raíz",
 }
 
 
