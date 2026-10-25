@@ -83,10 +83,12 @@ def incident_clocks(incident, now: datetime | None = None) -> tuple[str, str]:
     """Estado de los dos relojes de un incidente: (respuesta, solución).
 
     La respuesta se cumple al tomarlo y la solución al mitigarlo (spec 008, CA-4); con el incidente
-    mitigado los dos relojes quedan detenidos.
+    mitigado los dos relojes quedan detenidos: si se mitigó antes de que alguien lo tomara, la respuesta
+    se detiene en la hora de mitigación.
     """
     started_at = _as_utc(incident.started_at)
-    response = clock_state(started_at, _as_utc(incident.response_due_at), _as_utc(incident.acknowledged_at), now)
+    responded_at = _as_utc(incident.acknowledged_at) or _as_utc(incident.mitigated_at)
+    response = clock_state(started_at, _as_utc(incident.response_due_at), responded_at, now)
     resolution = clock_state(started_at, _as_utc(incident.resolution_due_at), _as_utc(incident.mitigated_at), now)
     return response, resolution
 

@@ -182,3 +182,13 @@ def test_incidente_con_fechas_sin_zona_de_sqlite():
     incident.started_at = datetime(2026, 10, 24, 14, 0)
 
     assert incident_clocks(incident, INICIO + timedelta(minutes=30))[0] == "cumplido"
+
+
+def test_mitigar_sin_tomar_detiene_tambien_el_reloj_de_respuesta():
+    # El sitio volvió a los 5 min (resolved) antes de que alguien lo tomara: la respuesta no sigue corriendo
+    incident = make_incident(None, INICIO + timedelta(minutes=5))
+    assert incident_clocks(incident, INICIO + timedelta(hours=1)) == ("cumplido", "cumplido")
+
+    # Si se mitigó cuando la respuesta ya estaba vencida, queda vencida
+    late = make_incident(None, INICIO + timedelta(minutes=40))
+    assert incident_clocks(late, INICIO + timedelta(hours=1)) == ("vencido", "cumplido")
