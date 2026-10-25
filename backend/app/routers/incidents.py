@@ -9,10 +9,11 @@ from app.db import get_db
 from app.deps import require_agency
 from app.models.client import Client
 from app.models.incident import Incident
+from app.models.incident_event import IncidentEvent
 from app.models.project import Project
 from app.models.service import Service
 from app.models.user import User
-from app.schemas.incident import IncidentCreate, IncidentOut
+from app.schemas.incident import IncidentCreate, IncidentDetail, IncidentOut
 from app.services import audit
 from app.services.incident_flow import add_event
 from app.services.sla import due_dates, incident_clocks
@@ -123,3 +124,37 @@ def list_incidents(
         query = query.where(Incident.priority == priority)
     now = utcnow()
     return [present(incident, now) for incident in db.scalars(query.order_by(Incident.id.desc()))]
+
+
+def _load(db: Session, incident_id: int) -> Incident:
+    """Incidente con su línea de tiempo y quién hizo cada evento, o 404."""
+    incident = db.scalar(
+        _base_query()
+        .options(selectinload(Incident.events).selectinload(IncidentEvent.actor))
+        .where(Incident.id == incident_id)
+    )
+    if incident is None:
+        raise HTTPException(status_code=404, detail="El incidente no existe.")
+    return incident
+
+
+def present_detail(incident: Incident, now: datetime | None = None) -> dict:
+    """Detalle del incidente: los datos de la lista más la línea de tiempo en orden."""
+    data = present(incident, now)
+    data["events"] = [
+        {
+            "id": event.id,
+            "type": event.type,
+            "message": event.message,
+            "actor_name": event.actor_name,
+            "created_at": _as_utc(event.created_at),
+        }
+        for event in incident.events
+    ]
+    return data
+
+
+@router.get("/{incident_id}", response_model=IncidentDetail)
+def get_incident(incident_id: int, db: Session = Depends(get_db)):
+    """Detalle del incidente con su línea de tiempo y el estado de los relojes del SLA."""
+    return present_detail(_load(db, incident_id))
