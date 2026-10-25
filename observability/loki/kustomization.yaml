@@ -1,0 +1,10 @@
+# Loki (spec 008, T25): guarda los registros de los sitios de los clientes que le manda Alloy.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+  - deployment.yaml
+configMapGenerator:
+  - name: loki-config
+    files:
+      - loki.yaml

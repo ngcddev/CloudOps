@@ -8,3 +8,4 @@ resources:
   - blackbox
   - prometheus
   - alertmanager
+  - loki
