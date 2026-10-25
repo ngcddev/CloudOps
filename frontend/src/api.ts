@@ -1013,3 +1013,74 @@ export async function downloadCheckReport(checkId: number): Promise<void> {
   // Se revoca después: en algunos navegadores revocar de inmediato cancela la descarga
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+
+// ---------- Incidentes (spec 008) ----------
+
+export type IncidentStatus = "abierto" | "mitigado" | "cerrado";
+export type IncidentSource = "alerta" | "manual";
+export type IncidentEventType = "detectado" | "tomado" | "nota" | "recuperado" | "cerrado";
+// Estado de un reloj del SLA (spec 008, CA-4)
+export type ClockState = "a_tiempo" | "en_riesgo" | "vencido" | "cumplido";
+
+export interface Incident {
+  id: number;
+  service_id: number;
+  client_id: number;
+  client_name: string;
+  service_name: string;
+  namespace: string;
+  priority: TicketPriority;
+  status: IncidentStatus;
+  source: IncidentSource;
+  title: string;
+  started_at: string;
+  acknowledged_at: string | null;
+  mitigated_at: string | null;
+  closed_at: string | null;
+  response_due_at: string;
+  resolution_due_at: string;
+  assignee_id: number | null;
+  assignee_name: string | null;
+  root_cause: string | null;
+  response_state: ClockState;
+  resolution_state: ClockState;
+  created_at: string;
+}
+
+export interface IncidentEvent {
+  id: number;
+  type: IncidentEventType;
+  message: string | null;
+  // Nombre del técnico o «Sistema» si lo registró el monitoreo
+  actor_name: string;
+  created_at: string;
+}
+
+// Última publicación del servicio, para revisar si la falla vino de ahí
+export interface IncidentLastChange {
+  version: string;
+  author: string;
+  source: "cambio" | "rollback";
+  deployed_at: string;
+  change_request_id: number | null;
+  commit_sha: string | null;
+  commit_url: string | null;
+}
+
+export interface IncidentDetail extends Incident {
+  events: IncidentEvent[];
+  logs_url: string | null;
+  last_change: IncidentLastChange | null;
+}
+
+export interface IncidentInput {
+  service_id: number;
+  priority: TicketPriority;
+  title: string;
+}
+
+export interface IncidentFilters {
+  status?: IncidentStatus;
+  client_id?: number;
+  priority?: TicketPriority;
+}
