@@ -43,6 +43,8 @@ services:
       # Enlaces del detalle del incidente (spec 008): vacíos = sin enlaces
       GRAFANA_URL: ${GRAFANA_URL:-}
       GITEA_PUBLIC_URL: ${GITEA_PUBLIC_URL:-}
+      # Webhook de Alertmanager (spec 008): vacío = la API no acepta avisos
+      ALERTMANAGER_TOKEN: ${ALERTMANAGER_TOKEN:-}
     # Solo para desarrollo: las pruebas (docker compose exec api pytest) leen seed/ y gitops/ en las
     # rutas del repo (/seed, /gitops y /pipelines). La imagen de producción no los lleva.
     volumes:
