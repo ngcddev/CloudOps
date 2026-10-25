@@ -102,3 +102,42 @@ def test_el_cliente_no_ve_ni_abre_incidentes(as_client, seeded, session_factory)
 
     assert as_client.get("/api/incidents").status_code == 403
     assert as_client.post("/api/incidents", json={"service_id": service_id, "priority": "P1", "title": "x"}).status_code == 403
+
+
+def test_tomar_a_los_5_min_cumple_la_respuesta_y_aparece_en_la_linea_de_tiempo(client, seeded, session_factory, clock):
+    incident = _open(client, session_factory)
+
+    clock.at(5)
+    response = client.post(f"/api/incidents/{incident['id']}/acknowledge")
+
+    assert response.status_code == 200, response.text
+    detail = response.json()
+    assert detail["response_state"] == "cumplido"
+    assert detail["resolution_state"] == "a_tiempo"
+    assert detail["acknowledged_at"].startswith("2026-10-24T14:05:00")
+    assert detail["assignee_name"] is not None
+    assert [e["type"] for e in detail["events"]] == ["detectado", "tomado"]
+    assert detail["events"][1]["actor_name"] == detail["assignee_name"]
+
+
+def test_tomar_dos_veces_responde_409(client, seeded, session_factory, clock):
+    incident = _open(client, session_factory)
+    client.post(f"/api/incidents/{incident['id']}/acknowledge")
+
+    assert client.post(f"/api/incidents/{incident['id']}/acknowledge").status_code == 409
+
+
+def test_las_notas_quedan_en_orden_en_el_detalle(client, seeded, session_factory, clock):
+    incident = _open(client, session_factory)
+
+    clock.at(2)
+    assert client.post(f"/api/incidents/{incident['id']}/notes", json={"message": "Revisé los registros"}).status_code == 201
+    assert client.post(f"/api/incidents/{incident['id']}/notes", json={"message": "  "}).status_code == 422
+
+    detail = client.get(f"/api/incidents/{incident['id']}").json()
+    assert [(e["type"], e["message"]) for e in detail["events"]][1] == ("nota", "Revisé los registros")
+
+
+def test_detalle_de_un_incidente_inexistente_responde_404(client, seeded):
+    assert client.get("/api/incidents/999").status_code == 404
+    assert client.post("/api/incidents/999/acknowledge").status_code == 404
