@@ -1114,6 +1114,13 @@ export function clockState(start: string, due: string, done: string | null, now:
   return (now - startMs) * 5 >= (dueMs - startMs) * 4 ? "en_riesgo" : "a_tiempo";
 }
 
+// Igual que la API: la respuesta se detiene en lo primero que pase entre tomar y mitigar el incidente
+export function responseStoppedAt(incident: Pick<Incident, "acknowledged_at" | "mitigated_at">): string | null {
+  const stops = [incident.acknowledged_at, incident.mitigated_at].filter((t): t is string => t !== null);
+  if (stops.length === 0) return null;
+  return stops.reduce((first, t) => (Date.parse(t) < Date.parse(first) ? t : first));
+}
+
 // Incidentes de prueba en memoria: uno de alerta de La Sazón que empezó hace 3 minutos
 const incidentMock = (() => {
   const incidents: IncidentDetail[] = [];
@@ -1183,8 +1190,7 @@ function withClocks(incident: IncidentDetail): IncidentDetail {
   return {
     ...incident,
     events: [...incident.events],
-    // Igual que la API: mitigar sin haberlo tomado también detiene la respuesta
-    response_state: clockState(incident.started_at, incident.response_due_at, incident.acknowledged_at ?? incident.mitigated_at),
+    response_state: clockState(incident.started_at, incident.response_due_at, responseStoppedAt(incident)),
     resolution_state: clockState(incident.started_at, incident.resolution_due_at, incident.mitigated_at),
   };
 }
