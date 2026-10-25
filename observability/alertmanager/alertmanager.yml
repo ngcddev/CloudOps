@@ -1,0 +1,24 @@
+# Configuración de Alertmanager (spec 008, T24): toda alerta va al webhook del Hub, que abre el incidente
+# con `firing` y lo mitiga con `resolved`.
+route:
+  receiver: hub
+  # Un grupo por alerta y sitio: la caída de un segundo sitio no espera al grupo del primero
+  group_by: [alertname, namespace]
+  # Peor caso de detección ≈ 45 s (decisión 3 del plan): 5 s aquí
+  group_wait: 5s
+  # Cada cuánto se avisa un cambio en un grupo ya avisado; incluye el `resolved` de la recuperación.
+  # Con el valor por defecto (5 min) el incidente tardaría hasta 5 min en verse mitigado.
+  group_interval: 10s
+  # Alertmanager repite el aviso de una falla que sigue; el Hub los descarta por fingerprint
+  repeat_interval: 1h
+
+receivers:
+  - name: hub
+    webhook_configs:
+      - url: http://api.hub.svc:8000/api/alerts/alertmanager
+        send_resolved: true
+        http_config:
+          authorization:
+            type: Bearer
+            # Secret hub-alertmanager (lo crea gitops/hub/crear-secretos.sh); nunca en el repo
+            credentials_file: /etc/alertmanager/token/token
