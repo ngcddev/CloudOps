@@ -115,3 +115,39 @@ def test_dos_avisos_simultaneos_no_rompen_el_indice_unico(anonymous, seeded, ses
     assert response.json()["results"][0]["result"] == "duplicado"
     assert calls["n"] == 2  # la primera consulta no lo vio y el índice único lo frenó
     assert len(incidents(session_factory)) == 1
+
+
+def test_resolved_mitiga_con_endsat_y_devuelve_el_servicio_a_operativo(anonymous, seeded, session_factory):
+    send(anonymous, "firing")
+
+    response = send(anonymous, "resolved")
+
+    assert response.status_code == 200
+    assert response.json()["results"][0]["result"] == "mitigado"
+    [incident] = incidents(session_factory)
+    assert incident.status == "mitigado"
+    assert incident.mitigated_at.replace(tzinfo=None).isoformat() == "2026-10-24T19:04:10"
+    assert service_status(session_factory) == "operativo"
+    with session_factory() as db:
+        saved = db.get(Incident, incident.id)
+        assert [(e.type, e.actor_id) for e in saved.events] == [("detectado", None), ("recuperado", None)]
+        actions = [log.action for log in db.scalars(select(AuditLog).where(AuditLog.entity == "incident"))]
+        assert actions == ["crear", "mitigar"]
+
+
+def test_un_resolved_repetido_o_sin_incidente_se_ignora_con_200(anonymous, seeded, session_factory):
+    assert send(anonymous, "resolved").json()["results"][0]["result"] == "ignorado"
+    send(anonymous, "firing")
+    send(anonymous, "resolved")
+
+    assert send(anonymous, "resolved").json()["results"][0]["result"] == "ignorado"
+    assert [i.status for i in incidents(session_factory)] == ["mitigado"]
+
+
+def test_un_namespace_desconocido_responde_200_y_avisa_en_el_log(anonymous, seeded, session_factory, caplog):
+    response = send(anonymous, "firing_desconocido")
+
+    assert response.status_code == 200
+    assert response.json()["results"][0]["result"] == "ignorado"
+    assert incidents(session_factory) == []
+    assert "cliente-desconocido" in caplog.text
