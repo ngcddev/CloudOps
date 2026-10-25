@@ -40,6 +40,9 @@ services:
       GITEA_TOKEN: ${GITEA_TOKEN:-}
       ARGOCD_URL: ${ARGOCD_URL:-}
       ARGOCD_TOKEN: ${ARGOCD_TOKEN:-}
+      # Enlaces del detalle del incidente (spec 008): vacíos = sin enlaces
+      GRAFANA_URL: ${GRAFANA_URL:-}
+      GITEA_PUBLIC_URL: ${GITEA_PUBLIC_URL:-}
     # Solo para desarrollo: las pruebas (docker compose exec api pytest) leen seed/ y gitops/ en las
     # rutas del repo (/seed, /gitops y /pipelines). La imagen de producción no los lleva.
     volumes:
