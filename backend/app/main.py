@@ -14,6 +14,7 @@ from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
 from app.routers import (
+    alerts,
     audit_logs,
     auth,
     catalog,
@@ -61,6 +62,7 @@ app.include_router(services.router)
 app.include_router(pipeline.router)
 app.include_router(security.router)
 app.include_router(incidents.router)
+app.include_router(alerts.router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
 _CAMPOS = {
