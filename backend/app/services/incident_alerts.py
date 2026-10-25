@@ -1,6 +1,6 @@
-# Convierte los avisos de Alertmanager en incidentes: abrir con `firing` sin duplicar (spec 008, T10-T12).
+# Convierte los avisos de Alertmanager en incidentes: abrir con `firing` sin duplicar y mitigar con `resolved` (spec 008, T10-T12).
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -10,6 +10,7 @@ from app.models.incident import Incident
 from app.models.service import Service
 from app.schemas.alertmanager import AlertmanagerAlert
 from app.services import audit
+from app.services import incident_flow
 from app.services.incident_flow import add_event
 from app.services.sla import due_dates
 
@@ -79,3 +80,33 @@ def open_from_alert(db: Session, alert: AlertmanagerAlert, confirm_seconds: int)
         {"prioridad": priority, "servicio": service.namespace, "origen": "alerta"},
     )
     return "creado", incident.id
+
+
+def _as_utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+
+
+def resolve_from_alert(db: Session, alert: AlertmanagerAlert) -> tuple[str, int | None]:
+    """Mitiga el incidente de un `resolved` con la hora real del primer sondeo sano (`endsAt`, CA-6).
+
+    El servicio vuelve a `operativo` si no le queda otro incidente de alerta abierto. No hace commit.
+    """
+    incident = _open_incident(db, alert.fingerprint)
+    if incident is None:
+        logger.warning("Aviso resolved de una falla sin incidente abierto: %s", alert.fingerprint)
+        return "ignorado", None
+
+    started_at = _as_utc(incident.started_at)
+    recovered_at = alert.ends_at if alert.ends_at is not None and alert.ends_at > started_at else datetime.now(timezone.utc)
+    incident_flow.mitigate(incident, recovered_at, by_alert=True)
+    add_event(incident, "recuperado", "El monitoreo vio el sitio responder de nuevo.", None, at=recovered_at)
+    db.flush()
+    still_down = db.scalar(
+        select(Incident.id).where(
+            Incident.service_id == incident.service_id, Incident.source == "alerta", Incident.status == "abierto"
+        )
+    )
+    if still_down is None:
+        incident.service.status = "operativo"
+    audit.record(db, None, "mitigar", "incident", incident.id, {"origen": "alerta"})
+    return "mitigado", incident.id
