@@ -196,3 +196,23 @@ def add_note(
     add_event(incident, "nota", data.message, actor, at=now)
     db.commit()
     return present_detail(_load(db, incident_id), now)
+
+
+@router.post("/{incident_id}/mitigate", response_model=IncidentDetail)
+def mitigate_incident(
+    incident_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
+    """Mitiga a mano un incidente manual; detiene el reloj de solución con la hora actual."""
+    incident = _load(db, incident_id)
+    now = utcnow()
+    try:
+        incident_flow.mitigate(incident, now)
+    except IncidentFlowError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    add_event(incident, "recuperado", f"Mitigado a mano por {actor.name}.", actor, at=now)
+    audit.record(db, actor, "mitigar", "incident", incident.id, {"origen": "manual"}, audit.request_ip(request))
+    db.commit()
+    return present_detail(_load(db, incident_id), now)
