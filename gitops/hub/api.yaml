@@ -61,6 +61,9 @@ spec:
             - name: ARGOCD_TOKEN
               valueFrom:
                 secretKeyRef: { name: hub-gitops-tokens, key: ARGOCD_TOKEN, optional: true }
+            # Enlaces del detalle del incidente (spec 008): direcciones que abre el navegador del técnico
+            - { name: GRAFANA_URL, value: "http://grafana.hub.local" }
+            - { name: GITEA_PUBLIC_URL, value: "http://gitea.hub.local" }
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
