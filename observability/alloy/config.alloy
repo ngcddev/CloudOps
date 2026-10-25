@@ -1,0 +1,51 @@
+// Configuración de Grafana Alloy (spec 008, T25): lee por la API de Kubernetes los registros de los Pods
+// de los clientes (namespaces cliente-*) y los manda a Loki con las etiquetas namespace, pod y container.
+// Reemplaza a Promtail, que está en fin de vida. No necesita montar carpetas del nodo.
+
+discovery.kubernetes "pods" {
+  role = "pod"
+}
+
+discovery.relabel "clientes" {
+  targets = discovery.kubernetes.pods.targets
+
+  // Solo los sitios de los clientes: la plataforma no se recoge (ahorra memoria y disco)
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    regex         = "cliente-.+"
+    action        = "keep"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label  = "namespace"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label  = "pod"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_app"]
+    target_label  = "app"
+  }
+  // El cliente sale del namespace, igual que en Prometheus: cliente-restaurante → restaurante
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    regex         = "cliente-(.+)"
+    target_label  = "client"
+  }
+}
+
+loki.source.kubernetes "clientes" {
+  targets    = discovery.relabel.clientes.output
+  forward_to = [loki.write.loki.receiver]
+}
+
+loki.write "loki" {
+  endpoint {
+    url = "http://loki.monitoring.svc:3100/loki/api/v1/push"
+  }
+}
