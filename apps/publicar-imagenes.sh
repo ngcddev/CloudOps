@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Construye y publica en el registro de Gitea las imágenes de los sitios de clientes (spec 003, T06):
 # restaurante, ferreteria, consultorio-web y consultorio-api, cada una en v1 (sana) y v2 (rota, 500).
-# También las del Hub (T17): hub-api y hub-web, solo en v1.3 (cada cambio del Hub lleva una etiqueta nueva: el nodo guarda en caché las ya bajadas). Se piden por nombre; no se publican por defecto.
+# También las del Hub (T17): hub-api y hub-web, solo en v1.4 (cada cambio del Hub lleva una etiqueta nueva: el nodo guarda en caché las ya bajadas). Se piden por nombre; no se publican por defecto.
 # Uso:  REGISTRY_USER=forja-admin REGISTRY_PASSWORD='...' bash apps/publicar-imagenes.sh [app[:versión] ...]
 # Con `app:versión` (por ejemplo ferreteria:v1.1) se publica solo esa versión de la app (spec 005, T05).
 # Sin argumentos publica las cuatro de los sitios. La contraseña va en el entorno: nunca en el repo.
@@ -22,7 +22,7 @@ NETWORK="${NETWORK:-k3d-hub}"
 declare -A CONTEXT=( [restaurante]=restaurante [ferreteria]=ferreteria [consultorio-web]=consultorio [consultorio-api]=consultorio [hub-api]=../backend [hub-web]=../frontend )
 declare -A DOCKERFILE=( [restaurante]=Dockerfile [ferreteria]=Dockerfile [consultorio-web]=Dockerfile.frontend [consultorio-api]=Dockerfile.backend [hub-api]=Dockerfile [hub-web]=Dockerfile )
 # Versiones por app y opciones extra de build (el Hub necesita seed/ como contexto adicional)
-declare -A VERSIONS=( [hub-api]=v1.3 [hub-web]=v1.3 )
+declare -A VERSIONS=( [hub-api]=v1.4 [hub-web]=v1.4 )
 declare -A EXTRA=( [hub-api]="--build-context seed=../seed" [hub-web]="--build-context seed=../seed" )
 
 APPS=("$@")
