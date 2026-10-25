@@ -7,6 +7,12 @@ global:
 rule_files:
   - /etc/prometheus/reglas/*.yml
 
+# Las alertas que disparan las reglas van a Alertmanager, que avisa al Hub (T24)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager.monitoring.svc:9093"]
+
 scrape_configs:
   - job_name: prometheus
     static_configs:
