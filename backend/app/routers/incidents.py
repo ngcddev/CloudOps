@@ -13,7 +13,7 @@ from app.models.incident_event import IncidentEvent
 from app.models.project import Project
 from app.models.service import Service
 from app.models.user import User
-from app.schemas.incident import IncidentCreate, IncidentDetail, IncidentNoteIn, IncidentOut
+from app.schemas.incident import IncidentCloseIn, IncidentCreate, IncidentDetail, IncidentNoteIn, IncidentOut
 from app.services import audit
 from app.services import incident_flow
 from app.services.incident_flow import IncidentFlowError, add_event
@@ -214,5 +214,26 @@ def mitigate_incident(
         raise HTTPException(status_code=409, detail=str(error)) from error
     add_event(incident, "recuperado", f"Mitigado a mano por {actor.name}.", actor, at=now)
     audit.record(db, actor, "mitigar", "incident", incident.id, {"origen": "manual"}, audit.request_ip(request))
+    db.commit()
+    return present_detail(_load(db, incident_id), now)
+
+
+@router.post("/{incident_id}/close", response_model=IncidentDetail)
+def close_incident(
+    incident_id: int,
+    data: IncidentCloseIn,
+    request: Request,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
+    """Cierra un incidente mitigado dejando la causa raíz como lección."""
+    incident = _load(db, incident_id)
+    now = utcnow()
+    try:
+        incident_flow.close(incident, data.root_cause, now)
+    except IncidentFlowError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    add_event(incident, "cerrado", f"Cerrado por {actor.name}. Causa raíz: {incident.root_cause}", actor, at=now)
+    audit.record(db, actor, "cerrar", "incident", incident.id, None, audit.request_ip(request))
     db.commit()
     return present_detail(_load(db, incident_id), now)
