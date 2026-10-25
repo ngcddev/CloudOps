@@ -141,3 +141,67 @@ def test_las_notas_quedan_en_orden_en_el_detalle(client, seeded, session_factory
 def test_detalle_de_un_incidente_inexistente_responde_404(client, seeded):
     assert client.get("/api/incidents/999").status_code == 404
     assert client.post("/api/incidents/999/acknowledge").status_code == 404
+
+
+def _audit_actions(session_factory, incident_id: int) -> list[str]:
+    with session_factory() as db:
+        logs = db.scalars(
+            select(AuditLog).where(AuditLog.entity == "incident", AuditLog.entity_id == incident_id).order_by(AuditLog.id)
+        )
+        return [log.action for log in logs]
+
+
+def test_ciclo_manual_completo_deja_las_horas_la_causa_y_cuatro_filas_en_la_bitacora(client, seeded, session_factory, clock):
+    incident = _open(client, session_factory)
+    url = f"/api/incidents/{incident['id']}"
+
+    clock.at(5)
+    client.post(f"{url}/acknowledge")
+    clock.at(40)
+    mitigated = client.post(f"{url}/mitigate")
+    assert mitigated.status_code == 200, mitigated.text
+    assert mitigated.json()["resolution_state"] == "cumplido"
+    clock.at(60)
+    closed = client.post(f"{url}/close", json={"root_cause": "La v2 no tenía la variable de la base"})
+
+    assert closed.status_code == 200, closed.text
+    detail = closed.json()
+    assert detail["status"] == "cerrado"
+    assert detail["mitigated_at"].startswith("2026-10-24T14:40:00")
+    assert detail["closed_at"].startswith("2026-10-24T15:00:00")
+    assert detail["root_cause"] == "La v2 no tenía la variable de la base"
+    assert [e["type"] for e in detail["events"]] == ["detectado", "tomado", "recuperado", "cerrado"]
+    assert _audit_actions(session_factory, incident["id"]) == ["crear", "tomar", "mitigar", "cerrar"]
+
+
+def test_cerrar_un_incidente_abierto_responde_409_y_no_deja_fila(client, seeded, session_factory, clock):
+    incident = _open(client, session_factory)
+
+    response = client.post(f"/api/incidents/{incident['id']}/close", json={"root_cause": "x"})
+
+    assert response.status_code == 409
+    assert _audit_actions(session_factory, incident["id"]) == ["crear"]
+
+
+def test_cerrar_sin_causa_raiz_responde_422(client, seeded, session_factory, clock):
+    incident = _open(client, session_factory)
+    client.post(f"/api/incidents/{incident['id']}/mitigate")
+
+    assert client.post(f"/api/incidents/{incident['id']}/close", json={"root_cause": "   "}).status_code == 422
+    assert client.post(f"/api/incidents/{incident['id']}/close", json={}).status_code == 422
+
+
+def test_un_incidente_de_alerta_no_se_mitiga_a_mano(client, seeded, session_factory, clock):
+    with session_factory() as db:
+        service = db.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
+        alert = Incident(
+            service_id=service.id, priority="P1", status="abierto", source="alerta", fingerprint="abc123",
+            title="El sitio no responde", started_at=T0, response_due_at=T0 + timedelta(minutes=15),
+            resolution_due_at=T0 + timedelta(hours=4),
+        )
+        db.add(alert)
+        db.commit()
+        alert_id = alert.id
+
+    assert client.post(f"/api/incidents/{alert_id}/mitigate").status_code == 409
+    assert _audit_actions(session_factory, alert_id) == []
