@@ -637,3 +637,36 @@ h4 {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Recuperación por rollback (spec 009): el avance se dice con texto e ícono, no con color */
+.progress-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  list-style: none;
+  margin: var(--space) 0 8px;
+  padding: 0;
+}
+
+.progress-steps li[aria-current="step"] {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.confirm-dialog {
+  max-width: 480px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  padding: var(--space);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.confirm-dialog .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

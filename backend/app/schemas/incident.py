@@ -44,11 +44,13 @@ class IncidentOut(BaseModel):
     # Estado de cada reloj del SLA: a_tiempo, en_riesgo, vencido o cumplido
     response_state: str
     resolution_state: str
+    # Minutos entre el inicio real de la falla y su mitigación (un decimal); nulo mientras siga abierto (spec 009)
+    mttr_minutes: float | None
     created_at: datetime
 
 
 class IncidentEventOut(BaseModel):
-    """Un punto de la línea de tiempo: detectado, tomado, nota, recuperado o cerrado."""
+    """Un punto de la línea de tiempo: detectado, tomado, nota, recuperado, cerrado o del rollback."""
 
     id: int
     type: str
@@ -70,11 +72,42 @@ class LastChangeOut(BaseModel):
     commit_url: str | None
 
 
+class RollbackOut(BaseModel):
+    """Rollback del incidente (spec 009): `sin_rollback`, `enviado`, `sincronizando` o `recuperado`."""
+
+    status: Literal["sin_rollback", "enviado", "sincronizando", "recuperado"]
+    from_version: str | None
+    to_version: str | None
+    # Quién lo pidió; nulo si no hay rollback
+    by_name: str | None
+    at: datetime | None
+    confirmed_at: datetime | None
+    commit_sha: str | None
+    commit_url: str | None
+
+
+class RollbackPlanOut(BaseModel):
+    """Lo que se ve antes de confirmar el rollback: a qué versión se vuelve y si el botón está activo."""
+
+    current_version: str | None
+    target_version: str | None
+    can_rollback: bool
+    # Por qué está deshabilitado; nulo si se puede
+    reason: str | None
+
+
+class ClientMessageOut(BaseModel):
+    """Mensaje para el cliente: se copia y la agencia lo envía; el Hub nunca lo manda solo."""
+
+    message: str
+
+
 class IncidentDetail(IncidentOut):
     events: list[IncidentEventOut]
     # Grafana Explore con los registros del sitio; nulo si no hay GRAFANA_URL
     logs_url: str | None
     last_change: LastChangeOut | None
+    rollback: RollbackOut
 
 
 class IncidentNoteIn(BaseModel):

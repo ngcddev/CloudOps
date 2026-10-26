@@ -14,9 +14,11 @@ from app.integrations.argocd import AppStatus, ArgoCDError
 from app.integrations.gitea import GiteaError
 from app.models.change_request import ChangeRequest
 from app.models.deployment import Deployment
+from app.models.incident import Incident
 from app.models.service import Service
 from app.services import audit
 from app.services.change_flow import step_event, transition
+from app.services.incident_flow import add_event
 from app.services.gitops_publish import kustomization_path
 from app.services.kustomization import get_tags
 
@@ -62,6 +64,10 @@ def reconcile_version(
     """
     if status.sync != "Synced" or (status.revision or "").lower() != head.lower():
         return False
+    # Un rollback del Hub sin confirmar escribió ese commit: lo confirma `confirm_rollbacks` con su propio
+    # `Deployment`; reconciliar aquí lo duplicaría (spec 009)
+    if rollback_pending(db, service.id):
+        return False
     open_change = db.scalar(
         select(ChangeRequest.id).where(
             ChangeRequest.service_id == service.id, ChangeRequest.status.in_(OPEN_STATUSES)
@@ -101,6 +107,72 @@ def reconcile_version(
         )
     )
     return True
+
+
+def rollback_pending(db: Session, service_id: int) -> bool:
+    """El servicio tiene un rollback escrito en Git que Argo CD aún no confirmó."""
+    return (
+        db.scalar(
+            select(Incident.id)
+            .where(
+                Incident.service_id == service_id,
+                Incident.rollback_commit_sha.is_not(None),
+                Incident.rollback_confirmed_at.is_(None),
+            )
+            .limit(1)
+        )
+        is not None
+    )
+
+
+def confirm_rollbacks(db: Session, service: Service, status: AppStatus, now: datetime) -> list[int]:
+    """Confirma los rollbacks que Argo CD ya aplicó y dejó sanos (spec 009, T07).
+
+    Igual que con un cambio: `Synced`, `Healthy` y en la revisión del commit. Deja la versión de destino
+    como actual y estable, agrega el `Deployment` de restauración a nombre de quien lo pidió, y registra
+    el evento y la bitácora como «Sistema». Devuelve los ids de los incidentes confirmados.
+    """
+    confirmed: list[int] = []
+    pending = db.scalars(
+        select(Incident)
+        .where(
+            Incident.service_id == service.id,
+            Incident.rollback_commit_sha.is_not(None),
+            Incident.rollback_confirmed_at.is_(None),
+        )
+        .order_by(Incident.id)
+    ).all()
+    for incident in pending:
+        if not is_published(status, incident.rollback_commit_sha):
+            continue
+        incident.rollback_confirmed_at = now
+        service.current_version = incident.rollback_to_version
+        service.stable_version = incident.rollback_to_version
+        requester = incident.rollback_by
+        db.add(
+            Deployment(
+                service_id=service.id,
+                version=incident.rollback_to_version,
+                commit_sha=incident.rollback_commit_sha,
+                author=requester.name if requester else "Hub",
+                source="rollback",
+                created_at=now,
+            )
+        )
+        add_event(
+            incident, "rollback_confirmado",
+            f"Argo CD confirmó {incident.rollback_to_version}: el sitio quedó sincronizado y sano.",
+            None, at=now,
+        )
+        audit.record(
+            db, None, "confirmar_rollback", "incident", incident.id,
+            {"desde": incident.rollback_from_version, "hacia": incident.rollback_to_version,
+             "commit": incident.rollback_commit_sha[:7]},
+        )
+        logger.info("Rollback del incidente #%s confirmado en %s (%s)", incident.id, service.namespace,
+                    incident.rollback_to_version)
+        confirmed.append(incident.id)
+    return confirmed
 
 
 def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) -> list[int]:
@@ -176,6 +248,7 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
                 )
             )
             deployed.append(change.id)
+        confirm_rollbacks(db, service, status, timestamp)
         if head is not None:
             reconcile_version(db, service, status, gitea, timestamp, head)
     db.commit()
