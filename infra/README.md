@@ -20,6 +20,8 @@ Las cuotas se obtendrán de `seed/plans.json`; ese archivo es la fuente única d
 
 ## Requisitos
 
-Las tareas siguientes incorporarán `tofu.sh`, que ejecuta versiones fijadas de OpenTofu o Terraform en contenedores. Para operar sobre el entorno se necesita el clúster k3d `hub`, la red `k3d-hub` y el token de Gitea en `GITEA_TOKEN`.
+`tofu.sh` ejecuta OpenTofu 1.13.2 o Terraform 1.17.0 en contenedores. Los comandos `version` y `help` no requieren que el clúster esté iniciado. Para operar sobre el entorno se necesita el clúster k3d `hub`, la red `k3d-hub` y el token de Gitea en `GITEA_TOKEN`.
+
+Ejemplo: `GITEA_TOKEN=<token> infra/tofu.sh tofu plan`.
 
 No guardes tokens, kubeconfigs ni archivos de estado en el repositorio. Antes de ejecutar cambios sobre un cliente existente, revisa el plan de ejecución y confirma que no propone recrearlo.
