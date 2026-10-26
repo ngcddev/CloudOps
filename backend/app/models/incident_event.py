@@ -12,7 +12,8 @@ class IncidentEvent(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), nullable=False)
-    # detectado, tomado, nota, recuperado o cerrado
+    # detectado, tomado, nota, recuperado, cerrado; y de la spec 009: rollback_enviado,
+    # rollback_confirmado y mensaje_cliente
     type: Mapped[str] = mapped_column(String(20), nullable=False)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Nulo = Sistema
