@@ -38,18 +38,26 @@ def rollback_target(db: Session, service: Service) -> str | None:
     """Versión a la que se vuelve, o None si no hay a dónde volver (decisión 1 del plan).
 
     1. Si la última versión estable no es la que corre (la v2 rota nunca estuvo sana), se vuelve a ella.
-    2. Si lo son (estuvo sana y se rompió después), se vuelve a la que corría antes en el historial.
+    2. Si lo son (estuvo sana y se rompió después), se vuelve a la que corría antes en el historial,
+       salvo una versión que una restauración posterior ya deshizo: ésa fue la que falló y volver a ella
+       repetiría la falla.
     """
     running = running_version(db, service)
     if service.stable_version != running:
         return service.stable_version
-    previous = db.scalar(
-        select(Deployment.version)
-        .where(Deployment.service_id == service.id, Deployment.version != running)
+    history = db.execute(
+        select(Deployment.id, Deployment.version, Deployment.source)
+        .where(Deployment.service_id == service.id)
         .order_by(Deployment.id.desc())
-        .limit(1)
-    )
-    return previous
+    ).all()
+    for position, (_, version, _) in enumerate(history):
+        if version == running:
+            continue
+        # `history` va del más nuevo al más viejo: las filas anteriores en la lista son las posteriores en el tiempo
+        undone = any(later_source == "rollback" and later_version != version for _, later_version, later_source in history[:position])
+        if not undone:
+            return version
+    return None
 
 
 def in_progress(incident: Incident) -> bool:

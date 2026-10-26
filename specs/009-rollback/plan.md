@@ -21,7 +21,9 @@
 1. Si `stable_version` es distinta de `current_version` (el caso de la v2 rota: nunca llegó a estar sana),
    se vuelve a `stable_version`.
 2. Si son iguales (la versión estuvo sana y se rompió después), se vuelve a la versión de la fila
-   anterior de `deployments` (la que corría antes de la actual).
+   anterior de `deployments` (la que corría antes de la actual). Se salta una versión que una
+   restauración posterior ya deshizo (en El Tornillo, `v9.133649b` se revirtió a `v1`): volver a ella repetiría
+   la falla. Se encontró probando la 009 en el clúster.
 3. Si no hay ninguna → botón deshabilitado: «No hay una versión anterior a la que volver».
 
 «Versión actual» es la que tiene Git, no la que dice el Hub: un cambio `en_validacion` ya escribió su commit, así que
