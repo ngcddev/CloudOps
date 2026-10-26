@@ -73,6 +73,7 @@ trap - EXIT
 
 # pwd -W conserva una ruta montable por Docker Desktop cuando se ejecuta desde Git Bash.
 MOUNT_DIR="$(cd "$SCRIPT_DIR" && (pwd -W 2>/dev/null || pwd))"
+SEED_MOUNT_DIR="$(cd "$SCRIPT_DIR/../seed" && (pwd -W 2>/dev/null || pwd))"
 DOCKER_ARGS=(
   run --rm
   --network "$NETWORK"
@@ -80,6 +81,7 @@ DOCKER_ARGS=(
   -e KUBECONFIG=/infra/.kubeconfig
   -v "${MOUNT_DIR}:/infra"
   -v "${MOUNT_DIR}/state:/state"
+  -v "${SEED_MOUNT_DIR}:/seed:ro"
   -w /infra/tofu
 )
 

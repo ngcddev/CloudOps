@@ -22,7 +22,7 @@ tanto (las dos escriben en archivos distintos).
 - [x] T01 · Crear `infra/` con `README.md`, `.gitignore` (`state/`, `.kubeconfig`, `*.tfvars`, `*.tfstate*`) y la estructura del plan — **Verifica:** `git status` no muestra `state/` ni `.kubeconfig` tras crearlos vacíos; el README explica qué gestiona y qué no. [ERIC]
 - [x] T02 · Escribir `infra/tofu.sh`, que corre `tofu` o `terraform` en contenedor con versión fija, en la red `k3d-hub`, con el `kubeconfig` generado y `gitea.hub.local` resuelto — **Verifica:** `infra/tofu.sh tofu version` imprime 1.13.2 y `infra/tofu.sh terraform version` imprime 1.17.0. [ERIC]
 - [x] T03 · Escribir `providers.tf` (kubernetes 3.4.0, gitea 0.8.1) y `variables.tf` (`gitea_token` sensible, `clients`) — **Verifica:** `tofu init` descarga ambos proveedores y `tofu validate` pasa. [ERIC]
-- [ ] T04 · Escribir `plans.tf` leyendo `seed/plans.json` y validar que cada cliente use un plan que exista — **Verifica:** `tofu plan` con un plan inexistente falla con un mensaje que lo nombra (CA-6, CA-8). [ ]
+- [x] T04 · Escribir `plans.tf` leyendo `seed/plans.json` y validar que cada cliente use un plan que exista — **Verifica:** `tofu plan` con un plan inexistente falla con un mensaje que lo nombra (CA-6, CA-8). [ERIC]
 
 ## Módulo y clientes
 
