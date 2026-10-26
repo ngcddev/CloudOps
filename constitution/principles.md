@@ -13,7 +13,7 @@
 7. **Medición real.** SLA, MTTR y disponibilidad se calculan con horas y métricas reales, nunca simuladas.
 8. **El cliente no ve jerga técnica.** Todo lo que llega al portal del cliente está en lenguaje de negocio (ver [glosario](../docs/glosario.md)).
 9. **Módulo a módulo.** Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió. El carril de producto (backend, frontend, base de datos, procesos) sí puede adelantarse.
-10. **Simple y verificable.** Diseño en blanco y negro, dos roles (agencia y cliente) y cada spec cierra con una demo reproducible desde datos semilla.
+10. **Simple y verificable.** Diseño sobrio (monocromo con un solo acento verde, en tema claro u oscuro), dos roles (agencia y cliente) y cada spec cierra con una demo reproducible desde datos semilla.
 
 ## Reglas derivadas
 
@@ -34,7 +34,7 @@ Antes de aprobar un plan o un PR, se comprueba:
 - ¿Un SLA, MTTR o disponibilidad está simulado (principio 7)?
 - ¿Algún texto técnico llega al portal del cliente (principio 8)?
 - ¿Se usa una herramienta de plataforma de un módulo que aún no se ha visto (principio 9)?
-- ¿La demo arranca desde datos semilla y respeta el blanco y negro (principio 10)?
+- ¿La demo arranca desde datos semilla y respeta el diseño sobrio: monocromo con un solo acento verde (principio 10)?
 
 ## Prohibido
 

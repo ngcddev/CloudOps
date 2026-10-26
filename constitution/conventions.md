@@ -43,7 +43,8 @@ cloudops/
 
 - Interfaz, textos, documentación y comentarios del código: **español**.
 - Nombres de código (variables, tablas, rutas): **inglés**, `snake_case` en Python y SQL, `camelCase` en TypeScript, `PascalCase` en componentes React.
-- Diseño **blanco y negro**: fondo blanco, texto negro, grises solo para bordes y estados deshabilitados. Sin temas de color. El estado se comunica con texto e íconos, no con color.
+- Diseño **sobrio, entre Vercel y GitHub**: monocromo (grises para bordes, superficies y texto secundario) con **un solo acento verde**, reservado al botón de la acción principal de cada pantalla y al ✓ de "operativo". Hay tema claro (`#fafafa`, de Vercel) y oscuro (`#0d1117`, de GitHub) con un interruptor; la elección se recuerda en el navegador. Sin más colores ni más temas. Tipografía Geist y Geist Mono, autoalojadas (sin CDN). Los valores viven como variables en `frontend/src/styles.css`.
+- El estado se comunica con texto e íconos, nunca solo con color.
 - Código completo y comentado en español; cada archivo empieza con un comentario que dice qué es.
 - Textos para el cliente: usar el [glosario](../docs/glosario.md).
 
