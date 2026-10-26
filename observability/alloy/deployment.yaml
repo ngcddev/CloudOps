@@ -43,14 +43,23 @@ spec:
               drop: [ALL]
           resources:
             requests: { cpu: 25m, memory: 64Mi }
-            limits: { cpu: 300m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 128Mi }
+          # Alloy tarda ~70 s en abrir el puerto en el nodo del laboratorio: la startupProbe le da hasta 5 min
+          # antes de que la de vida pueda matarlo (sin ella lo reiniciaba en bucle)
+          startupProbe:
+            httpGet: { path: /-/ready, port: http }
+            periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 5
           readinessProbe:
             httpGet: { path: /-/ready, port: http }
             periodSeconds: 10
+            timeoutSeconds: 5
           livenessProbe:
             httpGet: { path: /-/healthy, port: http }
-            initialDelaySeconds: 20
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           volumeMounts:
             - name: config
               mountPath: /etc/alloy
