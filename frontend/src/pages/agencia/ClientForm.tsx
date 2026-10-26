@@ -189,7 +189,7 @@ export default function ClientForm() {
         </fieldset>
 
         <div className="form-actions">
-          <button type="submit" className="button" disabled={saving}>
+          <button type="submit" className="button button-primary" disabled={saving}>
             {saving ? "Registrando…" : "Registrar cliente"}
           </button>
           <Link to="/agencia/clientes" className="button button-secondary">

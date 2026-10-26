@@ -11,7 +11,10 @@ export default function StatusBadge({ status }: { status: ServiceStatus }) {
   const { icon, text } = labels[status];
   return (
     <span className={`status status-${status}`}>
-      <span aria-hidden="true">{icon}</span> {text}
+      <span className="status-icon" aria-hidden="true">
+        {icon}
+      </span>{" "}
+      {text}
     </span>
   );
 }

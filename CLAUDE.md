@@ -24,7 +24,7 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 
 - Textos, comentarios y documentación en **español**; nombres de código en **inglés**.
 - Cada archivo empieza con un comentario que dice qué es.
-- Diseño en blanco y negro; el estado se comunica con texto e íconos.
+- Diseño sobrio entre Vercel y GitHub: monocromo con un solo acento verde, tema claro y oscuro; el estado se comunica con texto e íconos, nunca solo con color.
 - Fechas en UTC en la base; se muestran en America/Bogota.
 - Textos para el cliente: usar el [glosario](docs/glosario.md).
 - Commits con Conventional Commits en español: `feat(001): …`, `docs(004): …`.

@@ -177,7 +177,7 @@ Cada herramienta de plataforma se instala cuando el diplomado cubre su módulo. 
 |---|---|---|
 | Backend | Python 3.12 + **FastAPI** | SQLAlchemy 2, Alembic (migraciones), Pydantic, pytest |
 | Base de datos | **PostgreSQL 16** | Fechas en UTC (`timestamptz`) |
-| Frontend | **React + Vite + TypeScript** | react-router-dom; CSS propio en blanco y negro, sin librerías de UI. Consola de agencia y portal del cliente con las mismas rutas y roles distintos |
+| Frontend | **React + Vite + TypeScript** | react-router-dom; CSS propio (monocromo con un acento verde, tema claro y oscuro), sin librerías de UI. Consola de agencia y portal del cliente con las mismas rutas y roles distintos |
 | Contenedores | **Docker**, **docker compose** (desarrollo) | Imágenes multi-stage, usuario no root |
 | Dependencias | `pip` + `requirements.txt` / `npm` | |
 
@@ -445,7 +445,7 @@ cloudops/
 ## Convenciones
 
 - **Idioma:** interfaz, documentación y comentarios en español; nombres de código en inglés (`snake_case` en Python y SQL, `camelCase` en TypeScript, `PascalCase` en componentes React).
-- **Diseño:** blanco y negro; el estado se comunica con texto e íconos, no con color.
+- **Diseño:** sobrio entre Vercel y GitHub: monocromo con un solo acento verde, tema claro y oscuro; el estado se comunica con texto e íconos, nunca solo con color.
 - **Datos:** fechas en UTC en la base, mostradas en hora de Colombia (America/Bogota); ids enteros autoincrementales; todo dato de demo es ficticio.
 - **Git:** `main` protegida (se entra por PR). Ramas `feat/<spec>-t<NN>-<slug>`, `fix/<spec>-<slug>`, `docs/<slug>`. Commits con Conventional Commits en español: `feat(001): …`, `docs(004): …`. Un commit = un cambio lógico.
 - **Secretos:** nunca en el código ni en el repo; `.env` ignorado y `.env.example` con valores de desarrollo.
