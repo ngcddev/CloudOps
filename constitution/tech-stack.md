@@ -38,7 +38,7 @@ Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([pri
 |---|---|---|
 | Backend | Python 3.12 + FastAPI | SQLAlchemy 2, Alembic (migraciones), Pydantic, pytest |
 | Base de datos | PostgreSQL 16 | Fechas en UTC (`timestamptz`) |
-| Frontend | React + Vite + TypeScript | react-router-dom; CSS propio en blanco y negro, sin librerías de UI |
+| Frontend | React + Vite + TypeScript | react-router-dom; CSS propio (monocromo con un acento verde, tema claro y oscuro) y fuentes Geist autoalojadas con `@fontsource-variable`; sin librerías de UI |
 | Contenedores | Docker, docker compose (desarrollo) | Imágenes multi-stage, usuario no root |
 | Dependencias | `pip` + `requirements.txt` / `npm` | |
 
