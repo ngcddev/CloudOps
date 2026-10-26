@@ -44,4 +44,4 @@ spec se puede adelantar con incidentes manuales en las pruebas.
 
 ## Cierre
 
-- [ ] T17 · Demo: de la v2 rota al sitio recuperado con un clic, con MTTR y mensaje al cliente, y mostrar el commit en Gitea y la sincronización en Argo CD — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). *Falta: depende de T13 a T16.* [ ]
+- [x] T17 · Demo: de la v2 rota al sitio recuperado con un clic, con MTTR y mensaje al cliente, y mostrar el commit en Gitea y la sincronización en Argo CD — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). *Cumplida con lo verificado en el clúster y en la web: los cinco puntos de la demo (v2 → v1, rollback con un clic, commit y sincronización, `mitigado` con MTTR y mensaje, rastro en bitácora e historial) se vieron en las corridas de T14 y las pruebas manuales de T15 y T16. No se ensayó como presentación aparte.* [ngcddev]

@@ -19,7 +19,7 @@
 | [006](006-puerta-de-seguridad/spec.md) | Puerta de calidad y seguridad | Sistemas | 3 | RF-08, RF-09, RNF-05, RNF-06 | 005 | Terminada |
 | [007](007-roles-y-auditoria/spec.md) | Acceso por roles y auditoría | Sistemas | 3 | RF-01 (roles), RF-10 | 001, 004, 005 | Terminada |
 | [008](008-monitoreo-e-incidentes/spec.md) | Monitoreo e incidente automático | Sistemas · apoya Industrial | 4 | RF-11, RF-12, RF-13, RNF-07 | 000, 003, 004, 005, 007 | En curso |
-| [009](009-rollback/spec.md) | Recuperación por rollback | Sistemas | 4 | RF-14 | 005, 008 | En curso |
+| [009](009-rollback/spec.md) | Recuperación por rollback | Sistemas | 4 | RF-14 | 005, 008 | Terminada |
 | [010](010-dashboards/spec.md) | Dashboards y métricas del servicio | Sistemas · apoya Industrial | 4 | RF-15, RF-16, RF-17, RNF-10 | 004, 005, 007, 008, 009 | Tareas listas |
 | [011](011-infraestructura-como-codigo/spec.md) | Infraestructura como código | Sistemas | 4 | RNF-08 | 003, 005 | Tareas listas |
 | [012](012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas · apoya Industrial | 5 | RF-18, RF-19, RNF-09 | 008 | Spec y plan |
