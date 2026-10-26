@@ -131,7 +131,7 @@ export default function PortalTicketList() {
             />
           </label>
 
-          <button type="submit" className="button">
+          <button type="submit" className="button button-primary">
             Enviar solicitud
           </button>
         </form>
