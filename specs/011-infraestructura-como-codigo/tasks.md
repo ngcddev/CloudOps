@@ -27,7 +27,7 @@ tanto (las dos escriben en archivos distintos).
 ## Módulo y clientes
 
 - [x] T05 · Crear `modules/client-env/overlay.tftpl` que reproduce el `kustomization.yaml` de los clientes existentes — **Verifica:** `terraform console` renderizando el módulo de `ferreteria` da un texto idéntico al de `gitops/clients/ferreteria/kustomization.yaml` salvo el comentario de cabecera. [ERIC]
-- [ ] T06 · Crear `modules/client-env/main.tf` con `gitea_repository_file` (`ignore_changes = [content]`) y la `Application` con el finalizador, con `depends_on` para el orden de borrado — **Verifica:** `tofu plan` de un cliente de prueba muestra solo esos dos recursos. [ ]
+- [x] T06 · Crear `modules/client-env/main.tf` con `gitea_repository_file` (`ignore_changes = [content]`) y la `Application` con el finalizador, con `depends_on` para el orden de borrado — **Verifica:** `tofu plan` de un cliente de prueba muestra solo esos dos recursos. [ERIC]
 - [ ] T07 · Escribir `clients.tf` con `for_each` sobre `var.clients` y `clients.auto.tfvars.json.example` — **Verifica:** el ejemplo con un cliente de prueba valida y `plan` lo crea. [ ]
 - [ ] T08 · Escribir `infra/client-new.sh` con las validaciones de nombre, plan y dominio — **Verifica:** nombre repetido, plan inexistente y dominio sin `.hub.local` terminan con un mensaje claro y sin tocar nada (CA-8). [ ]
 - [ ] T09 · Crear el cliente de prueba `prueba` de punta a punta y borrarlo — **Verifica:** su `Application` queda `Synced` y `Healthy`, el namespace tiene la cuota de su plan, y tras `destroy -target` el namespace desaparece (CA-1). [ ]
