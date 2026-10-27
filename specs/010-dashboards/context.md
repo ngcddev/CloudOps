@@ -155,6 +155,17 @@ si fallan pero 1 y 2 están bien, se anota como observación, no como fallo de C
 | Duración total | |
 | Navegador y dispositivo | |
 
+**Valores que mostraba el portal al empezar** (anotarlos antes de la primera persona; sirven de
+respuesta correcta para las preguntas 1–4)
+
+| Dato | Valor |
+|---|---|
+| Estado actual | |
+| Disponibilidad del mes | |
+| Objetivo del plan | |
+| Fallas del mes | |
+| Solicitudes abiertas / cerradas | |
+
 **Participantes**
 
 | Código | Perfil (sin nombre) | P1 estado actual | P2 objetivo | P3 fallas | P4 solicitudes | P5 frase | Palabras confusas (P6) | Veredicto |
