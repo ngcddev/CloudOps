@@ -10,8 +10,12 @@
 |---|---|
 | Disponibilidad (uptime) de 99,2 % | "Su sitio se mantuvo disponible dentro del objetivo acordado." |
 | Disponibilidad por debajo del SLO | "Este mes su sitio estuvo disponible menos de lo acordado; le explicamos qué pasó y qué mejoramos." |
+| Sin datos del monitoreo | "Todavía no tenemos datos de su sitio este mes." |
+| Sin incidentes en el mes | "No tuvimos fallas que afectaran su sitio este mes." |
+| Sin solicitudes en el mes | "Este mes no abrió solicitudes." |
 | Error HTTP 500 / 5xx | "Se detectó una falla temporal y se activó el proceso de recuperación." |
 | Sitio caído (`caido`) | "Su sitio no está disponible en este momento; ya estamos trabajando en ello." |
+| Sitio operativo (`operativo`) | "Su sitio está disponible." |
 | Sitio degradado (`degradado`) | "Su sitio funciona, pero más lento o con fallas parciales." |
 | Rollback | "Se restauró una versión estable para mantener la continuidad." |
 | Latencia elevada | "El sitio presentó lentitud y se inició una acción de mejora." |
