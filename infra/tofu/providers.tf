@@ -2,6 +2,10 @@
 terraform {
   required_version = ">= 1.5.0"
 
+  backend "local" {
+    path = "../state/terraform.tfstate"
+  }
+
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"

@@ -39,7 +39,8 @@ resource "kubernetes_manifest" "application" {
       namespace  = "argocd"
       finalizers = ["resources-finalizer.argocd.argoproj.io"]
       labels = {
-        "hub/client" = var.name
+        "app.kubernetes.io/part-of" = "cloudops-hub"
+        "hub/client"                = var.name
       }
     }
     spec = {

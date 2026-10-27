@@ -34,7 +34,7 @@ tanto (las dos escriben en archivos distintos).
 
 ## Migración y pruebas
 
-- [ ] T10 · Importar los tres clientes existentes con `tofu import` y dejar `clients.auto.tfvars.json` con ellos — **Verifica:** el `plan` posterior no recrea nada y los sitios siguen respondiendo (CA-7). [ ]
+- [x] T10 · Importar los tres clientes existentes con `tofu import` y dejar `clients.auto.tfvars.json` con ellos — **Verifica:** el `plan` posterior no recrea nada y los sitios siguen respondiendo (CA-7). [ ]
 - [ ] T11 · Verificar el estado vacío: `apply` dos veces seguidas — **Verifica:** la segunda dice «0 to add, 0 to change, 0 to destroy» (CA-3). [ ]
 - [ ] T12 · Destruir y recrear El Tornillo — **Verifica:** el `plan` final sin diferencias, `Application` `Synced`/`Healthy` y `curl http://ferreteria.hub.local` responde 200 (CA-2). [ ]
 - [ ] T13 · Repetir T11 y T12 con `terraform` — **Verifica:** mismos resultados con el mismo código (CA-5). [ ]
