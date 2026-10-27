@@ -53,3 +53,9 @@
 ## Cierre
 
 - [ ] T20 · Demo: consola, carga y costo, detalle técnico, portal de La Sazón y Prometheus apagado — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+
+## Materiales de apoyo (no cambian el estado de las tareas)
+
+- **T02:** formulario de revisión con Industrial en [revision-industrial.md](revision-industrial.md).
+- **T18 y T20:** script que comprueba los CA en el clúster, [`gitops/pruebas/demo-010.sh`](../../gitops/pruebas/demo-010.sh), y guion de la demo en [demo.md](demo.md).
+- **T19:** guion, preguntas, consentimiento y tabla de resultados en [context.md](context.md).
