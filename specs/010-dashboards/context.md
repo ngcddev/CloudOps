@@ -76,6 +76,11 @@ datos de prueba). En este modo la pantalla muestra:
 > probar los estados «sitio caído» y «sin datos» hay que usar el modo A durante la caída de T18 o
 > después de apagar Prometheus. Si no se alcanzan esos estados, se anota en observaciones; CA-5 no
 > exige recorrerlos todos.
+>
+> Además, en el modo B la falla aparece **abierta** mientras la tarjeta de estado dice que el sitio
+> está **disponible**: los datos de prueba no se actualizan entre sí. Si la persona nota esa
+> contradicción, anotarla en la sección 7; no cuenta como respuesta incorrecta de la pregunta 1. Para
+> una medición oficial sin esa limitación, usar el modo A (clúster real).
 
 ## 3. Reglas de la sesión
 
