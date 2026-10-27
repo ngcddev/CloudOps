@@ -1,6 +1,8 @@
 # frontend/ — Consola de agencia y portal del cliente
 
-React + Vite + TypeScript, con react-router-dom y CSS propio en blanco y negro (sin librerías de UI).
+React + Vite + TypeScript, con react-router-dom y CSS propio (sin librerías de UI): monocromo con un solo acento verde, en tema claro y oscuro.
+Las fuentes Geist se sirven desde el propio paquete (`@fontsource-variable`), sin CDN. Los colores, radios y tipografía
+son variables al inicio de `src/styles.css`; el tema lo fija `data-theme` en `<html>` (script de `index.html` y `ThemeToggle`).
 Ver el [plan 001](../specs/001-clientes-y-planes/plan.md#pantallas).
 
 **Responsable en el módulo 1:** Sistemas 4 (Frontend). El `Dockerfile` lo escribe Sistemas 3

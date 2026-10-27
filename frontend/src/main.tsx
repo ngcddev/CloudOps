@@ -3,6 +3,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
+
 import App from "./App";
 import { AuthProvider } from "./auth";
 import "./styles.css";

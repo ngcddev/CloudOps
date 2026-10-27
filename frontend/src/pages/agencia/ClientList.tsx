@@ -21,7 +21,7 @@ export default function ClientList() {
     <>
       <div className="page-header">
         <h1>Clientes</h1>
-        <Link to="/agencia/clientes/nuevo" className="button">
+        <Link to="/agencia/clientes/nuevo" className="button button-primary">
           + Registrar cliente
         </Link>
       </div>
