@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     # Segundos que la regla SitioCaido espera antes de avisar (su `for: 30s` en observability/). El Hub los
     # resta del `startsAt` para que el incidente empiece a la hora real de la caída. Si cambia uno, cambia el otro.
     alert_confirm_seconds: int = 30
+    # URL de Prometheus (spec 010): la API consulta el job `sitios` y el de Traefik para los dashboards.
+    # Vacío = sin conexión: las tarjetas de disponibilidad responden «sin datos» (CA-8).
+    prometheus_url: str = ""
 
 
 settings = Settings()

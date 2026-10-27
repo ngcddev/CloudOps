@@ -32,7 +32,7 @@
 
 ## Backend · Prometheus
 
-- [ ] T09 · Escribir `integrations/prometheus.py` con `query` (timeout 2 s, caché de 60 s, `None` si falla) y agregar `PROMETHEUS_URL` a `config.py`, `.env.example`, `docker-compose.yml` y `gitops/hub/api.yaml` — **Verifica:** `pytest` con respuesta simulada, vacía y con error: devuelve valor, `None` y `None` sin lanzar. [ ]
+- [x] T09 · Escribir `integrations/prometheus.py` con `query` (timeout 2 s, caché de 60 s, `None` si falla) y agregar `PROMETHEUS_URL` a `config.py`, `.env.example`, `docker-compose.yml` y `gitops/hub/api.yaml` — **Verifica:** `pytest` con respuesta simulada, vacía y con error: devuelve valor, `None` y `None` sin lanzar. [x]
 - [ ] T10 · Sumar disponibilidad del mes, «cumple el objetivo» y latencia p95 a `kpi.py` y a los dos dashboards — **Verifica:** `pytest` con Prometheus simulado: 99,2 % contra un SLO de 99,0 cumple y contra 99,5 no; con Prometheus caído el dashboard responde 200 con `null` (CA-8). [ ]
 - [ ] T11 · Crear `GET /api/dashboard/client/{id}/series?month=` con puntos de disponibilidad y latencia cada 5 min — **Verifica:** en el clúster con la 008, la serie de La Sazón muestra el hueco de la caída de la demo. [ ]
 
