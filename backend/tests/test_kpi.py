@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from app.models.client import Client
+from app.models.incident import Incident
 from app.models.plan import Plan
 from app.models.project import Project
 from app.models.service import Service
@@ -167,3 +168,33 @@ def test_carga_del_tecnico_con_30_horas_registradas_y_120_disponibles_da_25(db):
     # 30 h registradas con 120 disponibles del mes = 25 % de carga
     assert kpi.horas_del_tecnico(db, tecnico.id, MES) == 30.0
     assert kpi.carga_tecnico(db, tecnico.id, MES) == 0.25
+
+
+def test_mttr_del_mes_promedia_las_mitigaciones(db):
+    service = _servicio(db)
+    inicio = datetime(2026, 10, 5, 14, 0, tzinfo=timezone.utc)
+
+    db.add(
+        Incident(
+            service_id=service.id, priority="P1", status="mitigado", source="alerta", title="Sitio caído",
+            started_at=inicio, response_due_at=inicio + timedelta(minutes=15), resolution_due_at=inicio + timedelta(hours=4),
+            mitigated_at=inicio + timedelta(minutes=6),
+        )
+    )
+    db.add(
+        Incident(
+            service_id=service.id, priority="P1", status="cerrado", source="alerta", title="Sitio caído",
+            started_at=inicio, response_due_at=inicio + timedelta(minutes=15), resolution_due_at=inicio + timedelta(hours=4),
+            mitigated_at=inicio + timedelta(minutes=10), closed_at=inicio + timedelta(minutes=12),
+        )
+    )
+    db.commit()
+
+    # (6 min + 10 min) / 2 = 8 min de MTTR
+    assert kpi.mttr_del_mes(db, service.project.client_id, MES) == 8.0
+
+
+def test_mttr_del_mes_sin_incidentes_da_none(db):
+    service = _servicio(db)
+
+    assert kpi.mttr_del_mes(db, service.project.client_id, MES) is None

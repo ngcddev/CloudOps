@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.client import Client
+from app.models.incident import Incident
 from app.models.project import Project
 from app.models.service import Service
 from app.models.ticket import Ticket
@@ -119,6 +120,38 @@ def horas_del_tecnico(db: Session, user_id: int, month: str | None = None) -> fl
 def carga_tecnico(db: Session, user_id: int, month: str | None = None) -> float:
     """Carga del técnico del mes: horas registradas ÷ horas disponibles del mes (`technician_monthly_hours`)."""
     return horas_del_tecnico(db, user_id, month) / float(kpi_params()["technician_monthly_hours"])
+
+
+def mttr_del_mes(db: Session, client_id: int, month: str | None = None) -> float | None:
+    """MTTR del mes: promedio (solución − inicio) en minutos de los incidentes mitigados/cerrados.
+
+    Sin incidentes mitigados en el mes devuelve `None` (CA-9): no se reporta un MTTR de 0 inventado.
+    """
+    inicio, fin = month_bounds(month or _mes_actual())
+    incidents = db.scalars(
+        select(Incident)
+        .join(Incident.service)
+        .join(Service.project)
+        .join(Project.client)
+        .where(
+            Client.id == client_id,
+            Incident.started_at >= inicio,
+            Incident.started_at < fin,
+            Incident.status.in_(["mitigado", "cerrado"]),
+        )
+    ).all()
+    if not incidents:
+        return None
+    minutos = []
+    for incident in incidents:
+        solucion = _as_utc(incident.mitigated_at) or _as_utc(incident.closed_at)
+        inicio_at = _as_utc(incident.started_at)
+        if solucion is None or inicio_at is None:
+            continue
+        minutos.append((solucion - inicio_at).total_seconds() / 60)
+    if not minutos:
+        return None
+    return round(sum(minutos) / len(minutos), 2)
 
 
 def cumplimiento_sla(db: Session, client_id: int, month: str | None = None) -> float | None:
