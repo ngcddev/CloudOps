@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
+from app.integrations.prometheus import Transport
 from app.models.client import Client
 from app.models.incident import Incident
 from app.models.plan import Plan
@@ -198,3 +199,48 @@ def test_mttr_del_mes_sin_incidentes_da_none(db):
     service = _servicio(db)
 
     assert kpi.mttr_del_mes(db, service.project.client_id, MES) is None
+
+
+def _transport_ok(valor: float) -> Transport:
+    def transport(url, timeout):
+        import json
+
+        return 200, json.dumps({"status": "success", "data": {"result": [{"metric": {}, "value": [1761446400, str(valor)]}]}}).encode()
+
+    return transport
+
+
+def _transport_error() -> Transport:
+    def transport(url, timeout):
+        raise OSError("Prometheus caído")
+
+    return transport
+
+
+def test_disponibilidad_del_mes_con_prometheus_simulado(db):
+    service = _servicio(db)
+    client_id = service.project.client_id
+
+    # 0.992 de promedio de probe_success = 99,2 % de disponibilidad
+    assert kpi.disponibilidad_del_mes(db, client_id, MES, transport=_transport_ok(0.992)) == 99.2
+    # El SLO del plan Premium es 99,9: la disponibilidad del mes no cumplió
+    assert kpi.cumple_objetivo(db, client_id, MES, transport=_transport_ok(0.992)) is False
+
+
+def test_cumple_objetivo_con_slo_distinto(db):
+    service = _servicio(db)
+    client_id = service.project.client_id
+    plan = db.get(Plan, service.plan_id)
+    assert plan is not None
+    plan.slo_availability = Decimal("99.0")
+    db.commit()
+
+    assert kpi.cumple_objetivo(db, client_id, MES, transport=_transport_ok(0.992)) is True
+
+
+def test_disponibilidad_con_prometheus_caido_da_none(db):
+    service = _servicio(db)
+
+    assert kpi.disponibilidad_del_mes(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
+    assert kpi.cumple_objetivo(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
+    assert kpi.latencia_p95_del_mes(db, service.project.client_id, "2026-11", transport=_transport_error()) is None

@@ -49,6 +49,16 @@ def test_agency_dashboard_de_un_cliente_devuelve_solo_su_kpi_sin_costo(client, s
     assert "technicians" not in data
 
 
+def test_agency_dashboard_con_prometheus_caido_responde_200_con_null_de_disponibilidad(client, seeded):
+    response = client.get("/api/dashboard/agency", params={"month": "2026-11"})
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    for item in data["clients"]:
+        assert item["availability"] is None
+        assert item["cumple_objetivo"] is None
+
+
 def test_agency_dashboard_de_otro_cliente_responde_404_para_un_cliente_que_pide(as_client, seeded):
     response = as_client.get("/api/dashboard/client/2", params={"month": "2026-10"})
 

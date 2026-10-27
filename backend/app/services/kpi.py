@@ -8,8 +8,11 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.integrations import prometheus
+from app.integrations.prometheus import Transport
 from app.models.client import Client
 from app.models.incident import Incident
+from app.models.plan import Plan
 from app.models.project import Project
 from app.models.service import Service
 from app.models.ticket import Ticket
@@ -104,6 +107,64 @@ def horas_por_cliente(db: Session, client_id: int, month: str | None = None) -> 
 def costo_por_cliente(db: Session, client_id: int, month: str | None = None) -> float:
     """Costo del mes del cliente: horas registradas × `hourly_cost` (docs/kpi.md, T01)."""
     return horas_por_cliente(db, client_id, month) * float(kpi_params()["hourly_cost"])
+
+
+def _servicio_de_cliente(db: Session, client_id: int) -> Service | None:
+    """Servicio principal del cliente, para armar las consultas de Prometheus con su namespace."""
+    return db.scalar(
+        select(Service)
+        .join(Service.project)
+        .join(Project.client)
+        .where(Client.id == client_id)
+        .order_by(Service.id)
+    )
+
+
+def disponibilidad_del_mes(
+    db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
+) -> float | None:
+    """Disponibilidad del mes del cliente: `avg_over_time(probe_success{client="<namespace>"}[<mes>]) × 100`.
+
+    Con Prometheus caído o sin serie devuelve `None` («sin datos»): nunca un 100 % inventado (CA-8).
+    """
+    service = _servicio_de_cliente(db, client_id)
+    if service is None:
+        return None
+    promql = f'probe_success{{client="{service.namespace}"}}'
+    valor = prometheus.query(promql, month or mes_actual(), transport=transport)
+    if valor is None:
+        return None
+    return round(valor * 100, 2)
+
+
+def cumple_objetivo(
+    db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
+) -> bool | None:
+    """La disponibilidad del mes cumplió el SLO del plan del cliente? `None` si no hay datos."""
+    disponibilidad = disponibilidad_del_mes(db, client_id, month, transport=transport)
+    if disponibilidad is None:
+        return None
+    slo = db.scalar(
+        select(Plan.slo_availability)
+        .join(Service.plan)
+        .join(Service.project)
+        .join(Project.client)
+        .where(Client.id == client_id)
+    )
+    if slo is None:
+        return None
+    return disponibilidad >= float(slo)
+
+
+def latencia_p95_del_mes(
+    db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
+) -> float | None:
+    """Latencia p95 del mes con las métricas de Traefik que expone la spec 008."""
+    service = _servicio_de_cliente(db, client_id)
+    if service is None:
+        return None
+    promql = 'histogram_quantile(0.95, sum by (le) (rate(traefik_service_request_duration_seconds_bucket{service=~"cliente-.*"}[5m])))'
+    return prometheus.query(promql, month or mes_actual(), transport=transport)
 
 
 def horas_del_tecnico(db: Session, user_id: int, month: str | None = None) -> float:

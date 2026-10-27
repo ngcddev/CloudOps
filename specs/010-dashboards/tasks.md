@@ -18,22 +18,22 @@
 
 ## Definición
 
-- [x] T01 · Crear `docs/kpi.md` con las fórmulas de la tabla del plan marcadas «provisional, valida Industrial» y `seed/kpi_params.json` con `hourly_cost`, `technician_monthly_hours` y `at_risk_ratio` — **Verifica:** el JSON es válido y cada KPI de CA-1 y CA-2 tiene fórmula, fuente y meta en el documento. [x]
+- [x] T01 · Crear `docs/kpi.md` con las fórmulas de la tabla del plan marcadas «provisional, valida Industrial» y `seed/kpi_params.json` con `hourly_cost`, `technician_monthly_hours` y `at_risk_ratio` — **Verifica:** el JSON es válido y cada KPI de CA-1 y CA-2 tiene fórmula, fuente y meta en el documento. [Andres]
 - [ ] T02 · Revisar con Industrial las fórmulas provisionales y registrar los cambios en `docs/kpi.md` — **Verifica:** el documento queda sin la marca «provisional» o con los cambios pedidos anotados. [ ]
 
 ## Backend · datos del Hub
 
-- [ ] T03 · Escribir `services/kpi.py` con el mes en America/Bogota y las funciones de solicitudes abiertas/cerradas y cumplimiento de SLA — **Verifica:** `pytest` con tickets semilla: 4 cerrados dentro del plazo y 1 fuera dan 80 %; sin terminados da `None`. [ ]
-- [x] T04 · Agregar horas y costo por cliente (Σ `work_logs.hours` × `hourly_cost`) — **Verifica:** `pytest`: 3 horas + 2 horas en solicitudes de La Sazón a 25 000 por hora dan 125 000. [x]
-- [x] T05 · Agregar la carga por técnico (horas del mes ÷ `technician_monthly_hours`) — **Verifica:** `pytest`: 30 h registradas con 120 disponibles dan 25 %. [x]
-- [x] T06 · Agregar el MTTR del mes desde los incidentes `mitigado`/`cerrado` — **Verifica:** `pytest`: incidentes de 6 y 10 min dan 8 min; sin incidentes da `None` (CA-9). [x]
-- [x] T07 · Crear `GET /api/dashboard/agency?month=` — **Verifica:** `pytest`: devuelve los 3 clientes con sus KPI y la carga de los técnicos; como cliente → 403. [x]
-- [x] T08 · Crear `GET /api/dashboard/client/{id}?month=` sin costo, horas ni nombres de técnicos — **Verifica:** `pytest`: La Sazón ve lo suyo, pedir el de El Tornillo → 404, y la respuesta no contiene `cost` ni `hours` (CA-7). [x]
+- [x] T03 · Escribir `services/kpi.py` con el mes en America/Bogota y las funciones de solicitudes abiertas/cerradas y cumplimiento de SLA — **Verifica:** `pytest` con tickets semilla: 4 cerrados dentro del plazo y 1 fuera dan 80 %; sin terminados da `None`. [Andres]
+- [x] T04 · Agregar horas y costo por cliente (Σ `work_logs.hours` × `hourly_cost`) — **Verifica:** `pytest`: 3 horas + 2 horas en solicitudes de La Sazón a 25 000 por hora dan 125 000. [Andres]
+- [x] T05 · Agregar la carga por técnico (horas del mes ÷ `technician_monthly_hours`) — **Verifica:** `pytest`: 30 h registradas con 120 disponibles dan 25 %. [Andres]
+- [x] T06 · Agregar el MTTR del mes desde los incidentes `mitigado`/`cerrado` — **Verifica:** `pytest`: incidentes de 6 y 10 min dan 8 min; sin incidentes da `None` (CA-9). [Andres]
+- [x] T07 · Crear `GET /api/dashboard/agency?month=` — **Verifica:** `pytest`: devuelve los 3 clientes con sus KPI y la carga de los técnicos; como cliente → 403. [Andres]
+- [x] T08 · Crear `GET /api/dashboard/client/{id}?month=` sin costo, horas ni nombres de técnicos — **Verifica:** `pytest`: La Sazón ve lo suyo, pedir el de El Tornillo → 404, y la respuesta no contiene `cost` ni `hours` (CA-7). [Andres]
 
 ## Backend · Prometheus
 
-- [x] T09 · Escribir `integrations/prometheus.py` con `query` (timeout 2 s, caché de 60 s, `None` si falla) y agregar `PROMETHEUS_URL` a `config.py`, `.env.example`, `docker-compose.yml` y `gitops/hub/api.yaml` — **Verifica:** `pytest` con respuesta simulada, vacía y con error: devuelve valor, `None` y `None` sin lanzar. [x]
-- [ ] T10 · Sumar disponibilidad del mes, «cumple el objetivo» y latencia p95 a `kpi.py` y a los dos dashboards — **Verifica:** `pytest` con Prometheus simulado: 99,2 % contra un SLO de 99,0 cumple y contra 99,5 no; con Prometheus caído el dashboard responde 200 con `null` (CA-8). [ ]
+- [x] T09 · Escribir `integrations/prometheus.py` con `query` (timeout 2 s, caché de 60 s, `None` si falla) y agregar `PROMETHEUS_URL` a `config.py`, `.env.example`, `docker-compose.yml` y `gitops/hub/api.yaml` — **Verifica:** `pytest` con respuesta simulada, vacía y con error: devuelve valor, `None` y `None` sin lanzar. [Andres]
+- [x] T10 · Sumar disponibilidad del mes, «cumple el objetivo» y latencia p95 a `kpi.py` y a los dos dashboards — **Verifica:** `pytest` con Prometheus simulado: 99,2 % contra un SLO de 99,0 cumple y contra 99,5 no; con Prometheus caído el dashboard responde 200 con `null` (CA-8). [Andres]
 - [ ] T11 · Crear `GET /api/dashboard/client/{id}/series?month=` con puntos de disponibilidad y latencia cada 5 min — **Verifica:** en el clúster con la 008, la serie de La Sazón muestra el hueco de la caída de la demo. [ ]
 
 ## Frontend

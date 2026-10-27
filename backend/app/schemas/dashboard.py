@@ -9,6 +9,10 @@ class ClientKpi(BaseModel):
     client_name: str
     service_name: str | None = None
     service_status: str = "operativo"
+    # Disponibilidad del mes y SLO del plan (spec 010, T10); null con Prometheus caído o sin serie
+    availability: float | None = None
+    cumple_objetivo: bool | None = None
+    latency_p95: float | None = None
     # SLA y MTTR calculados desde el Hub (docs/kpi.md, T03 y T06)
     sla_compliance: float | None = None
     mttr: float | None = None
