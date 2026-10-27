@@ -19,7 +19,7 @@
 ## Definición
 
 - [x] T01 · Crear `docs/kpi.md` con las fórmulas de la tabla del plan marcadas «provisional, valida Industrial» y `seed/kpi_params.json` con `hourly_cost`, `technician_monthly_hours` y `at_risk_ratio` — **Verifica:** el JSON es válido y cada KPI de CA-1 y CA-2 tiene fórmula, fuente y meta en el documento. [Andres]
-- [ ] T02 · Revisar con Industrial las fórmulas provisionales y registrar los cambios en `docs/kpi.md` — **Verifica:** el documento queda sin la marca «provisional» o con los cambios pedidos anotados. [Andres]
+- [ ] T02 · Revisar con Industrial las fórmulas provisionales y registrar los cambios en `docs/kpi.md` — **Verifica:** el documento queda sin la marca «provisional» o con los cambios pedidos anotados. [ ]
 
 ## Backend · datos del Hub
 
@@ -38,7 +38,7 @@
 
 ## Frontend
 
-- [ ] T12 · Agregar a `frontend/src/api.ts` los tipos y llamadas de dashboards, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. []
+- [x] T12 · Agregar a `frontend/src/api.ts` los tipos y llamadas de dashboards, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. [Andres]
 - [ ] T13 · Crear `frontend/src/texts/cliente.ts` con los textos del portal tomados del glosario (disponibilidad dentro y por debajo del objetivo, sitio caído, sin datos, sin incidentes) — **Verifica:** cada frase coincide con una fila de [`docs/glosario.md`](../../docs/glosario.md). [ ]
 - [ ] T14 · Crear el panel de la agencia en `/agencia` con la tabla por cliente, las tarjetas de KPI y la carga por técnico, con texto e ícono para el estado — **Verifica:** con datos de prueba aparecen los 3 clientes y «sin datos» cuando un valor es nulo (CA-1, CA-2, CA-8). [ ]
 - [ ] T15 · Crear `/agencia/clientes/:id/metricas` con las gráficas SVG de disponibilidad y latencia y el enlace a Grafana — **Verifica:** la gráfica con datos de prueba muestra el hueco de una caída y el enlace abre `grafana.hub.local` (CA-6). [ ]
