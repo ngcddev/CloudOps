@@ -35,7 +35,7 @@ tanto (las dos escriben en archivos distintos).
 ## Migración y pruebas
 
 - [x] T10 · Importar los tres clientes existentes con `tofu import` y dejar `clients.auto.tfvars.json` con ellos — **Verifica:** el `plan` posterior no recrea nada y los sitios siguen respondiendo (CA-7). [ ]
-- [ ] T11 · Verificar el estado vacío: `apply` dos veces seguidas — **Verifica:** la segunda dice «0 to add, 0 to change, 0 to destroy» (CA-3). [ ]
+- [x] T11 · Verificar el estado vacío: `apply` dos veces seguidas — **Verifica:** la segunda dice «0 to add, 0 to change, 0 to destroy» (CA-3). [ERIC]
 - [ ] T12 · Destruir y recrear El Tornillo — **Verifica:** el `plan` final sin diferencias, `Application` `Synced`/`Healthy` y `curl http://ferreteria.hub.local` responde 200 (CA-2). [ ]
 - [ ] T13 · Repetir T11 y T12 con `terraform` — **Verifica:** mismos resultados con el mismo código (CA-5). [ ]
 - [ ] T14 · Escribir `infra/pruebas/crear-cliente.sh` (crear, comprobar cuota y etiquetas contra `seed/plans.json`, destruir) y comprobar con `git grep` que no hay token ni estado en el repo — **Verifica:** el script termina en verde y `git grep -nE "GITEA_TOKEN=|tfstate"` no encuentra valores (CA-4, CA-6). [ ]
