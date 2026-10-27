@@ -133,8 +133,11 @@ contenido de `hub-gitops` manda; los cambios del monorepo en `gitops/` no se pro
 
 ## Una Application por cliente
 
+Desde T10 de la spec 011, las tres Applications existentes están administradas por OpenTofu usando
+`infra/tofu/clients.auto.tfvars.json`. Los YAML de `gitops/platform/argocd/applications/` quedan como
+manifiestos de bootstrap; no los vuelvas a aplicar sobre recursos ya importados. Para comprobarlas:
+
 ```bash
-kubectl apply -k gitops/platform/argocd/applications
 kubectl -n argocd get applications     # las 3, Synced y Healthy
 ```
 
@@ -144,7 +147,8 @@ el del namespace: el Hub la consulta por ese nombre. Argo CD llega a Gitea por e
 (`gitea.gitea.svc:3000`), no por `gitea.hub.local`, que los Pods no resuelven.
 
 Si el sitio ya se había aplicado a mano con `kubectl apply -k` (spec 003), Argo CD lo adopta sin
-recrearlo porque los manifiestos son los mismos.
+recrearlo porque los manifiestos son los mismos. OpenTofu administra el overlay y la Application;
+Argo CD sigue administrando los recursos Kubernetes de cada sitio.
 
 ## Tokens del Hub (Gitea y Argo CD)
 
@@ -153,7 +157,7 @@ mínimo permiso, y ninguno vive en el repo:
 
 | Token | Quién | Alcance |
 |---|---|---|
-| `GITEA_TOKEN` | usuario `hub-bot` | `write:repository`, y `hub-bot` es colaborador solo de `forja-digital/hub-gitops` |
+| `GITEA_TOKEN` | usuario `hub-bot` | `read:user` y `write:repository`; `hub-bot` es colaborador solo de `forja-digital/hub-gitops` |
 | `ARGOCD_TOKEN` | cuenta local `hub-readonly` | rol `readonly`: lee aplicaciones, no sincroniza ni borra |
 
 ```bash
