@@ -32,11 +32,31 @@ def test_agency_dashboard_devuelve_los_clientes_con_sus_kpi(client, seeded):
     assert isinstance(data["technicians"], list) and data["technicians"]
 
 
-def test_agency_dashboard_de_un_cliente_en_otro_mes_sigue_respondiendo(client, seeded):
-    assert client.get("/api/dashboard/agency").status_code == 200
-
-
 def test_agency_dashboard_cliente_no_ve_el_panel(as_client, seeded):
     response = as_client.get("/api/dashboard/agency")
 
     assert response.status_code == 403
+
+
+def test_agency_dashboard_de_un_cliente_devuelve_solo_su_kpi_sin_costo(client, seeded):
+    response = client.get("/api/dashboard/client/1", params={"month": "2026-10"})
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["client_id"] == 1
+    assert "cost" not in data
+    assert "hours" not in data
+    assert "technicians" not in data
+
+
+def test_agency_dashboard_de_otro_cliente_responde_404_para_un_cliente_que_pide(as_client, seeded):
+    response = as_client.get("/api/dashboard/client/2", params={"month": "2026-10"})
+
+    assert response.status_code == 404
+
+
+def test_cliente_ve_solo_el_kpi_de_su_propio_cliente(as_client, seeded):
+    response = as_client.get("/api/dashboard/client/1", params={"month": "2026-10"})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["client_id"] == 1

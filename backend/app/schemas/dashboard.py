@@ -20,6 +20,19 @@ class ClientKpi(BaseModel):
     cost: float = 0.0
 
 
+class ClientDashboardKpi(BaseModel):
+    """KPI del mes del cliente para el portal: sin costo, horas ni nombres de técnicos (CA-7)."""
+
+    client_id: int
+    client_name: str
+    service_name: str | None = None
+    service_status: str = "operativo"
+    sla_compliance: float | None = None
+    mttr: float | None = None
+    open_tickets: int = 0
+    closed_tickets: int = 0
+
+
 class TechnicianLoad(BaseModel):
     """Carga de un técnico del mes: horas registradas ÷ horas disponibles (CA-2, T05)."""
 
