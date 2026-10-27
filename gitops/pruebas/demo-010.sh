@@ -138,6 +138,16 @@ echo "$FICHA" | grep -qi '"cost"\|"hours"\|"technicians"' && falla "el portal mu
   || ok "sin costo, horas ni técnicos (CA-7)"
 [ "$(codigo -H "Authorization: Bearer ${TOKEN_CLIENTE}" "${HUB}/api/dashboard/client/2?month=${MES}")" = "404" ] \
   && ok "pedir El Tornillo da 404" || falla "el cliente pudo ver otro cliente"
+[ "$(codigo -H "Authorization: Bearer ${TOKEN_CLIENTE}" "${HUB}/api/dashboard/client/${CLIENTE_ID}/incidents?month=${MES}")" = "200" ] \
+  && ok "el portal puede listar sus fallas (CA-4)" || falla "el portal no puede listar sus fallas (¿endpoint solo de agencia?)"
+INCIDENTES_PORTAL="$(cliente_get "${HUB}/api/dashboard/client/${CLIENTE_ID}/incidents?month=${MES}")"
+echo "$INCIDENTES_PORTAL" | grep -qi '"assignee_name"\|"root_cause"' \
+  && falla "las fallas del portal traen técnicos o causa interna" \
+  || ok "las fallas del portal no traen técnicos ni causa interna (CA-7)"
+[ "$(codigo -H "Authorization: Bearer ${TOKEN_CLIENTE}" "${HUB}/api/dashboard/client/2/incidents?month=${MES}")" = "404" ] \
+  && ok "pedir las fallas de El Tornillo da 404" || falla "el cliente pudo ver fallas de otro cliente"
+[ "$(codigo -H "Authorization: Bearer ${TOKEN_CLIENTE}" "${HUB}/api/tickets?client_id=${CLIENTE_ID}")" = "200" ] \
+  && ok "el portal puede listar sus solicitudes" || falla "el portal no puede listar sus solicitudes"
 
 # ---------- 3. Serie de 5 minutos (CA-6) ----------
 
