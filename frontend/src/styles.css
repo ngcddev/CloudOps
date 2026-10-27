@@ -637,3 +637,104 @@ h4 {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* ---------- Tableros (spec 010) ---------- */
+
+.month-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.month-picker input {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space);
+  margin-bottom: var(--space);
+}
+
+.card.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.kpi-label {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.load-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.load-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.load-bar {
+  margin-top: 4px;
+  height: 12px;
+  border: 1px solid var(--ink);
+}
+
+.load-bar span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+
+/* Gráficas SVG escritas a mano (spec 010, T15) */
+.chart {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.chart-target {
+  stroke: var(--muted);
+  stroke-dasharray: 4 4;
+  stroke-width: 1.5;
+}
+
+.chart-gap {
+  fill: var(--line);
+}
+
+.chart-label {
+  fill: var(--muted);
+  font-size: 12px;
+}

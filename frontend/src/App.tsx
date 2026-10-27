@@ -10,6 +10,7 @@ import ClientForm from "./pages/agencia/ClientForm";
 import AuditLogList from "./pages/agencia/AuditLogList";
 import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
+import Dashboard from "./pages/agencia/Dashboard";
 import IncidentDetail from "./pages/agencia/IncidentDetail";
 import IncidentList from "./pages/agencia/IncidentList";
 import ServiceList from "./pages/agencia/ServiceList";
@@ -26,7 +27,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route element={<RequireRole role="agencia" />}>
         <Route path="/agencia" element={<AgencyLayout />}>
-          <Route index element={<Navigate to="clientes" replace />} />
+          <Route index element={<Dashboard />} />
           <Route path="clientes" element={<ClientList />} />
           <Route path="clientes/nuevo" element={<ClientForm />} />
           <Route path="clientes/:id" element={<ClientDetail />} />
