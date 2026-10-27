@@ -173,10 +173,15 @@ Los dos primeros ya están corregidos en `backend/app/services/kpi.py`; el resto
 | 6 | La latencia p95 no tiene meta numérica («latencia elevada inicia mejora») | No se puede decir si cumple o no | Que Industrial fije un umbral por plan (por ejemplo, p95 ≤ 1 s) | `docs/kpi.md` |
 | 7 | SLA: el documento dice tickets + incidentes; el código solo cuenta tickets | Dos lecturas distintas del mismo KPI | Elegir la opción A o B de la sección 2 | `docs/kpi.md` o tarea de seguimiento |
 
-**Propuesta del equipo para agilizar la reunión** (no aprobada; la decide Industrial):
+**Postura del equipo confirmada el 26 oct 2026** (pendiente de la firma de Industrial; no se aplica a
+`docs/kpi.md` hasta que la firme):
 
 - Aprobar las fórmulas 1–3 y 5–9 tal como están.
 - Fórmula 4: **opción A** (SLA solo con tickets) y corregir la frase de `docs/kpi.md`.
 - Aprobar los parámetros 25 000 COP/h, 120 h, 0,8 y COP; aclarar si las 120 h son de soporte.
-- Aprobar los SLO 99,0 / 99,5 / 99,9 % y decidir si el mes se mide completo o solo en horario de soporte.
+- Aprobar los SLO 99,0 / 99,5 / 99,9 % medidos sobre el **mes calendario completo**.
 - Los hallazgos 3–6 se corrigen en tareas de seguimiento, no en T02.
+
+> **Estado de T02:** abierta. Falta la reunión con Industrial, las respuestas de las secciones 2–5 y la
+> firma de la sección 6. Con esa firma se quita la marca «provisional, valida Industrial» y se aplica la
+> opción A del SLA.
