@@ -130,7 +130,7 @@ export default function PortalHome() {
             {incidents.length === 0 ? (
               <p>{textosCliente.sinIncidentes}</p>
             ) : (
-              <ul className="plain-list">
+              <ul className="portal-list">
                 {incidents.map((incident) => (
                   <li key={incident.id}>
                     <strong>{incident.title}</strong>
@@ -151,7 +151,7 @@ export default function PortalHome() {
             {tickets.length === 0 ? (
               <p>{textosCliente.sinSolicitudes}</p>
             ) : (
-              <ul className="plain-list">
+              <ul className="portal-list">
                 {tickets.map((ticket) => (
                   <li key={ticket.id}>
                     <strong>{ticket.title}</strong>

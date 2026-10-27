@@ -1,5 +1,6 @@
 // Marco del portal del cliente: encabezado con el nombre de quien entró y "Cerrar sesión" (spec 007).
-import { Outlet, useNavigate } from "react-router-dom";
+// Menú con «Inicio» y «Solicitudes» (spec 010, T17).
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth";
 import MockDataNotice from "./MockDataNotice";
@@ -17,6 +18,12 @@ export default function PortalLayout() {
     <div className="portal">
       <header className="portal-header">
         <div className="brand">Forja Digital · Portal de clientes</div>
+        <nav className="portal-nav" aria-label="Menú del portal">
+          <NavLink to="/portal" end>
+            Inicio
+          </NavLink>
+          <NavLink to="/portal/solicitudes">Solicitudes</NavLink>
+        </nav>
         <div className="session">
           <span>{user?.name}</span>
           {!mock && (

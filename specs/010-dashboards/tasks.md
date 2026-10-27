@@ -43,7 +43,7 @@
 - [x] T14 · Crear el panel de la agencia en `/agencia` con la tabla por cliente, las tarjetas de KPI y la carga por técnico, con texto e ícono para el estado — **Verifica:** con datos de prueba aparecen los 3 clientes y «sin datos» cuando un valor es nulo (CA-1, CA-2, CA-8). [Andres]
 - [x] T15 · Crear `/agencia/clientes/:id/metricas` con las gráficas SVG de disponibilidad y latencia y el enlace a Grafana — **Verifica:** la gráfica con datos de prueba muestra el hueco de una caída y el enlace abre `grafana.hub.local` (CA-6). [Andres]
 - [x] T16 · Crear el inicio de `/portal` con estado actual, disponibilidad vs. objetivo, incidentes y solicitudes del mes, solo con `texts/cliente.ts` — **Verifica:** `git grep -nEi "P1|MTTR|Prometheus|rollback|deploy" frontend/src/pages/portal` no encuentra jerga (CA-4). [Andres]
-- [ ] T17 · Habilitar «Inicio» en los menús de la consola y del portal — **Verifica:** entrar como Sofía lleva a `/agencia` y como Marta a `/portal`, cada una con lo suyo. [ ]
+- [x] T17 · Habilitar «Inicio» en los menús de la consola y del portal — **Verifica:** entrar como Sofía lleva a `/agencia` y como Marta a `/portal`, cada una con lo suyo. [Andres]
 
 ## Validación
 

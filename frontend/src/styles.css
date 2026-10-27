@@ -711,7 +711,7 @@ h4 {
   background: var(--ink);
 }
 
-/* Gráficas SVG escritas a mano (spec 010, T15) */
+/* Grï¿½ficas SVG escritas a mano (spec 010, T15) */
 .chart {
   width: 100%;
   height: auto;
@@ -746,7 +746,7 @@ h4 {
   gap: var(--space);
 }
 
-.plain-list {
+.portal-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -754,12 +754,29 @@ h4 {
   gap: 12px;
 }
 
-.plain-list li {
+.portal-list li {
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
 }
 
-.plain-list li:last-child {
+.portal-list li:last-child {
   padding-bottom: 0;
   border-bottom: 0;
+}
+
+.portal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+}
+
+.portal-nav a {
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.portal-nav a.active {
+  border-bottom-color: var(--ink);
+  font-weight: 700;
 }
