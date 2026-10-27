@@ -244,3 +244,58 @@ def test_disponibilidad_con_prometheus_caido_da_none(db):
     assert kpi.disponibilidad_del_mes(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
     assert kpi.cumple_objetivo(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
     assert kpi.latencia_p95_del_mes(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
+
+
+def _transport_rango(valores: list[float]) -> Transport:
+    def transport(url, timeout):
+        import json
+        from datetime import datetime, timezone
+
+        inicio = datetime(2026, 10, 1, tzinfo=timezone.utc).timestamp()
+        return 200, json.dumps(
+            {
+                "status": "success",
+                "data": {
+                    "result": [
+                        {
+                            "metric": {},
+                            "values": [
+                                [inicio + i * 300, str(valor)] for i, valor in enumerate(valores)
+                            ],
+                        }
+                    ],
+                },
+            }
+        ).encode()
+
+    return transport
+
+
+def test_serie_disponibilidad_devuelve_porcentajes_cada_5_min(db):
+    service = _servicio(db)
+
+    puntos = kpi.serie_disponibilidad(
+        db, service.project.client_id, MES, transport=_transport_rango([0.99, 0.0, 1.0])
+    )
+
+    assert puntos is not None
+    assert [valor for _, valor in puntos] == [99.0, 0.0, 100.0]
+    assert (puntos[1][0] - puntos[0][0]).total_seconds() == 300
+
+
+def test_serie_latencia_p95_devuelve_los_puntos(db):
+    service = _servicio(db)
+
+    puntos = kpi.serie_latencia_p95(
+        db, service.project.client_id, MES, transport=_transport_rango([0.2, 0.45])
+    )
+
+    assert puntos is not None
+    assert [valor for _, valor in puntos] == [0.2, 0.45]
+
+
+def test_series_con_prometheus_caido_dan_none(db):
+    service = _servicio(db)
+
+    assert kpi.serie_disponibilidad(db, service.project.client_id, MES, transport=_transport_error()) is None
+    assert kpi.serie_latencia_p95(db, service.project.client_id, MES, transport=_transport_error()) is None

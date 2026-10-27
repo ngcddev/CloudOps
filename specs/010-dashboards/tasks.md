@@ -19,7 +19,7 @@
 ## Definición
 
 - [x] T01 · Crear `docs/kpi.md` con las fórmulas de la tabla del plan marcadas «provisional, valida Industrial» y `seed/kpi_params.json` con `hourly_cost`, `technician_monthly_hours` y `at_risk_ratio` — **Verifica:** el JSON es válido y cada KPI de CA-1 y CA-2 tiene fórmula, fuente y meta en el documento. [Andres]
-- [ ] T02 · Revisar con Industrial las fórmulas provisionales y registrar los cambios en `docs/kpi.md` — **Verifica:** el documento queda sin la marca «provisional» o con los cambios pedidos anotados. [ ]
+- [ ] T02 · Revisar con Industrial las fórmulas provisionales y registrar los cambios en `docs/kpi.md` — **Verifica:** el documento queda sin la marca «provisional» o con los cambios pedidos anotados. [Andres]
 
 ## Backend · datos del Hub
 
@@ -34,11 +34,11 @@
 
 - [x] T09 · Escribir `integrations/prometheus.py` con `query` (timeout 2 s, caché de 60 s, `None` si falla) y agregar `PROMETHEUS_URL` a `config.py`, `.env.example`, `docker-compose.yml` y `gitops/hub/api.yaml` — **Verifica:** `pytest` con respuesta simulada, vacía y con error: devuelve valor, `None` y `None` sin lanzar. [Andres]
 - [x] T10 · Sumar disponibilidad del mes, «cumple el objetivo» y latencia p95 a `kpi.py` y a los dos dashboards — **Verifica:** `pytest` con Prometheus simulado: 99,2 % contra un SLO de 99,0 cumple y contra 99,5 no; con Prometheus caído el dashboard responde 200 con `null` (CA-8). [Andres]
-- [ ] T11 · Crear `GET /api/dashboard/client/{id}/series?month=` con puntos de disponibilidad y latencia cada 5 min — **Verifica:** en el clúster con la 008, la serie de La Sazón muestra el hueco de la caída de la demo. [ ]
+- [x] T11 · Crear `GET /api/dashboard/client/{id}/series?month=` con puntos de disponibilidad y latencia cada 5 min — **Verifica:** en el clúster con la 008, la serie de La Sazón muestra el hueco de la caída de la demo. [Andres]
 
 ## Frontend
 
-- [ ] T12 · Agregar a `frontend/src/api.ts` los tipos y llamadas de dashboards, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. [ ]
+- [ ] T12 · Agregar a `frontend/src/api.ts` los tipos y llamadas de dashboards, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. []
 - [ ] T13 · Crear `frontend/src/texts/cliente.ts` con los textos del portal tomados del glosario (disponibilidad dentro y por debajo del objetivo, sitio caído, sin datos, sin incidentes) — **Verifica:** cada frase coincide con una fila de [`docs/glosario.md`](../../docs/glosario.md). [ ]
 - [ ] T14 · Crear el panel de la agencia en `/agencia` con la tabla por cliente, las tarjetas de KPI y la carga por técnico, con texto e ícono para el estado — **Verifica:** con datos de prueba aparecen los 3 clientes y «sin datos» cuando un valor es nulo (CA-1, CA-2, CA-8). [ ]
 - [ ] T15 · Crear `/agencia/clientes/:id/metricas` con las gráficas SVG de disponibilidad y latencia y el enlace a Grafana — **Verifica:** la gráfica con datos de prueba muestra el hueco de una caída y el enlace abre `grafana.hub.local` (CA-6). [ ]

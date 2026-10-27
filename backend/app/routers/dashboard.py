@@ -8,7 +8,14 @@ from app.deps import client_scope, current_user, require_agency
 from app.models.client import Client
 from app.models.project import Project
 from app.models.user import User
-from app.schemas.dashboard import AgencyDashboard, ClientDashboardKpi, ClientKpi, TechnicianLoad
+from app.schemas.dashboard import (
+    AgencyDashboard,
+    ClientDashboardKpi,
+    ClientKpi,
+    ClientSeries,
+    SeriesPoint,
+    TechnicianLoad,
+)
 from app.services import kpi
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -83,8 +90,42 @@ def dashboard_client(
         client_name=client.name,
         service_name=service.name if service is not None else None,
         service_status=service.status if service is not None else "operativo",
+        availability=kpi.disponibilidad_del_mes(db, client.id, month),
+        cumple_objetivo=kpi.cumple_objetivo(db, client.id, month),
+        latency_p95=kpi.latencia_p95_del_mes(db, client.id, month),
         sla_compliance=kpi.cumplimiento_sla(db, client.id, month),
         mttr=kpi.mttr_del_mes(db, client.id, month),
         open_tickets=kpi.solicitudes_abiertas(db, client.id, month),
         closed_tickets=kpi.solicitudes_cerradas(db, client.id, month),
+    )
+
+
+@router.get("/client/{client_id}/series", response_model=ClientSeries)
+def dashboard_client_series(
+    client_id: int,
+    month: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_agency),
+) -> ClientSeries:
+    """Series del mes cada 5 min para las gráficas del detalle técnico (CA-6, T11).
+
+    Con Prometheus caído devuelve listas vacías y el panel muestra «sin datos» (CA-8).
+    """
+    month = month or kpi.mes_actual()
+    client = db.get(Client, client_id)
+    if client is None:
+        raise HTTPException(status_code=404, detail="El cliente no existe.")
+    slo = kpi.objetivo_disponibilidad(db, client.id)
+    return ClientSeries(
+        client_id=client.id,
+        month=month,
+        slo_availability=float(slo) if slo is not None else None,
+        availability=[
+            SeriesPoint(timestamp=marca, value=valor)
+            for marca, valor in kpi.serie_disponibilidad(db, client.id, month) or []
+        ],
+        latency_p95=[
+            SeriesPoint(timestamp=marca, value=valor)
+            for marca, valor in kpi.serie_latencia_p95(db, client.id, month) or []
+        ],
     )

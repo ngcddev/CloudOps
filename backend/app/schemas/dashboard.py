@@ -1,4 +1,6 @@
-# Esquemas de salida del panel de la agencia: KPIs por cliente, totales y carga por técnico (spec 010, T07).
+# Esquemas de salida del panel de la agencia y del portal: KPIs, carga y series (spec 010, T07-T11).
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -31,6 +33,10 @@ class ClientDashboardKpi(BaseModel):
     client_name: str
     service_name: str | None = None
     service_status: str = "operativo"
+    # Disponibilidad y SLO del plan (spec 010, T10); null con Prometheus caído o sin serie
+    availability: float | None = None
+    cumple_objetivo: bool | None = None
+    latency_p95: float | None = None
     sla_compliance: float | None = None
     mttr: float | None = None
     open_tickets: int = 0
@@ -52,3 +58,20 @@ class AgencyDashboard(BaseModel):
     month: str
     clients: list[ClientKpi] = []
     technicians: list[TechnicianLoad] = []
+
+
+class SeriesPoint(BaseModel):
+    """Un punto de una gráfica: instante en UTC y valor (porcentaje o segundos)."""
+
+    timestamp: datetime
+    value: float
+
+
+class ClientSeries(BaseModel):
+    """Series del mes de un cliente para las gráficas del detalle técnico (CA-6, T11)."""
+
+    client_id: int
+    month: str
+    slo_availability: float | None = None
+    availability: list[SeriesPoint] = []
+    latency_p95: list[SeriesPoint] = []
