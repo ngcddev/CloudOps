@@ -30,7 +30,7 @@ tanto (las dos escriben en archivos distintos).
 - [x] T06 · Crear `modules/client-env/main.tf` con `gitea_repository_file` (`ignore_changes = [content]`) y la `Application` con el finalizador, con `depends_on` para el orden de borrado — **Verifica:** `tofu plan` de un cliente de prueba muestra solo esos dos recursos. [ERIC]
 - [x] T07 · Escribir `clients.tf` con `for_each` sobre `var.clients` y `clients.auto.tfvars.json.example` — **Verifica:** el ejemplo con un cliente de prueba valida y `plan` lo crea. [ERIC]
 - [x] T08 · Escribir `infra/client-new.sh` con las validaciones de nombre, plan y dominio — **Verifica:** nombre repetido, plan inexistente y dominio sin `.hub.local` terminan con un mensaje claro y sin tocar nada (CA-8). [ERIC]
-- [ ] T09 · Crear el cliente de prueba `prueba` de punta a punta y borrarlo — **Verifica:** su `Application` queda `Synced` y `Healthy`, el namespace tiene la cuota de su plan, y tras `destroy -target` el namespace desaparece (CA-1). [ ]
+- [x] T09 · Crear el cliente de prueba `prueba` de punta a punta y borrarlo — **Verifica:** su `Application` queda `Synced` y `Healthy`, el namespace tiene la cuota de su plan, y tras `destroy -target` el namespace desaparece (CA-1). [ERIC]
 
 ## Migración y pruebas
 

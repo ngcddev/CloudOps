@@ -153,7 +153,7 @@ mínimo permiso, y ninguno vive en el repo:
 
 | Token | Quién | Alcance |
 |---|---|---|
-| `GITEA_TOKEN` | usuario `hub-bot` | `write:repository`, y `hub-bot` es colaborador solo de `forja-digital/hub-gitops` |
+| `GITEA_TOKEN` | usuario `hub-bot` | `read:user` y `write:repository`; `hub-bot` es colaborador solo de `forja-digital/hub-gitops` |
 | `ARGOCD_TOKEN` | cuenta local `hub-readonly` | rol `readonly`: lee aplicaciones, no sincroniza ni borra |
 
 ```bash

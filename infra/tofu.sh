@@ -39,7 +39,22 @@ case "${1:-}" in
     ;;
 esac
 
-command -v k3d >/dev/null 2>&1 || {
+K3D_BIN="${K3D_BIN:-}"
+if [[ -z "$K3D_BIN" ]]; then
+  if command -v k3d >/dev/null 2>&1; then
+    K3D_BIN="k3d"
+  elif command -v k3d.exe >/dev/null 2>&1; then
+    K3D_BIN="k3d.exe"
+  elif command -v cmd.exe >/dev/null 2>&1; then
+    WINDOWS_K3D="$(cmd.exe /c where k3d.exe 2>/dev/null | tr -d '\r' | head -n 1 || true)"
+    if [[ -n "$WINDOWS_K3D" ]] && command -v wslpath >/dev/null 2>&1; then
+      K3D_BIN="$(wslpath -u "$WINDOWS_K3D")"
+    elif [[ -n "$WINDOWS_K3D" ]] && command -v cygpath >/dev/null 2>&1; then
+      K3D_BIN="$(cygpath -u "$WINDOWS_K3D")"
+    fi
+  fi
+fi
+[[ -n "$K3D_BIN" ]] || {
   echo "No se encontró k3d en PATH; inicia el clúster hub antes de ejecutar $TOOL." >&2
   exit 1
 }
@@ -58,7 +73,7 @@ fi
 KUBECONFIG_PATH="$SCRIPT_DIR/.kubeconfig"
 KUBECONFIG_TMP="${KUBECONFIG_PATH}.tmp.$$"
 trap 'rm -f "$KUBECONFIG_TMP"' EXIT
-if ! k3d kubeconfig get hub > "$KUBECONFIG_TMP"; then
+if ! "$K3D_BIN" kubeconfig get hub > "$KUBECONFIG_TMP"; then
   echo "No se pudo generar el kubeconfig del clúster k3d hub." >&2
   exit 1
 fi
@@ -79,6 +94,7 @@ DOCKER_ARGS=(
   --network "$NETWORK"
   --add-host "gitea.hub.local:${SERVERLB_IP}"
   -e KUBECONFIG=/infra/.kubeconfig
+  -e KUBE_CONFIG_PATH=/infra/.kubeconfig
   -v "${MOUNT_DIR}:/infra"
   -v "${MOUNT_DIR}/state:/state"
   -v "${SEED_MOUNT_DIR}:/seed:ro"
