@@ -144,3 +144,26 @@ def test_costo_del_cliente_suma_horas_por_hora_del_parametro(db):
     # 3 horas + 2 horas a 25 000 por hora = 125 000 de costo para el cliente
     assert kpi.horas_por_cliente(db, service.project.client_id, MES) == 5.0
     assert kpi.costo_por_cliente(db, service.project.client_id, MES) == 125000.0
+
+
+def test_carga_del_tecnico_con_30_horas_registradas_y_120_disponibles_da_25(db):
+    service = _servicio(db)
+    created_at = datetime(2026, 10, 5, 14, 0, tzinfo=timezone.utc)
+    response_due_at = created_at + timedelta(minutes=15)
+    resolution_due_at = created_at + timedelta(hours=4)
+    ticket = _solicitud(
+        db, service.id, "cerrado", created_at, response_due_at=response_due_at, resolution_due_at=resolution_due_at,
+        first_response_at=created_at + timedelta(minutes=5), resolved_at=created_at + timedelta(minutes=10),
+        closed_at=created_at + timedelta(minutes=12),
+    )
+    tecnico = User(name="Sofía Ramírez", email="sofia@forjadigital.test", role="agencia")
+    db.add(tecnico)
+    db.commit()
+    db.refresh(tecnico)
+    db.add(WorkLog(ticket_id=ticket.id, user_id=tecnico.id, hours=Decimal("10"), note="Revisión"))
+    db.add(WorkLog(ticket_id=ticket.id, user_id=tecnico.id, hours=Decimal("20"), note="Ajuste de render"))
+    db.commit()
+
+    # 30 h registradas con 120 disponibles del mes = 25 % de carga
+    assert kpi.horas_del_tecnico(db, tecnico.id, MES) == 30.0
+    assert kpi.carga_tecnico(db, tecnico.id, MES) == 0.25

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.client import Client
@@ -103,6 +103,22 @@ def horas_por_cliente(db: Session, client_id: int, month: str | None = None) -> 
 def costo_por_cliente(db: Session, client_id: int, month: str | None = None) -> float:
     """Costo del mes del cliente: horas registradas × `hourly_cost` (docs/kpi.md, T01)."""
     return horas_por_cliente(db, client_id, month) * float(kpi_params()["hourly_cost"])
+
+
+def horas_del_tecnico(db: Session, user_id: int, month: str | None = None) -> float:
+    """Horas registradas por un técnico en el mes: Σ `work_logs.hours` de sus tickets creados en el mes."""
+    inicio, fin = month_bounds(month or _mes_actual())
+    total = db.scalar(
+        select(func.sum(WorkLog.hours))
+        .join(Ticket, WorkLog.ticket_id == Ticket.id)
+        .where(WorkLog.user_id == user_id, Ticket.created_at >= inicio, Ticket.created_at < fin)
+    )
+    return float(total or 0)
+
+
+def carga_tecnico(db: Session, user_id: int, month: str | None = None) -> float:
+    """Carga del técnico del mes: horas registradas ÷ horas disponibles del mes (`technician_monthly_hours`)."""
+    return horas_del_tecnico(db, user_id, month) / float(kpi_params()["technician_monthly_hours"])
 
 
 def cumplimiento_sla(db: Session, client_id: int, month: str | None = None) -> float | None:
