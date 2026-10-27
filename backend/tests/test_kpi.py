@@ -227,6 +227,25 @@ def test_disponibilidad_del_mes_con_prometheus_simulado(db):
     assert kpi.cumple_objetivo(db, client_id, MES, transport=_transport_ok(0.992)) is False
 
 
+def test_disponibilidad_consulta_la_etiqueta_client_del_job_sitios(db):
+    """Prometheus etiqueta `client="restaurante"`, no el namespace completo (008, T22)."""
+    from urllib.parse import unquote
+
+    service = _servicio(db)
+    urls = []
+
+    def transport(url, timeout):
+        import json
+
+        urls.append(unquote(url))
+        return 200, json.dumps(
+            {"status": "success", "data": {"result": [{"metric": {}, "value": [1761446400, "0.992"]}]}}
+        ).encode()
+
+    assert kpi.disponibilidad_del_mes(db, service.project.client_id, MES, transport=transport) == 99.2
+    assert 'avg_over_time(probe_success{client="restaurante"}' in urls[0]
+
+
 def test_cumple_objetivo_con_slo_distinto(db):
     service = _servicio(db)
     client_id = service.project.client_id

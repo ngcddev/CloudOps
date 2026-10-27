@@ -120,18 +120,52 @@ def _servicio_de_cliente(db: Session, client_id: int) -> Service | None:
     )
 
 
+def nombre_cliente(namespace: str | None) -> str:
+    """Etiqueta `client` de Prometheus: el namespace sin el prefijo `cliente-` (008, T22).
+
+    El job `sitios` fija `client` a partir del namespace (`cliente-restaurante` → `restaurante`);
+    consultar con el namespace completo devolvía vacío y la pantalla mostraba «sin datos».
+    """
+    return (namespace or "").removeprefix("cliente-")
+
+
+def _ventana_del_mes(month: str) -> tuple[int, int] | None:
+    """Duración y `offset` en segundos del mes, para `avg_over_time` sobre el rango correcto.
+
+    Devuelve `None` si el mes todavía no empezó (no hay nada que promediar).
+    """
+    inicio, fin = month_bounds(month)
+    ahora = datetime.now(timezone.utc)
+    fin_real = min(fin, ahora)
+    if fin_real <= inicio:
+        return None
+    segundos = max(int((fin_real - inicio).total_seconds()), 1)
+    offset = max(int((ahora - fin_real).total_seconds()), 0)
+    return segundos, offset
+
+
 def disponibilidad_del_mes(
     db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
 ) -> float | None:
-    """Disponibilidad del mes del cliente: `avg_over_time(probe_success{client="<namespace>"}[<mes>]) × 100`.
+    """Disponibilidad del mes del cliente: `avg_over_time(probe_success{client="<c>"}[<mes>]) × 100`.
 
-    Con Prometheus caído o sin serie devuelve `None` («sin datos»): nunca un 100 % inventado (CA-8).
+    El rango se calcula desde el inicio del mes hasta ahora (o hasta el fin del mes si ya pasó) y se
+    desplaza con `offset` cuando el mes es anterior. Con Prometheus caído o sin serie devuelve `None`
+    («sin datos»): nunca un 100 % inventado (CA-8).
     """
     service = _servicio_de_cliente(db, client_id)
     if service is None:
         return None
-    promql = f'probe_success{{client="{service.namespace}"}}'
-    valor = prometheus.query(promql, month or mes_actual(), transport=transport)
+    mes = month or mes_actual()
+    ventana = _ventana_del_mes(mes)
+    if ventana is None:
+        return None
+    segundos, offset = ventana
+    promql = f'avg_over_time(probe_success{{client="{nombre_cliente(service.namespace)}"}}[{segundos}s]'
+    if offset:
+        promql += f" offset {offset}s"
+    promql += ")"
+    valor = prometheus.query(promql, mes, transport=transport)
     if valor is None:
         return None
     return round(valor * 100, 2)
@@ -191,7 +225,7 @@ def serie_disponibilidad(
         return None
     inicio, fin = month_bounds(month or mes_actual())
     puntos = prometheus.query_range(
-        f'probe_success{{client="{service.namespace}"}}',
+        f'probe_success{{client="{nombre_cliente(service.namespace)}"}}',
         inicio,
         fin,
         step_seconds=SERIES_STEP_SECONDS,
