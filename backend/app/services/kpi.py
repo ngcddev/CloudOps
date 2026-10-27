@@ -177,6 +177,6 @@ def cumplimiento_sla(db: Session, client_id: int, month: str | None = None) -> f
     return round((dentro / len(terminados)) * 100, 2)
 
 
-def _mes_actual() -> str:
+def mes_actual() -> str:
     """Mes actual en America/Bogota, con el formato `YYYY-MM` que reciben las consultas."""
     return datetime.now(BOGOTA).strftime("%Y-%m")

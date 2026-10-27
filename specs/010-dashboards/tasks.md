@@ -27,7 +27,7 @@
 - [x] T04 · Agregar horas y costo por cliente (Σ `work_logs.hours` × `hourly_cost`) — **Verifica:** `pytest`: 3 horas + 2 horas en solicitudes de La Sazón a 25 000 por hora dan 125 000. [x]
 - [x] T05 · Agregar la carga por técnico (horas del mes ÷ `technician_monthly_hours`) — **Verifica:** `pytest`: 30 h registradas con 120 disponibles dan 25 %. [x]
 - [x] T06 · Agregar el MTTR del mes desde los incidentes `mitigado`/`cerrado` — **Verifica:** `pytest`: incidentes de 6 y 10 min dan 8 min; sin incidentes da `None` (CA-9). [x]
-- [ ] T07 · Crear `GET /api/dashboard/agency?month=` — **Verifica:** `pytest`: devuelve los 3 clientes con sus KPI y la carga de los técnicos; como cliente → 403. [ ]
+- [x] T07 · Crear `GET /api/dashboard/agency?month=` — **Verifica:** `pytest`: devuelve los 3 clientes con sus KPI y la carga de los técnicos; como cliente → 403. [x]
 - [ ] T08 · Crear `GET /api/dashboard/client/{id}?month=` sin costo, horas ni nombres de técnicos — **Verifica:** `pytest`: La Sazón ve lo suyo, pedir el de El Tornillo → 404, y la respuesta no contiene `cost` ni `hours` (CA-7). [ ]
 
 ## Backend · Prometheus
