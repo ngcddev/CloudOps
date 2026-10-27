@@ -26,7 +26,7 @@ La prueba se puede hacer de dos maneras:
 | Modo | Cuándo usarlo | Qué muestra |
 |---|---|---|
 | **A. Clúster real** (recomendado) | Después de T18, con el sitio de La Sazón y el monitoreo funcionando | Datos reales del mes, incluido el incidente de la caída |
-| **B. Datos de prueba** | Sin clúster; sirve para ensayar el guion o si T18 se retrasa | La Sazón con 99,4 % frente a un objetivo de 99,9 %, una falla y tres solicitudes |
+| **B. Datos de prueba** | Sin clúster; sirve para ensayar el guion o si T18 se retrasa | La Sazón con 99,4 % frente a un objetivo de 99,9 %, una falla y tres solicitudes (en octubre de 2026; ver la nota de la sección 2) |
 
 En el modo B la persona ve siempre al cliente de prueba (La Sazón) y no hay que iniciar sesión. En el
 modo A se entra con el usuario de La Sazón (`contacto@lasazon.test`) y la contraseña de los usuarios
@@ -61,7 +61,16 @@ datos de prueba). En este modo la pantalla muestra:
 | Objetivo del plan (Premium) | 99,9 % |
 | Frase de disponibilidad | «Este mes su sitio estuvo disponible menos de lo acordado; le explicamos qué pasó y qué mejoramos.» |
 | Fallas del mes | 1: «El sitio de restaurante no responde» (abierta) |
-| Solicitudes del mes | 3: «El menú del domingo no aparece» (En progreso), «No llegan los mensajes del formulario» (Abierta), «Cambio de banner del sitio» (Cerrada) |
+| Solicitudes del mes | 3 en octubre de 2026: «El menú del domingo no aparece» (En progreso), «No llegan los mensajes del formulario» (Abierta), «Cambio de banner del sitio» (Cerrada). En otro mes: «Este mes no abrió solicitudes.» |
+
+> **Fechas de los datos de prueba.** Las tres solicitudes están fechadas el 5 de octubre de 2026 y el
+> portal solo muestra las del mes en curso. Por eso:
+>
+> - Si la sesión se hace **en octubre de 2026**, la persona ve **3 solicitudes**.
+> - Si se hace **en otro mes**, ve **0 solicitudes** y la frase «Este mes no abrió solicitudes»; esa
+>   es la respuesta correcta, no un error de la pantalla.
+>
+> La falla, en cambio, se crea al abrir la pantalla y siempre cae en el mes en curso.
 
 > Limitación conocida del modo B: los datos de prueba son fijos y siempre muestran a La Sazón. Para
 > probar los estados «sitio caído» y «sin datos» hay que usar el modo A durante la caída de T18 o
@@ -114,7 +123,7 @@ pregunta 6 no puntúa: sirve para detectar jerga.
 | 1 | «¿Cómo está tu sitio en este momento?» | «Está disponible» / «funciona» / «está bien ahora» | Coincide con el estado que muestra la pantalla (disponible, con fallas o no disponible) |
 | 2 | «¿Este mes tu sitio estuvo disponible lo que se acordó? ¿Cómo lo sabes?» | **No**: 99,4 % es menos que el 99,9 % acordado; o repite la frase «estuvo disponible menos de lo acordado» | Distingue «dentro del objetivo» de «por debajo del objetivo» y menciona el objetivo o la frase de la pantalla |
 | 3 | «¿Tuviste fallas este mes? ¿Cuántas? ¿Qué te dice la pantalla de ellas?» | **Sí, una**: «El sitio de restaurante no responde», y ve el estado de la falla | Menciona el número de fallas del mes y al menos un dato de la falla (título, fecha o estado) |
-| 4 | «¿Qué solicitudes tienes este mes y en qué estado están?» | **Tres**: una en progreso, una abierta y una cerrada | Menciona el número de solicitudes del mes y al menos un estado |
+| 4 | «¿Qué solicitudes tienes este mes y en qué estado están?» | **Tres** en octubre de 2026 (una en progreso, una abierta y una cerrada); **ninguna** en otro mes | Menciona el número de solicitudes del mes y al menos un estado |
 | 5 | «En una frase, ¿cómo le contarías a un socio cómo va el sitio este mes?» | Combina «ahora funciona» con «este mes estuvo por debajo de lo acordado» o «hubo una falla» | Combina el estado actual con la disponibilidad del mes o las fallas |
 | 6 | «¿Hay alguna palabra o frase que no entiendas?» | No puntúa. Se anotan las palabras textuales | Igual |
 
