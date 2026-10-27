@@ -7,6 +7,7 @@ TOFU_DIR="$SCRIPT_DIR/tofu"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 CLIENTS_FILE="$TOFU_DIR/clients.auto.tfvars.json"
 PLANS_FILE="$REPO_ROOT/seed/plans.json"
+IAC_TOOL="${IAC_TOOL:-tofu}"
 
 usage() {
   echo "Uso: infra/client-new.sh <nombre> <dominio> <plan>" >&2
@@ -22,6 +23,11 @@ fail() {
 NAME="$1"
 HOST="$2"
 PLAN="$3"
+
+case "$IAC_TOOL" in
+  tofu|terraform) ;;
+  *) fail "herramienta invalida '$IAC_TOOL'; usa tofu o terraform." ;;
+esac
 
 if [[ ! "$NAME" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
   fail "nombre invalido '$NAME'; usa minusculas, numeros y guiones simples."
@@ -104,7 +110,9 @@ clients = inventory.get("clients")
 if not isinstance(clients, dict):
     fail("el inventario debe contener un objeto 'clients'.")
 if name in clients:
-    fail(f"el cliente '{name}' ya existe en clients.auto.tfvars.json.")
+  existing = clients[name]
+  if existing != {"host": host, "plan": plan}:
+    fail(f"el cliente '{name}' ya existe con otro dominio o plan.")
 
 updated_inventory = dict(inventory)
 updated_clients = dict(clients)
@@ -116,8 +124,8 @@ try:
         mode="w",
         encoding="utf-8",
         dir=clients_path.parent,
-        prefix=".clients.auto.tfvars.json.",
-        suffix=".tmp",
+      prefix=".clients.auto.tfvars.",
+      suffix=".tfvars.json",
         delete=False,
     ) as candidate:
         json.dump(updated_inventory, candidate, ensure_ascii=False, indent=2)
@@ -151,12 +159,12 @@ if [[ -z "${GITEA_TOKEN:-}" ]]; then
 fi
 
 # El plan guardado asegura que el apply ejecute exactamente lo revisado.
-"$SCRIPT_DIR/tofu.sh" tofu plan -input=false -var-file "$CANDIDATE_NAME" -out "/state/$PLAN_FILE_NAME"
+"$SCRIPT_DIR/tofu.sh" "$IAC_TOOL" plan -input=false -var-file "$CANDIDATE_NAME" -out "/state/$PLAN_FILE_NAME"
 
 # Conserva el inventario deseado aunque apply falle parcialmente, para poder reintentar.
 mv -f -- "$CANDIDATE_FILE" "$CLIENTS_FILE"
 CANDIDATE_FILE=""
-"$SCRIPT_DIR/tofu.sh" tofu apply -input=false "/state/$PLAN_FILE_NAME"
+"$SCRIPT_DIR/tofu.sh" "$IAC_TOOL" apply -input=false "/state/$PLAN_FILE_NAME"
 
 echo "Cliente '$NAME' agregado y aplicado."
 echo "Agrega esta entrada al archivo hosts: 127.0.0.1 $HOST"

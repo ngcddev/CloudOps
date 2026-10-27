@@ -42,4 +42,4 @@ tanto (las dos escriben en archivos distintos).
 
 ## Cierre
 
-- [ ] T15 · Demo: crear Panadería El Trigo (plan Básico), mostrar Gitea, Argo CD y el namespace, recrear El Tornillo y repetir el comando de creación sin cambios — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ ]
+- [ ] T15 · Demo: crear Panadería El Trigo (plan Básico), mostrar Gitea, Argo CD y el namespace, recrear El Tornillo y repetir el comando de creación sin cambios — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ERIC ]
