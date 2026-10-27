@@ -198,6 +198,30 @@ No hay que borrar nada: el diseño ya lo cubre. Para mostrarlo, elegir un client
 incidentes (por ejemplo, el mes anterior) y señalar que el MTTR dice **«sin incidentes este mes»**, no
 `0`. En la API: `mttr` es `null`.
 
+## 3.1. Ejecución registrada de T18 (26 oct 2026)
+
+Primera corrida completa en el clúster `hub` (k3d, k3s 1.32.9) con el Hub, los 3 sitios, Prometheus,
+Blackbox, Alertmanager y Grafana. Salida del script:
+
+```text
+Demo de la spec 010: todo OK (mes 2026-10, incidente 1).
+```
+
+| Comprobación | Resultado |
+|---|---|
+| Tablero: 3 clientes, 2 técnicos, SLA, solicitudes, horas/costo, disponibilidad | OK |
+| Portal: disponibilidad, objetivo, sin costo/horas/técnicos, 404 cruzado | OK |
+| Serie del mes | 2 puntos al inicio; con la caída mostró el valor 0 |
+| Caída del sitio | Incidente #1 abierto por la alerta en menos de 5 min |
+| Recuperación | Incidente mitigado; MTTR 3,25 min |
+| Prometheus apagado | 3 clientes con `availability: null`, portal igual y series vacías, todo con 200 |
+
+Hallazgos corregidos antes de la corrida: la etiqueta `client` de Prometheus no lleva el prefijo
+`cliente-` (el tablero salía `null`) y la disponibilidad tomaba el último sondeo en vez del promedio
+del mes. Ver [revision-industrial.md](revision-industrial.md#8-hallazgos-de-la-puesta-en-marcha-en-el-clúster-26-oct-2026).
+
+Esta corrida cierra **T18**. **T20 sigue abierta**: falta la demo visual con el jurado y las capturas.
+
 ## 4. Mapa de criterios a evidencia
 
 | CA | Qué se ve | Dónde |

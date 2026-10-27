@@ -47,7 +47,7 @@
 
 ## Validación
 
-- [ ] T18 · Conectar todo en el clúster y repetir la caída de la demo de la 009 — **Verifica:** la consola y el portal de La Sazón muestran el incidente, su MTTR y la disponibilidad por debajo o dentro del objetivo según corresponda; apagar Prometheus deja «sin datos» sin errores (CA-1, CA-4, CA-8). [ ]
+- [x] T18 · Conectar todo en el clúster y repetir la caída de la demo de la 009 — **Verifica:** la consola y el portal de La Sazón muestran el incidente, su MTTR y la disponibilidad por debajo o dentro del objetivo según corresponda; apagar Prometheus deja «sin datos» sin errores (CA-1, CA-4, CA-8). *Verificado el 26 oct 2026 con `demo-010.sh`: todo OK; incidente #1 por alerta, MTTR 3,25 min, hueco en la serie y `null` con Prometheus apagado.* [Andres]
 - [ ] T19 · Hacer la prueba con 3 personas no técnicas y anotarla en `context.md` de esta carpeta — **Verifica:** al menos 2 explican correctamente el estado de su sitio (CA-5). [ ]
 
 ## Cierre
