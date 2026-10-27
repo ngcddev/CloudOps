@@ -3,19 +3,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { getAgencyDashboard, type AgencyDashboard } from "../../api";
+import { fijarMes, getAgencyDashboard, mesActual, type AgencyDashboard } from "../../api";
 import StatusBadge from "../../components/StatusBadge";
 import { formatPercent, formatPrice } from "../../format";
-
-function mesActual(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Bogota",
-    year: "numeric",
-    month: "2-digit",
-  })
-    .format(new Date())
-    .slice(0, 7);
-}
 
 // Valor con «sin datos» cuando la API no tiene serie (CA-8), nunca un 100 % inventado
 function textoDisponibilidad(value: number | null): string {
@@ -68,7 +58,15 @@ export default function AgencyDashboardPage() {
         </div>
         <label className="month-picker">
           Mes
-          <input type="month" value={month} onChange={(event) => setMonth(event.target.value || mesActual())} />
+          <input
+            type="month"
+            value={month}
+            onChange={(event) => {
+              const nuevo = event.target.value || mesActual();
+              setMonth(nuevo);
+              fijarMes(nuevo);
+            }}
+          />
         </label>
       </div>
 

@@ -7,6 +7,7 @@ import {
   getClientDashboard,
   listClientIncidents,
   listTickets,
+  mesActual,
   type ClientDashboardKpi,
   type ClientIncident,
   type Ticket,
@@ -20,16 +21,6 @@ import {
   textoEstado,
   textosCliente,
 } from "../../texts/cliente";
-
-function mesActual(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Bogota",
-    year: "numeric",
-    month: "2-digit",
-  })
-    .format(new Date())
-    .slice(0, 7);
-}
 
 function enElMes(iso: string, month: string): boolean {
   return (

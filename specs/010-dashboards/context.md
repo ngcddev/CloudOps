@@ -38,7 +38,9 @@ sembrados. **No se le pide a la persona que inicie sesión:** eso lo prepara qui
 
 1. Confirmar que T18 terminó y que el portal de La Sazón carga con datos del mes.
 2. Abrir el portal en el navegador y dejarlo en la pantalla de inicio (`/portal`), ya con la sesión
-   iniciada.
+   iniciada. Si la sesión se hace después de octubre de 2026, abrir
+   `http://hub.local/portal?month=2026-10` para ver los datos sembrados de ese mes; el portal recuerda
+   el mes mientras dure la pestaña.
 3. Anotar antes de la sesión la respuesta correcta a cada pregunta (sección 5), porque los datos
    cambian con la caída y la recuperación.
 4. Tener a la mano el incidente del mes y el número de solicitudes abiertas/cerradas.

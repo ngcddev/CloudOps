@@ -12,6 +12,11 @@ Esta demo es la misma que usan T18 y la sustentación. Se puede hacer con el scr
 pantallas. El script no reemplaza la demostración visual: comprueba los datos y deja la evidencia,
 pero el jurado tiene que ver la consola y el portal.
 
+> **Si la demo se hace después de octubre de 2026**, las pantallas usan el mes en curso y los datos
+> sembrados son de octubre. Abrir el portal con `http://hub.local/portal?month=2026-10` y la consola
+> con `http://hub.local/agencia?month=2026-10`; el mes queda recordado en la pestaña. El script ya
+> acepta `MES=2026-10`.
+
 ## 1. Antes de empezar (10 min)
 
 | # | Requisito | Cómo se comprueba |

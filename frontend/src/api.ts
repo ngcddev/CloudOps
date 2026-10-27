@@ -1359,8 +1359,29 @@ export interface ClientSeries {
   latency_p95: SeriesPoint[];
 }
 
-// Mes actual en America/Bogota, con el formato YYYY-MM que recibe la API
-function mesActual(): string {
+// Mes de la pantalla, con el formato YYYY-MM que recibe la API.
+// Se puede fijar con `?month=2026-10` (útil para la demo cuando el mes ya cambió) y se recuerda
+// durante la pestaña; sin parámetro se usa el mes actual en America/Bogota.
+const MES_KEY = "hub.mes";
+
+function mesValido(valor: string | null): string | null {
+  return valor && /^\d{4}-(0[1-9]|1[0-2])$/.test(valor) ? valor : null;
+}
+
+export function mesActual(): string {
+  if (typeof window !== "undefined") {
+    try {
+      const deUrl = mesValido(new URLSearchParams(window.location.search).get("month"));
+      if (deUrl) {
+        window.sessionStorage.setItem(MES_KEY, deUrl);
+        return deUrl;
+      }
+      const guardado = mesValido(window.sessionStorage.getItem(MES_KEY));
+      if (guardado) return guardado;
+    } catch {
+      // Sin sessionStorage (modo privado o navegador antiguo): se usa el mes actual.
+    }
+  }
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Bogota",
     year: "numeric",
@@ -1368,6 +1389,20 @@ function mesActual(): string {
   })
     .format(new Date())
     .slice(0, 7);
+}
+
+// Fija el mes elegido en la URL y en la pestaña, para que no se pierda al navegar.
+export function fijarMes(mes: string): void {
+  const valido = mesValido(mes);
+  if (!valido || typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(MES_KEY, valido);
+  } catch {
+    // Sin sessionStorage: al menos queda en la URL.
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("month", valido);
+  window.history.replaceState({}, "", url);
 }
 
 function mockMainService(clientId: number) {

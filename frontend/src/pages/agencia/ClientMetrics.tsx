@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
+  fijarMes,
   getClientDashboard,
   getClientSeries,
+  mesActual,
   type ClientDashboardKpi,
   type ClientSeries,
 } from "../../api";
@@ -15,16 +17,6 @@ import { formatPercent } from "../../format";
 
 // Grafana del clúster de la demo (spec 008); se abre en otra pestaña
 const GRAFANA_URL = "http://grafana.hub.local";
-
-function mesActual(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Bogota",
-    year: "numeric",
-    month: "2-digit",
-  })
-    .format(new Date())
-    .slice(0, 7);
-}
 
 // p95 de una serie de latencias (cada punto ya es el p95 de 5 min)
 function p95(valores: number[]): number | null {
@@ -81,7 +73,15 @@ export default function ClientMetrics() {
         <div className="page-actions">
           <label className="month-picker">
             Mes
-            <input type="month" value={month} onChange={(event) => setMonth(event.target.value || mesActual())} />
+            <input
+              type="month"
+              value={month}
+              onChange={(event) => {
+                const nuevo = event.target.value || mesActual();
+                setMonth(nuevo);
+                fijarMes(nuevo);
+              }}
+            />
           </label>
           <a className="button button-secondary" href={GRAFANA_URL} target="_blank" rel="noreferrer">
             Abrir Grafana ↗
