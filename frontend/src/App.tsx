@@ -10,6 +10,7 @@ import ClientForm from "./pages/agencia/ClientForm";
 import AuditLogList from "./pages/agencia/AuditLogList";
 import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
+import ClientMetrics from "./pages/agencia/ClientMetrics";
 import Dashboard from "./pages/agencia/Dashboard";
 import IncidentDetail from "./pages/agencia/IncidentDetail";
 import IncidentList from "./pages/agencia/IncidentList";
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="clientes" element={<ClientList />} />
           <Route path="clientes/nuevo" element={<ClientForm />} />
           <Route path="clientes/:id" element={<ClientDetail />} />
+          <Route path="clientes/:id/metricas" element={<ClientMetrics />} />
           <Route path="bitacora" element={<AuditLogList />} />
           <Route path="cambios" element={<ChangeList />} />
           <Route path="servicios" element={<ServiceList />} />
