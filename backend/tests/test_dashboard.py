@@ -111,3 +111,39 @@ def test_cliente_ve_solo_el_kpi_de_su_propio_cliente(as_client, seeded):
 
     assert response.status_code == 200, response.text
     assert response.json()["client_id"] == 1
+
+
+def test_portal_incidentes_solo_del_cliente_y_sin_datos_internos(as_agency, as_client, seeded):
+    from sqlalchemy import select
+
+    from app.models import Service
+    from app.services import kpi
+
+    def crear(namespace: str, titulo: str) -> None:
+        service = seeded.scalar(select(Service).where(Service.namespace == namespace))
+        response = as_agency.post(
+            "/api/incidents",
+            json={"service_id": service.id, "priority": "P1", "title": titulo},
+        )
+        assert response.status_code == 201, response.text
+
+    crear("cliente-restaurante", "El sitio de La Sazón no responde")
+    crear("cliente-ferreteria", "El sitio de El Tornillo no responde")
+
+    mes = kpi.mes_actual()
+    response = as_client.get("/api/dashboard/client/1/incidents", params={"month": mes})
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert [item["title"] for item in data] == ["El sitio de La Sazón no responde"]
+    assert data[0]["status"] == "abierto"
+    # El portal no recibe técnicos, SLA ni causa interna (CA-7)
+    assert set(data[0]) == {"id", "title", "status", "started_at"}
+
+    # Un cliente no puede pedir las fallas de otro
+    assert as_client.get("/api/dashboard/client/2/incidents", params={"month": mes}).status_code == 404
+
+    # La agencia sí puede consultar cualquier cliente
+    response = as_agency.get("/api/dashboard/client/2/incidents", params={"month": mes})
+    assert response.status_code == 200, response.text
+    assert [item["title"] for item in response.json()] == ["El sitio de El Tornillo no responde"]

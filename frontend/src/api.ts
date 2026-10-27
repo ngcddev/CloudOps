@@ -1325,6 +1325,14 @@ export interface ClientDashboardKpi {
   closed_tickets: number;
 }
 
+// Falla del mes en el portal: sin tecnicos, SLA ni causa interna (CA-4, CA-7)
+export interface ClientIncident {
+  id: number;
+  title: string;
+  status: IncidentStatus;
+  started_at: string;
+}
+
 export interface TechnicianLoad {
   user_id: number;
   name: string;
@@ -1427,6 +1435,23 @@ export async function getClientDashboard(clientId: number, month?: string): Prom
   }
   return request<ClientDashboardKpi>(
     `/dashboard/client/${clientId}?month=${encodeURIComponent(mes)}`,
+  );
+}
+
+// Fallas del mes para el portal: la API filtra por cliente y por mes; el mock lo hace en memoria
+export async function listClientIncidents(
+  clientId: number,
+  month?: string,
+): Promise<ClientIncident[]> {
+  const mes = month ?? mesActual();
+  if ((await detectMode()) === "mock") {
+    ensureMockIncidents();
+    return incidentMock.incidents
+      .filter((incident) => incident.client_id === clientId)
+      .map(({ id, title, status, started_at }) => ({ id, title, status, started_at }));
+  }
+  return request<ClientIncident[]>(
+    `/dashboard/client/${clientId}/incidents?month=${encodeURIComponent(mes)}`,
   );
 }
 

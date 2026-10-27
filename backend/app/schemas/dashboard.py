@@ -44,6 +44,15 @@ class ClientDashboardKpi(BaseModel):
     closed_tickets: int = 0
 
 
+class ClientIncident(BaseModel):
+    """Una falla del mes en el portal: sin técnicos, SLA ni causa interna (CA-4, CA-7)."""
+
+    id: int
+    title: str
+    status: str
+    started_at: datetime
+
+
 class TechnicianLoad(BaseModel):
     """Carga de un técnico del mes: horas registradas ÷ horas disponibles (CA-2, T05)."""
 

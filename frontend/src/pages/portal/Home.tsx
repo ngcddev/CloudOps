@@ -5,10 +5,10 @@ import { Link } from "react-router-dom";
 
 import {
   getClientDashboard,
-  listIncidents,
+  listClientIncidents,
   listTickets,
   type ClientDashboardKpi,
-  type Incident,
+  type ClientIncident,
   type Ticket,
 } from "../../api";
 import { useAuth } from "../../auth";
@@ -50,7 +50,7 @@ export default function PortalHome() {
   const clientId = user?.client_id ?? null;
   const month = mesActual();
   const [dashboard, setDashboard] = useState<ClientDashboardKpi | null>(null);
-  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [incidents, setIncidents] = useState<ClientIncident[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +62,7 @@ export default function PortalHome() {
     let cancelled = false;
     Promise.all([
       getClientDashboard(clientId, month),
-      listIncidents({ client_id: clientId }),
+      listClientIncidents(clientId, month),
       listTickets({ client_id: clientId }),
     ])
       .then(([dashboardData, incidentData, ticketData]) => {

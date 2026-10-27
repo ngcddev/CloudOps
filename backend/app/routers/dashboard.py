@@ -6,11 +6,14 @@ from sqlalchemy.orm import Session, selectinload
 from app.db import get_db
 from app.deps import client_scope, current_user, require_agency
 from app.models.client import Client
+from app.models.incident import Incident
 from app.models.project import Project
+from app.models.service import Service
 from app.models.user import User
 from app.schemas.dashboard import (
     AgencyDashboard,
     ClientDashboardKpi,
+    ClientIncident,
     ClientKpi,
     ClientSeries,
     SeriesPoint,
@@ -101,6 +104,45 @@ def dashboard_client(
         open_tickets=kpi.solicitudes_abiertas(db, client.id, month),
         closed_tickets=kpi.solicitudes_cerradas(db, client.id, month),
     )
+
+
+@router.get("/client/{client_id}/incidents", response_model=list[ClientIncident])
+def dashboard_client_incidents(
+    client_id: int,
+    month: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+) -> list[ClientIncident]:
+    """Fallas del mes del cliente para su portal, sin técnicos ni datos internos (CA-4, CA-7).
+
+    La agencia puede consultar cualquier cliente; un cliente solo el suyo (404 si pide otro).
+    """
+    month = month or kpi.mes_actual()
+    client = db.get(Client, client_id)
+    scope = client_scope(user)
+    if client is None or (scope is not None and scope != client_id):
+        raise HTTPException(status_code=404, detail="El cliente no existe.")
+    inicio, fin = kpi.month_bounds(month)
+    incidents = db.scalars(
+        select(Incident)
+        .join(Service, Incident.service_id == Service.id)
+        .join(Project, Service.project_id == Project.id)
+        .where(
+            Project.client_id == client_id,
+            Incident.started_at >= inicio,
+            Incident.started_at < fin,
+        )
+        .order_by(Incident.started_at.desc(), Incident.id.desc())
+    ).all()
+    return [
+        ClientIncident(
+            id=incident.id,
+            title=incident.title,
+            status=incident.status,
+            started_at=incident.started_at,
+        )
+        for incident in incidents
+    ]
 
 
 @router.get("/client/{client_id}/series", response_model=ClientSeries)
