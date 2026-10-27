@@ -11,3 +11,4 @@ state/
 *.tfvars.json
 !*.tfvars.example
 !*.tfvars.json.example
+!clients.auto.tfvars.json
