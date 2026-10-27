@@ -23,7 +23,7 @@
 
 ## Backend · datos del Hub
 
-- [ ] T03 · Escribir `services/kpi.py` con el mes en America/Bogota y las funciones de solicitudes abiertas/cerradas y cumplimiento de SLA — **Verifica:** `pytest` con tickets semilla: 4 cerrados dentro del plazo y 1 fuera dan 80 %; sin terminados da `None`. [ ]
+- [x] T03 · Escribir `services/kpi.py` con el mes en America/Bogota y las funciones de solicitudes abiertas/cerradas y cumplimiento de SLA — **Verifica:** `pytest` con tickets semilla: 4 cerrados dentro del plazo y 1 fuera dan 80 %; sin terminados da `None`. [x]
 - [ ] T04 · Agregar horas y costo por cliente (Σ `work_logs.hours` × `hourly_cost`) — **Verifica:** `pytest`: 3 horas + 2 horas en solicitudes de La Sazón a 25 000 por hora dan 125 000. [ ]
 - [ ] T05 · Agregar la carga por técnico (horas del mes ÷ `technician_monthly_hours`) — **Verifica:** `pytest`: 30 h registradas con 120 disponibles dan 25 %. [ ]
 - [ ] T06 · Agregar el MTTR del mes desde los incidentes `mitigado`/`cerrado` — **Verifica:** `pytest`: incidentes de 6 y 10 min dan 8 min; sin incidentes da `None` (CA-9). [ ]
