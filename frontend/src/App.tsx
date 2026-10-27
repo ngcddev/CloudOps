@@ -1,5 +1,5 @@
 // Componente raíz: define las rutas de la aplicación.
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import AgencyLayout from "./components/AgencyLayout";
 import HomeRedirect from "./components/HomeRedirect";
@@ -18,6 +18,7 @@ import ServiceList from "./pages/agencia/ServiceList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
 import PortalTicketList from "./pages/portal/TicketList";
+import PortalHome from "./pages/portal/Home";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -45,7 +46,7 @@ export default function App() {
       </Route>
       <Route element={<RequireRole role="cliente" />}>
         <Route path="/portal" element={<PortalLayout />}>
-          <Route index element={<Navigate to="solicitudes" replace />} />
+          <Route index element={<PortalHome />} />
           <Route path="solicitudes" element={<PortalTicketList />} />
           <Route path="*" element={<NotFound />} />
         </Route>

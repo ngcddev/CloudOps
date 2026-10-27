@@ -1317,6 +1317,7 @@ export interface ClientDashboardKpi {
   service_status: ServiceStatus;
   availability: number | null;
   cumple_objetivo: boolean | null;
+  slo_availability: number | null;
   latency_p95: number | null;
   sla_compliance: number | null;
   mttr: number | null;
@@ -1380,7 +1381,7 @@ function mockClientKpi(clientId: number): ClientKpi {
   const client = findMockClient(clientId);
   const service = mockMainService(clientId);
   const hours = mockClientHours(clientId);
-  // El tercer cliente queda sin serie para mostrar «sin datos» (CA-8)
+  // El tercer cliente queda sin serie para mostrar ï¿½sin datosï¿½ (CA-8)
   const availability = clientId === 3 ? null : clientId === 1 ? 99.4 : 98.6;
   const slo = service?.plan.slo_availability ?? null;
   return {
@@ -1419,7 +1420,10 @@ export async function getClientDashboard(clientId: number, month?: string): Prom
   const mes = month ?? mesActual();
   if ((await detectMode()) === "mock") {
     const { hours: _hours, cost: _cost, ...client } = mockClientKpi(clientId);
-    return client;
+    return {
+      ...client,
+      slo_availability: mockMainService(clientId)?.plan.slo_availability ?? null,
+    };
   }
   return request<ClientDashboardKpi>(
     `/dashboard/client/${clientId}?month=${encodeURIComponent(mes)}`,

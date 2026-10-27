@@ -1,6 +1,6 @@
 // Textos del portal del cliente, tomados de docs/glosario.md (spec 010, T13).
 // Regla: el cliente no ve jerga técnica (principio 8); todo lo que se muestra sale de aquí.
-import type { ServiceStatus } from "../api";
+import type { IncidentStatus, ServiceStatus, TicketStatus } from "../api";
 
 export const textosCliente = {
   // Disponibilidad (uptime) frente al objetivo del plan
@@ -22,6 +22,21 @@ export const textosCliente = {
   solicitud: "Solicitud.",
   sinSolicitudes: "Este mes no abrió solicitudes.",
 } as const;
+
+// Estados canónicos con el texto que ve el cliente (glosario, «Estados canónicos»)
+export const estadosSolicitud: Record<TicketStatus, string> = {
+  abierto: "Abierta",
+  en_progreso: "En progreso",
+  en_espera: "En espera",
+  resuelto: "Resuelta",
+  cerrado: "Cerrada",
+};
+
+export const estadosIncidente: Record<IncidentStatus, string> = {
+  abierto: "Abierto",
+  mitigado: "Mitigado",
+  cerrado: "Cerrado",
+};
 
 // Estado actual del sitio en palabras del cliente
 export function textoEstado(status: ServiceStatus | null | undefined): string {

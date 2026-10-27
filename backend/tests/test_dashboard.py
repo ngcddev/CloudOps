@@ -48,6 +48,7 @@ def test_agency_dashboard_de_un_cliente_devuelve_solo_su_kpi_sin_costo(client, s
     assert "hours" not in data
     assert "technicians" not in data
     assert "availability" in data and "cumple_objetivo" in data
+    assert data["slo_availability"] is not None
 
 
 def test_agency_dashboard_con_prometheus_caido_responde_200_con_null_de_disponibilidad(client, seeded):

@@ -92,6 +92,9 @@ def dashboard_client(
         service_status=service.status if service is not None else "operativo",
         availability=kpi.disponibilidad_del_mes(db, client.id, month),
         cumple_objetivo=kpi.cumple_objetivo(db, client.id, month),
+        slo_availability=(
+            float(slo) if (slo := kpi.objetivo_disponibilidad(db, client.id)) is not None else None
+        ),
         latency_p95=kpi.latencia_p95_del_mes(db, client.id, month),
         sla_compliance=kpi.cumplimiento_sla(db, client.id, month),
         mttr=kpi.mttr_del_mes(db, client.id, month),

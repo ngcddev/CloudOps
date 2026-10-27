@@ -36,6 +36,7 @@ class ClientDashboardKpi(BaseModel):
     # Disponibilidad y SLO del plan (spec 010, T10); null con Prometheus caído o sin serie
     availability: float | None = None
     cumple_objetivo: bool | None = None
+    slo_availability: float | None = None
     latency_p95: float | None = None
     sla_compliance: float | None = None
     mttr: float | None = None
