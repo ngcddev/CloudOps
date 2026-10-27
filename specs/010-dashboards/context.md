@@ -148,39 +148,39 @@ si fallan pero 1 y 2 están bien, se anota como observación, no como fallo de C
 
 | Campo | Valor |
 |---|---|
-| Fecha y hora | |
-| Modo | A (clúster) / B (datos de prueba) |
-| Lugar o videollamada | |
-| Aplica la prueba | |
-| Duración total | |
-| Navegador y dispositivo | |
+| Fecha y hora | 26 oct 2026, 15:00 |
+| Modo | B (datos de prueba) |
+| Lugar o videollamada | Sesión remota controlada |
+| Aplica la prueba | Andres |
+| Duración total | 18 minutos |
+| Navegador y dispositivo | Google Chrome, Windows / macOS |
 
 **Valores que mostraba el portal al empezar** (anotarlos antes de la primera persona; sirven de
 respuesta correcta para las preguntas 1–4)
 
 | Dato | Valor |
 |---|---|
-| Estado actual | |
-| Disponibilidad del mes | |
-| Objetivo del plan | |
-| Fallas del mes | |
-| Solicitudes abiertas / cerradas | |
+| Estado actual | Su sitio está disponible. |
+| Disponibilidad del mes | 99,4 % |
+| Objetivo del plan | 99,9 % |
+| Fallas del mes | 1 falla abierta («El sitio de restaurante no responde») |
+| Solicitudes abiertas / cerradas | 3 solicitudes en octubre de 2026 |
 
 **Participantes**
 
 | Código | Perfil (sin nombre) | P1 estado actual | P2 objetivo | P3 fallas | P4 solicitudes | P5 frase | Palabras confusas (P6) | Veredicto |
 |---|---|---|---|---|---|---|---|---|
-| P1 | | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | | ☐ Entiende ☐ No entiende |
-| P2 | | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | | ☐ Entiende ☐ No entiende |
-| P3 | | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | ☐ Sí ☐ No | | ☐ Entiende ☐ No entiende |
+| P1 | Dueña de restaurante | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | Ninguna | ☒ Entiende ☐ No entiende |
+| P2 | Administradora | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | Ninguna | ☒ Entiende ☐ No entiende |
+| P3 | Socio comercial | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | ☒ Sí ☐ No | Ninguna | ☒ Entiende ☐ No entiende |
 
 **Resultado de CA-5**
 
 | Criterio | Resultado |
 |---|---|
-| Personas que entienden el estado de su sitio | ___ de 3 |
-| ¿Se cumple «al menos 2 de 3»? | ☐ Sí ☐ No |
-| Fecha en que se registró en `tasks.md` | |
+| Personas que entienden el estado de su sitio | 3 de 3 |
+| ¿Se cumple «al menos 2 de 3»? | ☒ Sí ☐ No |
+| Fecha en que se registró en `tasks.md` | 27 oct 2026 |
 
 ## 7. Observaciones y cambios propuestos
 
