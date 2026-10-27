@@ -156,3 +156,27 @@ correo o la captura al acta del proyecto):
    `- [x] T02 · … [Andres]`.
 6. Guardar este formulario diligenciado en esta misma carpeta (puede ser el mismo archivo con las
    respuestas y la firma).
+
+## 8. Hallazgos de la puesta en marcha en el clúster (26 oct 2026)
+
+Estos hallazgos salieron al ejecutar T18 por primera vez con Prometheus real. **No cambian las
+fórmulas acordadas**: son defectos de implementación o definiciones que Industrial debe confirmar.
+Los dos primeros ya están corregidos en `backend/app/services/kpi.py`; el resto queda para decidir.
+
+| # | Hallazgo | Impacto | Decisión sugerida | Dónde se corrige |
+|---|---|---|---|---|
+| 1 | La API consultaba `probe_success{client="cliente-restaurante"}`; Prometheus etiqueta `client="restaurante"` (sin el prefijo `cliente-`, spec 008 T22) | Disponibilidad y serie siempre `null` en el clúster | Corregido: se usa el nombre del cliente sin prefijo y hay prueba de regresión | `kpi.py`, `test_kpi.py` |
+| 2 | La disponibilidad tomaba el último sondeo, no el promedio del mes; el mes solo se usaba como clave de caché | Un solo sondeo bueno mostraba 100 % aunque el mes tuviera caídas | Corregido: `avg_over_time` con la ventana del mes y `offset` para meses pasados | `kpi.py` |
+| 3 | `at_risk_ratio` (0,8) está documentado como señal de riesgo, pero ni el backend ni el tablero lo aplican | La carga por técnico se muestra, pero nunca avisa del 80 % | Decidir: implementar el aviso en la consola o quitar el parámetro de `docs/kpi.md` | `docs/kpi.md` + `Dashboard.tsx` |
+| 4 | Horas y costo se cuentan por el mes de **creación del ticket**, no por la fecha del registro de horas (`work_logs.created_at`) | Trabajo de octubre sobre un ticket de septiembre cae en septiembre; el costo del mes no cuadra | Confirmar que el mes del reporte es el del trabajo realizado y corregir la consulta | `kpi.py` (tarea de seguimiento) |
+| 5 | El tablero escribe «120 disponibles» fijo en el texto; no lee `technician_monthly_hours` | Si Industrial aprueba otro valor, la pantalla miente | Enviar el parámetro en la respuesta de la API y mostrarlo | `dashboard` + `Dashboard.tsx` |
+| 6 | La latencia p95 no tiene meta numérica («latencia elevada inicia mejora») | No se puede decir si cumple o no | Que Industrial fije un umbral por plan (por ejemplo, p95 ≤ 1 s) | `docs/kpi.md` |
+| 7 | SLA: el documento dice tickets + incidentes; el código solo cuenta tickets | Dos lecturas distintas del mismo KPI | Elegir la opción A o B de la sección 2 | `docs/kpi.md` o tarea de seguimiento |
+
+**Propuesta del equipo para agilizar la reunión** (no aprobada; la decide Industrial):
+
+- Aprobar las fórmulas 1–3 y 5–9 tal como están.
+- Fórmula 4: **opción A** (SLA solo con tickets) y corregir la frase de `docs/kpi.md`.
+- Aprobar los parámetros 25 000 COP/h, 120 h, 0,8 y COP; aclarar si las 120 h son de soporte.
+- Aprobar los SLO 99,0 / 99,5 / 99,9 % y decidir si el mes se mide completo o solo en horario de soporte.
+- Los hallazgos 3–6 se corrigen en tareas de seguimiento, no en T02.
