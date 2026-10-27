@@ -67,7 +67,7 @@ El script hace, en orden:
    portal responden 200 con `availability: null` y series vacías.
 8. Restaura el sitio y Prometheus al salir, incluso si algo falla (`trap`).
 
-Duración aproximada: 5–8 minutos, más la espera de 65 s del punto 7 y el tiempo de recuperación del
+Duración aproximada: 8–12 minutos, más la espera de 65 s del punto 7 y el tiempo de recuperación del
 sitio (hasta 3 minutos). La salida debe terminar en:
 
 ```text
@@ -149,6 +149,10 @@ kubectl -n cliente-restaurante scale deploy/web --replicas=0
 3. Refrescar la consola: La Sazón queda **caída** y el incidente aparece en la lista.
 4. Refrescar el portal: «Su sitio no está disponible en este momento; ya estamos trabajando en ello.»
 5. Esperar a que el incidente esté **abierto** y mostrar la hora de inicio (no la de la alerta).
+6. Mantener el sitio caído hasta pasar el siguiente múltiplo de 5 minutos. La serie se dibuja cada 5
+   minutos; si la caída dura menos, puede no quedar ningún punto en 0 y la gráfica no mostraría el
+   hueco. El script espera solo; a mano, mirar el reloj y recuperar después del siguiente `:00`,
+   `:05`, `:10`, etc. El MTTR incluirá esa espera, y es correcto: la caída duró eso.
 
 Recuperar:
 
@@ -157,10 +161,10 @@ kubectl -n cliente-restaurante scale deploy/web --replicas=1
 kubectl -n cliente-restaurante rollout status deploy/web --timeout=180s
 ```
 
-6. Cuando el sitio responde 200, en **30–45 s** el incidente queda **mitigado**.
-7. Refrescar la consola: el **MTTR** deja de ser `null` y muestra los minutos de la caída.
-8. Refrescar el portal: la falla aparece como **Mitigada** y el texto explica qué pasó sin jerga.
-9. Abrir **Métricas**: la serie muestra el hueco en 0.
+7. Cuando el sitio responde 200, en **30–45 s** el incidente queda **mitigado**.
+8. Refrescar la consola: el **MTTR** deja de ser `null` y muestra los minutos de la caída.
+9. Refrescar el portal: la falla aparece como **Mitigada** y el texto explica qué pasó sin jerga.
+10. Abrir **Métricas**: la serie muestra el hueco en 0.
 
 **Esperado:** un solo incidente (no duplicados), MTTR calculado con la hora real de la caída y el
 sitio respondiendo 200 al final.
@@ -249,7 +253,7 @@ Después:
 | Preparación y comprobaciones | 10 |
 | Consola, carga/costo y detalle técnico | 10 |
 | Portal del cliente | 5 |
-| Caída, recuperación y MTTR | 5–8 |
+| Caída, recuperación y MTTR | 5–10 |
 | Prometheus apagado | 2 (más 65 s de espera) |
 | Cierre y restauración | 5 |
 | **Total** | **35–45** |

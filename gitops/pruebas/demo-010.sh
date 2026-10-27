@@ -180,6 +180,15 @@ esperar "que el tablero muestre el sitio caído" caido_en_tablero && ok "el tabl
 # ---------- 5. La recuperación y el MTTR (CA-9) ----------
 
 echo "== 5. Recuperación y MTTR =="
+# La serie de disponibilidad tiene un punto cada 5 min (SERIES_STEP_SECONDS). Si la caída dura
+# menos que eso, puede no caer en ningún punto y la gráfica no mostraría el hueco (CA-6). Se
+# mantiene el sitio caído hasta pasar el siguiente múltiplo de 5 minutos; el MTTR lo refleja.
+ahora="$(date +%s)"
+espera=$(( 300 - ahora % 300 + 10 ))
+[ "$espera" -lt 10 ] && espera=$((espera + 300))
+echo "   (esperando ${espera} s para que la caída quede en un punto de la serie)"
+sleep "$espera"
+
 kubectl -n "$NAMESPACE" scale deploy/web --replicas=1 >/dev/null \
   && ok "sitio encendido (1 réplica)" || falla "no se pudo encender el sitio"
 SITIO_TOCADO=0
