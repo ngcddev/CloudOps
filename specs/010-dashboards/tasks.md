@@ -18,7 +18,7 @@
 
 ## Definición
 
-- [ ] T01 · Crear `docs/kpi.md` con las fórmulas de la tabla del plan marcadas «provisional, valida Industrial» y `seed/kpi_params.json` con `hourly_cost`, `technician_monthly_hours` y `at_risk_ratio` — **Verifica:** el JSON es válido y cada KPI de CA-1 y CA-2 tiene fórmula, fuente y meta en el documento. [ ]
+- [x] T01 · Crear `docs/kpi.md` con las fórmulas de la tabla del plan marcadas «provisional, valida Industrial» y `seed/kpi_params.json` con `hourly_cost`, `technician_monthly_hours` y `at_risk_ratio` — **Verifica:** el JSON es válido y cada KPI de CA-1 y CA-2 tiene fórmula, fuente y meta en el documento. [x]
 - [ ] T02 · Revisar con Industrial las fórmulas provisionales y registrar los cambios en `docs/kpi.md` — **Verifica:** el documento queda sin la marca «provisional» o con los cambios pedidos anotados. [ ]
 
 ## Backend · datos del Hub
