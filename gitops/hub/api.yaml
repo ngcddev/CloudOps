@@ -69,6 +69,9 @@ spec:
             # Enlaces del detalle del incidente (spec 008): direcciones que abre el navegador del técnico
             - { name: GRAFANA_URL, value: "http://grafana.hub.local" }
             - { name: GITEA_PUBLIC_URL, value: "http://gitea.hub.local" }
+            # Dashboards y métricas (spec 010): la API consulta Prometheus (jobs `sitios` y Traefik) para los
+            # KPIs de disponibilidad y latencia; con la URL vacía el panel responde «sin datos».
+            - { name: PROMETHEUS_URL, value: "http://prometheus.monitoring.svc:9090" }
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

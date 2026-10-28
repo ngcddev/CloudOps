@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Frontend, Backend) · Industrial define los KPI y hace la prueba con personas no técnicas
 >
-> **Módulo:** 4 (las vistas con datos del Hub se pueden adelantar) · **Requerimientos:** RF-15, RF-16, RF-17, RNF-10 · **Depende de:** 004, 005, 007, 008, 009 · **Estado:** Tareas listas
+> **Módulo:** 4 (las vistas con datos del Hub se pueden adelantar) · **Requerimientos:** RF-15, RF-16, RF-17, RNF-10 · **Depende de:** 004, 005, 007, 008, 009 · **Estado:** En curso
 
 ## Qué y por qué
 

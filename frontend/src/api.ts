@@ -1341,6 +1341,231 @@ export async function closeIncident(id: number, rootCause: string): Promise<Inci
   return request<IncidentDetail>(`/incidents/${id}/close`, { method: "POST", body: JSON.stringify({ root_cause: rootCause }) });
 }
 
+// ---------- Dashboards y metricas (spec 010) ----------
+
+export interface ClientKpi {
+  client_id: number;
+  client_name: string;
+  service_name: string | null;
+  service_status: ServiceStatus;
+  // null = sin datos (Prometheus caido o sin serie); nunca se inventa un 100 %
+  availability: number | null;
+  cumple_objetivo: boolean | null;
+  latency_p95: number | null;
+  sla_compliance: number | null;
+  mttr: number | null;
+  open_tickets: number;
+  closed_tickets: number;
+  hours: number;
+  cost: number;
+}
+
+// El portal no recibe costo, horas ni nombres de tecnicos (CA-7)
+export interface ClientDashboardKpi {
+  client_id: number;
+  client_name: string;
+  service_name: string | null;
+  service_status: ServiceStatus;
+  availability: number | null;
+  cumple_objetivo: boolean | null;
+  slo_availability: number | null;
+  latency_p95: number | null;
+  sla_compliance: number | null;
+  mttr: number | null;
+  open_tickets: number;
+  closed_tickets: number;
+}
+
+// Falla del mes en el portal: sin tecnicos, SLA ni causa interna (CA-4, CA-7)
+export interface ClientIncident {
+  id: number;
+  title: string;
+  status: IncidentStatus;
+  started_at: string;
+}
+
+export interface TechnicianLoad {
+  user_id: number;
+  name: string;
+  hours: number;
+  load: number;
+}
+
+export interface AgencyDashboard {
+  month: string;
+  clients: ClientKpi[];
+  technicians: TechnicianLoad[];
+}
+
+export interface SeriesPoint {
+  timestamp: string;
+  value: number;
+}
+
+export interface ClientSeries {
+  client_id: number;
+  month: string;
+  slo_availability: number | null;
+  availability: SeriesPoint[];
+  latency_p95: SeriesPoint[];
+}
+
+// Mes de la pantalla, con el formato YYYY-MM que recibe la API.
+// Se puede fijar con `?month=2026-10` (útil para la demo cuando el mes ya cambió) y se recuerda
+// durante la pestaña; sin parámetro se usa el mes actual en America/Bogota.
+const MES_KEY = "hub.mes";
+
+function mesValido(valor: string | null): string | null {
+  return valor && /^\d{4}-(0[1-9]|1[0-2])$/.test(valor) ? valor : null;
+}
+
+export function mesActual(): string {
+  if (typeof window !== "undefined") {
+    try {
+      const deUrl = mesValido(new URLSearchParams(window.location.search).get("month"));
+      if (deUrl) {
+        window.sessionStorage.setItem(MES_KEY, deUrl);
+        return deUrl;
+      }
+      const guardado = mesValido(window.sessionStorage.getItem(MES_KEY));
+      if (guardado) return guardado;
+    } catch {
+      // Sin sessionStorage (modo privado o navegador antiguo): se usa el mes actual.
+    }
+  }
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+  })
+    .format(new Date())
+    .slice(0, 7);
+}
+
+// Fija el mes elegido en la URL y en la pestaña, para que no se pierda al navegar.
+export function fijarMes(mes: string): void {
+  const valido = mesValido(mes);
+  if (!valido || typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(MES_KEY, valido);
+  } catch {
+    // Sin sessionStorage: al menos queda en la URL.
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("month", valido);
+  window.history.replaceState({}, "", url);
+}
+
+function mockMainService(clientId: number) {
+  const client = findMockClient(clientId);
+  return client.projects.flatMap((project) => project.services)[0] ?? null;
+}
+
+// Horas registradas en el mes de prueba (los datos de prueba viven en octubre de 2026)
+function mockClientHours(clientId: number): number {
+  const client = findMockClient(clientId);
+  const serviceIds = new Set(client.projects.flatMap((project) => project.services.map((service) => service.id)));
+  return mock.tickets
+    .filter((ticket) => serviceIds.has(ticket.service_id))
+    .flatMap((ticket) => ticket.work_logs)
+    .reduce((total, log) => total + log.hours, 0);
+}
+
+function mockClientKpi(clientId: number): ClientKpi {
+  const client = findMockClient(clientId);
+  const service = mockMainService(clientId);
+  const hours = mockClientHours(clientId);
+  // El tercer cliente queda sin serie para mostrar �sin datos� (CA-8)
+  const availability = clientId === 3 ? null : clientId === 1 ? 99.4 : 98.6;
+  const slo = service?.plan.slo_availability ?? null;
+  return {
+    client_id: client.id,
+    client_name: client.name,
+    service_name: service?.name ?? null,
+    service_status: service?.status ?? "operativo",
+    availability,
+    cumple_objetivo: availability === null || slo === null ? null : availability >= slo,
+    latency_p95: clientId === 3 ? null : clientId === 1 ? 0.24 : 0.41,
+    sla_compliance: clientId === 3 ? null : 80,
+    mttr: clientId === 1 ? 8 : null,
+    open_tickets: 1,
+    closed_tickets: 2,
+    hours,
+    cost: hours * 25000,
+  };
+}
+
+export async function getAgencyDashboard(month?: string): Promise<AgencyDashboard> {
+  const mes = month ?? mesActual();
+  if ((await detectMode()) === "mock") {
+    return {
+      month: mes,
+      clients: mock.clients.map((client) => mockClientKpi(client.id)),
+      technicians: [
+        { user_id: 1, name: MOCK_USER_NAME, hours: 30, load: 30 / 120 },
+        { user_id: 2, name: "Camilo Torres", hours: 96, load: 96 / 120 },
+      ],
+    };
+  }
+  return request<AgencyDashboard>(`/dashboard/agency?month=${encodeURIComponent(mes)}`);
+}
+
+export async function getClientDashboard(clientId: number, month?: string): Promise<ClientDashboardKpi> {
+  const mes = month ?? mesActual();
+  if ((await detectMode()) === "mock") {
+    const { hours: _hours, cost: _cost, ...client } = mockClientKpi(clientId);
+    return {
+      ...client,
+      slo_availability: mockMainService(clientId)?.plan.slo_availability ?? null,
+    };
+  }
+  return request<ClientDashboardKpi>(
+    `/dashboard/client/${clientId}?month=${encodeURIComponent(mes)}`,
+  );
+}
+
+// Fallas del mes para el portal: la API filtra por cliente y por mes; el mock lo hace en memoria
+export async function listClientIncidents(
+  clientId: number,
+  month?: string,
+): Promise<ClientIncident[]> {
+  const mes = month ?? mesActual();
+  if ((await detectMode()) === "mock") {
+    ensureMockIncidents();
+    return incidentMock.incidents
+      .filter((incident) => incident.client_id === clientId)
+      .map(({ id, title, status, started_at }) => ({ id, title, status, started_at }));
+  }
+  return request<ClientIncident[]>(
+    `/dashboard/client/${clientId}/incidents?month=${encodeURIComponent(mes)}`,
+  );
+}
+
+// Serie de prueba: un punto cada 5 min durante un dia, con el hueco de la caida de la demo (CA-6)
+function mockSeries(clientId: number, month: string): ClientSeries {
+  const service = mockMainService(clientId);
+  const slo = service?.plan.slo_availability ?? null;
+  const dia = `${month}-05`;
+  const availability: SeriesPoint[] = [];
+  const latency: SeriesPoint[] = [];
+  for (let minuto = 0; minuto < 24 * 60; minuto += 5) {
+    // Hueco de 10:00 a 10:30: el sitio dejo de responder (la grafica queda cortada)
+    if (minuto >= 10 * 60 && minuto < 10 * 60 + 30) continue;
+    const hora = String(Math.floor(minuto / 60)).padStart(2, "0");
+    const mins = String(minuto % 60).padStart(2, "0");
+    const timestamp = new Date(`${dia}T${hora}:${mins}:00-05:00`).toISOString();
+    availability.push({ timestamp, value: 100 });
+    latency.push({ timestamp, value: minuto === 10 * 60 + 30 ? 1.8 : 0.24 });
+  }
+  return { client_id: clientId, month, slo_availability: slo, availability, latency_p95: latency };
+}
+
+export async function getClientSeries(clientId: number, month?: string): Promise<ClientSeries> {
+  const mes = month ?? mesActual();
+  if ((await detectMode()) === "mock") return mockSeries(clientId, mes);
+  return request<ClientSeries>(`/dashboard/client/${clientId}/series?month=${encodeURIComponent(mes)}`);
+}
+
 // ---------- Recuperación por rollback (spec 009) ----------
 
 // En datos de prueba el avance del rollback se simula por tiempo: enviado → sincronizando → recuperado.

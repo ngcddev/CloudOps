@@ -22,6 +22,16 @@ from app.seed import seed_if_empty  # noqa: E402
 from app.services.auth import create_token  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def limpiar_cache_prometheus():
+    """La consulta a Prometheus cachea 60 s: entre pruebas se limpia para que no se filtre un valor simulado."""
+    from app.integrations import prometheus
+
+    prometheus._cache.clear()
+    yield
+    prometheus._cache.clear()
+
+
 @pytest.fixture
 def session_factory():
     """Base nueva en memoria para cada prueba, con todas las tablas creadas."""
