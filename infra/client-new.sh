@@ -37,113 +37,46 @@ if [[ "$HOST" != *.hub.local || "$HOST" == .hub.local ]]; then
   fail "dominio invalido '$HOST'; debe terminar en .hub.local."
 fi
 
-PYTHON_BIN="${PYTHON:-}"
-if [[ -z "$PYTHON_BIN" ]]; then
-  for candidate in python3 python python.exe; do
-    if command -v "$candidate" >/dev/null 2>&1; then
-      PYTHON_BIN="$candidate"
-      break
-    fi
-  done
+# Se valida todo antes de crear el archivo candidato, para que entradas invalidas no alteren el inventario.
+# Sin Python ni jq: el inventario y el catalogo de planes tienen formato fijo y se leen con grep y awk.
+if [[ ! "$PLAN" =~ ^[a-z0-9-]+$ ]] || ! grep -Eq "\"code\": *\"$PLAN\"" "$PLANS_FILE" 2>/dev/null; then
+  fail "el plan '$PLAN' no existe en seed/plans.json."
 fi
-if [[ -z "$PYTHON_BIN" ]] && command -v cmd.exe >/dev/null 2>&1; then
-  WINDOWS_PYTHON="$(cmd.exe /c where python.exe 2>/dev/null | tr -d '\r' | head -n 1 || true)"
-  if [[ -n "$WINDOWS_PYTHON" ]]; then
-    if command -v wslpath >/dev/null 2>&1; then
-      PYTHON_BIN="$(wslpath -u "$WINDOWS_PYTHON")"
-    elif command -v cygpath >/dev/null 2>&1; then
-      PYTHON_BIN="$(cygpath -u "$WINDOWS_PYTHON")"
-    fi
+
+# Entradas actuales del inventario, una por linea: "nombre dominio plan".
+ENTRIES=""
+if [[ -f "$CLIENTS_FILE" ]]; then
+  ENTRIES="$(awk '
+    /"[^"]+": *\{/ && !/"clients"/ { n = $0; sub(/^[^"]*"/, "", n); sub(/".*$/, "", n) }
+    /"host"/ { h = $0; sub(/.*"host": *"/, "", h); sub(/".*/, "", h) }
+    /"plan"/ { p = $0; sub(/.*"plan": *"/, "", p); sub(/".*/, "", p); print n, h, p }
+  ' "$CLIENTS_FILE")" || fail "no se pudo leer el inventario de clientes."
+fi
+
+while read -r existing_name existing_host existing_plan; do
+  [[ "$existing_name" == "$NAME" ]] || continue
+  if [[ "$existing_host" != "$HOST" || "$existing_plan" != "$PLAN" ]]; then
+    fail "el cliente '$NAME' ya existe con otro dominio o plan."
   fi
-fi
-[[ -n "$PYTHON_BIN" ]] || fail "se requiere Python 3; define PYTHON con la ruta del ejecutable."
-PYTHON_PLATFORM="$("$PYTHON_BIN" -c 'import sys; print(sys.platform)' 2>/dev/null)" || \
-  fail "no se pudo ejecutar Python desde '$PYTHON_BIN'."
-PY_CLIENTS_FILE="$CLIENTS_FILE"
-PY_PLANS_FILE="$PLANS_FILE"
-if [[ "$PYTHON_PLATFORM" == win32 ]]; then
-  if command -v wslpath >/dev/null 2>&1; then
-    PY_CLIENTS_FILE="$(wslpath -w "$CLIENTS_FILE")"
-    PY_PLANS_FILE="$(wslpath -w "$PLANS_FILE")"
-  elif command -v cygpath >/dev/null 2>&1; then
-    PY_CLIENTS_FILE="$(cygpath -w "$CLIENTS_FILE")"
-    PY_PLANS_FILE="$(cygpath -w "$PLANS_FILE")"
-  else
-    fail "se necesita wslpath o cygpath para usar Python de Windows desde Bash."
-  fi
-fi
+done <<< "$ENTRIES"
 
-# Valida todo antes de crear el archivo candidato, para que entradas invalidas no alteren el inventario.
-if ! CANDIDATE_FILE="$("$PYTHON_BIN" - "$NAME" "$HOST" "$PLAN" "$PY_CLIENTS_FILE" "$PY_PLANS_FILE" <<'PY'
-import json
-import sys
-import tempfile
-from pathlib import Path
-
-name, host, plan, clients_file, plans_file = sys.argv[1:]
-clients_path = Path(clients_file)
-
-
-def fail(message):
-    print(f"Error: {message}", file=sys.stderr)
-    raise SystemExit(1)
-
-
-try:
-    plans = json.loads(Path(plans_file).read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError) as error:
-    fail(f"no se pudo leer el catalogo de planes: {error}")
-
-plan_codes = {item.get("code") for item in plans if isinstance(item, dict)}
-if plan not in plan_codes:
-    fail(f"el plan '{plan}' no existe en seed/plans.json.")
-
-if clients_path.exists():
-    try:
-        inventory = json.loads(clients_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        fail(f"no se pudo leer el inventario de clientes: {error}")
-else:
-    inventory = {"clients": {}}
-
-clients = inventory.get("clients")
-if not isinstance(clients, dict):
-    fail("el inventario debe contener un objeto 'clients'.")
-if name in clients:
-  existing = clients[name]
-  if existing != {"host": host, "plan": plan}:
-    fail(f"el cliente '{name}' ya existe con otro dominio o plan.")
-
-updated_inventory = dict(inventory)
-updated_clients = dict(clients)
-updated_clients[name] = {"host": host, "plan": plan}
-updated_inventory["clients"] = updated_clients
-
-try:
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        encoding="utf-8",
-        dir=clients_path.parent,
-      prefix=".clients.auto.tfvars.",
-      suffix=".tfvars.json",
-        delete=False,
-    ) as candidate:
-        json.dump(updated_inventory, candidate, ensure_ascii=False, indent=2)
-        candidate.write("\n")
-        print(candidate.name)
-except OSError as error:
-    fail(f"no se pudo preparar el inventario temporal: {error}")
-PY
-)"; then
-  exit 1
-fi
-if [[ "$PYTHON_PLATFORM" == win32 ]]; then
-  if command -v wslpath >/dev/null 2>&1; then
-    CANDIDATE_FILE="$(wslpath -u "$CANDIDATE_FILE")"
-  else
-    CANDIDATE_FILE="$(cygpath -u "$CANDIDATE_FILE")"
-  fi
-fi
+CANDIDATE_FILE="$(mktemp --suffix=.tfvars.json "$TOFU_DIR/.clients.auto.tfvars.XXXXXX")" ||
+  fail "no se pudo preparar el inventario temporal."
+{
+  echo '{'
+  echo '  "clients": {'
+  # El cliente nuevo va al final; si ya estaba con los mismos datos no se repite.
+  printf '%s\n%s %s %s\n' "$ENTRIES" "$NAME" "$HOST" "$PLAN" | awk '
+    NF == 3 && !($1 in host) { orden[++total] = $1; host[$1] = $2; plan[$1] = $3 }
+    END {
+      for (i = 1; i <= total; i++) {
+        k = orden[i]
+        printf "    \"%s\": {\n      \"host\": \"%s\",\n      \"plan\": \"%s\"\n    }%s\n", k, host[k], plan[k], (i < total ? "," : "")
+      }
+    }'
+  echo '  }'
+  echo '}'
+} > "$CANDIDATE_FILE"
 
 PLAN_FILE_NAME="client-new-${NAME}-$$.tfplan"
 PLAN_FILE_HOST="$SCRIPT_DIR/state/$PLAN_FILE_NAME"
