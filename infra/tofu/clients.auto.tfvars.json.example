@@ -1,0 +1,8 @@
+{
+  "clients": {
+    "prueba": {
+      "host": "prueba.hub.local",
+      "plan": "basico"
+    }
+  }
+}
