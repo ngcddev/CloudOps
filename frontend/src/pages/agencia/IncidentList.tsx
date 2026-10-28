@@ -148,7 +148,7 @@ export default function IncidentList() {
       <div className="page-header">
         <h1>Incidentes</h1>
         {!creating && (
-          <button type="button" className="button" onClick={() => setCreating(true)}>
+          <button type="button" className="button button-primary" onClick={() => setCreating(true)}>
             Nuevo incidente
           </button>
         )}

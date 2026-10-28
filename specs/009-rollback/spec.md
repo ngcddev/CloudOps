@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Cloud / Platform, Backend, Frontend)
 >
-> **Módulo:** 4 · **Requerimientos:** RF-14 · **Depende de:** 005, 007, 008 · **Estado:** Tareas listas
+> **Módulo:** 4 · **Requerimientos:** RF-14 · **Depende de:** 005, 007, 008 · **Estado:** Terminada
 
 ## Qué y por qué
 

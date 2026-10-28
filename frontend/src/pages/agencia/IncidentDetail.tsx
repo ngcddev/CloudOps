@@ -12,12 +12,15 @@ import {
   type IncidentDetail as IncidentDetailData,
   type IncidentEventType,
 } from "../../api";
+import RecoveryPanel from "../../components/RecoveryPanel";
 import SlaClock from "../../components/SlaClock";
 import { formatDateTime } from "../../format";
 import { INCIDENT_SOURCE_LABELS, INCIDENT_STATUS_LABELS } from "./IncidentList";
 
 // Cada cuánto se vuelve a pedir el detalle: la recuperación que ve el monitoreo aparece sola
 const REFRESH_MS = 10_000;
+// Mientras un rollback no esté recuperado se lee más seguido para mostrar su avance (spec 009)
+const ROLLBACK_REFRESH_MS = 5_000;
 
 const EVENT_LABELS: Record<IncidentEventType, { icon: string; text: string }> = {
   detectado: { icon: "✗", text: "Detectado" },
@@ -25,6 +28,9 @@ const EVENT_LABELS: Record<IncidentEventType, { icon: string; text: string }> = 
   nota: { icon: "·", text: "Nota" },
   recuperado: { icon: "✓", text: "Recuperado" },
   cerrado: { icon: "■", text: "Cerrado" },
+  rollback_enviado: { icon: "↺", text: "Rollback enviado" },
+  rollback_confirmado: { icon: "✓", text: "Rollback confirmado" },
+  mensaje_cliente: { icon: "✉", text: "Mensaje al cliente" },
 };
 
 export default function IncidentDetail() {
@@ -46,11 +52,13 @@ export default function IncidentDetail() {
       .catch((error: Error) => setLoadError(error.message));
   }, [incidentId]);
 
+  const rollbackStatus = incident?.rollback.status;
+  const rollbackRunning = rollbackStatus === "enviado" || rollbackStatus === "sincronizando";
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, REFRESH_MS);
+    const timer = window.setInterval(load, rollbackRunning ? ROLLBACK_REFRESH_MS : REFRESH_MS);
     return () => window.clearInterval(timer);
-  }, [load]);
+  }, [load, rollbackRunning]);
 
   // Corre una acción y pinta el detalle que devuelve la API, sin recargar la página
   async function run(action: () => Promise<IncidentDetailData>, after?: () => void) {
@@ -150,6 +158,10 @@ export default function IncidentDetail() {
         </dl>
       </section>
 
+      {(!closed || incident.rollback.status !== "sin_rollback") && (
+        <RecoveryPanel incident={incident} onUpdated={setIncident} />
+      )}
+
       <div className="detail-grid">
         <section className="card" aria-label="Diagnóstico">
           <h2>Diagnóstico</h2>
@@ -199,12 +211,12 @@ export default function IncidentDetail() {
                   Tomar incidente
                 </button>
               )}
-              {open && incident.source === "manual" && (
+              {open && (incident.source === "manual" || incident.rollback.confirmed_at !== null) && (
                 <button type="button" className="button" disabled={busy} onClick={() => run(() => mitigateIncident(incidentId))}>
                   Marcar como mitigado
                 </button>
               )}
-              {open && incident.source === "alerta" && (
+              {open && incident.source === "alerta" && incident.rollback.confirmed_at === null && (
                 <p className="muted">Se marca mitigado solo cuando el monitoreo ve el sitio responder.</p>
               )}
             </div>

@@ -2,7 +2,7 @@
 # con un único commit. Es lo único que el Hub escribe; Argo CD hace el resto.
 import re
 
-from app.integrations.gitea import GiteaClient, version_commit_message
+from app.integrations.gitea import GiteaClient, rollback_commit_message, version_commit_message
 from app.services.kustomization import set_new_tag
 
 
@@ -61,6 +61,47 @@ def publish_version(
         new_text,
         current.sha,
         version_commit_message(client_slug(namespace), tag, change_id),
+        author_name,
+        author_email,
+    )
+
+
+def find_existing_rollback(gitea: GiteaClient, namespace: str, tag: str, incident_id: int) -> str | None:
+    """SHA del commit si el último que tocó el archivo ya es el rollback de este incidente.
+
+    Cubre un rollback que escribió en Gitea pero no alcanzó a guardarse en la base: al reintentar, el
+    archivo ya tiene la versión y el incidente adopta ese commit en vez de quedar atascado.
+    """
+    latest = gitea.latest_commit(kustomization_path(namespace))
+    if latest is None:
+        return None
+    sha, message = latest
+    return sha if message.strip() == rollback_commit_message(client_slug(namespace), tag, incident_id) else None
+
+
+def publish_rollback(
+    gitea: GiteaClient,
+    namespace: str,
+    tag: str,
+    incident_id: int,
+    author_name: str,
+    author_email: str,
+) -> str:
+    """Escribe en el kustomization del cliente la versión de destino y devuelve el SHA del commit.
+
+    La API de Gitea no tiene `revert`: se escribe el contenido con el `newTag` anterior, que es lo mismo
+    que dejaría un `git revert`. Solo cambian los `newTag`; el resto del archivo queda igual.
+    """
+    path = kustomization_path(namespace)
+    current = gitea.get_file(path)
+    new_text = set_new_tag(current.text, tag)
+    if new_text == current.text:
+        raise NothingToPublish(f"{path} ya tiene la versión {tag}.")
+    return gitea.update_file(
+        path,
+        new_text,
+        current.sha,
+        rollback_commit_message(client_slug(namespace), tag, incident_id),
         author_name,
         author_email,
     )

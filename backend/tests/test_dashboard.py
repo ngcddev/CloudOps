@@ -147,3 +147,11 @@ def test_portal_incidentes_solo_del_cliente_y_sin_datos_internos(as_agency, as_c
     response = as_agency.get("/api/dashboard/client/2/incidents", params={"month": mes})
     assert response.status_code == 200, response.text
     assert [item["title"] for item in response.json()] == ["El sitio de El Tornillo no responde"]
+
+
+@pytest.mark.parametrize("month", ["abc", "2026-13", "2026-1"])
+@pytest.mark.parametrize(
+    "path", ["/api/dashboard/agency", "/api/dashboard/client/1", "/api/dashboard/client/1/series"]
+)
+def test_mes_con_formato_invalido_responde_422(client, seeded, path, month):
+    assert client.get(path, params={"month": month}).status_code == 422

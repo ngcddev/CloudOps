@@ -1,8 +1,9 @@
 // Marco de la consola de agencia: menú lateral de navegación y área de contenido.
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 
-import { useAuth } from "../auth";
+import Logo from "./Logo";
 import MockDataNotice from "./MockDataNotice";
+import SessionBar from "./SessionBar";
 
 // Secciones de la consola. Las que aún no existen se muestran deshabilitadas con la spec que las trae.
 const sections: { label: string; to?: string; spec?: string }[] = [
@@ -17,19 +18,14 @@ const sections: { label: string; to?: string; spec?: string }[] = [
 ];
 
 export default function AgencyLayout() {
-  const { user, mock, logout } = useAuth();
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
-
   return (
     <div className="layout">
       <aside className="sidebar">
-        <div className="brand">CloudOps Client Hub</div>
-        <div className="brand-sub">Consola de agencia · Forja Digital</div>
+        <div className="brand">
+          <Logo />
+          CloudOps Client Hub
+        </div>
+        <div className="brand-sub">Consola · Forja Digital</div>
         <nav aria-label="Menú de la consola">
           <ul className="nav">
             {sections.map((section) => (
@@ -48,14 +44,7 @@ export default function AgencyLayout() {
             ))}
           </ul>
         </nav>
-        <div className="session">
-          <span>{user?.name}</span>
-          {!mock && (
-            <button type="button" className="button button-secondary" onClick={handleLogout}>
-              Cerrar sesión
-            </button>
-          )}
-        </div>
+        <SessionBar />
       </aside>
       <main className="content">
         <MockDataNotice />

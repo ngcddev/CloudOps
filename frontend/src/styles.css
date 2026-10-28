@@ -1,16 +1,91 @@
-/* Estilos globales del Hub: blanco y negro, grises solo para bordes y estados deshabilitados. */
+/*
+  Estilos globales del Hub. Sistema de diseño a medio camino entre Vercel y GitHub:
+  - De Vercel: lienzo claro #fafafa, tipografía Geist con titulares ligeros y apretados,
+    bordes de un píxel en vez de sombras, botones de 6px y etiquetas en mono mayúscula.
+  - De GitHub: tema oscuro #0d1117, tarjetas de vidrio translúcido, píldoras y un solo
+    acento verde para la acción principal.
+  El color es un acento, no un lenguaje: el estado se dice siempre con texto e ícono.
+  El tema lo fija el atributo data-theme de <html> (index.html y ThemeToggle).
+*/
 
 :root {
-  --ink: #000;
-  --paper: #fff;
-  --line: #bbb;
-  --muted: #666;
+  color-scheme: light;
+
+  /* Superficies */
+  --canvas: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f5f5f5;
+  --input-bg: #ffffff;
+  --dialog-bg: #ffffff;
+  --hover: rgba(0, 0, 0, 0.04);
+  --selected: rgba(0, 0, 0, 0.07);
+
+  /* Texto */
+  --ink: #171717;
+  --ink-2: #4d4d4d;
+  --ink-3: #666666;
+
+  /* Bordes */
+  --edge: rgba(0, 0, 0, 0.09);
+  --edge-strong: #c9c9c9;
+  --focus-ring: rgba(23, 23, 23, 0.14);
+
+  /* Fichas invertidas y botón neutro */
+  --invert-bg: #171717;
+  --invert-ink: #ffffff;
+
+  /* Único acento: la acción principal (verde de GitHub) y el ✓ de "operativo" (verde de Vercel) */
+  --accent: #08872b;
+  --accent-ink: #ffffff;
+  --ok: #297a3a;
+
+  /* Halo violeta tenue del inicio de sesión */
+  --halo: rgba(140, 147, 251, 0.3);
+
+  /* Tipografía */
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Formas */
+  --radius-sm: 6px;
+  --radius-card: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;
+
   --space: 16px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 16px;
+  --sidebar-width: 248px;
+
+  font-family: var(--font-sans);
+  font-size: 14px;
   line-height: 1.5;
   color: var(--ink);
-  background: var(--paper);
+  background: var(--canvas);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0d1117;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --input-bg: #0d1117;
+  --dialog-bg: #161b22;
+  --hover: rgba(255, 255, 255, 0.06);
+  --selected: rgba(255, 255, 255, 0.1);
+
+  --ink: #ffffff;
+  --ink-2: #a4aea6;
+  --ink-3: #7c8980;
+
+  --edge: rgba(255, 255, 255, 0.12);
+  --edge-strong: #484f58;
+  --focus-ring: rgba(255, 255, 255, 0.2);
+
+  --invert-bg: #ffffff;
+  --invert-ink: #0d1117;
+
+  --ok: #5fed83;
+  --halo: rgba(167, 162, 255, 0.35);
 }
 
 * {
@@ -19,84 +94,197 @@
 
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--canvas);
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--invert-bg);
+  color: var(--invert-ink);
 }
 
 a {
   color: var(--ink);
+  text-decoration-color: var(--edge-strong);
+  text-underline-offset: 3px;
 }
 
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* Titulares: ligeros y con tracking apretado, como en Vercel */
 h1,
 h2,
-h3 {
-  line-height: 1.2;
+h3,
+h4 {
   margin: 0 0 var(--space);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+h1 {
+  font-size: 30px;
+  font-weight: 450;
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+h4 {
+  margin: var(--space) 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+p {
+  margin: 0 0 var(--space);
+}
+
+code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* Etiquetas en mono mayúscula: la "estampa" de Vercel */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.071em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 /* ---------- Estructura de la consola ---------- */
 
 .layout {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .sidebar {
-  border-right: 2px solid var(--ink);
-  padding: var(--space);
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 20px 12px 16px;
+  border-right: 1px solid var(--edge);
+  overflow-y: auto;
 }
 
 .brand {
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.logo {
+  flex: none;
+  color: var(--ink);
 }
 
 .brand-sub {
-  color: var(--muted);
-  font-size: 0.85rem;
-  margin-bottom: calc(var(--space) * 1.5);
+  margin: 4px 10px 24px 42px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.071em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 .nav {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .nav a,
 .nav .nav-disabled {
   display: block;
-  padding: 8px 10px;
-  margin-bottom: 4px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
-  border: 1px solid transparent;
+  color: var(--ink-2);
+}
+
+.nav a {
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .nav a:hover {
-  border-color: var(--ink);
+  background: var(--hover);
+  color: var(--ink);
 }
 
-/* La sección activa se marca con fondo invertido, no con color */
+/* La sección activa se marca con fondo y peso, además del atributo aria-current */
 .nav a.active {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--selected);
+  color: var(--ink);
+  font-weight: 500;
 }
 
 .nav .nav-disabled {
-  color: var(--muted);
+  color: var(--ink-3);
   cursor: not-allowed;
 }
 
 .nav .nav-disabled small {
   display: block;
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .content {
-  padding: calc(var(--space) * 2);
-  max-width: 1100px;
+  width: 100%;
+  max-width: 1248px;
+  margin: 0 auto;
+  padding: 40px 48px 80px;
+}
+
+/* Cada bloque entra con un fundido corto; solo transform y opacidad */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.content > * {
+  animation: rise 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ---------- Elementos comunes ---------- */
@@ -107,7 +295,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: var(--space);
-  margin-bottom: var(--space);
+  margin-bottom: 24px;
 }
 
 .page-header h1 {
@@ -115,42 +303,81 @@ h3 {
 }
 
 .muted {
-  color: var(--muted);
-  font-size: 0.875rem;
+  color: var(--ink-3);
+  font-size: 13px;
 }
 
+/* Botón neutro (negro en claro, blanco en oscuro). El verde es solo para la acción principal. */
 .button {
-  display: inline-block;
-  padding: 8px 14px;
-  border: 2px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--invert-bg);
+  color: var(--invert-ink);
   font: inherit;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
 }
 
 .button:hover {
-  background: var(--paper);
-  color: var(--ink);
+  opacity: 0.85;
+}
+
+.button:active {
+  transform: translateY(1px);
 }
 
 .button:disabled {
-  border-color: var(--line);
-  background: var(--line);
-  color: var(--paper);
+  opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
+}
+
+.button-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 .button-secondary {
-  background: var(--paper);
-  color: var(--ink);
+  background: transparent;
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--edge-strong);
 }
 
 .button-secondary:hover {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--hover);
+  color: var(--ink);
+  opacity: 1;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--edge-strong);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.icon-button:hover {
+  background: var(--hover);
+  color: var(--ink);
 }
 
 .filters-panel {
@@ -163,54 +390,102 @@ h3 {
   gap: var(--space);
 }
 
-.filters-grid label {
+/* Campos de formulario: el mismo tratamiento en todas las pantallas */
+.filters-grid select,
+.stacked-form input,
+.stacked-form select,
+.stacked-form textarea,
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--ink);
+  font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filters-grid select:hover,
+.stacked-form input:hover,
+.stacked-form select:hover,
+.stacked-form textarea:hover,
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: var(--ink-3);
+}
+
+.filters-grid select:focus-visible,
+.stacked-form input:focus-visible,
+.stacked-form select:focus-visible,
+.stacked-form textarea:focus-visible,
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid transparent;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.stacked-form textarea,
+.field textarea {
+  resize: vertical;
+}
+
+.filters-grid label,
+.stacked-form label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.filters-grid select {
-  border: 1px solid var(--ink);
-  padding: 8px 10px;
-  font: inherit;
-  background: var(--paper);
-}
-
+/* Fichas de prioridad, estado y SLA: píldoras en mono. Lo que las distingue es el relleno y el trazo, no el color. */
 .priority-badge,
 .status-pill,
 .sla-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  border: 1px solid var(--ink);
-  font-size: 0.8rem;
-  font-weight: 700;
+  padding: 2px 9px;
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 .priority-P1 {
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--invert-bg);
+  background: var(--invert-bg);
+  color: var(--invert-ink);
 }
 
 .priority-P2 {
+  border-color: var(--ink);
   border-style: dashed;
 }
 
 .priority-P3,
 .priority-P4 {
-  background: #f3f3f3;
+  background: var(--surface-2);
 }
 
 .status-abierto {
+  border-color: var(--ink);
   border-style: dashed;
 }
 
 .status-en_progreso {
-  background: #efefef;
+  background: var(--surface-2);
 }
 
 .status-en_espera {
@@ -218,36 +493,38 @@ h3 {
 }
 
 .status-resuelto {
-  background: #ededed;
+  background: var(--surface-2);
 }
 
 .status-cerrado {
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--invert-bg);
+  background: var(--invert-bg);
+  color: var(--invert-ink);
 }
 
 /* Incidente mitigado (spec 008): el servicio volvió y falta cerrarlo con la causa raíz */
 .status-mitigado {
-  background: #ededed;
+  background: var(--surface-2);
 }
 
 .sla-a_tiempo {
-  border-color: var(--ink);
-  background: #f5f5f5;
+  background: var(--surface-2);
 }
 
 .sla-en_riesgo {
   border-color: var(--ink);
-  background: #f0f0f0;
+  background: var(--surface-2);
 }
 
 .sla-vencido {
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--invert-bg);
+  background: var(--invert-bg);
+  color: var(--invert-ink);
 }
 
 /* Reloj del SLA de un incidente (spec 008): detenido y a tiempo */
 .sla-cumplido {
+  border-color: var(--ink);
   border-style: double;
   border-width: 3px;
 }
@@ -255,19 +532,21 @@ h3 {
 .sla-clock {
   display: inline-flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 4px;
 }
 
 .sla-clock-label {
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.071em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #555;
+  color: var(--ink-3);
 }
 
 .sla-clock-time {
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
 }
 
 .ticket-meta {
@@ -284,26 +563,18 @@ h3 {
   margin-bottom: var(--space);
 }
 
+.detail-grid > .card {
+  margin-bottom: 0;
+}
+
 .stacked-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.stacked-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-weight: 600;
-}
-
-.stacked-form input,
-.stacked-form select,
-.stacked-form textarea {
-  border: 1px solid var(--ink);
-  padding: 8px 10px;
-  font: inherit;
-  background: var(--paper);
+.stacked-form > .button {
+  align-self: flex-start;
 }
 
 .history-list {
@@ -312,58 +583,91 @@ h3 {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .history-list li {
-  border: 1px solid var(--line);
-  padding: 10px 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
 }
 
 .portal-form {
   margin-bottom: var(--space);
 }
 
-/* Avisos: se distinguen por ícono, texto y borde, no por color */
+/* Avisos: se distinguen por ícono, texto y trazo, no por color */
 .notice,
 .error {
-  padding: 10px 14px;
+  padding: 12px 16px;
   margin: 0 0 var(--space);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--surface);
 }
 
 .notice {
-  border: 1px dashed var(--ink);
+  border-style: dashed;
+  border-color: var(--edge-strong);
 }
 
 .error {
-  border: 2px solid var(--ink);
-  font-weight: 600;
+  border-color: var(--ink);
+  font-weight: 500;
 }
 
 /* ---------- Tablas ---------- */
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
 }
 
 .table th,
 .table td {
   text-align: left;
   vertical-align: top;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .table th {
-  border-bottom: 2px solid var(--ink);
-  font-size: 0.875rem;
+  padding: 10px 16px;
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.071em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.table tbody tr:hover {
+  background: var(--hover);
 }
 
 .status {
   white-space: nowrap;
+}
+
+/* Operativo lleva el ✓ en verde; el texto sigue diciendo el estado */
+.status-operativo .status-icon {
+  color: var(--ok);
+  font-weight: 700;
 }
 
 /* Un estado con problemas se resalta con peso y subrayado, no con color */
@@ -379,20 +683,16 @@ section {
   margin-bottom: calc(var(--space) * 2);
 }
 
-h4 {
-  margin: var(--space) 0 8px;
-}
-
 /* Lista de datos en dos columnas: etiqueta y valor */
 .data {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 6px var(--space);
+  gap: 8px 24px;
   margin: 0;
 }
 
 .data dt {
-  font-weight: 600;
+  color: var(--ink-3);
 }
 
 .data dd {
@@ -403,10 +703,18 @@ h4 {
   margin-bottom: var(--space);
 }
 
+/* Tarjeta: vidrio en el tema oscuro, papel con borde fino en el claro */
 .card {
-  border: 1px solid var(--ink);
-  padding: var(--space);
+  padding: 20px;
   margin-bottom: var(--space);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+:root[data-theme="dark"] .card {
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .card-header {
@@ -415,19 +723,25 @@ h4 {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .card-header h3 {
   margin: 0;
 }
 
-/* El nombre del plan se resalta invertido, sin color */
+/* El nombre del plan es una píldora invertida en mono */
 .plan-name {
   display: inline-block;
-  padding: 0 8px;
-  background: var(--ink);
-  color: var(--paper);
+  padding: 1px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--invert-bg);
+  color: var(--invert-ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* ---------- Formularios ---------- */
@@ -437,59 +751,46 @@ h4 {
 }
 
 .form fieldset {
-  border: 1px solid var(--ink);
   margin: 0 0 calc(var(--space) * 1.5);
-  padding: var(--space);
+  padding: 20px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 
 .form legend {
-  font-weight: 700;
-  padding: 0 6px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: var(--space);
 }
 
 .field label {
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.field input,
-.field select,
-.field textarea {
-  font: inherit;
-  padding: 8px 10px;
-  border: 1px solid var(--ink);
-  background: var(--paper);
-  color: var(--ink);
-  width: 100%;
-}
-
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-  outline: 2px solid var(--ink);
-  outline-offset: 1px;
-}
-
-/* Un campo con error se marca con borde grueso y mensaje con ícono */
+/* Un campo con error se marca con trazo reforzado y mensaje con ícono */
 .field [aria-invalid="true"] {
-  border-width: 3px;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
 }
 
 .field-error {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .form-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space);
+  gap: 12px;
 }
 
 /* ---------- Pantallas pequeñas: el menú pasa arriba ---------- */
@@ -503,23 +804,27 @@ h4 {
   }
 
   .sidebar {
+    position: static;
+    height: auto;
+    padding: 16px;
     border-right: none;
-    border-bottom: 2px solid var(--ink);
+    border-bottom: 1px solid var(--edge);
+  }
+
+  .brand,
+  .brand-sub {
+    padding-left: 0;
   }
 
   .brand-sub {
-    margin-bottom: 8px;
+    margin: 4px 0 12px 32px;
   }
 
   /* El menú pasa a una fila que se parte en varias líneas; lo que aún no existe se oculta */
   .nav {
-    display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
     gap: 4px;
-  }
-
-  .nav a {
-    margin-bottom: 0;
   }
 
   .nav li:has(.nav-disabled) {
@@ -528,15 +833,20 @@ h4 {
 
   .content {
     min-width: 0;
-    padding: var(--space);
+    padding: 24px 16px 48px;
+  }
+
+  h1 {
+    font-size: 26px;
   }
 
   .data {
     grid-template-columns: 1fr;
+    gap: 2px;
   }
 
   .data dd {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
 
   /* La tabla se desplaza sola, no la página */
@@ -548,19 +858,20 @@ h4 {
 
 /* ---------- Cambios por GitOps (spec 005) ---------- */
 
-/* El estado del cambio se distingue por texto, ícono y borde, no por color */
+/* El estado del cambio se distingue por texto, ícono y trazo, no por color */
 .change-pendiente {
   border-style: dashed;
 }
 
 .change-aprobada,
 .change-en_validacion {
-  background: #efefef;
+  background: var(--surface-2);
 }
 
 .change-desplegada {
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--invert-bg);
+  background: var(--invert-bg);
+  color: var(--invert-ink);
 }
 
 .change-rechazada {
@@ -568,50 +879,171 @@ h4 {
   text-decoration: line-through;
 }
 
-/* No se pudo publicar: borde grueso e ícono "!" (el estado nunca se comunica con color) */
+/* No se pudo publicar: trazo grueso e ícono "!" (el estado nunca se comunica con color) */
 .change-fallida {
+  border-color: var(--ink);
   border-width: 3px;
 }
 
-/* Inicio de sesión (spec 007): una tarjeta centrada, en blanco y negro */
+/* ---------- Inicio de sesión (spec 007) ---------- */
+
 .login {
-  display: flex;
-  justify-content: center;
-  padding: 4rem 1rem;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 48px 16px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Halo violeta difuso detrás de la tarjeta: el único lugar con atmósfera */
+.login::before {
+  content: "";
+  position: absolute;
+  top: -8%;
+  left: 50%;
+  z-index: -1;
+  width: min(760px, 120vw);
+  height: 440px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, var(--halo), transparent);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.login-theme {
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 
 .login-card {
   width: 100%;
-  max-width: 24rem;
+  max-width: 400px;
+  margin: 0;
+  padding: 32px;
+  border-radius: var(--radius-lg);
 }
 
-/* Sesión (spec 007): nombre de la persona y botón de salir, en la consola y en el portal */
+.login-card .logo {
+  margin-bottom: 20px;
+}
+
+.login-card .eyebrow {
+  margin: 0 0 8px;
+}
+
+.login-card h1 {
+  margin-bottom: 8px;
+}
+
+.login-card .muted {
+  margin-bottom: 24px;
+}
+
+.login-card .stacked-form > .button {
+  align-self: stretch;
+  height: 40px;
+  margin-top: 4px;
+}
+
+/* ---------- Sesión (spec 007) ---------- */
+
 .session {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  font-size: 0.9rem;
+  gap: 12px;
+  font-size: 13px;
 }
 
 .sidebar .session {
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+  margin-top: auto;
+  padding: 16px 10px 0;
+  border-top: 1px solid var(--edge);
 }
 
+.session-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.session-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--edge-strong);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.session-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session .button {
+  flex: 1;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .sidebar .session {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding: 12px 0 0;
+  }
+
+  .session .button {
+    flex: none;
+  }
+}
+
+/* Encabezado del portal: pegado arriba, con el lienzo difuminado detrás */
 .portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--ink);
+  gap: var(--space);
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--canvas) 80%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+.portal-header .brand {
+  padding: 0;
 }
 
 .portal-header .session {
   margin-top: 0;
 }
 
-/* Puerta de seguridad (spec 006): controles de una versión, en blanco y negro */
+/* ---------- Puerta de seguridad (spec 006) ---------- */
+
 .plain-list {
   list-style: none;
   margin: 0.5rem 0 0;
@@ -624,17 +1056,19 @@ h4 {
 
 .security-checks summary {
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .link-button {
-  background: none;
-  border: 0;
-  padding: 0;
   margin-left: 0.5rem;
-  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--ink);
+  font: inherit;
   text-decoration: underline;
+  text-decoration-color: var(--edge-strong);
+  text-underline-offset: 3px;
   cursor: pointer;
 }
 
@@ -650,8 +1084,8 @@ h4 {
 .month-picker input {
   font: inherit;
   padding: 6px 8px;
-  border: 1px solid var(--ink);
-  background: var(--paper);
+  border: 1px solid var(--edge-strong);
+  background: var(--input-bg);
 }
 
 .cards {
@@ -672,7 +1106,7 @@ h4 {
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--muted);
+  color: var(--ink-3);
 }
 
 .kpi-value {
@@ -702,20 +1136,22 @@ h4 {
 .load-bar {
   margin-top: 4px;
   height: 12px;
-  border: 1px solid var(--ink);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--edge-strong);
 }
 
 .load-bar span {
   display: block;
   height: 100%;
-  background: var(--ink);
+  background: var(--accent);
 }
 
 /* Gr�ficas SVG escritas a mano (spec 010, T15) */
 .chart {
   width: 100%;
   height: auto;
-  border: 1px solid var(--line);
+  border: 1px solid var(--edge);
 }
 
 .chart-line {
@@ -725,17 +1161,17 @@ h4 {
 }
 
 .chart-target {
-  stroke: var(--muted);
+  stroke: var(--ink-3);
   stroke-dasharray: 4 4;
   stroke-width: 1.5;
 }
 
 .chart-gap {
-  fill: var(--line);
+  fill: var(--edge);
 }
 
 .chart-label {
-  fill: var(--muted);
+  fill: var(--ink-3);
   font-size: 12px;
 }
 
@@ -756,7 +1192,7 @@ h4 {
 
 .portal-list li {
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--edge);
 }
 
 .portal-list li:last-child {
@@ -779,4 +1215,58 @@ h4 {
 .portal-nav a.active {
   border-bottom-color: var(--ink);
   font-weight: 700;
+}
+
+.link-button:hover {
+  text-decoration-color: currentColor;
+}
+
+/* ---------- Recuperación por rollback (spec 009) ---------- */
+
+/* El avance se dice con texto e ícono, no con color */
+.progress-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  list-style: none;
+  margin: var(--space) 0 8px;
+  padding: 0;
+  color: var(--ink-2);
+}
+
+.progress-steps li[aria-current="step"] {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.confirm-dialog {
+  max-width: 480px;
+  padding: 24px;
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-lg);
+  background: var(--dialog-bg);
+  color: var(--ink);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.confirm-dialog .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

@@ -1029,7 +1029,16 @@ export async function downloadCheckReport(checkId: number): Promise<void> {
 
 export type IncidentStatus = "abierto" | "mitigado" | "cerrado";
 export type IncidentSource = "alerta" | "manual";
-export type IncidentEventType = "detectado" | "tomado" | "nota" | "recuperado" | "cerrado";
+// Los tres últimos son de la spec 009: el rollback pedido, el rollback confirmado y el mensaje al cliente
+export type IncidentEventType =
+  | "detectado"
+  | "tomado"
+  | "nota"
+  | "recuperado"
+  | "cerrado"
+  | "rollback_enviado"
+  | "rollback_confirmado"
+  | "mensaje_cliente";
 // Estado de un reloj del SLA (spec 008, CA-4)
 export type ClockState = "a_tiempo" | "en_riesgo" | "vencido" | "cumplido";
 
@@ -1055,6 +1064,8 @@ export interface Incident {
   root_cause: string | null;
   response_state: ClockState;
   resolution_state: ClockState;
+  // Minutos entre el inicio real y la mitigación (un decimal); nulo mientras siga abierto (spec 009)
+  mttr_minutes: number | null;
   created_at: string;
 }
 
@@ -1078,10 +1089,33 @@ export interface IncidentLastChange {
   commit_url: string | null;
 }
 
+// Avance del rollback (spec 009): enviado → sincronizando → recuperado
+export type RollbackStatus = "sin_rollback" | "enviado" | "sincronizando" | "recuperado";
+
+export interface IncidentRollback {
+  status: RollbackStatus;
+  from_version: string | null;
+  to_version: string | null;
+  by_name: string | null;
+  at: string | null;
+  confirmed_at: string | null;
+  commit_sha: string | null;
+  commit_url: string | null;
+}
+
+// Lo que se ve antes de confirmar: a qué versión se vuelve y por qué el botón puede estar deshabilitado
+export interface RollbackPlan {
+  current_version: string | null;
+  target_version: string | null;
+  can_rollback: boolean;
+  reason: string | null;
+}
+
 export interface IncidentDetail extends Incident {
   events: IncidentEvent[];
   logs_url: string | null;
   last_change: IncidentLastChange | null;
+  rollback: IncidentRollback;
 }
 
 export interface IncidentInput {
@@ -1161,10 +1195,21 @@ function newMockIncident(serviceId: number, priority: TicketPriority, title: str
     root_cause: null,
     response_state: "a_tiempo",
     resolution_state: "a_tiempo",
+    mttr_minutes: null,
     created_at: startedAt,
     events: [],
     logs_url: null,
     last_change: null,
+    rollback: {
+      status: "sin_rollback",
+      from_version: null,
+      to_version: null,
+      by_name: null,
+      at: null,
+      confirmed_at: null,
+      commit_sha: null,
+      commit_url: null,
+    },
   };
   incident.events.push({
     id: incidentMock.newId(),
@@ -1187,9 +1232,12 @@ function ensureMockIncidents() {
 
 // Devuelve una copia con los relojes calculados a la hora actual, como lo hace la API
 function withClocks(incident: IncidentDetail): IncidentDetail {
+  advanceMockRollback(incident);
   return {
     ...incident,
     events: [...incident.events],
+    rollback: { ...incident.rollback },
+    mttr_minutes: mockMttr(incident),
     response_state: clockState(incident.started_at, incident.response_due_at, responseStoppedAt(incident)),
     resolution_state: clockState(incident.started_at, incident.resolution_due_at, incident.mitigated_at),
   };
@@ -1264,8 +1312,11 @@ export async function addIncidentNote(id: number, message: string): Promise<Inci
 export async function mitigateIncident(id: number): Promise<IncidentDetail> {
   if ((await detectMode()) === "mock") {
     const incident = findMockIncident(id);
-    if (incident.source !== "manual") {
-      throw new ApiError("Un incidente de alerta se mitiga solo cuando el monitoreo ve el sitio sano.", 409);
+    if (incident.source !== "manual" && !incident.rollback.confirmed_at) {
+      throw new ApiError(
+        "Un incidente de alerta se mitiga solo cuando el monitoreo ve el sitio sano (o a mano, cuando su rollback ya se confirmó en Argo CD).",
+        409,
+      );
     }
     if (incident.status !== "abierto") throw new ApiError(`No se permite pasar de «${incident.status}» a «mitigado».`, 409);
     incident.status = "mitigado";
@@ -1513,4 +1564,114 @@ export async function getClientSeries(clientId: number, month?: string): Promise
   const mes = month ?? mesActual();
   if ((await detectMode()) === "mock") return mockSeries(clientId, mes);
   return request<ClientSeries>(`/dashboard/client/${clientId}/series?month=${encodeURIComponent(mes)}`);
+}
+
+// ---------- Recuperación por rollback (spec 009) ----------
+
+// En datos de prueba el avance del rollback se simula por tiempo: enviado → sincronizando → recuperado.
+// Cada paso dura 5 s para que se vea el avance sin recargar la página.
+const MOCK_ROLLBACK_STEP_MS = 5_000;
+
+// En datos de prueba solo La Sazón tiene una versión estable a la que volver (v2 rota → v1); los demás
+// servicios no tienen versión anterior y el botón queda deshabilitado con su razón.
+const MOCK_NO_TARGET = "No hay una versión anterior a la que volver.";
+
+function mockMttr(incident: IncidentDetail): number | null {
+  if (!incident.mitigated_at) return null;
+  return Math.round(((Date.parse(incident.mitigated_at) - Date.parse(incident.started_at)) / 60_000) * 10) / 10;
+}
+
+// Igual que la API: el paso depende de lo que Argo CD informe; aquí, de cuánto tiempo pasó desde el pedido
+function advanceMockRollback(incident: IncidentDetail) {
+  const rollback = incident.rollback;
+  if (!rollback.at || rollback.confirmed_at) return;
+  const elapsed = Date.now() - Date.parse(rollback.at);
+  if (elapsed >= 2 * MOCK_ROLLBACK_STEP_MS) {
+    const confirmedAt = new Date().toISOString();
+    rollback.status = "recuperado";
+    rollback.confirmed_at = confirmedAt;
+    pushMockIncidentEvent(incident, "rollback_confirmado", `Argo CD confirmó ${rollback.to_version}: el sitio quedó sincronizado y sano.`, "Sistema");
+    // La sonda ve el sitio sano y mitiga el incidente de alerta con la hora real
+    if (incident.status === "abierto" && incident.source === "alerta") {
+      incident.status = "mitigado";
+      incident.mitigated_at = confirmedAt;
+      pushMockIncidentEvent(incident, "recuperado", "El monitoreo vio el sitio responder de nuevo.", "Sistema");
+    }
+  } else if (elapsed >= MOCK_ROLLBACK_STEP_MS) {
+    rollback.status = "sincronizando";
+  }
+}
+
+function pushMockIncidentEvent(incident: IncidentDetail, type: IncidentEventType, message: string, actorName: string) {
+  incident.events.push({ id: incidentMock.newId(), type, message, actor_name: actorName, created_at: new Date().toISOString() });
+}
+
+function mockRollbackPlan(incident: IncidentDetail): RollbackPlan {
+  advanceMockRollback(incident);
+  const rollback = incident.rollback;
+  const hasTarget = incident.namespace === "cliente-restaurante";
+  const current = rollback.from_version ?? (hasTarget ? "v2" : "v1");
+  const target = rollback.to_version ?? (hasTarget ? "v1" : null);
+  let reason: string | null = null;
+  if (incident.status !== "abierto") reason = "El incidente ya no está abierto.";
+  else if (rollback.commit_sha && !rollback.confirmed_at) reason = "Ya hay un rollback en curso.";
+  else if (rollback.commit_sha) reason = "El rollback ya se confirmó en Argo CD; si el sitio no responde, revisa la causa o mitiga a mano.";
+  else if (!hasTarget) reason = MOCK_NO_TARGET;
+  return { current_version: current, target_version: target, can_rollback: reason === null, reason };
+}
+
+export async function getRollbackPlan(id: number): Promise<RollbackPlan> {
+  if ((await detectMode()) === "mock") return mockRollbackPlan(findMockIncident(id));
+  return request<RollbackPlan>(`/incidents/${id}/rollback-plan`);
+}
+
+// El cuerpo va vacío: quién pide el rollback sale de la sesión, no de lo que mande el navegador
+export async function rollbackIncident(id: number): Promise<IncidentDetail> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(id);
+    const plan = mockRollbackPlan(incident);
+    if (!plan.can_rollback) throw new ApiError(plan.reason ?? "No se puede hacer el rollback.", 409);
+    const now = new Date().toISOString();
+    incident.rollback = {
+      status: "enviado",
+      from_version: plan.current_version,
+      to_version: plan.target_version,
+      by_name: MOCK_USER_NAME,
+      at: now,
+      confirmed_at: null,
+      commit_sha: "9f3c2a1d7b6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a",
+      commit_url: null,
+    };
+    pushMockIncidentEvent(
+      incident,
+      "rollback_enviado",
+      `${MOCK_USER_NAME} pidió volver de ${plan.current_version} a ${plan.target_version}; commit 9f3c2a1 en hub-gitops.`,
+      MOCK_USER_NAME,
+    );
+    return withClocks(incident);
+  }
+  return request<IncidentDetail>(`/incidents/${id}/rollback`, { method: "POST" });
+}
+
+// Mismo texto que la API (plantilla de la misión): horas de Colombia al minuto y duración sacada de ellas
+function bogotaHourMinute(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour12: false, hour: "2-digit", minute: "2-digit" });
+}
+
+export async function getClientMessage(id: number): Promise<{ message: string }> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(id);
+    if (!incident.mitigated_at) {
+      throw new ApiError("El mensaje al cliente se genera cuando el incidente está mitigado.", 409);
+    }
+    const minutes = Math.floor(Date.parse(incident.mitigated_at) / 60_000) - Math.floor(Date.parse(incident.started_at) / 60_000);
+    const total = minutes < 1 ? "menos de 1 minuto" : minutes === 1 ? "1 minuto" : `${minutes} minutos`;
+    return {
+      message:
+        `Detectamos una falla temporal en su sitio a las ${bogotaHourMinute(incident.started_at)}. ` +
+        `Activamos la recuperación y a las ${bogotaHourMinute(incident.mitigated_at)} el servicio volvió a funcionar. ` +
+        `Tiempo total: ${total}.`,
+    };
+  }
+  return request<{ message: string }>(`/incidents/${id}/client-message`);
 }

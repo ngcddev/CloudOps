@@ -43,10 +43,19 @@ class Incident(Base):
     created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     root_cause: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Rollback (spec 009): nulos hasta que un técnico lo pide. El estado (`enviado`, `sincronizando`,
+    # `recuperado`) y el MTTR se calculan al leer; no se guardan.
+    rollback_from_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    rollback_to_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    rollback_commit_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rollback_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    rollback_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rollback_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     service = relationship("Service")
     assignee = relationship("User", foreign_keys=[assignee_id])
     created_by = relationship("User", foreign_keys=[created_by_id])
+    rollback_by = relationship("User", foreign_keys=[rollback_by_id])
     events = relationship(
         "IncidentEvent", back_populates="incident", cascade="all, delete-orphan", order_by="IncidentEvent.id"
     )

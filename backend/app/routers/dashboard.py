@@ -21,12 +21,15 @@ from app.schemas.dashboard import (
 )
 from app.services import kpi
 
+# Mes en formato YYYY-MM: cualquier otro valor responde 422 en vez de romper el cálculo.
+MONTH_PATTERN = r"^[0-9]{4}-(0[1-9]|1[0-2])$"
+
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
 @router.get("/agency", response_model=AgencyDashboard)
 def dashboard_agency(
-    month: str | None = Query(default=None),
+    month: str | None = Query(default=None, pattern=MONTH_PATTERN),
     db: Session = Depends(get_db),
     user: User = Depends(require_agency),
 ) -> AgencyDashboard:
@@ -77,7 +80,7 @@ def dashboard_agency(
 @router.get("/client/{client_id}", response_model=ClientDashboardKpi)
 def dashboard_client(
     client_id: int,
-    month: str | None = Query(default=None),
+    month: str | None = Query(default=None, pattern=MONTH_PATTERN),
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ) -> ClientDashboardKpi:
@@ -109,7 +112,7 @@ def dashboard_client(
 @router.get("/client/{client_id}/incidents", response_model=list[ClientIncident])
 def dashboard_client_incidents(
     client_id: int,
-    month: str | None = Query(default=None),
+    month: str | None = Query(default=None, pattern=MONTH_PATTERN),
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ) -> list[ClientIncident]:
@@ -148,7 +151,7 @@ def dashboard_client_incidents(
 @router.get("/client/{client_id}/series", response_model=ClientSeries)
 def dashboard_client_series(
     client_id: int,
-    month: str | None = Query(default=None),
+    month: str | None = Query(default=None, pattern=MONTH_PATTERN),
     db: Session = Depends(get_db),
     user: User = Depends(require_agency),
 ) -> ClientSeries:

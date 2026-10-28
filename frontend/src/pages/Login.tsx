@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { homeFor, useAuth } from "../auth";
+import Logo from "../components/Logo";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function Login() {
   const { user, loading, mock, login } = useAuth();
@@ -35,7 +37,12 @@ export default function Login() {
 
   return (
     <main className="login">
+      <div className="login-theme">
+        <ThemeToggle />
+      </div>
       <section className="card login-card">
+        <Logo size={28} />
+        <p className="eyebrow">Centro de operación</p>
         <h1>CloudOps Client Hub</h1>
         <p className="muted">Entra con tu correo y tu contraseña.</p>
         <form onSubmit={handleSubmit} className="stacked-form">
@@ -64,7 +71,7 @@ export default function Login() {
               ✗ {error}
             </p>
           )}
-          <button type="submit" className="button" disabled={submitting}>
+          <button type="submit" className="button button-primary" disabled={submitting}>
             {submitting ? "Entrando…" : "Entrar"}
           </button>
         </form>
