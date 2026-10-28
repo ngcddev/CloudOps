@@ -45,6 +45,8 @@ services:
       GITEA_PUBLIC_URL: ${GITEA_PUBLIC_URL:-}
       # Webhook de Alertmanager (spec 008): vacío = la API no acepta avisos
       ALERTMANAGER_TOKEN: ${ALERTMANAGER_TOKEN:-}
+      # Dashboards y métricas (spec 010): la API consulta Prometheus para disponibilidad y latencia
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-}
     # Solo para desarrollo: las pruebas (docker compose exec api pytest) leen seed/ y gitops/ en las
     # rutas del repo (/seed, /gitops y /pipelines). La imagen de producción no los lleva.
     volumes:

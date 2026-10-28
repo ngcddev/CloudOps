@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cliente-${name}
+resources:
+  - ../_base
+images:
+  - name: gitea.hub.local/forja-digital/plantilla
+    newName: gitea.hub.local/forja-digital/${image_name}
+    newTag: ${image_tag}
+patches:
+  - target: { kind: Namespace }
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: cliente-${name}
+      - op: replace
+        path: /metadata/labels/hub~1client
+        value: ${name}
+      - op: replace
+        path: /metadata/labels/hub~1plan
+        value: ${plan}
+  - target: { kind: ResourceQuota }
+    patch: |-
+      - op: replace
+        path: /spec/hard/limits.cpu
+        value: ${quota.cpu}
+      - op: replace
+        path: /spec/hard/limits.memory
+        value: ${quota.memory}
+  - target: { kind: Ingress }
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: ${host}

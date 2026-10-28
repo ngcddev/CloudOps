@@ -1,0 +1,6 @@
+{
+  "hourly_cost": 25000,
+  "technician_monthly_hours": 120,
+  "currency": "COP",
+  "at_risk_ratio": 0.8
+}

@@ -1,5 +1,5 @@
-// Marco del portal del cliente: encabezado con el nombre de quien entró y "Cerrar sesión" (spec 007).
-import { Outlet } from "react-router-dom";
+// Marco del portal del cliente: menú con «Inicio» y «Solicitudes» (spec 010, T17) y la sesión (spec 007).
+import { NavLink, Outlet } from "react-router-dom";
 
 import Logo from "./Logo";
 import MockDataNotice from "./MockDataNotice";
@@ -13,6 +13,12 @@ export default function PortalLayout() {
           <Logo />
           Forja Digital · Portal de clientes
         </div>
+        <nav className="portal-nav" aria-label="Menú del portal">
+          <NavLink to="/portal" end>
+            Inicio
+          </NavLink>
+          <NavLink to="/portal/solicitudes">Solicitudes</NavLink>
+        </nav>
         <SessionBar />
       </header>
       <main className="content">

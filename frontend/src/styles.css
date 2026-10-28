@@ -1072,6 +1072,151 @@ section {
   cursor: pointer;
 }
 
+/* ---------- Tableros (spec 010) ---------- */
+
+.month-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.month-picker input {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--edge-strong);
+  background: var(--input-bg);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space);
+  margin-bottom: var(--space);
+}
+
+.card.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.kpi-label {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-3);
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.load-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.load-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.load-bar {
+  margin-top: 4px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--edge-strong);
+}
+
+.load-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* Gr�ficas SVG escritas a mano (spec 010, T15) */
+.chart {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--edge);
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.chart-target {
+  stroke: var(--ink-3);
+  stroke-dasharray: 4 4;
+  stroke-width: 1.5;
+}
+
+.chart-gap {
+  fill: var(--edge);
+}
+
+.chart-label {
+  fill: var(--ink-3);
+  font-size: 12px;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space);
+}
+
+.portal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.portal-list li {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.portal-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.portal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space);
+}
+
+.portal-nav a {
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.portal-nav a.active {
+  border-bottom-color: var(--ink);
+  font-weight: 700;
+}
+
 .link-button:hover {
   text-decoration-color: currentColor;
 }

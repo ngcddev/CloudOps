@@ -3,7 +3,7 @@
 # `hub-gitops-tokens` del namespace hub (spec 005, T04). Nada se escribe en el repo ni en pantalla.
 #
 #   · Gitea: el usuario `hub-bot` solo es colaborador con escritura de forja-digital/hub-gitops, y su
-#     token tiene el alcance write:repository. Así el token no puede tocar ningún otro repo.
+#     token tiene los alcances read:user y write:repository. Así puede identificarse y escribir solo ese repo.
 #   · Argo CD: la cuenta local `hub-readonly` con el rol readonly y un token de solo lectura.
 #
 # Uso:  GITEA_ADMIN_USER=forja-admin GITEA_ADMIN_PASSWORD='...' bash gitops/hub/crear-tokens.sh
@@ -47,7 +47,7 @@ curl -sf -u "${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" -H 'Content-Type: appl
   -X PUT "${GITEA_URL}/api/v1/repos/${ORG}/${REPO}/collaborators/${BOT}" -d '{"permission":"write"}' >/dev/null
 GITEA_TOKEN="$(curl -sf -u "${BOT}:${CLAVE_BOT}" -H 'Content-Type: application/json' \
   -X POST "${GITEA_URL}/api/v1/users/${BOT}/tokens" \
-  -d "{\"name\":\"hub-$(date +%Y%m%d%H%M%S)\",\"scopes\":[\"write:repository\"]}" | campo sha1)"
+  -d "{\"name\":\"hub-$(date +%Y%m%d%H%M%S)\",\"scopes\":[\"read:user\",\"write:repository\"]}" | campo sha1)"
 
 # ---------- Argo CD: cuenta hub-readonly con token de solo lectura ----------
 kubectl -n argocd patch configmap argocd-cm --type merge \
