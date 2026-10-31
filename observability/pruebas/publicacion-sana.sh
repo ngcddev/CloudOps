@@ -37,7 +37,7 @@ contar() { hub_get "${HUB}/api/incidents?client_id=${CLIENTE}" | grep -o '"id":'
 antes="$(contar)"
 
 echo "== Publicar ${VERSION} en ${NS} por el Hub =="
-ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Publicación sana ${VERSION}\",\"description\":\"Prueba CA-9 (spec 008, T31).\",\"kind\":\"cambio\"}")"
+ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Publicaci\\u00f3n sana ${VERSION}\",\"description\":\"Prueba CA-9 (spec 008, T31).\",\"kind\":\"cambio\"}")"
 cambio="$(post "${HUB}/api/change-requests" "{\"ticket_id\":$(echo "$ticket" | campo id),\"to_version\":\"${VERSION}\"}")"
 CAMBIO_ID="$(echo "$cambio" | campo id)"
 aprobado="$(post "${HUB}/api/change-requests/${CAMBIO_ID:-0}/approve" "{}")"

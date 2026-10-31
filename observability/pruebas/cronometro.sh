@@ -61,7 +61,7 @@ for corrida in $(seq 1 "$CORRIDAS"); do
     sleep 15; espera=$((espera + 15))
   done
 
-  ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Cronómetro 008: publicar ${VERSION_ROTA}\",\"description\":\"Prueba de detección (spec 008, T30).\",\"kind\":\"cambio\"}")"
+  ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Cron\u00f3metro 008: publicar ${VERSION_ROTA}\",\"description\":\"Prueba de detecci00f3n (spec 008, T30).\",\"kind\":\"cambio\"}")"
   TICKET_ID="$(echo "$ticket" | campo id)"
   cambio="$(post "${HUB}/api/change-requests" "{\"ticket_id\":${TICKET_ID:-0},\"to_version\":\"${VERSION_ROTA}\"}")"
   CAMBIO_ID="$(echo "$cambio" | campo id)"
