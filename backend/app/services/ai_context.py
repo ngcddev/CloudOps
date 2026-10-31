@@ -61,3 +61,23 @@ def incident_facts(incident: Incident) -> dict:
         "root_cause": incident.root_cause,
         "times": times,
     }
+
+
+def manual_summary(facts: dict) -> str:
+    """Resumen técnico armado solo con los hechos, para escribir a mano cuando el asistente no responde (CA-5).
+
+    Es para la agencia: puede nombrar la prioridad, el rollback y las versiones.
+    """
+    minutes = facts["duration_minutes"]
+    duration = "menos de 1 minuto" if minutes < 1 else "1 minuto" if minutes == 1 else f"{minutes} minutos"
+    if facts["recovery"] == "rollback":
+        action = f"Se hizo rollback de {facts['from_version']} a {facts['to_version']}."
+    else:
+        action = "Se mitigó a mano."
+    text = (
+        f"Incidente {facts['priority']} en {facts['service']} ({facts['client']}): {facts['title']}. "
+        f"Empezó a las {facts['start_time']} y se recuperó a las {facts['end_time']} ({duration}). {action}"
+    )
+    if facts["root_cause"]:
+        text += f" Causa raíz: {facts['root_cause']}"
+    return text

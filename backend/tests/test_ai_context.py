@@ -65,3 +65,12 @@ def test_mitigado_a_mano_sin_rollback(seeded):
 
     facts = incident_facts(incident)
     assert (facts["recovery"], facts["from_version"], facts["duration_minutes"]) == ("manual", None, 20)
+
+
+def test_el_resumen_a_mano_cita_solo_los_hechos(mitigado):
+    from app.services.ai_context import manual_summary
+
+    assert manual_summary(incident_facts(mitigado)) == (
+        "Incidente P1 en Sitio web (Restaurante La Sazón): El sitio no responde. Empezó a las 14:00 "
+        "y se recuperó a las 14:07 (7 minutos). Se hizo rollback de v2 a v1."
+    )
