@@ -9,6 +9,7 @@ from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
 from app.models.plan import Plan
 from app.models.project import Project
+from app.models.report import Report
 from app.models.security_check import SecurityCheck
 from app.models.security_run import SecurityRun
 from app.models.service import Service
@@ -29,6 +30,7 @@ __all__ = [
 	"IncidentEvent",
 	"Plan",
 	"Project",
+	"Report",
 	"SecurityCheck",
 	"SecurityRun",
 	"Service",
