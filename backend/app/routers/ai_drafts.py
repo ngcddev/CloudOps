@@ -1,4 +1,5 @@
-# Endpoints de los borradores de un incidente: generarlos con el asistente y listarlos (spec 012). Solo agencia.
+# Endpoints de los borradores de un incidente: generarlos con el asistente, listarlos y escribirlos a mano
+# (spec 012). Solo agencia.
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,9 +12,10 @@ from app.models.ai_draft import AiDraft
 from app.models.incident import Incident
 from app.models.project import Project
 from app.models.service import Service
-from app.schemas.ai_draft import AiDraftsGenerated, IncidentDrafts
+from app.models.user import User
+from app.schemas.ai_draft import AiDraftOut, AiDraftsGenerated, IncidentDrafts, ManualDraftIn
 from app.services.ai_context import incident_facts, manual_summary
-from app.services.ai_drafts import DraftWriter, WriterError, generate_drafts
+from app.services.ai_drafts import DraftWriter, WriterError, check_text, generate_drafts
 from app.services.messages import client_message
 
 incident_router = APIRouter(
@@ -115,3 +117,30 @@ def list_drafts(incident_id: int, db: Session = Depends(get_db)):
             "mensaje_cliente": client_message(incident),
         }
     return {"drafts": [present_draft(draft) for draft in drafts], "manual_templates": templates}
+
+
+@incident_router.post("/{incident_id}/drafts", response_model=AiDraftOut, status_code=status.HTTP_201_CREATED)
+def create_manual_draft(
+    incident_id: int,
+    data: ManualDraftIn,
+    db: Session = Depends(get_db),
+    actor: User = Depends(require_agency),
+):
+    """Guarda un borrador escrito a mano; pasa por los mismos controles que el del asistente (CA-3, CA-5)."""
+    incident = _load_incident(db, incident_id)
+    _require_mitigated(incident)
+    problem = check_text(data.kind, data.text, incident_facts(incident))
+    if problem is not None:
+        raise HTTPException(status_code=422, detail=problem)
+    draft = AiDraft(
+        incident_id=incident.id,
+        kind=data.kind,
+        status="borrador_ia",
+        model="manual",
+        generated_text=data.text,
+        created_by_id=actor.id,
+    )
+    db.add(draft)
+    db.commit()
+    db.refresh(draft)
+    return present_draft(draft)

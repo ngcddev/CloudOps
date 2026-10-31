@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class AiDraftOut(BaseModel):
@@ -43,3 +43,18 @@ class IncidentDrafts(BaseModel):
 
     drafts: list[AiDraftOut]
     manual_templates: ManualTemplates
+
+
+class ManualDraftIn(BaseModel):
+    """Borrador escrito a mano por el técnico cuando el asistente no responde (CA-5)."""
+
+    kind: Literal["resumen", "mensaje_cliente"]
+    text: str = Field(max_length=4000)
+
+    @field_validator("text")
+    @classmethod
+    def _texto_obligatorio(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("El texto no puede estar vacío.")
+        return value

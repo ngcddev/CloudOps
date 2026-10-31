@@ -123,3 +123,49 @@ def test_sin_mitigar_no_hay_plantillas(client, seeded):
 
 def test_el_cliente_no_ve_los_borradores(as_client, incidente):
     assert as_client.get(f"/api/incidents/{incidente.id}/drafts").status_code == 403
+
+
+# ---------- T08: escribir a mano ----------
+
+
+def test_guarda_un_borrador_escrito_a_mano(client, incidente):
+    texto = "Detectamos una falla temporal en su sitio a las 14:00 y a las 14:07 volvió a funcionar."
+    response = client.post(f"/api/incidents/{incidente.id}/drafts", json={"kind": "mensaje_cliente", "text": texto})
+
+    assert response.status_code == 201
+    draft = response.json()
+    assert (draft["status"], draft["model"], draft["prompt_version"]) == ("borrador_ia", "manual", None)
+    assert draft["generated_text"] == texto
+    assert draft["created_by_name"] == "tecnico.pruebas"
+
+
+def test_un_mensaje_a_mano_con_jerga_no_se_guarda(client, seeded, incidente):
+    response = client.post(
+        f"/api/incidents/{incidente.id}/drafts", json={"kind": "mensaje_cliente", "text": "Hicimos rollback del sitio."}
+    )
+
+    assert response.status_code == 422
+    assert "rollback" in response.json()["detail"]
+    assert seeded.scalars(select(AiDraft)).all() == []
+
+
+def test_el_resumen_a_mano_si_puede_ser_tecnico(client, incidente):
+    response = client.post(
+        f"/api/incidents/{incidente.id}/drafts", json={"kind": "resumen", "text": "Rollback de v2 a v1 a las 14:03."}
+    )
+    assert response.status_code == 201
+
+
+def test_un_texto_vacio_no_se_guarda(client, incidente):
+    response = client.post(f"/api/incidents/{incidente.id}/drafts", json={"kind": "resumen", "text": "   "})
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "El texto no puede estar vacío."
+
+
+def test_a_mano_tambien_espera_a_mitigar(client, seeded):
+    sazon = seeded.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
+    abierto = open_incident(seeded, sazon)
+
+    response = client.post(f"/api/incidents/{abierto.id}/drafts", json={"kind": "resumen", "text": "Nota."})
+    assert response.status_code == 409

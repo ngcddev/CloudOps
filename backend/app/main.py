@@ -92,6 +92,8 @@ _CAMPOS = {
     "service_id": "servicio",
     "message": "nota",
     "root_cause": "causa raíz",
+    "kind": "tipo",
+    "text": "texto",
 }
 
 
