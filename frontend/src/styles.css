@@ -1270,3 +1270,32 @@ section {
     transition: none !important;
   }
 }
+
+/* ---------- Borradores del asistente (spec 012) ---------- */
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.draft-group {
+  margin-top: calc(var(--space) * 1.5);
+  padding-top: var(--space);
+  border-top: 1px solid var(--edge);
+}
+
+.draft-group h3 {
+  margin: 0;
+}
+
+.draft {
+  margin-top: var(--space);
+  padding: 12px 16px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+}
+
+.draft-text {
+  white-space: pre-wrap;
+}
