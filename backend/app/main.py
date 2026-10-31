@@ -66,6 +66,7 @@ app.include_router(pipeline.router)
 app.include_router(security.router)
 app.include_router(incidents.router)
 app.include_router(ai_drafts.incident_router)
+app.include_router(ai_drafts.drafts_router)
 app.include_router(alerts.router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria

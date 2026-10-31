@@ -58,3 +58,19 @@ class ManualDraftIn(BaseModel):
         if not value:
             raise ValueError("El texto no puede estar vacío.")
         return value
+
+
+class ApproveDraftIn(BaseModel):
+    """Texto final que aprueba el técnico, con sus ediciones; sin texto se aprueba el borrador tal cual."""
+
+    text: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("text")
+    @classmethod
+    def _texto_no_vacio(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            raise ValueError("El texto no puede estar vacío.")
+        return value

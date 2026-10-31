@@ -169,3 +169,93 @@ def test_a_mano_tambien_espera_a_mitigar(client, seeded):
 
     response = client.post(f"/api/incidents/{abierto.id}/drafts", json={"kind": "resumen", "text": "Nota."})
     assert response.status_code == 409
+
+
+# ---------- T09: aprobar y descartar ----------
+
+
+def _mensaje(client, incidente) -> dict:
+    """Genera los dos borradores y devuelve el del mensaje al cliente."""
+    drafts = client.post(f"/api/incidents/{incidente.id}/ai-drafts").json()["drafts"]
+    return next(d for d in drafts if d["kind"] == "mensaje_cliente")
+
+
+def test_aprueba_con_el_texto_editado_y_queda_en_la_bitacora(client, assistant, seeded, incidente):
+    from app.models import AuditLog, User
+
+    mensaje = _mensaje(client, incidente)
+    editado = mensaje["generated_text"].replace("Detectamos", "Identificamos")
+
+    response = client.post(f"/api/ai-drafts/{mensaje['id']}/approve", json={"text": editado, "approved_by_id": 999})
+
+    assert response.status_code == 200
+    draft = response.json()
+    assert (draft["status"], draft["final_text"]) == ("aprobado", editado)
+    assert draft["generated_text"] == mensaje["generated_text"]  # lo que propuso el asistente no se pisa
+    assert draft["approved_by_name"] == "tecnico.pruebas" and draft["approved_at"] is not None
+    tecnico = seeded.scalar(select(User).where(User.email == "tecnico.pruebas@forjadigital.test"))
+    log = seeded.scalar(select(AuditLog).where(AuditLog.entity == "ai_draft"))
+    assert (log.action, log.entity_id, log.user_id) == ("aprobar", mensaje["id"], tecnico.id)
+    assert log.details["editado"] is True and log.details["tipo"] == "mensaje_cliente"
+
+
+def test_sin_texto_se_aprueba_tal_cual(client, assistant, incidente):
+    mensaje = _mensaje(client, incidente)
+
+    draft = client.post(f"/api/ai-drafts/{mensaje['id']}/approve", json={}).json()
+    assert draft["final_text"] == mensaje["generated_text"]
+
+
+def test_una_edicion_con_jerga_no_se_aprueba(client, assistant, incidente):
+    mensaje = _mensaje(client, incidente)
+
+    response = client.post(f"/api/ai-drafts/{mensaje['id']}/approve", json={"text": "Hicimos rollback a la v1."})
+    assert response.status_code == 422
+    assert "rollback" in response.json()["detail"]
+    assert client.get(f"/api/incidents/{incidente.id}/drafts").json()["drafts"][1]["status"] == "borrador_ia"
+
+
+def test_no_se_aprueba_dos_veces_ni_un_descartado(client, assistant, incidente):
+    mensaje = _mensaje(client, incidente)
+    client.post(f"/api/ai-drafts/{mensaje['id']}/approve", json={})
+
+    assert client.post(f"/api/ai-drafts/{mensaje['id']}/approve", json={}).status_code == 409
+    otro = _mensaje(client, incidente)
+    assert client.post(f"/api/ai-drafts/{otro['id']}/discard").json()["status"] == "descartado"
+    response = client.post(f"/api/ai-drafts/{otro['id']}/approve", json={})
+    assert response.status_code == 409
+    assert response.json()["detail"] == "El borrador ya está descartado."
+
+
+def test_un_segundo_mensaje_aprobado_reemplaza_al_anterior(client, assistant, incidente):
+    primero = _mensaje(client, incidente)
+    client.post(f"/api/ai-drafts/{primero['id']}/approve", json={})
+    segundo = _mensaje(client, incidente)
+    client.post(f"/api/ai-drafts/{segundo['id']}/approve", json={})
+
+    drafts = {d["id"]: d for d in client.get(f"/api/incidents/{incidente.id}/drafts").json()["drafts"]}
+    assert drafts[primero["id"]]["status"] == "descartado"
+    assert drafts[segundo["id"]]["status"] == "aprobado"
+    # El resumen es de otro tipo: aprobar un mensaje no lo toca
+    assert {d["status"] for d in drafts.values() if d["kind"] == "resumen"} == {"borrador_ia"}
+
+
+def test_descartar_queda_en_la_bitacora(client, assistant, seeded, incidente):
+    from app.models import AuditLog
+
+    mensaje = _mensaje(client, incidente)
+    assert client.post(f"/api/ai-drafts/{mensaje['id']}/discard").status_code == 200
+
+    log = seeded.scalar(select(AuditLog).where(AuditLog.entity == "ai_draft"))
+    assert (log.action, log.entity_id) == ("descartar", mensaje["id"])
+
+
+def test_el_cliente_no_aprueba_ni_descarta(as_client, client, assistant, incidente):
+    mensaje = _mensaje(client, incidente)
+
+    assert as_client.post(f"/api/ai-drafts/{mensaje['id']}/approve", json={}).status_code == 403
+    assert as_client.post(f"/api/ai-drafts/{mensaje['id']}/discard").status_code == 403
+
+
+def test_borrador_que_no_existe(client, seeded):
+    assert client.post("/api/ai-drafts/999/approve", json={}).status_code == 404
