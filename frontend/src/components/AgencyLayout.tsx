@@ -7,12 +7,12 @@ import SessionBar from "./SessionBar";
 
 // Secciones de la consola. Las que aún no existen se muestran deshabilitadas con la spec que las trae.
 const sections: { label: string; to?: string; spec?: string }[] = [
+  { label: "Inicio", to: "/agencia" },
   { label: "Clientes", to: "/agencia/clientes" },
   { label: "Solicitudes", to: "/agencia/tickets" },
   { label: "Cambios", to: "/agencia/cambios" },
   { label: "Servicios", to: "/agencia/servicios" },
   { label: "Incidentes", to: "/agencia/incidentes" },
-  { label: "Tableros", spec: "010" },
   { label: "Reportes", spec: "013" },
   { label: "Bitácora", to: "/agencia/bitacora" },
 ];
@@ -31,7 +31,9 @@ export default function AgencyLayout() {
             {sections.map((section) => (
               <li key={section.label}>
                 {section.to ? (
-                  <NavLink to={section.to}>{section.label}</NavLink>
+                  <NavLink to={section.to} end={section.to === "/agencia"}>
+                    {section.label}
+                  </NavLink>
                 ) : (
                   <span className="nav-disabled" aria-disabled="true">
                     {section.label}

@@ -43,13 +43,14 @@ spec:
               drop: [ALL]
           resources:
             requests: { cpu: 25m, memory: 64Mi }
-            limits: { cpu: 500m, memory: 128Mi }
-          # Alloy tarda ~70 s en abrir el puerto en el nodo del laboratorio: la startupProbe le da hasta 5 min
+            limits: { cpu: 1000m, memory: 128Mi }
+          # Alloy tarda ~70 s en abrir el puerto en el nodo del laboratorio y más de 5 min si el PC está cargado:
+          # la startupProbe le da hasta 10 min
           # antes de que la de vida pueda matarlo (sin ella lo reiniciaba en bucle)
           startupProbe:
             httpGet: { path: /-/ready, port: http }
             periodSeconds: 10
-            failureThreshold: 30
+            failureThreshold: 60
             timeoutSeconds: 5
           readinessProbe:
             httpGet: { path: /-/ready, port: http }

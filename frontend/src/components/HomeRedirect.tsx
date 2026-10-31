@@ -7,6 +7,6 @@ export default function HomeRedirect() {
   const { user, loading, mock } = useAuth();
 
   if (loading) return <p className="muted">Cargando…</p>;
-  if (mock) return <Navigate to="/agencia/clientes" replace />;
+  if (mock) return <Navigate to="/agencia" replace />;
   return <Navigate to={user ? homeFor(user) : "/login"} replace />;
 }

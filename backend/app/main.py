@@ -20,6 +20,7 @@ from app.routers import (
     catalog,
     change_requests,
     clients,
+    dashboard,
     incidents,
     pipeline,
     security,
@@ -56,6 +57,7 @@ app.include_router(audit_logs.router)
 app.include_router(catalog.router)
 app.include_router(clients.router)
 app.include_router(clients.projects_router)
+app.include_router(dashboard.router)
 app.include_router(tickets.router)
 app.include_router(change_requests.router)
 app.include_router(services.router)

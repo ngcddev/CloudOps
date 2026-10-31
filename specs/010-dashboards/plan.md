@@ -56,6 +56,7 @@ lanza. Caché en memoria de 60 s por consulta y mes.
 |---|---|---|---|
 | GET | `/api/dashboard/agency?month=YYYY-MM` | agencia | KPI por cliente, totales y carga por técnico |
 | GET | `/api/dashboard/client/{id}?month=YYYY-MM` | agencia, cliente dueño | Estado, disponibilidad vs. objetivo, incidentes y solicitudes del mes (sin costo ni horas) |
+| GET | `/api/dashboard/client/{id}/incidents?month=YYYY-MM` | agencia, cliente dueño | Fallas del mes del portal: título, estado y fecha de inicio, sin técnicos ni datos internos |
 | GET | `/api/dashboard/client/{id}/series?month=YYYY-MM` | agencia | Puntos de disponibilidad y latencia cada 5 min para las gráficas |
 
 `month` por omisión es el mes actual. El cliente de otro cliente → 404 (spec 007). La respuesta del portal no

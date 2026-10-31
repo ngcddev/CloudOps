@@ -1,5 +1,5 @@
 // Componente raíz: define las rutas de la aplicación.
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import AgencyLayout from "./components/AgencyLayout";
 import HomeRedirect from "./components/HomeRedirect";
@@ -10,12 +10,15 @@ import ClientForm from "./pages/agencia/ClientForm";
 import AuditLogList from "./pages/agencia/AuditLogList";
 import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
+import ClientMetrics from "./pages/agencia/ClientMetrics";
+import Dashboard from "./pages/agencia/Dashboard";
 import IncidentDetail from "./pages/agencia/IncidentDetail";
 import IncidentList from "./pages/agencia/IncidentList";
 import ServiceList from "./pages/agencia/ServiceList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
 import PortalTicketList from "./pages/portal/TicketList";
+import PortalHome from "./pages/portal/Home";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -26,10 +29,11 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route element={<RequireRole role="agencia" />}>
         <Route path="/agencia" element={<AgencyLayout />}>
-          <Route index element={<Navigate to="clientes" replace />} />
+          <Route index element={<Dashboard />} />
           <Route path="clientes" element={<ClientList />} />
           <Route path="clientes/nuevo" element={<ClientForm />} />
           <Route path="clientes/:id" element={<ClientDetail />} />
+          <Route path="clientes/:id/metricas" element={<ClientMetrics />} />
           <Route path="bitacora" element={<AuditLogList />} />
           <Route path="cambios" element={<ChangeList />} />
           <Route path="servicios" element={<ServiceList />} />
@@ -42,7 +46,7 @@ export default function App() {
       </Route>
       <Route element={<RequireRole role="cliente" />}>
         <Route path="/portal" element={<PortalLayout />}>
-          <Route index element={<Navigate to="solicitudes" replace />} />
+          <Route index element={<PortalHome />} />
           <Route path="solicitudes" element={<PortalTicketList />} />
           <Route path="*" element={<NotFound />} />
         </Route>
