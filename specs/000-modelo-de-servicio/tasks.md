@@ -5,15 +5,15 @@
 
 ## Levantamiento
 
-- [ ] T01 · Preparar la guía de entrevista (10 preguntas) — **Verifica:** guía en `context.md`. [ ]
-- [ ] T02 · Entrevistar a 2–3 agencias o freelancers de Popayán — **Verifica:** notas por entrevista en `context.md`. [ ]
-- [ ] T03 · Escribir las fichas de persona de los 3 actores humanos — **Verifica:** `docs/personas.md`. [ ]
+- [X] T01 · Preparar la guía de entrevista (10 preguntas) — **Verifica:** guía en `context.md`. [andrea]
+- [X] T02 · Entrevistar a 2–3 agencias o freelancers de Popayán — **Verifica:** notas por entrevista en `context.md`. [andrea ]
+- [X] T03 · Escribir las fichas de persona de los 3 actores humanos — **Verifica:** `docs/personas.md`. [ andrea]
 
 ## Proceso
 
-- [ ] T04 · Dibujar el proceso AS-IS de solicitud y de falla — **Verifica:** diagrama en `docs/proceso.md`. [ ]
-- [ ] T05 · Dibujar el proceso TO-BE con estados canónicos — **Verifica:** usa los estados de la constitución. [ ]
-- [ ] T06 · Definir reglas de escalamiento al 50/80/100 % del SLA — **Verifica:** tabla en `docs/proceso.md`. [ ]
+- [X] T04 · Dibujar el proceso AS-IS de solicitud y de falla — **Verifica:** diagrama en `docs/proceso.md`. [andrea ]
+- [X] T05 · Dibujar el proceso TO-BE con estados canónicos — **Verifica:** usa los estados de la constitución. [andrea ]
+- [X] T06 · Definir reglas de escalamiento al 50/80/100 % del SLA — **Verifica:** tabla en `docs/proceso.md`. [andrea]
 
 ## Reglas del servicio
 
