@@ -45,7 +45,7 @@ Decisiones de esta lista:
 
 - [x] T12 · Agregar a `frontend/src/api.ts` los tipos y llamadas de borradores, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. *Con `?asistente=apagado` en la URL el asistente simulado no responde, para probar el camino a mano. `ClientIncident` suma `message` (T10).* [sebastian-debug]
 - [x] T13 · Agregar al detalle del incidente el bloque «Borradores»: «Generar borradores», editar, «Aprobar» y «Descartar», y «Escribir a mano» prellenado si el asistente falla o tarda más de 60 s — **Verifica:** con datos de prueba se genera, se edita una palabra y se aprueba; con el asistente simulado caído aparece el aviso y se aprueba un texto escrito a mano (CA-1, CA-4, CA-5). *Verificado en el navegador con datos de prueba (Playwright): se generó, se cambió «Detectamos» por «Identificamos» y se aprobó; con `?asistente=apagado` salió el aviso, el texto a mano venía prellenado, uno con «rollback» se rechazó y otro limpio se aprobó.* [sebastian-debug]
-- [ ] T14 · Mostrar en el inicio del portal el mensaje aprobado de cada falla del mes — **Verifica:** con datos de prueba la falla con mensaje aprobado lo muestra y la que solo tiene borrador no muestra texto (CA-4). [ ]
+- [x] T14 · Mostrar en el inicio del portal el mensaje aprobado de cada falla del mes — **Verifica:** con datos de prueba la falla con mensaje aprobado lo muestra y la que solo tiene borrador no muestra texto (CA-4). *Verificado en el navegador con datos de prueba: con solo el borrador la falla no mostró texto; tras aprobarlo con una palabra editada, el portal mostró el texto final.* [sebastian-debug]
 
 ## Integración (módulo 5, desde el 3 nov)
 
