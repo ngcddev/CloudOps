@@ -29,7 +29,7 @@ Decisiones de esta lista:
 
 ## Backend
 
-- [ ] T01 · Crear el modelo `AiDraft` (tabla `ai_drafts`) con la migración `0010` — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores; los incidentes de la 008 y la 009 siguen leyéndose. [ ]
+- [x] T01 · Crear el modelo `AiDraft` (tabla `ai_drafts`) con la migración `0010` — **Verifica:** `alembic upgrade head` y `alembic downgrade -1` sin errores; los incidentes de la 008 y la 009 siguen leyéndose. *`tests/test_migrations.py` sube a `0010` y baja a `0009` con los incidentes y el rollback intactos. Se agregó `created_by_id` para saber quién escribió un borrador a mano.* [sebastian-debug]
 - [ ] T02 · Escribir `incident_facts(incident)` en `services/ai_context.py`: cliente, servicio, prioridad, horas en America/Bogota, duración, versiones del rollback y causa raíz — **Verifica:** `pytest`: con el incidente de La Sazón (14:00 → 14:07, v2 → v1) trae esos datos y ninguna clave con correo, teléfono ni técnico (CA-2, CA-6). [ ]
 - [ ] T03 · Escribir `forbidden_terms(text)` en `services/ai_checks.py` con la lista prohibida del glosario — **Verifica:** `pytest`: «rollback», «P1», «Pod» o «v2» se detectan sin importar mayúsculas; el mensaje de la 009 sale limpio (CA-3). [ ]
 - [ ] T04 · Escribir `hours_match(text, facts)` en `services/ai_checks.py`: toda hora `HH:MM` del texto debe ser una hora del incidente — **Verifica:** `pytest`: «a las 14:00» pasa; «a las 15:30» se marca como hora inventada (CA-2). [ ]
