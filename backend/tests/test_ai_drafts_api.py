@@ -259,3 +259,32 @@ def test_el_cliente_no_aprueba_ni_descarta(as_client, client, assistant, inciden
 
 def test_borrador_que_no_existe(client, seeded):
     assert client.post("/api/ai-drafts/999/approve", json={}).status_code == 404
+
+
+# ---------- T10: el portal ve solo el mensaje aprobado ----------
+
+
+def _portal(as_client) -> list[dict]:
+    return as_client.get("/api/dashboard/client/1/incidents", params={"month": "2026-10"}).json()
+
+
+def test_el_portal_no_ve_borradores(client, as_client, assistant, incidente):
+    client.post(f"/api/incidents/{incidente.id}/ai-drafts")
+
+    assert [falla["message"] for falla in _portal(as_client)] == [None]
+
+
+def test_el_portal_ve_el_texto_final_aprobado(client, as_client, assistant, incidente):
+    mensaje = _mensaje(client, incidente)
+    editado = mensaje["generated_text"].replace("Detectamos", "Identificamos")
+    client.post(f"/api/ai-drafts/{mensaje['id']}/approve", json={"text": editado})
+
+    assert [falla["message"] for falla in _portal(as_client)] == [editado]
+
+
+def test_el_portal_nunca_ve_el_resumen(client, as_client, assistant, incidente):
+    drafts = client.post(f"/api/incidents/{incidente.id}/ai-drafts").json()["drafts"]
+    resumen = next(d for d in drafts if d["kind"] == "resumen")
+    client.post(f"/api/ai-drafts/{resumen['id']}/approve", json={})
+
+    assert [falla["message"] for falla in _portal(as_client)] == [None]
