@@ -279,6 +279,31 @@ flowchart TD
 4. Un incidente no puede pasar directamente de `abierto` a `cerrado`.
 5. Si falla la mitigación, el incidente permanece en `abierto` o vuelve a `abierto`.
 
+### Escalamiento
+
+Estas reglas aplican a cada objetivo de SLA que esté pendiente —respuesta y solución— en los
+tickets e incidentes cubiertos por la política correspondiente. Cada objetivo se evalúa por separado:
+por ejemplo, cumplir la respuesta no detiene el reloj de solución. El porcentaje se calcula sobre el
+tiempo objetivo y el calendario que defina la política de SLA del caso; esta tabla no cambia horarios,
+pausas ni tiempos objetivo, que se cierran en `seed/sla_policies.json`.
+
+| Consumo del SLA | Nivel y destinatario | Acción requerida |
+|---|---|---|
+| **50 % · preventivo** | Aviso al técnico responsable; visible para la administradora de la agencia. | Revisar avance, confirmar que el caso sigue atendible dentro del tiempo restante y registrar la siguiente acción. Si hay un bloqueo o riesgo, informar a la administradora y dejar constancia de la causa. |
+| **80 % · alto riesgo** | Escalamiento a la administradora de la agencia y aviso al técnico responsable. | La administradora revisa el bloqueo y la prioridad, coordina apoyo o reasignación si hace falta y acuerda con el técnico un plan para cumplir o mitigar. Informar al cliente el estado y la próxima actualización, sin prometer un plazo no confirmado. |
+| **100 % · incumplido** | Alerta inmediata a la administradora y al técnico responsable. | Registrar el incumplimiento con hora real, objetivo afectado y tiempo transcurrido; informar al cliente con claridad sobre el estado y las acciones siguientes. Continuar la atención hasta cumplir el criterio de respuesta o solución: el aviso no cierra ni cambia el estado del caso. |
+
+#### Reglas de registro y aplicación
+
+- Los avisos se disparan al alcanzar por primera vez cada umbral mientras el objetivo siga pendiente.
+- Registrar cada escalamiento en la línea de tiempo del caso con fecha y hora UTC, objetivo afectado
+  (respuesta o solución), porcentaje alcanzado, responsable, destinatarios y acción tomada.
+- Un cambio de responsable no reinicia el tiempo ni borra avisos previos. Si cambia la prioridad, se
+  aplica el objetivo vigente según la política y se conserva la trazabilidad del tiempo ya transcurrido.
+- Escalar no modifica automáticamente la prioridad ni los estados canónicos (`abierto`,
+  `en_progreso`, `en_espera`, `mitigado` o `resuelto`). La administradora documenta cualquier
+  decisión y el cliente recibe mensajes en lenguaje de negocio.
+
 ## 7. Estados del servicio
 
 El servicio puede tener un estado independiente del ticket o del incidente:

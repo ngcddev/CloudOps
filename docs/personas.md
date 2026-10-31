@@ -42,4 +42,3 @@
 | **Frustraciones** | Incertidumbre sobre el estado del caso, necesidad de usar varios canales para obtener información y tiempos de espera que afectan sus ventas. |
 | **Comportamiento** | Describe el problema con un mensaje breve, adjunta evidencia y valida la solución mediante el funcionamiento real del sitio. |
 | **Decisión clave** | Continuar con el plan contratado, solicitar prioridad o pedir una explicación del incidente. |
-
