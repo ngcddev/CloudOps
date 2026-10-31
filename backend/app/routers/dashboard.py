@@ -44,26 +44,8 @@ def dashboard_agency(
         .options(selectinload(Client.projects).selectinload(Project.services))
         .order_by(Client.id)
     ).all()
-    client_kpis = []
-    for client in clients:
-        service = client.main_service
-        client_kpis.append(
-            ClientKpi(
-                client_id=client.id,
-                client_name=client.name,
-                service_name=service.name if service is not None else None,
-                service_status=service.status if service is not None else "operativo",
-                availability=kpi.disponibilidad_del_mes(db, client.id, month),
-                cumple_objetivo=kpi.cumple_objetivo(db, client.id, month),
-                latency_p95=kpi.latencia_p95_del_mes(db, client.id, month),
-                sla_compliance=kpi.cumplimiento_sla(db, client.id, month),
-                mttr=kpi.mttr_del_mes(db, client.id, month),
-                open_tickets=kpi.solicitudes_abiertas(db, client.id, month),
-                closed_tickets=kpi.solicitudes_cerradas(db, client.id, month),
-                hours=kpi.horas_por_cliente(db, client.id, month),
-                cost=kpi.costo_por_cliente(db, client.id, month),
-            )
-        )
+    # Los mismos KPI que el reporte operativo (spec 013): salen de una sola función
+    client_kpis = [ClientKpi(**kpi.client_month_kpis(db, client, month)) for client in clients]
 
     technicians = [
         TechnicianLoad(
