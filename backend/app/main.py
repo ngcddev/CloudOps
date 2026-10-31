@@ -95,6 +95,8 @@ _CAMPOS = {
     "root_cause": "causa raíz",
     "kind": "tipo",
     "text": "texto",
+    "month": "mes",
+    "client_id": "cliente",
 }
 
 
@@ -108,6 +110,8 @@ async def validation_error_es(_: Request, exc: RequestValidationError) -> JSONRe
             msg = f"El campo «{campo}» es obligatorio."
         elif error["type"] == "string_too_long":
             msg = f"El campo «{campo}» es demasiado largo."
+        elif error["type"] == "string_pattern_mismatch":
+            msg = f"El campo «{campo}» no tiene el formato esperado."
         elif error["type"] == "literal_error":
             msg = f"El campo «{campo}» tiene un valor no permitido: {error['ctx']['expected']}."
         else:
