@@ -1299,3 +1299,9 @@ section {
 .draft-text {
   white-space: pre-wrap;
 }
+
+/* Mensaje aprobado de una falla en el inicio del portal */
+.portal-message {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}

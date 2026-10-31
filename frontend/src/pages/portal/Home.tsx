@@ -128,6 +128,8 @@ export default function PortalHome() {
                     <div className="muted">
                       {formatDateTime(incident.started_at)} · {estadosIncidente[incident.status]}
                     </div>
+                    {/* Solo el mensaje que la agencia aprobó; los borradores nunca llegan aquí (spec 012) */}
+                    {incident.message && <p className="portal-message">{incident.message}</p>}
                   </li>
                 ))}
               </ul>
