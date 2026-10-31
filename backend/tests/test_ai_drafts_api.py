@@ -81,3 +81,45 @@ def test_el_cliente_no_puede_generar(as_client, assistant, incidente):
 
 def test_incidente_que_no_existe(client, assistant, seeded):
     assert client.post("/api/incidents/999/ai-drafts").status_code == 404
+
+
+# ---------- T07: listar ----------
+
+
+def test_lista_los_borradores_en_orden(client, assistant, incidente):
+    client.post(f"/api/incidents/{incidente.id}/ai-drafts")
+    client.post(f"/api/incidents/{incidente.id}/ai-drafts")
+
+    body = client.get(f"/api/incidents/{incidente.id}/drafts").json()
+    assert [d["kind"] for d in body["drafts"]] == ["resumen", "mensaje_cliente"] * 2
+    assert [d["id"] for d in body["drafts"]] == sorted(d["id"] for d in body["drafts"])
+    assert {d["status"] for d in body["drafts"]} == {"borrador_ia"}
+
+
+def test_las_plantillas_traen_las_horas_reales(client, incidente):
+    templates = client.get(f"/api/incidents/{incidente.id}/drafts").json()["manual_templates"]
+
+    assert templates["mensaje_cliente"] == (
+        "Detectamos una falla temporal en su sitio a las 14:00. Activamos la recuperación y a las 14:07 "
+        "el servicio volvió a funcionar. Tiempo total: 7 minutos."
+    )
+    assert "14:00" in templates["resumen"] and "14:07" in templates["resumen"]
+    assert "rollback de v2 a v1" in templates["resumen"]
+
+
+def test_la_plantilla_del_cerrado_lleva_la_causa_raiz(client, seeded):
+    cerrado = mitigated_incident(seeded, status="cerrado")
+    resumen = client.get(f"/api/incidents/{cerrado.id}/drafts").json()["manual_templates"]["resumen"]
+
+    assert resumen.endswith("Causa raíz: La versión nueva respondía con error en la página principal.")
+
+
+def test_sin_mitigar_no_hay_plantillas(client, seeded):
+    sazon = seeded.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
+    body = client.get(f"/api/incidents/{open_incident(seeded, sazon).id}/drafts").json()
+
+    assert body == {"drafts": [], "manual_templates": {"resumen": None, "mensaje_cliente": None}}
+
+
+def test_el_cliente_no_ve_los_borradores(as_client, incidente):
+    assert as_client.get(f"/api/incidents/{incidente.id}/drafts").status_code == 403

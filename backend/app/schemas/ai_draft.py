@@ -29,3 +29,17 @@ class AiDraftsGenerated(BaseModel):
 
     drafts: list[AiDraftOut]
     problems: list[str]
+
+
+class ManualTemplates(BaseModel):
+    """Textos con los datos reales para escribir a mano; nulos mientras el incidente no se mitigue."""
+
+    resumen: str | None
+    mensaje_cliente: str | None
+
+
+class IncidentDrafts(BaseModel):
+    """Los borradores de un incidente, del más antiguo al más reciente, y las plantillas para escribir a mano."""
+
+    drafts: list[AiDraftOut]
+    manual_templates: ManualTemplates

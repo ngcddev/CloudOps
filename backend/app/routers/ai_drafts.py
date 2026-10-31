@@ -1,4 +1,4 @@
-# Endpoints de los borradores de un incidente: generarlos con el asistente (spec 012). Solo agencia.
+# Endpoints de los borradores de un incidente: generarlos con el asistente y listarlos (spec 012). Solo agencia.
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,8 +11,10 @@ from app.models.ai_draft import AiDraft
 from app.models.incident import Incident
 from app.models.project import Project
 from app.models.service import Service
-from app.schemas.ai_draft import AiDraftOut, AiDraftsGenerated
+from app.schemas.ai_draft import AiDraftsGenerated, IncidentDrafts
+from app.services.ai_context import incident_facts, manual_summary
 from app.services.ai_drafts import DraftWriter, WriterError, generate_drafts
+from app.services.messages import client_message
 
 incident_router = APIRouter(
     prefix="/api/incidents", tags=["borradores"], dependencies=[Depends(require_agency)]
@@ -94,3 +96,22 @@ def create_ai_drafts(
         raise HTTPException(status_code=503, detail=f"{error} {MANUAL_HINT}") from error
     db.commit()
     return {"drafts": [present_draft(draft) for draft in result.drafts], "problems": result.problems}
+
+
+@incident_router.get("/{incident_id}/drafts", response_model=IncidentDrafts)
+def list_drafts(incident_id: int, db: Session = Depends(get_db)):
+    """Borradores del incidente en orden, con las plantillas prellenadas para escribir a mano (CA-5)."""
+    incident = _load_incident(db, incident_id)
+    drafts = db.scalars(
+        select(AiDraft)
+        .options(selectinload(AiDraft.created_by), selectinload(AiDraft.approved_by))
+        .where(AiDraft.incident_id == incident.id)
+        .order_by(AiDraft.id)
+    ).all()
+    templates = {"resumen": None, "mensaje_cliente": None}
+    if incident.mitigated_at is not None:
+        templates = {
+            "resumen": manual_summary(incident_facts(incident)),
+            "mensaje_cliente": client_message(incident),
+        }
+    return {"drafts": [present_draft(draft) for draft in drafts], "manual_templates": templates}
