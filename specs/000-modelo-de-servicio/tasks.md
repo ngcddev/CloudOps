@@ -17,7 +17,7 @@
 
 ## Reglas del servicio
 
-- [ ] T07 · Cerrar la matriz P1–P4 con un ejemplo por cliente — **Verifica:** `seed/priority_matrix.json` válido. [ ]
+- [x] T07 · Cerrar la matriz P1–P4 con un ejemplo por cliente — **Verifica:** `seed/priority_matrix.json` válido. Hecho el 31 oct 2026: la matriz es válida y `docs/prioridades.md` trae 4 ejemplos por cada uno de los 3 clientes (12), todos coherentes con la matriz. Redactado por Sistemas, sin revisión de Industrial.
 - [ ] T08 · Cerrar tiempos de SLA y reloj por prioridad — **Verifica:** `seed/sla_policies.json` válido. [ ]
 - [ ] T09 · Cerrar los 3 planes con precio, cuota y horas — **Verifica:** `seed/plans.json` válido. [ ]
 - [x] T10 · Escribir la tabla de KPI con fórmula, fuente y meta — **Verifica:** `docs/kpi.md`. Verificado el 31 oct 2026: `docs/kpi.md` tiene los 9 KPI con fórmula, fuente y meta, aprobado por Industrial el 26 oct.
