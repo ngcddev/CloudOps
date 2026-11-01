@@ -1,5 +1,6 @@
 # Modelos de la base de datos: se importan aquí para que Base.metadata los conozca.
 from app.models.agency import Agency
+from app.models.ai_draft import AiDraft
 from app.models.audit_log import AuditLog
 from app.models.change_request import ChangeRequest
 from app.models.client import Client
@@ -19,6 +20,7 @@ from app.models.work_log import WorkLog
 
 __all__ = [
 	"Agency",
+	"AiDraft",
 	"AuditLog",
 	"ChangeRequest",
 	"Client",
