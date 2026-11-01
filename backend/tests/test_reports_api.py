@@ -129,3 +129,25 @@ def test_sin_sesion_no_hay_reportes(anonymous, tres_reportes):
 
 def test_reporte_que_no_existe(client, seeded):
     assert client.get("/api/reports/999").status_code == 404
+
+
+# ---------- T06: los números quedan congelados ----------
+
+
+def test_una_falla_nueva_no_cambia_un_reporte_ya_generado(client, seeded):
+    from datetime import timedelta
+
+    from app.models import Service
+    from tests.rollback_support import T0, open_incident
+
+    report = client.post("/api/reports", json={"kind": "ejecutivo", "client_id": 1, "month": "2026-10"}).json()
+    assert report["data"]["incidents"]["count"] == 0
+
+    sazon = seeded.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
+    open_incident(seeded, sazon, started_at=T0 + timedelta(days=2))
+
+    guardado = client.get(f"/api/reports/{report['id']}").json()
+    assert guardado["data"] == report["data"]
+    # Uno nuevo del mismo mes sí ve la falla
+    nuevo = client.post("/api/reports", json={"kind": "ejecutivo", "client_id": 1, "month": "2026-10"}).json()
+    assert nuevo["data"]["incidents"]["count"] == 1
