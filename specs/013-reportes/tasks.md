@@ -40,7 +40,7 @@ Decisiones de esta lista:
 ## Frontend
 
 - [x] T07 · Agregar a `frontend/src/api.ts` los tipos y llamadas de reportes, con datos de prueba si la API no responde — **Verifica:** `tsc` sin errores. *Los datos de prueba reutilizan `mockClientKpi` del dashboard y los mensajes aprobados de la 012.* [sebastian-debug]
-- [ ] T08 · Crear `/agencia/reportes`: formulario para generar (tipo, cliente, mes) y lista de reportes, y activar «Reportes» en el menú — **Verifica:** con datos de prueba se genera un operativo y un ejecutivo de La Sazón y aparecen en la lista. [ ]
+- [x] T08 · Crear `/agencia/reportes`: formulario para generar (tipo, cliente, mes) y lista de reportes, y activar «Reportes» en el menú — **Verifica:** con datos de prueba se genera un operativo y un ejecutivo de La Sazón y aparecen en la lista. *Verificado en el navegador con datos de prueba: desde el menú se generó un operativo y un ejecutivo de La Sazón de 2026-10 y los dos aparecieron en la lista.* [sebastian-debug]
 - [ ] T09 · Crear la vista del reporte operativo: tabla por cliente con el mes anterior al lado y el total, y botón «Descargar PDF» — **Verifica:** la vista de impresión del navegador muestra la tabla en A4, en blanco y negro, sin menús (CA-1, CA-4). [ ]
 - [ ] T10 · Crear la vista del reporte ejecutivo en **una página** A4 con «Descargar PDF» — **Verifica:** la vista de impresión del navegador cabe en una página con La Sazón (disponibilidad, una falla con su mensaje, cambios y solicitudes) (CA-2, CA-4). [ ]
 - [ ] T11 · Crear `/portal/reportes` para que el cliente vea y descargue sus reportes ejecutivos, y agregarlo al menú del portal — **Verifica:** con datos de prueba el cliente ve solo los ejecutivos de su empresa y abre la vista de una página (CA-4). [ ]
