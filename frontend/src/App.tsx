@@ -19,6 +19,7 @@ import ReportView from "./pages/agencia/ReportView";
 import ServiceList from "./pages/agencia/ServiceList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
+import PortalReportList from "./pages/portal/ReportList";
 import PortalTicketList from "./pages/portal/TicketList";
 import PortalHome from "./pages/portal/Home";
 import Login from "./pages/Login";
@@ -52,6 +53,8 @@ export default function App() {
         <Route path="/portal" element={<PortalLayout />}>
           <Route index element={<PortalHome />} />
           <Route path="solicitudes" element={<PortalTicketList />} />
+          <Route path="reportes" element={<PortalReportList />} />
+          <Route path="reportes/:id" element={<ReportView backTo="/portal/reportes" />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
