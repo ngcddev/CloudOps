@@ -1305,3 +1305,12 @@ section {
   margin: 6px 0 0;
   white-space: pre-wrap;
 }
+
+/* ---------- Reportes (spec 013) ---------- */
+
+.report-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+  gap: var(--space);
+}
