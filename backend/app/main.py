@@ -14,6 +14,7 @@ from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
 from app.routers import (
+    ai_drafts,
     alerts,
     audit_logs,
     auth,
@@ -64,6 +65,8 @@ app.include_router(services.router)
 app.include_router(pipeline.router)
 app.include_router(security.router)
 app.include_router(incidents.router)
+app.include_router(ai_drafts.incident_router)
+app.include_router(ai_drafts.drafts_router)
 app.include_router(alerts.router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
@@ -90,6 +93,8 @@ _CAMPOS = {
     "service_id": "servicio",
     "message": "nota",
     "root_cause": "causa raíz",
+    "kind": "tipo",
+    "text": "texto",
 }
 
 
