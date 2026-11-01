@@ -14,6 +14,8 @@ import ClientMetrics from "./pages/agencia/ClientMetrics";
 import Dashboard from "./pages/agencia/Dashboard";
 import IncidentDetail from "./pages/agencia/IncidentDetail";
 import IncidentList from "./pages/agencia/IncidentList";
+import ReportList from "./pages/agencia/ReportList";
+import ReportView from "./pages/agencia/ReportView";
 import ServiceList from "./pages/agencia/ServiceList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
@@ -41,6 +43,8 @@ export default function App() {
           <Route path="incidentes/:id" element={<IncidentDetail />} />
           <Route path="tickets" element={<TicketList />} />
           <Route path="tickets/:id" element={<TicketDetail />} />
+          <Route path="reportes" element={<ReportList />} />
+          <Route path="reportes/:id" element={<ReportView />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
