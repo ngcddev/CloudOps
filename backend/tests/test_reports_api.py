@@ -66,3 +66,66 @@ def test_generar_queda_en_la_bitacora(client, seeded):
     log = seeded.scalar(select(AuditLog).where(AuditLog.entity == "report"))
     assert (log.action, log.entity_id) == ("generar", report["id"])
     assert log.details == {"tipo": "ejecutivo", "cliente": 1, "mes": "2026-10"}
+
+
+# ---------- T05: listar y ver con alcance por rol ----------
+
+
+@pytest.fixture
+def tres_reportes(client, seeded):
+    """Un operativo, un ejecutivo de La Sazón (cliente 1) y uno de El Tornillo (cliente 2)."""
+    ids = {}
+    for name, body in (
+        ("operativo", {"kind": "operativo", "month": "2026-10"}),
+        ("sazon", {"kind": "ejecutivo", "client_id": 1, "month": "2026-10"}),
+        ("tornillo", {"kind": "ejecutivo", "client_id": 2, "month": "2026-09"}),
+    ):
+        ids[name] = client.post("/api/reports", json=body).json()["id"]
+    return ids
+
+
+def test_la_agencia_ve_todos_sin_los_datos(client, tres_reportes):
+    rows = client.get("/api/reports").json()
+
+    assert [row["id"] for row in rows] == [tres_reportes[k] for k in ("tornillo", "sazon", "operativo")]
+    assert "data" not in rows[0]
+
+
+def test_la_agencia_filtra_por_tipo_cliente_y_mes(client, tres_reportes):
+    assert [r["id"] for r in client.get("/api/reports", params={"kind": "operativo"}).json()] == [
+        tres_reportes["operativo"]
+    ]
+    assert [r["id"] for r in client.get("/api/reports", params={"client_id": 2}).json()] == [tres_reportes["tornillo"]]
+    assert [r["id"] for r in client.get("/api/reports", params={"month": "2026-09"}).json()] == [
+        tres_reportes["tornillo"]
+    ]
+
+
+def test_el_cliente_ve_solo_sus_ejecutivos(as_client, tres_reportes):
+    rows = as_client.get("/api/reports").json()
+
+    assert [row["id"] for row in rows] == [tres_reportes["sazon"]]
+    # Ni pidiendo el filtro de otro cliente o del operativo ve más
+    assert as_client.get("/api/reports", params={"client_id": 2}).json() == []
+    assert as_client.get("/api/reports", params={"kind": "operativo"}).json() == []
+
+
+def test_el_cliente_abre_el_suyo(as_client, tres_reportes):
+    response = as_client.get(f"/api/reports/{tres_reportes['sazon']}")
+
+    assert response.status_code == 200
+    assert response.json()["data"]["client_name"] == "Restaurante La Sazón"
+
+
+def test_el_operativo_y_el_de_otro_cliente_no_existen_para_el_cliente(as_client, tres_reportes):
+    assert as_client.get(f"/api/reports/{tres_reportes['operativo']}").status_code == 404
+    assert as_client.get(f"/api/reports/{tres_reportes['tornillo']}").status_code == 404
+
+
+def test_sin_sesion_no_hay_reportes(anonymous, tres_reportes):
+    assert anonymous.get("/api/reports").status_code == 401
+    assert anonymous.get(f"/api/reports/{tres_reportes['sazon']}").status_code == 401
+
+
+def test_reporte_que_no_existe(client, seeded):
+    assert client.get("/api/reports/999").status_code == 404

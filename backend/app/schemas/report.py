@@ -23,15 +23,20 @@ class ReportCreate(BaseModel):
         return self
 
 
-class ReportOut(BaseModel):
-    """Un reporte generado, con sus números congelados en `data`."""
+class ReportSummary(BaseModel):
+    """Fila de la lista de reportes, sin los datos."""
 
     id: int
     kind: Literal["operativo", "ejecutivo"]
     client_id: int | None
     client_name: str | None
     month: str
-    # Datos del reporte: la forma depende del tipo (services/reports.py)
-    data: dict
     generated_by_name: str | None
     created_at: datetime
+
+
+class ReportOut(ReportSummary):
+    """Un reporte generado, con sus números congelados en `data`."""
+
+    # Datos del reporte: la forma depende del tipo (services/reports.py)
+    data: dict
