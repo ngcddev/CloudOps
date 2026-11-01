@@ -24,6 +24,7 @@ from app.routers import (
     dashboard,
     incidents,
     pipeline,
+    reports,
     security,
     services,
     tickets,
@@ -67,6 +68,7 @@ app.include_router(security.router)
 app.include_router(incidents.router)
 app.include_router(ai_drafts.incident_router)
 app.include_router(ai_drafts.drafts_router)
+app.include_router(reports.router)
 app.include_router(alerts.router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
