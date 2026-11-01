@@ -14,9 +14,12 @@ import ClientMetrics from "./pages/agencia/ClientMetrics";
 import Dashboard from "./pages/agencia/Dashboard";
 import IncidentDetail from "./pages/agencia/IncidentDetail";
 import IncidentList from "./pages/agencia/IncidentList";
+import ReportList from "./pages/agencia/ReportList";
+import ReportView from "./pages/agencia/ReportView";
 import ServiceList from "./pages/agencia/ServiceList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
+import PortalReportList from "./pages/portal/ReportList";
 import PortalTicketList from "./pages/portal/TicketList";
 import PortalHome from "./pages/portal/Home";
 import Login from "./pages/Login";
@@ -41,6 +44,8 @@ export default function App() {
           <Route path="incidentes/:id" element={<IncidentDetail />} />
           <Route path="tickets" element={<TicketList />} />
           <Route path="tickets/:id" element={<TicketDetail />} />
+          <Route path="reportes" element={<ReportList />} />
+          <Route path="reportes/:id" element={<ReportView />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
@@ -48,6 +53,8 @@ export default function App() {
         <Route path="/portal" element={<PortalLayout />}>
           <Route index element={<PortalHome />} />
           <Route path="solicitudes" element={<PortalTicketList />} />
+          <Route path="reportes" element={<PortalReportList />} />
+          <Route path="reportes/:id" element={<ReportView backTo="/portal/reportes" />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

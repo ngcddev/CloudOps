@@ -1,4 +1,5 @@
-// Marco del portal del cliente: menú con «Inicio» y «Solicitudes» (spec 010, T17) y la sesión (spec 007).
+// Marco del portal del cliente: menú con «Inicio», «Solicitudes» (spec 010, T17) y «Reportes» (spec 013), y la
+// sesión (spec 007).
 import { NavLink, Outlet } from "react-router-dom";
 
 import Logo from "./Logo";
@@ -18,6 +19,7 @@ export default function PortalLayout() {
             Inicio
           </NavLink>
           <NavLink to="/portal/solicitudes">Solicitudes</NavLink>
+          <NavLink to="/portal/reportes">Reportes</NavLink>
         </nav>
         <SessionBar />
       </header>
