@@ -1314,3 +1314,82 @@ section {
   align-items: end;
   gap: var(--space);
 }
+
+.report-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space);
+}
+
+.report-header h1 {
+  margin-bottom: 4px;
+}
+
+.report-section {
+  margin-top: calc(var(--space) * 1.5);
+}
+
+.report-table tfoot td {
+  border-top: 2px solid var(--ink);
+}
+
+/* Impresión (PDF desde el navegador): solo el reporte, en blanco y negro, en A4 */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  .report-operational {
+    page: apaisada;
+  }
+
+  @page apaisada {
+    size: A4 landscape;
+  }
+
+  html,
+  body,
+  .layout,
+  .content {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .sidebar,
+  .notice,
+  .no-print,
+  .portal-header,
+  .session-bar {
+    display: none !important;
+  }
+
+  .layout {
+    display: block;
+  }
+
+  .content {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+  }
+
+  .report,
+  .report * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+
+  .report .table,
+  .report .table th,
+  .report .table td {
+    border-color: #000 !important;
+  }
+
+  .report .muted {
+    color: #444 !important;
+  }
+}

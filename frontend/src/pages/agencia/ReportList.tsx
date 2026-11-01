@@ -1,5 +1,6 @@
 // Reportes mensuales de la agencia: generar un operativo o un ejecutivo y ver los ya generados (spec 013).
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   createReport,
@@ -25,6 +26,7 @@ export default function ReportList() {
   const [month, setMonth] = useState(mesActual());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
 
   const load = useCallback(() => {
     listReports()
@@ -44,8 +46,8 @@ export default function ReportList() {
     setBusy(true);
     setError(null);
     try {
-      await createReport(kind, month, kind === "ejecutivo" && clientId !== "" ? clientId : undefined);
-      load();
+      const report = await createReport(kind, month, kind === "ejecutivo" && clientId !== "" ? clientId : undefined);
+      navigate(`/agencia/reportes/${report.id}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -121,7 +123,9 @@ export default function ReportList() {
             {reports.map((report) => (
               <tr key={report.id}>
                 <td>
-                  <strong>{REPORT_KIND_LABELS[report.kind]}</strong>
+                  <Link to={`/agencia/reportes/${report.id}`}>
+                    <strong>{REPORT_KIND_LABELS[report.kind]}</strong>
+                  </Link>
                   <div className="muted">{report.client_name ?? "Todos los clientes"}</div>
                 </td>
                 <td>{report.month}</td>
