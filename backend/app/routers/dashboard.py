@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.deps import client_scope, current_user, require_agency
+from app.models.ai_draft import AiDraft
 from app.models.client import Client
 from app.models.incident import Incident
 from app.models.project import Project
@@ -43,26 +44,8 @@ def dashboard_agency(
         .options(selectinload(Client.projects).selectinload(Project.services))
         .order_by(Client.id)
     ).all()
-    client_kpis = []
-    for client in clients:
-        service = client.main_service
-        client_kpis.append(
-            ClientKpi(
-                client_id=client.id,
-                client_name=client.name,
-                service_name=service.name if service is not None else None,
-                service_status=service.status if service is not None else "operativo",
-                availability=kpi.disponibilidad_del_mes(db, client.id, month),
-                cumple_objetivo=kpi.cumple_objetivo(db, client.id, month),
-                latency_p95=kpi.latencia_p95_del_mes(db, client.id, month),
-                sla_compliance=kpi.cumplimiento_sla(db, client.id, month),
-                mttr=kpi.mttr_del_mes(db, client.id, month),
-                open_tickets=kpi.solicitudes_abiertas(db, client.id, month),
-                closed_tickets=kpi.solicitudes_cerradas(db, client.id, month),
-                hours=kpi.horas_por_cliente(db, client.id, month),
-                cost=kpi.costo_por_cliente(db, client.id, month),
-            )
-        )
+    # Los mismos KPI que el reporte operativo (spec 013): salen de una sola función
+    client_kpis = [ClientKpi(**kpi.client_month_kpis(db, client, month)) for client in clients]
 
     technicians = [
         TechnicianLoad(
@@ -116,7 +99,8 @@ def dashboard_client_incidents(
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ) -> list[ClientIncident]:
-    """Fallas del mes del cliente para su portal, sin técnicos ni datos internos (CA-4, CA-7).
+    """Fallas del mes del cliente para su portal, sin técnicos ni datos internos (CA-4, CA-7), con el mensaje
+    que la agencia aprobó para cada una (spec 012).
 
     La agencia puede consultar cualquier cliente; un cliente solo el suyo (404 si pide otro).
     """
@@ -137,12 +121,27 @@ def dashboard_client_incidents(
         )
         .order_by(Incident.started_at.desc(), Incident.id.desc())
     ).all()
+    # Solo el mensaje aprobado llega al cliente; los borradores y el resumen técnico nunca (spec 012, CA-4).
+    # Una sola consulta para todas las fallas del mes, sin N+1.
+    messages: dict[int, str] = {}
+    if incidents:
+        approved = db.execute(
+            select(AiDraft.incident_id, AiDraft.final_text)
+            .where(
+                AiDraft.incident_id.in_([incident.id for incident in incidents]),
+                AiDraft.kind == "mensaje_cliente",
+                AiDraft.status == "aprobado",
+            )
+            .order_by(AiDraft.approved_at)
+        )
+        messages = {incident_id: text for incident_id, text in approved}
     return [
         ClientIncident(
             id=incident.id,
             title=incident.title,
             status=incident.status,
             started_at=incident.started_at,
+            message=messages.get(incident.id),
         )
         for incident in incidents
     ]

@@ -1,4 +1,5 @@
-// Detalle de un incidente: relojes del SLA, línea de tiempo, enlaces para diagnosticar y acciones del técnico (spec 008).
+// Detalle de un incidente: relojes del SLA, línea de tiempo, enlaces para diagnosticar y acciones del técnico (spec 008),
+// con la recuperación (spec 009) y los borradores del asistente (spec 012).
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -12,6 +13,7 @@ import {
   type IncidentDetail as IncidentDetailData,
   type IncidentEventType,
 } from "../../api";
+import DraftsPanel from "../../components/DraftsPanel";
 import RecoveryPanel from "../../components/RecoveryPanel";
 import SlaClock from "../../components/SlaClock";
 import { formatDateTime } from "../../format";
@@ -161,6 +163,8 @@ export default function IncidentDetail() {
       {(!closed || incident.rollback.status !== "sin_rollback") && (
         <RecoveryPanel incident={incident} onUpdated={setIncident} />
       )}
+
+      <DraftsPanel incident={incident} />
 
       <div className="detail-grid">
         <section className="card" aria-label="Diagnóstico">
