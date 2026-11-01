@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     # URL de Prometheus (spec 010): la API consulta el job `sitios` y el de Traefik para los dashboards.
     # Vacío = sin conexión: las tarjetas de disponibilidad responden «sin datos» (CA-8).
     prometheus_url: str = ""
+    # Asistente de incidentes (spec 012): Ollama en el PC B, que el Hub llama por la red local. Vacío = sin
+    # asistente: «Generar borradores» responde que se escriba a mano y nada más cambia (principio 6).
+    ollama_url: str = ""
+    ollama_model: str = ""
+    # Segundos que se espera al asistente antes de pedir el texto a mano (CA-5)
+    ai_timeout_seconds: int = 60
 
 
 settings = Settings()

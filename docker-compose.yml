@@ -47,6 +47,10 @@ services:
       ALERTMANAGER_TOKEN: ${ALERTMANAGER_TOKEN:-}
       # Dashboards y métricas (spec 010): la API consulta Prometheus para disponibilidad y latencia
       PROMETHEUS_URL: ${PROMETHEUS_URL:-}
+      # Asistente de incidentes (spec 012): Ollama en el PC B; vacío = se escribe a mano
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-60}
     # Solo para desarrollo: las pruebas (docker compose exec api pytest) leen seed/ y gitops/ en las
     # rutas del repo (/seed, /gitops y /pipelines). La imagen de producción no los lleva.
     volumes:
