@@ -51,6 +51,8 @@ class ClientIncident(BaseModel):
     title: str
     status: str
     started_at: datetime
+    # Texto aprobado por la agencia para el cliente (spec 012); nulo si todavía no hay uno aprobado (CA-4)
+    message: str | None = None
 
 
 class TechnicianLoad(BaseModel):
