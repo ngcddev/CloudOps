@@ -1856,3 +1856,218 @@ export async function discardDraft(id: number): Promise<AiDraft> {
   }
   return request<AiDraft>(`/ai-drafts/${id}/discard`, { method: "POST" });
 }
+
+// ---------- Reportes mensuales (spec 013) ----------
+
+export type ReportKind = "operativo" | "ejecutivo";
+
+export interface ReportSummary {
+  id: number;
+  kind: ReportKind;
+  client_id: number | null;
+  client_name: string | null;
+  month: string;
+  generated_by_name: string | null;
+  created_at: string;
+}
+
+// Total de la agencia: suma horas, costo y solicitudes; promedia disponibilidad, SLA y MTTR de los clientes con dato
+export interface ReportTotals {
+  open_tickets: number;
+  closed_tickets: number;
+  hours: number;
+  cost: number;
+  availability: number | null;
+  sla_compliance: number | null;
+  mttr: number | null;
+}
+
+export interface OperationalReportData {
+  kind: "operativo";
+  month: string;
+  previous_month: string;
+  currency: string;
+  hourly_cost: number;
+  clients: { client_id: number; client_name: string; service_name: string | null; current: ClientKpi; previous: ClientKpi }[];
+  totals: { current: ReportTotals; previous: ReportTotals };
+  technicians: TechnicianLoad[];
+}
+
+// Todo el texto del ejecutivo ya viene en lenguaje del cliente (glosario), congelado al generarse
+export interface ExecutiveReportData {
+  kind: "ejecutivo";
+  month: string;
+  month_label: string;
+  client_id: number;
+  client_name: string;
+  service_name: string | null;
+  plan_name: string | null;
+  availability: { value: number | null; objective: number | null; meets_objective: boolean | null; text: string };
+  incidents: { count: number; items: { date: string; time: string; text: string }[]; text: string; recovery_text: string | null };
+  changes: { count: number; items: { date: string; text: string }[]; text: string };
+  tickets: { opened: number; attended: number; text: string };
+}
+
+export type Report = ReportSummary & { data: OperationalReportData | ExecutiveReportData };
+
+export interface ReportFilters {
+  kind?: ReportKind;
+  client_id?: number;
+  month?: string;
+}
+
+// Reportes de prueba en memoria, armados con los mismos datos de prueba del dashboard
+const reportMock: Report[] = [];
+const MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+function mesAnterior(month: string): string {
+  const [year, number] = month.split("-").map(Number);
+  return number === 1 ? `${year - 1}-12` : `${year}-${String(number - 1).padStart(2, "0")}`;
+}
+
+function mockTotals(rows: ClientKpi[]): ReportTotals {
+  const average = (values: (number | null)[]) => {
+    const present = values.filter((v): v is number => v !== null);
+    return present.length ? Math.round((present.reduce((a, b) => a + b, 0) / present.length) * 100) / 100 : null;
+  };
+  return {
+    open_tickets: rows.reduce((t, r) => t + r.open_tickets, 0),
+    closed_tickets: rows.reduce((t, r) => t + r.closed_tickets, 0),
+    hours: rows.reduce((t, r) => t + r.hours, 0),
+    cost: rows.reduce((t, r) => t + r.cost, 0),
+    availability: average(rows.map((r) => r.availability)),
+    sla_compliance: average(rows.map((r) => r.sla_compliance)),
+    mttr: average(rows.map((r) => r.mttr)),
+  };
+}
+
+function mockOperational(month: string): OperationalReportData {
+  const current = mock.clients.map((client) => mockClientKpi(client.id));
+  // El mes anterior de prueba: la mitad de las horas y sin fallas
+  const previous = current.map((row) => ({ ...row, hours: row.hours / 2, cost: row.cost / 2, mttr: null }));
+  return {
+    kind: "operativo",
+    month,
+    previous_month: mesAnterior(month),
+    currency: "COP",
+    hourly_cost: 25000,
+    clients: current.map((row, index) => ({
+      client_id: row.client_id,
+      client_name: row.client_name,
+      service_name: row.service_name,
+      current: row,
+      previous: previous[index],
+    })),
+    totals: { current: mockTotals(current), previous: mockTotals(previous) },
+    technicians: [
+      { user_id: 1, name: MOCK_USER_NAME, hours: 30, load: 30 / 120 },
+      { user_id: 2, name: "Camilo Torres", hours: 96, load: 96 / 120 },
+    ],
+  };
+}
+
+function mockExecutive(clientId: number, month: string): ExecutiveReportData {
+  const client = findMockClient(clientId);
+  const service = mockMainService(clientId);
+  const kpi = mockClientKpi(clientId);
+  ensureMockIncidents();
+  const incidents = incidentMock.incidents
+    .filter((incident) => incident.client_id === clientId)
+    .map((incident) => ({
+      date: new Date(incident.started_at).toLocaleDateString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "2-digit", year: "numeric" }),
+      time: bogotaHourMinute(incident.started_at),
+      text: approvedMockMessage(incident.id) ?? "Se detectó una falla temporal y se activó el proceso de recuperación.",
+    }));
+  const [year, number] = month.split("-").map(Number);
+  const opened = kpi.open_tickets + kpi.closed_tickets;
+  return {
+    kind: "ejecutivo",
+    month,
+    month_label: `${MESES_ES[number - 1]} de ${year}`,
+    client_id: client.id,
+    client_name: client.name,
+    service_name: service?.name ?? null,
+    plan_name: service?.plan.name ?? null,
+    availability: {
+      value: kpi.availability,
+      objective: service?.plan.slo_availability ?? null,
+      meets_objective: kpi.cumple_objetivo,
+      text:
+        kpi.cumple_objetivo === null
+          ? "Todavía no tenemos datos de su sitio este mes."
+          : kpi.cumple_objetivo
+            ? "Su sitio se mantuvo disponible dentro del objetivo acordado."
+            : "Este mes su sitio estuvo disponible menos de lo acordado; le explicamos qué pasó y qué mejoramos.",
+    },
+    incidents: {
+      count: incidents.length,
+      items: incidents,
+      text: incidents.length === 0 ? "No tuvimos fallas que afectaran su sitio este mes." : `Este mes tuvimos ${incidents.length} ${incidents.length === 1 ? "falla" : "fallas"}.`,
+      recovery_text: kpi.mttr === null ? null : `Tiempo que tardamos en recuperar su sitio. ${Math.round(kpi.mttr)} min.`,
+    },
+    changes: {
+      count: 1,
+      items: [{ date: `12/${String(number).padStart(2, "0")}/${year}`, text: "Publicamos la actualización que usted solicitó." }],
+      text: "Este mes publicamos 1 actualización de su sitio.",
+    },
+    tickets: {
+      opened,
+      attended: kpi.closed_tickets,
+      text: `Este mes abrió ${opened} ${opened === 1 ? "solicitud" : "solicitudes"} y atendimos ${kpi.closed_tickets} ${kpi.closed_tickets === 1 ? "solicitud" : "solicitudes"}.`,
+    },
+  };
+}
+
+// Sin el campo data, como la lista de la API
+function summarizeReport({ data: _data, ...summary }: Report): ReportSummary {
+  return summary;
+}
+
+// En los datos de prueba la sesión es de la agencia y ve todos; la API real filtra al cliente a sus ejecutivos
+export async function listReports(filters: ReportFilters = {}): Promise<ReportSummary[]> {
+  if ((await detectMode()) === "mock") {
+    return reportMock
+      .filter((r) => (filters.kind ? r.kind === filters.kind : true))
+      .filter((r) => (filters.client_id ? r.client_id === filters.client_id : true))
+      .filter((r) => (filters.month ? r.month === filters.month : true))
+      .map(summarizeReport);
+  }
+  const params = new URLSearchParams();
+  if (filters.kind) params.set("kind", filters.kind);
+  if (filters.client_id) params.set("client_id", String(filters.client_id));
+  if (filters.month) params.set("month", filters.month);
+  const query = params.toString();
+  return request<ReportSummary[]>(`/reports${query ? `?${query}` : ""}`);
+}
+
+export async function getReport(id: number): Promise<Report> {
+  if ((await detectMode()) === "mock") {
+    const report = reportMock.find((r) => r.id === id);
+    if (!report) throw new ApiError("El reporte no existe.", 404);
+    return report;
+  }
+  return request<Report>(`/reports/${id}`);
+}
+
+export async function createReport(kind: ReportKind, month: string, clientId?: number): Promise<Report> {
+  if ((await detectMode()) === "mock") {
+    if (kind === "ejecutivo" && !clientId) throw new ApiError("El reporte ejecutivo necesita un cliente.", 422);
+    const client = clientId ? findMockClient(clientId) : null;
+    const report: Report = {
+      id: incidentMock.newId(),
+      kind,
+      client_id: kind === "ejecutivo" ? (client?.id ?? null) : null,
+      client_name: kind === "ejecutivo" ? (client?.name ?? null) : null,
+      month,
+      generated_by_name: MOCK_USER_NAME,
+      created_at: new Date().toISOString(),
+      data: kind === "ejecutivo" && client ? mockExecutive(client.id, month) : mockOperational(month),
+    };
+    reportMock.unshift(report);
+    return report;
+  }
+  return request<Report>("/reports", {
+    method: "POST",
+    body: JSON.stringify({ kind, month, client_id: kind === "ejecutivo" ? clientId : null }),
+  });
+}
