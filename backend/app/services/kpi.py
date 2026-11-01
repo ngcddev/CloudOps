@@ -327,3 +327,27 @@ def cumplimiento_sla(db: Session, client_id: int, month: str | None = None) -> f
 def mes_actual() -> str:
     """Mes actual en America/Bogota, con el formato `YYYY-MM` que reciben las consultas."""
     return datetime.now(BOGOTA).strftime("%Y-%m")
+
+
+def client_month_kpis(db: Session, client: Client, month: str) -> dict:
+    """Todos los KPI del mes de un cliente para la agencia, en un solo lugar.
+
+    Lo usan el panel de la agencia (spec 010) y el reporte operativo (spec 013): así los números de los dos
+    coinciden siempre (CA-5 de la 013).
+    """
+    service = client.main_service
+    return {
+        "client_id": client.id,
+        "client_name": client.name,
+        "service_name": service.name if service is not None else None,
+        "service_status": service.status if service is not None else "operativo",
+        "availability": disponibilidad_del_mes(db, client.id, month),
+        "cumple_objetivo": cumple_objetivo(db, client.id, month),
+        "latency_p95": latencia_p95_del_mes(db, client.id, month),
+        "sla_compliance": cumplimiento_sla(db, client.id, month),
+        "mttr": mttr_del_mes(db, client.id, month),
+        "open_tickets": solicitudes_abiertas(db, client.id, month),
+        "closed_tickets": solicitudes_cerradas(db, client.id, month),
+        "hours": horas_por_cliente(db, client.id, month),
+        "cost": costo_por_cliente(db, client.id, month),
+    }

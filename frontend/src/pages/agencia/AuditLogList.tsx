@@ -12,6 +12,8 @@ const ENTITY_LABELS: Record<string, string> = {
   service: "Servicio",
   change_request: "Cambio de versión",
   incident: "Incidente",
+  ai_draft: "Borrador del asistente",
+  report: "Reporte",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -32,6 +34,10 @@ const ACTION_LABELS: Record<string, string> = {
   // Rollback (spec 009)
   rollback: "Pidió el rollback",
   confirmar_rollback: "Confirmó el rollback",
+  // Borradores del asistente (spec 012); «aprobar» ya existe arriba
+  descartar: "Descartó",
+  // Reportes (spec 013)
+  generar: "Generó",
 };
 
 // Las fechas del filtro son días de Colombia (UTC-5, sin horario de verano)
@@ -60,6 +66,13 @@ const DETAIL_LABELS: Record<string, string> = {
   desde: "Desde",
   hacia: "Hacia",
   cambio_fallido: "Cambio fallido",
+  // Borradores (spec 012) y reportes (spec 013)
+  incidente: "Incidente",
+  tipo: "Tipo",
+  modelo: "Modelo",
+  editado: "Editado",
+  reemplaza: "Reemplaza",
+  mes: "Mes",
 };
 
 function describe(details: AuditLog["details"]): string {
