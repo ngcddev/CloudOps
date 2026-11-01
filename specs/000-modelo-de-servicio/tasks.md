@@ -20,7 +20,7 @@
 - [ ] T07 · Cerrar la matriz P1–P4 con un ejemplo por cliente — **Verifica:** `seed/priority_matrix.json` válido. [ ]
 - [ ] T08 · Cerrar tiempos de SLA y reloj por prioridad — **Verifica:** `seed/sla_policies.json` válido. [ ]
 - [ ] T09 · Cerrar los 3 planes con precio, cuota y horas — **Verifica:** `seed/plans.json` válido. [ ]
-- [ ] T10 · Escribir la tabla de KPI con fórmula, fuente y meta — **Verifica:** `docs/kpi.md`. [ ]
+- [x] T10 · Escribir la tabla de KPI con fórmula, fuente y meta — **Verifica:** `docs/kpi.md`. Verificado el 31 oct 2026: `docs/kpi.md` tiene los 9 KPI con fórmula, fuente y meta, aprobado por Industrial el 26 oct.
 
 ## Cierre
 
