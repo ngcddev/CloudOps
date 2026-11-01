@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { getReport, type Report } from "../../api";
+import ExecutiveReport from "../../components/ExecutiveReport";
 import OperationalReport from "../../components/OperationalReport";
 
 export default function ReportView({ backTo = "/agencia/reportes" }: { backTo?: string }) {
@@ -38,7 +39,7 @@ export default function ReportView({ backTo = "/agencia/reportes" }: { backTo?: 
           Descargar PDF
         </button>
       </div>
-      {report.data.kind === "operativo" && <OperationalReport data={report.data} />}
+      {report.data.kind === "operativo" ? <OperationalReport data={report.data} /> : <ExecutiveReport data={report.data} />}
     </>
   );
 }

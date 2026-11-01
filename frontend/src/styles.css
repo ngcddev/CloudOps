@@ -1334,6 +1334,45 @@ section {
   border-top: 2px solid var(--ink);
 }
 
+/* El ejecutivo cabe en una página: ancho de hoja y sin adornos */
+.report-executive {
+  max-width: 720px;
+}
+
+.report-executive h2 {
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.report-executive .report-section {
+  margin-top: var(--space);
+  padding-top: var(--space);
+  border-top: 1px solid var(--edge);
+}
+
+.report-figures {
+  display: flex;
+  gap: calc(var(--space) * 2);
+}
+
+.report-figures div {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-figures strong {
+  font-size: 24px;
+}
+
+.report-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.report-list li + li {
+  margin-top: 6px;
+}
+
 /* Impresión (PDF desde el navegador): solo el reporte, en blanco y negro, en A4 */
 @media print {
   @page {
@@ -1391,5 +1430,15 @@ section {
 
   .report .muted {
     color: #444 !important;
+  }
+
+  .report-executive {
+    max-width: none;
+    font-size: 12px;
+  }
+
+  .report-executive .report-section {
+    border-color: #000 !important;
+    break-inside: avoid;
   }
 }
