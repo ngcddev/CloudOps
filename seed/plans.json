@@ -6,8 +6,8 @@
     "support_hours": "lun-vie 08:00-18:00",
     "cpu_quota": "250m",
     "memory_quota": "256Mi",
-    "monthly_price": null,
-    "included_hours": null
+    "monthly_price": 150000,
+    "included_hours": 4
   },
   {
     "code": "estandar",
@@ -16,8 +16,8 @@
     "support_hours": "lun-sab 07:00-20:00",
     "cpu_quota": "500m",
     "memory_quota": "512Mi",
-    "monthly_price": null,
-    "included_hours": null
+    "monthly_price": 350000,
+    "included_hours": 10
   },
   {
     "code": "premium",
@@ -26,7 +26,7 @@
     "support_hours": "24x7",
     "cpu_quota": "1000m",
     "memory_quota": "1Gi",
-    "monthly_price": null,
-    "included_hours": null
+    "monthly_price": 700000,
+    "included_hours": 20
   }
 ]

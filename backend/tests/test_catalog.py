@@ -13,7 +13,8 @@ def test_plans_come_from_the_seed(client, seeded):
 
     assert [plan["code"] for plan in plans] == ["basico", "estandar", "premium"]
     assert plans[2]["slo_availability"] == 99.9
-    assert plans[0]["monthly_price"] is None  # "por definir" hasta que la industrial lo cierre
+    assert [plan["monthly_price"] for plan in plans] == [150000, 350000, 700000]
+    assert [plan["included_hours"] for plan in plans] == [4, 10, 20]
 
 
 def test_sla_policies_list_p1_to_p4(client, seeded):
