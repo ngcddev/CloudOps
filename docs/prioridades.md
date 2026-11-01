@@ -60,8 +60,8 @@ Cada ejemplo indica el impacto y la urgencia con los que se clasifica, y la prio
 
 | Prioridad | Caso | Impacto | Urgencia |
 |---|---|---|---|
-| P1 | El formulario de citas no envía y el sitio no guarda solicitudes un lunes de atención. | alto | alta |
-| P2 | Algunas citas llegan con datos incompletos (sin teléfono): hay que llamar a ciegas. | alto | media |
+| P1 | El sitio no abre un lunes de atención: nadie ve el horario ni puede pedir una cita. | alto | alta |
+| P2 | El formulario de citas no envía: se pierden solicitudes, aunque la página sí abre. | alto | media |
 | P3 | El horario publicado está mal y mañana hay festivo. | bajo | alta |
 | P4 | Ajustar el texto de bienvenida de la página. | bajo | baja |
 
