@@ -52,3 +52,21 @@ scrape_configs:
   - job_name: traefik
     static_configs:
       - targets: ["traefik-metrics.kube-system.svc:9100"]
+
+  # Métricas propias de las apps de los clientes (spec 008, T32): se descubren por la anotación hub/metrics de
+  # su Service y se leen en /metrics del puerto del Service. Un cliente nuevo con métricas queda recogido sin
+  # tocar este archivo.
+  - job_name: apps
+    kubernetes_sd_configs:
+      - role: service
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_hub_metrics]
+        regex: "true"
+        action: keep
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_namespace]
+        regex: "cliente-(.+)"
+        target_label: client
+      - source_labels: [__meta_kubernetes_service_name]
+        target_label: service
