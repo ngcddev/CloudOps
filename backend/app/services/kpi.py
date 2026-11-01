@@ -61,10 +61,7 @@ def month_bounds(month: str) -> tuple[datetime, datetime]:
         fin_local = datetime(anio + 1, 1, 1, tzinfo=BOGOTA)
     else:
         fin_local = datetime(anio, mes + 1, 1, tzinfo=BOGOTA)
-    inicio = _as_utc(inicio_local)
-    fin = _as_utc(fin_local)
-    assert inicio is not None and fin is not None
-    return inicio, fin
+    return inicio_local.astimezone(timezone.utc), fin_local.astimezone(timezone.utc)
 
 
 def tickets_del_cliente(db: Session, client_id: int, month: str) -> list[Ticket]:

@@ -19,9 +19,9 @@
 
 | Plan | SLO mensual | Atención | CPU / RAM | Precio (COP/mes, ficticio) | Horas incluidas |
 |---|---|---|---|---|---|
-| Básico | 99,0 % | Lun–Vie 8:00–18:00 | 250m / 256Mi | a definir | a definir |
-| Estándar | 99,5 % | Lun–Sáb 7:00–20:00 | 500m / 512Mi | a definir | a definir |
-| Premium | 99,9 % | 24/7 | 1000m / 1Gi | a definir | a definir |
+| Básico | 99,0 % | Lun–Vie 8:00–18:00 | 250m / 256Mi | 150.000 | 4 |
+| Estándar | 99,5 % | Lun–Sáb 7:00–20:00 | 500m / 512Mi | 350.000 | 10 |
+| Premium | 99,9 % | 24/7 | 1000m / 1Gi | 700.000 | 20 |
 
 | Prioridad | Respuesta | Solución |
 |---|---|---|

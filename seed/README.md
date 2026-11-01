@@ -20,8 +20,11 @@ que cambiar un campo, se cambia aquí en un PR que revisan el industrial y el ba
 Los valores vienen de la propuesta de la [constitución](../constitution/canonical-names.md#planes-propuesta-la-spec-000-los-confirma).
 El industrial los confirma o ajusta en las tareas de la spec 000. Mientras tanto:
 
-- `monthly_price` e `included_hours` valen `null`, que significa **a definir**. El backend los acepta
-  como opcionales y el frontend muestra "Por definir".
+- `monthly_price` (COP al mes) e `included_hours` (horas de soporte al mes) son valores de trabajo **ficticios**
+  definidos por Sistemas el 31 oct 2026: Básico 150.000 y 4 h, Estándar 350.000 y 10 h, Premium 700.000 y
+  20 h. Con `hourly_cost` de 25.000 COP, las horas incluidas cuestan 100.000, 250.000 y 500.000: cada plan
+  cubre sus horas. El backend los acepta como opcionales; si algún plan quedara en `null`, el frontend
+  muestra "Por definir". La base ya creada no se actualiza sola: la semilla solo carga con la base vacía.
 - `clock`: P1 corre `24x7` en todos los planes; P2–P4 corren en `horario_plan` (el horario del plan
   del servicio). Es la recomendación del [plan 000](../specs/000-modelo-de-servicio/plan.md); falta
   confirmarla.
