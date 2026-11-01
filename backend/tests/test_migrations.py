@@ -26,6 +26,8 @@ TABLES = {
     "security_checks",
     "incidents",
     "incident_events",
+    "ai_drafts",
+    "reports",
 }
 
 
@@ -57,6 +59,16 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
         assert {"password_hash", "is_active", "last_login_at"} <= {
             c["name"] for c in inspect(connection).get_columns("users")
         }
+
+        # 0011 (spec 013): quita los reportes; los borradores de la 012 siguen ahí
+        command.downgrade(_config(connection), "-1")
+        assert "reports" not in set(inspect(connection).get_table_names())
+        assert "ai_drafts" in set(inspect(connection).get_table_names())
+
+        # 0010 (spec 012): quita los borradores; los incidentes y su rollback siguen ahí
+        command.downgrade(_config(connection), "-1")
+        assert "ai_drafts" not in set(inspect(connection).get_table_names())
+        assert "incidents" in set(inspect(connection).get_table_names())
 
         # 0009 (spec 009): quita las columnas del rollback; los incidentes de la 008 siguen ahí
         incident_columns = {c["name"] for c in inspect(connection).get_columns("incidents")}

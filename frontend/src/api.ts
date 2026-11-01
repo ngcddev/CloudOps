@@ -1382,6 +1382,8 @@ export interface ClientIncident {
   title: string;
   status: IncidentStatus;
   started_at: string;
+  // Mensaje que la agencia aprobó para el cliente (spec 012); nulo mientras no haya uno aprobado
+  message: string | null;
 }
 
 export interface TechnicianLoad {
@@ -1534,7 +1536,7 @@ export async function listClientIncidents(
     ensureMockIncidents();
     return incidentMock.incidents
       .filter((incident) => incident.client_id === clientId)
-      .map(({ id, title, status, started_at }) => ({ id, title, status, started_at }));
+      .map(({ id, title, status, started_at }) => ({ id, title, status, started_at, message: approvedMockMessage(id) }));
   }
   return request<ClientIncident[]>(
     `/dashboard/client/${clientId}/incidents?month=${encodeURIComponent(mes)}`,
@@ -1674,4 +1676,183 @@ export async function getClientMessage(id: number): Promise<{ message: string }>
     };
   }
   return request<{ message: string }>(`/incidents/${id}/client-message`);
+}
+
+// ---------- Borradores del asistente (spec 012) ----------
+
+export type DraftKind = "resumen" | "mensaje_cliente";
+export type DraftStatus = "borrador_ia" | "aprobado" | "descartado";
+
+export interface AiDraft {
+  id: number;
+  incident_id: number;
+  kind: DraftKind;
+  status: DraftStatus;
+  // Modelo que lo redactó, o "manual" si lo escribió un técnico
+  model: string;
+  prompt_version: string | null;
+  generated_text: string;
+  // Texto que aprobó el técnico, con sus ediciones
+  final_text: string | null;
+  created_by_name: string | null;
+  approved_by_name: string | null;
+  approved_at: string | null;
+  latency_ms: number | null;
+  created_at: string;
+}
+
+export interface IncidentDrafts {
+  drafts: AiDraft[];
+  // Textos con los datos reales para escribir a mano; nulos mientras el incidente no se mitigue
+  manual_templates: Record<DraftKind, string | null>;
+}
+
+export interface AiDraftsGenerated {
+  drafts: AiDraft[];
+  // Textos que el asistente redactó pero no pasaron los controles (jerga u horas inventadas)
+  problems: string[];
+}
+
+// Borradores de prueba en memoria. Con ?asistente=apagado en la URL el asistente simulado no responde,
+// para probar el camino de escribir a mano (CA-5).
+const draftMock: AiDraft[] = [];
+const MOCK_ASSISTANT_MS = 1500;
+
+function mockAssistantDown(): boolean {
+  return new URLSearchParams(window.location.search).get("asistente") === "apagado";
+}
+
+// Misma lista que backend/app/services/ai_checks.py, para que los datos de prueba se porten como la API
+const MOCK_FORBIDDEN = ["rollback", "incidente", "ticket", "mttr", "sla", "commit", "argo", "pod", "namespace", "clúster", "kubernetes", "despliegue"];
+
+function mockCheck(kind: DraftKind, text: string): string | null {
+  if (!text.trim()) return "El texto no puede estar vacío.";
+  if (kind !== "mensaje_cliente") return null;
+  const found = MOCK_FORBIDDEN.filter((term) => new RegExp(`(^|[^\\p{L}\\d-])${term}($|[^\\p{L}\\d-])`, "iu").test(text));
+  if (/(^|[^\w-])(p[1-4]|v\d+(\.\d+)*)($|[^\w-])/i.test(text)) found.push("versión o prioridad");
+  return found.length ? `El mensaje al cliente usa términos técnicos que el cliente no debe ver: ${found.join(", ")}.` : null;
+}
+
+function mockTemplates(incident: IncidentDetail): Record<DraftKind, string | null> {
+  if (!incident.mitigated_at) return { resumen: null, mensaje_cliente: null };
+  const start = bogotaHourMinute(incident.started_at);
+  const end = bogotaHourMinute(incident.mitigated_at);
+  const minutes = Math.floor(Date.parse(incident.mitigated_at) / 60_000) - Math.floor(Date.parse(incident.started_at) / 60_000);
+  const total = minutes < 1 ? "menos de 1 minuto" : minutes === 1 ? "1 minuto" : `${minutes} minutos`;
+  const action = incident.rollback.to_version
+    ? `Se hizo rollback de ${incident.rollback.from_version} a ${incident.rollback.to_version}.`
+    : "Se mitigó a mano.";
+  return {
+    resumen: `Incidente ${incident.priority} en ${incident.service_name} (${incident.client_name}): ${incident.title}. Empezó a las ${start} y se recuperó a las ${end} (${total}). ${action}`,
+    mensaje_cliente: `Detectamos una falla temporal en su sitio a las ${start}. Activamos la recuperación y a las ${end} el servicio volvió a funcionar. Tiempo total: ${total}.`,
+  };
+}
+
+function newMockDraft(incidentId: number, kind: DraftKind, text: string, manual: boolean): AiDraft {
+  const draft: AiDraft = {
+    id: incidentMock.newId(),
+    incident_id: incidentId,
+    kind,
+    status: "borrador_ia",
+    model: manual ? "manual" : "qwen2.5:7b (simulado)",
+    prompt_version: manual ? null : "v1",
+    generated_text: text,
+    final_text: null,
+    created_by_name: manual ? MOCK_USER_NAME : null,
+    approved_by_name: null,
+    approved_at: null,
+    latency_ms: manual ? null : MOCK_ASSISTANT_MS,
+    created_at: new Date().toISOString(),
+  };
+  draftMock.push(draft);
+  return draft;
+}
+
+function findMockDraft(id: number): AiDraft {
+  const draft = draftMock.find((item) => item.id === id);
+  if (!draft) throw new ApiError("El borrador no existe.", 404);
+  return draft;
+}
+
+function approvedMockMessage(incidentId: number): string | null {
+  const approved = draftMock.find((d) => d.incident_id === incidentId && d.kind === "mensaje_cliente" && d.status === "aprobado");
+  return approved?.final_text ?? null;
+}
+
+function requireMockMitigated(incident: IncidentDetail) {
+  if (!incident.mitigated_at) throw new ApiError("Los borradores se generan cuando el incidente está mitigado.", 409);
+}
+
+function requireMockPending(draft: AiDraft) {
+  if (draft.status !== "borrador_ia") throw new ApiError(`El borrador ya está ${draft.status === "aprobado" ? "aprobado" : "descartado"}.`, 409);
+}
+
+export async function listDrafts(incidentId: number): Promise<IncidentDrafts> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(incidentId);
+    return {
+      drafts: draftMock.filter((d) => d.incident_id === incidentId).map((d) => ({ ...d })),
+      manual_templates: mockTemplates(incident),
+    };
+  }
+  return request<IncidentDrafts>(`/incidents/${incidentId}/drafts`);
+}
+
+// Puede tardar hasta 60 s: lo que espera el Hub al asistente antes de pedir el texto a mano
+export async function generateDrafts(incidentId: number): Promise<AiDraftsGenerated> {
+  if ((await detectMode()) === "mock") {
+    const incident = findMockIncident(incidentId);
+    requireMockMitigated(incident);
+    await new Promise((resolve) => window.setTimeout(resolve, MOCK_ASSISTANT_MS));
+    if (mockAssistantDown()) {
+      throw new ApiError(
+        "El asistente no respondió en 60 segundos. Escribe el texto a mano: el borrador se prellena con los datos reales del incidente.",
+        503,
+      );
+    }
+    const templates = mockTemplates(incident);
+    return {
+      drafts: (["resumen", "mensaje_cliente"] as DraftKind[]).map((kind) => newMockDraft(incidentId, kind, templates[kind] ?? "", false)),
+      problems: [],
+    };
+  }
+  return request<AiDraftsGenerated>(`/incidents/${incidentId}/ai-drafts`, { method: "POST" });
+}
+
+export async function createManualDraft(incidentId: number, kind: DraftKind, text: string): Promise<AiDraft> {
+  if ((await detectMode()) === "mock") {
+    requireMockMitigated(findMockIncident(incidentId));
+    const problem = mockCheck(kind, text);
+    if (problem) throw new ApiError(problem, 422);
+    return { ...newMockDraft(incidentId, kind, text.trim(), true) };
+  }
+  return request<AiDraft>(`/incidents/${incidentId}/drafts`, { method: "POST", body: JSON.stringify({ kind, text }) });
+}
+
+// Quién aprueba sale de la sesión; el cuerpo solo lleva el texto final editado
+export async function approveDraft(id: number, text: string): Promise<AiDraft> {
+  if ((await detectMode()) === "mock") {
+    const draft = findMockDraft(id);
+    requireMockPending(draft);
+    const problem = mockCheck(draft.kind, text);
+    if (problem) throw new ApiError(problem, 422);
+    for (const previous of draftMock) {
+      if (previous.incident_id === draft.incident_id && previous.kind === draft.kind && previous.status === "aprobado") {
+        previous.status = "descartado";
+      }
+    }
+    Object.assign(draft, { status: "aprobado", final_text: text.trim(), approved_by_name: MOCK_USER_NAME, approved_at: new Date().toISOString() });
+    return { ...draft };
+  }
+  return request<AiDraft>(`/ai-drafts/${id}/approve`, { method: "POST", body: JSON.stringify({ text }) });
+}
+
+export async function discardDraft(id: number): Promise<AiDraft> {
+  if ((await detectMode()) === "mock") {
+    const draft = findMockDraft(id);
+    requireMockPending(draft);
+    draft.status = "descartado";
+    return { ...draft };
+  }
+  return request<AiDraft>(`/ai-drafts/${id}/discard`, { method: "POST" });
 }
