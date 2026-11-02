@@ -1,0 +1,149 @@
+# Compose del Hub y los sitios de clientes para el VPS del profesor (Dokploy). Spec 011, T16.
+# Diferencias con docker-compose.yml (que es de desarrollo y no se usa en el VPS):
+#   - No publica puertos del host: el VPS es compartido y sus puertos 5432, 5434, 15432, 8080 y 8001 ya están ocupados.
+#     Todo entra por Traefik con un dominio por servicio (web, restaurante, ferreteria, consultorio-web).
+#   - Sin los volúmenes de desarrollo (./seed, ./gitops, ./pipelines): la imagen ya lleva lo que necesita.
+#   - Sitios fijos en v1 (sana). La v2 rota es solo para la demo y no se despliega aquí por accidente.
+#   - GitOps, Alertmanager y Prometheus apagados a propósito: sin clúster, la API falla cada 15 s si están definidos.
+#   - Con límite de memoria y reinicio automático, para no quitarle recursos a los otros equipos.
+# Variables que se cargan en la pestaña Environment de Dokploy (nunca en el repo):
+#   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, DATABASE_URL, JWT_SECRET, SEED_USER_PASSWORD
+# En Dokploy, activar «Isolated Deployment»: el nombre `api` lo comparten otros equipos en dokploy-network.
+
+services:
+  # Base de datos del Hub (spec 001)
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER en las variables del servicio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en las variables del servicio}
+      POSTGRES_DB: ${POSTGRES_DB:?Falta POSTGRES_DB en las variables del servicio}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # API del Hub (spec 001): FastAPI en :8000, solo interna; la consola la alcanza por /api
+  api:
+    build:
+      context: ./backend
+      # seed/ entra a la imagen: la API lo carga la primera vez que la base está vacía
+      additional_contexts:
+        seed: ./seed
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Falta DATABASE_URL en las variables del servicio}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en las variables del servicio}
+      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:?Falta SEED_USER_PASSWORD en las variables del servicio}
+      # Sin pipeline, Gitea, Argo CD, Alertmanager ni Prometheus en el VPS: vacíos = la API arranca sin ellos
+      PIPELINE_TOKEN: ""
+      GITEA_URL: ""
+      GITEA_REPO: forja-digital/hub-gitops
+      GITEA_TOKEN: ""
+      ARGOCD_URL: ""
+      ARGOCD_TOKEN: ""
+      GRAFANA_URL: ""
+      GITEA_PUBLIC_URL: ""
+      ALERTMANAGER_TOKEN: ""
+      PROMETHEUS_URL: ""
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Consola de agencia (spec 001): nginx en :8080 dentro del contenedor, publicada por dominio
+  web:
+    build:
+      context: ./frontend
+      additional_contexts:
+        seed: ./seed
+    restart: unless-stopped
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # ---------- Sitios de los clientes (spec 002), siempre en v1 ----------
+
+  # Sitio de La Sazón (plantilla landing)
+  restaurante:
+    build:
+      context: ./apps/restaurante
+      args:
+        APP_VERSION: v1
+    restart: unless-stopped
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Sitio de El Tornillo (plantilla landing)
+  ferreteria:
+    build:
+      context: ./apps/ferreteria
+      args:
+        APP_VERSION: v1
+    restart: unless-stopped
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Sitio de Dental Popayán (plantilla landing-form); /api pasa a consultorio-api
+  consultorio-web:
+    build:
+      context: ./apps/consultorio
+      dockerfile: Dockerfile.frontend
+      args:
+        APP_VERSION: v1
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      API_UPSTREAM: consultorio-api:8000
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      consultorio-api:
+        condition: service_healthy
+
+  # Backend del formulario de citas (solo se alcanza a través de consultorio-web)
+  consultorio-api:
+    build:
+      context: ./apps/consultorio
+      dockerfile: Dockerfile.backend
+      args:
+        APP_VERSION: v1
+    restart: unless-stopped
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+volumes:
+  db_data:
