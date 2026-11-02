@@ -43,3 +43,14 @@ tanto (las dos escriben en archivos distintos).
 ## Cierre
 
 - [ ] T15 · Demo: crear Panadería El Trigo (plan Básico), mostrar Gitea, Argo CD y el namespace, recrear El Tornillo y repetir el comando de creación sin cambios — **Verifica:** todos los criterios de [spec.md](spec.md#criterios-de-aceptación). [ERIC ]
+
+## Propuestas (por confirmar con el equipo antes de tomarlas)
+
+> Salieron al revisar el VPS que entregó el profesor (Dokploy, Docker Compose, compartido con otros equipos);
+> no estaban en el plan y no se hicieron sin acordarlo. Esta spec deja fuera «crear las máquinas y el clúster»:
+> estas dos tareas no crean ni tocan el clúster k3s, solo publican el Hub y los sitios con Compose. Si el equipo
+> prefiere que vivan en otra spec, se mueven tal cual. El procedimiento operativo está en la skill
+> `desplegar-cloudops-vps`.
+
+- [ ] T16 · Escribir `docker-compose.dokploy.yml` en la raíz para el VPS: Hub (`db`, `api`, `web`) y los tres sitios de clientes en `v1`, sin `ports:` ni volúmenes de desarrollo, con `GITEA_*`, `ARGOCD_*` y `PROMETHEUS_URL` vacíos — **Verifica:** `docker compose -f docker-compose.dokploy.yml config` pasa con un `.env` de prueba, `git grep -n "ports:" docker-compose.dokploy.yml` no encuentra nada y `docker compose -f docker-compose.dokploy.yml up --build` en el PC deja `web`, `api` y los tres sitios respondiendo 200 detrás de un proxy (el VPS tiene ocupados 5432, 5434, 15432, 8080 y 8001). [ ]
+- [ ] T17 · Publicar el compose en el VPS por Dokploy (servicio `cloudops` con el repo público, rama `main`, variables en Dokploy y un dominio `sslip.io` por servicio público) y corregir la skill con lo que pase — **Verifica:** la consola y `/health` de los tres sitios responden 200, `/api/auth/me` sin sesión devuelve el 401 del Hub (no el de la `api` de otro equipo de la red compartida), el inicio de sesión con un usuario sembrado funciona, `db` queda `Healthy` y no se modificó ningún servicio de otros equipos. [ ]
