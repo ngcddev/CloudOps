@@ -22,8 +22,8 @@
 | [009](009-rollback/spec.md) | Recuperación por rollback | Sistemas | 4 | RF-14 | 005, 008 | Terminada |
 | [010](010-dashboards/spec.md) | Dashboards y métricas del servicio | Sistemas · apoya Industrial | 4 | RF-15, RF-16, RF-17, RNF-10 | 004, 005, 007, 008, 009 | En curso |
 | [011](011-infraestructura-como-codigo/spec.md) | Infraestructura como código | Sistemas | 4 | RNF-08 | 003, 005 | Tareas listas |
-| [012](012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas · apoya Industrial | 5 | RF-18, RF-19, RNF-09 | 008 | Spec y plan |
-| [013](013-reportes/spec.md) | Reportes operativo y ejecutivo | Industrial + Sistemas | 5 | RF-20 | 010 | Spec y plan |
+| [012](012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas · apoya Industrial | 5 | RF-18, RF-19, RNF-09 | 008 | Tareas listas |
+| [013](013-reportes/spec.md) | Reportes operativo y ejecutivo | Industrial + Sistemas | 5 | RF-20 | 010 | Tareas listas |
 | [014](014-infografia/spec.md) | Infografía mensual | Sistemas · apoya Industrial | 6 | RF-21, RF-23 | 010, 013 | Spec y plan |
 | [015](015-demo-integrada/spec.md) | Demo integrada | Todo el equipo | 7 | RNF-11 | todas | Spec y plan |
 

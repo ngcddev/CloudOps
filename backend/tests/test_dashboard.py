@@ -138,7 +138,8 @@ def test_portal_incidentes_solo_del_cliente_y_sin_datos_internos(as_agency, as_c
     assert [item["title"] for item in data] == ["El sitio de La Sazón no responde"]
     assert data[0]["status"] == "abierto"
     # El portal no recibe técnicos, SLA ni causa interna (CA-7)
-    assert set(data[0]) == {"id", "title", "status", "started_at"}
+    assert set(data[0]) == {"id", "title", "status", "started_at", "message"}
+    assert data[0]["message"] is None
 
     # Un cliente no puede pedir las fallas de otro
     assert as_client.get("/api/dashboard/client/2/incidents", params={"month": mes}).status_code == 404

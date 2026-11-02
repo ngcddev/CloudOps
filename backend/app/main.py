@@ -14,6 +14,7 @@ from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
 from app.routers import (
+    ai_drafts,
     alerts,
     audit_logs,
     auth,
@@ -23,6 +24,7 @@ from app.routers import (
     dashboard,
     incidents,
     pipeline,
+    reports,
     security,
     services,
     tickets,
@@ -64,6 +66,9 @@ app.include_router(services.router)
 app.include_router(pipeline.router)
 app.include_router(security.router)
 app.include_router(incidents.router)
+app.include_router(ai_drafts.incident_router)
+app.include_router(ai_drafts.drafts_router)
+app.include_router(reports.router)
 app.include_router(alerts.router)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
@@ -90,6 +95,10 @@ _CAMPOS = {
     "service_id": "servicio",
     "message": "nota",
     "root_cause": "causa raíz",
+    "kind": "tipo",
+    "text": "texto",
+    "month": "mes",
+    "client_id": "cliente",
 }
 
 
@@ -103,6 +112,8 @@ async def validation_error_es(_: Request, exc: RequestValidationError) -> JSONRe
             msg = f"El campo «{campo}» es obligatorio."
         elif error["type"] == "string_too_long":
             msg = f"El campo «{campo}» es demasiado largo."
+        elif error["type"] == "string_pattern_mismatch":
+            msg = f"El campo «{campo}» no tiene el formato esperado."
         elif error["type"] == "literal_error":
             msg = f"El campo «{campo}» tiene un valor no permitido: {error['ctx']['expected']}."
         else:

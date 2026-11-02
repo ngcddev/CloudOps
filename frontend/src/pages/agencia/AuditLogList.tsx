@@ -12,6 +12,7 @@ const ENTITY_LABELS: Record<string, string> = {
   service: "Servicio",
   change_request: "Cambio de versión",
   incident: "Incidente",
+  ai_draft: "Borrador del asistente",
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -32,6 +33,8 @@ const ACTION_LABELS: Record<string, string> = {
   // Rollback (spec 009)
   rollback: "Pidió el rollback",
   confirmar_rollback: "Confirmó el rollback",
+  // Borradores del asistente (spec 012); «aprobar» ya existe arriba
+  descartar: "Descartó",
 };
 
 // Las fechas del filtro son días de Colombia (UTC-5, sin horario de verano)
