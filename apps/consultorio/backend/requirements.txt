@@ -1,3 +1,8 @@
 # Dependencias del backend del formulario de citas (copia de la plantilla landing-form), con versión fija.
 fastapi==0.142.2
 uvicorn==0.54.0
+# Métricas custom (spec 008, T32): OpenTelemetry expone los contadores en formato Prometheus.
+opentelemetry-api==1.45.2
+opentelemetry-sdk==1.45.2
+opentelemetry-exporter-prometheus==0.66b2
+prometheus-client==0.26.0

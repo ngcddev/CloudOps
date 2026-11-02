@@ -13,6 +13,7 @@
 | Base | T01–T04 | Solo T04 | Ya |
 | Módulo y clientes | T05–T09 | Sí | Cuando cierre T04 |
 | Migración y pruebas | T10–T14 | Sí | Cuando cierre T09 |
+| Despliegue en el VPS | T16–T17 | No (usa el VPS) | T16 ya; T17 cuando cierre T16 |
 
 Una sola persona puede llevarlo todo; si son dos, una toma T01–T04 y otra prepara T05–T06 en papel mientras
 tanto (las dos escriben en archivos distintos).
@@ -39,6 +40,15 @@ tanto (las dos escriben en archivos distintos).
 - [x] T12 · Destruir y recrear El Tornillo — **Verifica:** el `plan` final sin diferencias, `Application` `Synced`/`Healthy` y `curl http://ferreteria.hub.local` responde 200 (CA-2). [ERIC]
 - [x] T13 · Repetir T11 y T12 con `terraform` — **Verifica:** mismos resultados con el mismo código (CA-5). [ERIC]
 - [x] T14 · Escribir `infra/pruebas/crear-cliente.sh` (crear, comprobar cuota y etiquetas contra `seed/plans.json`, destruir) y comprobar con `git grep` que no hay token ni estado en el repo — **Verifica:** el script termina en verde y `git grep -nE "GITEA_TOKEN=|tfstate"` no encuentra valores (CA-4, CA-6). [ERIC]
+
+## Despliegue en el VPS del profesor
+
+> El despliegue permanente va en el VPS que entregó el profesor (Dokploy, Docker Compose, x86_64, compartido con
+> otros equipos), no en el clúster k3s del PC A. Estas tareas no crean ni tocan ese clúster: publican el Hub y los
+> tres sitios con Compose. Procedimiento operativo: skill `desplegar-cloudops-vps`.
+
+- [x] T16 · Escribir `docker-compose.dokploy.yml` en la raíz para el VPS: Hub (`db`, `api`, `web`) y los tres sitios de clientes en `v1`, sin `ports:` ni volúmenes de desarrollo, con `GITEA_*`, `ARGOCD_*` y `PROMETHEUS_URL` vacíos — **Verifica:** `docker compose -f docker-compose.dokploy.yml config` pasa con un `.env` de prueba, `git grep -n "ports:" docker-compose.dokploy.yml` no encuentra nada y `docker compose -f docker-compose.dokploy.yml up --build` en el PC deja `web`, `api` y los tres sitios respondiendo 200 detrás de un proxy (el VPS tiene ocupados 5432, 5434, 15432, 8080 y 8001). *Hecho el 2 nov 2026: `docker-compose.dokploy.yml` con `restart`, `mem_limit` y healthchecks. Con un `.env` de prueba, `config` pasa y sin variables falla nombrando la que falta; `grep "ports:"` no encuentra nada y ningún contenedor publica puertos del host. Con `up --build --wait` los 7 contenedores quedaron `Healthy`; desde la red del compose, `web`, `restaurante`, `ferreteria` y `consultorio-web` respondieron 200, `/health` de los tres sitios 200 con `v1`, `/api/auth/me` sin sesión 401 del Hub y el inicio de sesión de un usuario sembrado 200 (3 clientes sembrados). Memoria en reposo: api 101 MiB, db 62 MiB, el resto menos de 40 MiB. Falta (T17): «Isolated Deployment» en Dokploy y el despliegue real.* [ngcddev]
+- [ ] T17 · Publicar el compose en el VPS por Dokploy (servicio `cloudops` con el repo público, rama `main`, variables en Dokploy y un dominio `sslip.io` por servicio público) y corregir la skill con lo que pase — **Verifica:** la consola y `/health` de los tres sitios responden 200, `/api/auth/me` sin sesión devuelve el 401 del Hub (no el de la `api` de otro equipo de la red compartida), el inicio de sesión con un usuario sembrado funciona, `db` queda `Healthy` y no se modificó ningún servicio de otros equipos. [ ]
 
 ## Cierre
 

@@ -12,7 +12,7 @@ Pods cliente-* ──registros──> Alloy ──> Loki ──> Grafana (Explor
 | Carpeta | Qué hace |
 |---|---|
 | `blackbox/` | Sondea `/health` de cada sitio (módulo `http_2xx`, 4 s de timeout) |
-| `prometheus/` | Descubre los sitios por la anotación `hub/probe` de su Service, los sondea cada 5 s y evalúa `SitioCaido` |
+| `prometheus/` | Descubre los sitios por la anotación `hub/probe` de su Service, los sondea cada 5 s y evalúa `SitioCaido`. El job `apps` recoge `/metrics` de los Services con la anotación `hub/metrics` (hoy, `consultorio-api`: `contact_forms_received_total` y `contact_forms_failed_total`, con OpenTelemetry; spec 008, T32) |
 | `alertmanager/` | Avisa al Hub en `http://api.hub.svc:8000/api/alerts/alertmanager` con el token del Secret `hub-alertmanager` |
 | `loki/` | Guarda 3 días de registros de los sitios |
 | `alloy/` | Lee por la API de Kubernetes los registros de los Pods de `cliente-*` y los manda a Loki |
