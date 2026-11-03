@@ -10,27 +10,13 @@ import {
   listChangeRequests,
   transitionTicket,
   type ChangeRequest,
-  type Ticket,
   type TicketDetail as TicketDetailData,
   type TicketImpact,
   type TicketPriority,
   type TicketStatus,
   type TicketUrgency,
 } from "../../api";
-
-type SlaState = "a_tiempo" | "en_riesgo" | "vencido";
-
-const SLA_LABELS: Record<SlaState, string> = {
-  a_tiempo: "a tiempo",
-  en_riesgo: "en riesgo",
-  vencido: "vencido",
-};
-
-const SLA_ICONS: Record<SlaState, string> = {
-  a_tiempo: "✓",
-  en_riesgo: "⚠",
-  vencido: "✕",
-};
+import { getTicketSlaState, SLA_ICONS, SLA_LABELS } from "./ticketSla";
 
 // Texto de cada estado de un cambio (glosario)
 const CHANGE_STATUS_TEXT: Record<ChangeRequest["status"], string> = {
@@ -41,21 +27,6 @@ const CHANGE_STATUS_TEXT: Record<ChangeRequest["status"], string> = {
   rechazada: "Rechazada",
   fallida: "No se pudo publicar",
 };
-
-function getTicketSlaState(ticket: Ticket): SlaState {
-  if (!ticket.created_at) return "a_tiempo";
-  const createdAt = new Date(ticket.created_at).getTime();
-  const dueAt = ticket.first_response_at
-    ? new Date(ticket.resolution_due_at ?? ticket.response_due_at ?? ticket.created_at).getTime()
-    : new Date(ticket.response_due_at ?? ticket.resolution_due_at ?? ticket.created_at).getTime();
-  if (!Number.isFinite(dueAt) || dueAt <= 0) return "a_tiempo";
-  const now = Date.now();
-  if (now >= dueAt) return "vencido";
-  const totalWindow = dueAt - createdAt;
-  const elapsed = now - createdAt;
-  if (totalWindow > 0 && elapsed * 5 >= totalWindow * 4) return "en_riesgo";
-  return "a_tiempo";
-}
 
 export default function TicketDetail() {
   const { id } = useParams();
@@ -93,7 +64,7 @@ export default function TicketDetail() {
       .catch((loadError: Error) => setError(loadError.message));
   }, [id]);
 
-  const slaState = useMemo(() => (ticket ? getTicketSlaState(ticket) : "a_tiempo"), [ticket]);
+  const slaState = useMemo(() => (ticket ? getTicketSlaState(ticket) : "sin_plazo"), [ticket]);
 
   async function handleClassify(event: React.FormEvent) {
     event.preventDefault();
@@ -193,7 +164,7 @@ export default function TicketDetail() {
               <div className="muted">#{ticket.id}</div>
             </div>
             <div className="ticket-meta">
-              <span className={`priority-badge priority-${ticket.priority ?? "sin-prioridad"}`}>{ticket.priority ?? "—"}</span>
+              <span className={`priority-badge priority-${ticket.priority ?? "sin-prioridad"}`}>{ticket.priority ?? "sin asignar aún"}</span>
               <span className={`status-pill status-${ticket.status}`}>{ticket.status}</span>
               <span className={`sla-badge sla-${slaState}`}>
                 {SLA_ICONS[slaState]} {SLA_LABELS[slaState]}

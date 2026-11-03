@@ -10,41 +10,7 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from "../../api";
-
-type SlaState = "a_tiempo" | "en_riesgo" | "vencido";
-
-const SLA_LABELS: Record<SlaState, string> = {
-  a_tiempo: "a tiempo",
-  en_riesgo: "en riesgo",
-  vencido: "vencido",
-};
-
-const SLA_ICONS: Record<SlaState, string> = {
-  a_tiempo: "✓",
-  en_riesgo: "⚠",
-  vencido: "✕",
-};
-
-function getTicketSlaState(ticket: Ticket): SlaState {
-  const createdAt = new Date(ticket.created_at).getTime();
-  const responseDueAt = ticket.response_due_at ? new Date(ticket.response_due_at).getTime() : null;
-  const resolutionDueAt = ticket.resolution_due_at ? new Date(ticket.resolution_due_at).getTime() : null;
-  const dueAt = ticket.first_response_at ? resolutionDueAt ?? responseDueAt ?? createdAt : responseDueAt ?? resolutionDueAt ?? createdAt;
-
-  if (!Number.isFinite(dueAt) || dueAt <= 0) return "a_tiempo";
-
-  const now = Date.now();
-  if (now >= dueAt) return "vencido";
-
-  const totalWindow = dueAt - createdAt;
-  const elapsed = now - createdAt;
-
-  if (totalWindow > 0 && elapsed * 5 >= totalWindow * 4) {
-    return "en_riesgo";
-  }
-
-  return "a_tiempo";
-}
+import { getTicketSlaState, SLA_ICONS, SLA_LABELS, type SlaState } from "./ticketSla";
 
 function findTicketClient(ticket: Ticket, clients: ClientDetail[]): ClientDetail | undefined {
   return clients.find((client) =>
@@ -148,6 +114,7 @@ export default function TicketList() {
               <span>SLA</span>
               <select value={slaFilter} onChange={(event) => setSlaFilter(event.target.value as SlaState | "")}>
                 <option value="">Todos</option>
+                <option value="sin_plazo">Sin plazo</option>
                 <option value="a_tiempo">A tiempo</option>
                 <option value="en_riesgo">En riesgo</option>
                 <option value="vencido">Vencido</option>
@@ -189,7 +156,7 @@ export default function TicketList() {
                         <div className="muted">#{ticket.id}</div>
                       </td>
                       <td>
-                        <span className={`priority-badge priority-${ticket.priority ?? "sin-prioridad"}`}>{ticket.priority ?? "—"}</span>
+                        <span className={`priority-badge priority-${ticket.priority ?? "sin-prioridad"}`}>{ticket.priority ?? "sin asignar aún"}</span>
                       </td>
                       <td>
                         <span className={`status-pill status-${ticket.status}`}>{ticket.status}</span>

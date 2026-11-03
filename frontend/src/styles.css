@@ -507,6 +507,11 @@ code {
   background: var(--surface-2);
 }
 
+.sla-sin_plazo {
+  border-style: dashed;
+  background: transparent;
+}
+
 .sla-a_tiempo {
   background: var(--surface-2);
 }
