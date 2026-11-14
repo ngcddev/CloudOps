@@ -1,0 +1,33 @@
+{
+  "criteria": {
+    "impact": {
+      "alto": "El sitio no funciona o se pierden ventas, citas o pedidos.",
+      "medio": "Una función importante falla, pero el sitio sigue sirviendo.",
+      "bajo": "Detalle menor, de contenido o de presentación."
+    },
+    "urgency": {
+      "alta": "Está pasando ahora y empeora cada minuto.",
+      "media": "Puede esperar unas horas sin mayor daño.",
+      "baja": "Puede planearse para otro día."
+    }
+  },
+  "matrix": [
+    { "impact": "alto", "urgency": "alta", "priority": "P1" },
+    { "impact": "alto", "urgency": "media", "priority": "P2" },
+    { "impact": "alto", "urgency": "baja", "priority": "P3" },
+    { "impact": "medio", "urgency": "alta", "priority": "P2" },
+    { "impact": "medio", "urgency": "media", "priority": "P3" },
+    { "impact": "medio", "urgency": "baja", "priority": "P4" },
+    { "impact": "bajo", "urgency": "alta", "priority": "P3" },
+    { "impact": "bajo", "urgency": "media", "priority": "P4" },
+    { "impact": "bajo", "urgency": "baja", "priority": "P4" }
+  ],
+  "examples": [
+    { "client": "Restaurante La Sazón", "case": "El sitio muestra error en la hora del almuerzo y no se ve el menú.", "impact": "alto", "urgency": "alta", "priority": "P1" },
+    { "client": "Restaurante La Sazón", "case": "La foto del plato del día no carga; el resto del sitio funciona.", "impact": "bajo", "urgency": "alta", "priority": "P3" },
+    { "client": "Ferretería El Tornillo", "case": "El catálogo de productos abre, pero muy lento.", "impact": "medio", "urgency": "alta", "priority": "P2" },
+    { "client": "Ferretería El Tornillo", "case": "Cambiar el horario de atención en el pie de página.", "impact": "bajo", "urgency": "baja", "priority": "P4" },
+    { "client": "Consultorio Dental Popayán", "case": "El formulario de citas no envía y los pacientes no pueden agendar.", "impact": "alto", "urgency": "alta", "priority": "P1" },
+    { "client": "Consultorio Dental Popayán", "case": "El mensaje de confirmación del formulario tiene un error de ortografía.", "impact": "bajo", "urgency": "media", "priority": "P4" }
+  ]
+}

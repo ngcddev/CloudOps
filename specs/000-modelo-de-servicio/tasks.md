@@ -17,10 +17,10 @@
 
 ## Reglas del servicio
 
-- [ ] T07 · Cerrar la matriz P1–P4 con un ejemplo por cliente — **Verifica:** `seed/priority_matrix.json` válido. [ ]
-- [ ] T08 · Cerrar tiempos de SLA y reloj por prioridad — **Verifica:** `seed/sla_policies.json` válido. [ ]
-- [ ] T09 · Cerrar los 3 planes con precio, cuota y horas — **Verifica:** `seed/plans.json` válido. [ ]
-- [ ] T10 · Escribir la tabla de KPI con fórmula, fuente y meta — **Verifica:** `docs/kpi.md`. [ ]
+- [X] T07 · Cerrar la matriz P1–P4 con un ejemplo por cliente — **Verifica:** `seed/priority_matrix.json` válido. [yisel]
+- [X] T08 · Cerrar tiempos de SLA y reloj por prioridad — **Verifica:** `seed/sla_policies.json` válido. [yisel]
+- [X] T09 · Cerrar los 3 planes con precio, cuota y horas — **Verifica:** `seed/plans.json` válido. [yisel]
+- [X] T10 · Escribir la tabla de KPI con fórmula, fuente y meta — **Verifica:** `docs/kpi.md`. [yisel]
 
 ## Cierre
 
