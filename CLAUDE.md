@@ -40,10 +40,22 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 - Enviar datos de clientes a servicios de IA externos.
 - Marcar una tarea como hecha sin verificar su criterio.
 
-## Comandos (se completan cuando exista el código)
+## Comandos
 
 | Qué | Comando |
 |---|---|
 | Levantar todo | `docker compose up --build` |
 | Pruebas del backend | `docker compose exec api pytest` |
 | Migraciones | `docker compose exec api alembic upgrade head` |
+| Frontend en desarrollo | `cd frontend && npm install && npm run dev` |
+| Pruebas de `ai/` (registro en MLflow, evaluación) | `cd ai && pip install -r requirements.txt && pytest` |
+| Lint de Python | `ruff check .` (configuración en `ruff.toml`) |
+| Imagen de producción de la API | `bash pipelines/pruebas/humo-hub-api.sh` |
+| Validar la observabilidad | `bash observability/pruebas/validar.sh` · `grafana.sh` · `trazas.sh` |
+| Respaldo y restauración de PostgreSQL | `bash gitops/pruebas/respaldo.sh` |
+| Reiniciar la demo | `bash demo/reiniciar.sh` (borra la base del entorno) |
+| Reiniciar la demo del colegio en el clúster | `GITEA_USER=... GITEA_PASSWORD=... bash demo/reiniciar-cluster.sh` |
+| Puerta de seguridad del colegio (v1 y v2) | `bash demo/preparar-colegio.sh` |
+| Simulaciones de falla en el clúster | `bash gitops/pruebas/simulaciones.sh` · `admision.sh` |
+| Respaldo de la plataforma (Gitea, Argo CD) fuera del nodo | `bash gitops/pruebas/respaldo-plataforma.sh` |
+| Estado remoto de OpenTofu (laboratorio) | `bash infra/estado-remoto.sh iniciar` · `probar` · `activar` |

@@ -37,6 +37,7 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 - **Servicio (sitio):** `operativo` · `degradado` · `caido`.
 - **Solicitud de cambio:** `pendiente` → `aprobada` → `en_validacion` → `desplegada` | `fallida`; o `pendiente` → `rechazada`. `fallida` es un cambio aprobado que no llegó a publicarse sano dentro del tiempo de validación (10 min por defecto).
 - **Texto de IA:** `borrador_ia` → `aprobado` | `descartado`.
+- **Decisión de la compuerta del asistente:** `en_tema` (despierta al LLM) · `fuera_de_tema` (responde la compuerta, LLM dormido).
 
 ## Apps demo
 

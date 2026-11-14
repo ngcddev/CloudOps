@@ -15,7 +15,7 @@ class ChangeRequest(Base):
     service_id: Mapped[int] = mapped_column(ForeignKey("services.id"), nullable=False)
     from_version: Mapped[str] = mapped_column(String(50), nullable=False)
     to_version: Mapped[str] = mapped_column(String(50), nullable=False)
-    # pendiente → aprobada → en_validacion → desplegada | rechazada (constitución, estados)
+    # pendiente → aprobada → en_validacion → desplegada | fallida; o pendiente → rechazada (constitución, estados)
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="pendiente")
     requested_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     approved_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)

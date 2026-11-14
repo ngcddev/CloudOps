@@ -58,7 +58,8 @@ Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([pri
 | Frontend (Hub) | **React + Vite** | Consola de agencia + portal de cliente, mismas rutas con roles distintos |
 | MLOps | **MLflow** (Docker Compose) | Registro de versiones de prompt/modelo y sus evaluaciones; corre en el PC B |
 | LLM local | **Ollama** | Modelo: Qwen2.5 7B-Instruct o Llama 3.1 8B (Q4, ~5 GB de VRAM); respaldo Qwen2.5 3B |
-| RAG | **AnythingLLM** | Embeddings vía `nomic-embed-text` servido también desde Ollama |
+| Compuerta del asistente | **Clasificador Naive Bayes** (Python puro) | Corre en el Hub (PC A), entrenado y registrado en MLflow; el LLM solo se despierta si la pregunta trata del Hub (spec 012) |
+| RAG | **RAG propio en el Hub** (decisión 14 nov 2026, ver `docs/bitacora.md`) | Embeddings `nomic-embed-text` servidos por Ollama; índice en PostgreSQL (`kb_documents`, `kb_chunks`) con similitud coseno en Python. AnythingLLM queda como alternativa opcional, no se despliega |
 | Multimodal obligatorio | **Stability Matrix + ComfyUI** | Modelo: SD 1.5; SDXL Turbo solo si corre bien en 6 GB — genera la ilustración de la infografía operativa |
 
 ## Distribución del hardware
@@ -133,6 +134,7 @@ usuario no root para cumplir Pod Security Admission `restricted` (por ejemplo, `
 Clúster k3s (PC A)
 ├── namespace: hub                  → el Hub (FastAPI, React, PostgreSQL)
 ├── namespace: argocd               → Argo CD
+├── namespace: gitea                → Gitea y registro de imágenes
 ├── namespace: monitoring           → Prometheus, Grafana, Alertmanager, Loki
 ├── namespace: cliente-restaurante  → sitio del restaurante
 ├── namespace: cliente-ferreteria   → sitio de la ferretería
