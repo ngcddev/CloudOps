@@ -1,0 +1,55 @@
+# Escalado y disponibilidad del Hub (spec 016): HPA por CPU para la API y la web, y un PodDisruptionBudget para cada una.
+# metrics-server viene con k3s. Máximo 2 réplicas: el nodo es pequeño y la API lleva tareas en segundo plano (vigilancia de Argo CD,
+# alertas) que con más réplicas se repetirían. PostgreSQL no se escala: es un solo StatefulSet con su respaldo.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api
+  namespace: hub
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: api }
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120   # no se achica ante un pico corto
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web
+  namespace: hub
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: web }
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+---
+# Una réplica nunca se retira voluntariamente (drenar un nodo, actualizar) si es la única disponible.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api
+  namespace: hub
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: api }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web
+  namespace: hub
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: web }
