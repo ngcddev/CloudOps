@@ -1,0 +1,21 @@
+# Estado remoto de OpenTofu en un almacén compatible con S3 (spec 016): SeaweedFS en el laboratorio, o cualquier S3 (el de la nube de producción) cambiando
+# `endpoints`. Con `use_lockfile` el bloqueo vive en el mismo bucket: dos `apply` a la vez no se pisan. Es un archivo *_override.tf: se copia como
+# `backend_override.tf` (ignorado por Git) y sustituye al backend local de providers.tf sin tocarlo. Las credenciales NO van aquí:
+# AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY en el entorno. Lo activa `bash infra/estado-remoto.sh activar`.
+terraform {
+  backend "s3" {
+    bucket = "tofu-estado"
+    key    = "cloudops/terraform.tfstate"
+    region = "us-east-1" # MinIO lo ignora; S3 lo exige
+
+    endpoints = {
+      s3 = "http://estado-remoto:8333"
+    }
+    use_path_style              = true
+    skip_credentials_validation = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    use_lockfile                = true
+  }
+}
