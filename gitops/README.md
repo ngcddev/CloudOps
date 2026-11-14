@@ -309,3 +309,9 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 - `kubectl apply -f platform/namespaces.yaml && kubectl apply -k platform/mlops` despliega MLflow en el namespace `mlops` (imagen: `bash apps/publicar-imagenes.sh mlflow`); interfaz en `mlflow.hub.local`.
 - `kubectl apply -k platform/backstage` despliega Backstage (≈ 400 MiB); el alta de un sitio añade su `catalog-info.yaml` y aparece en el catálogo.
 - Runner de Gitea Actions: `pipelines/README.md`. Con el runner encendido, `demo/preparar-colegio.sh` vuelve a subir las etiquetas del colegio y la puerta corre sola.
+
+## Drift y selfHeal (spec 017)
+
+
+
+`pruebas/drift.sh` escala a mano el Deployment de un sitio y borra su Ingress; Argo CD los detecta (OutOfSync) y los devuelve a lo que dice Git sin que nadie toque Git (medido: 4 s y menos de 1 s). Falla si `selfHeal` está apagado.

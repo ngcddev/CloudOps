@@ -59,3 +59,4 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Simulaciones de falla en el clúster | `bash gitops/pruebas/simulaciones.sh` · `admision.sh` |
 | Respaldo de la plataforma (Gitea, Argo CD) fuera del nodo | `bash gitops/pruebas/respaldo-plataforma.sh` |
 | Estado remoto de OpenTofu (laboratorio) | `bash infra/estado-remoto.sh iniciar` · `probar` · `activar` |
+| Probar el drift con selfHeal (Argo CD corrige cambios a mano) | `bash gitops/pruebas/drift.sh` |
