@@ -4,7 +4,10 @@
 #   2. promtool check rules   sobre las reglas de alerta
 #   3. promtool test rules    con los casos de observability/pruebas/reglas_test.yml
 #   4. amtool check-config    sobre alertmanager.yml (si ya existe)
-#   5. kubectl kustomize      de observability/ (que todos los manifiestos armen)
+#   4b. promtool test rules   con observability/pruebas/presupuesto_test.yml (alertas de presupuesto de error, spec 016)
+#   5. promtool test rules    con observability/pruebas/tablero_test.yml (cuentas del SLI y del presupuesto de error)
+#   6. promtool check rules   sobre las expresiones del tablero de Grafana (si hay Python)
+#   7. kubectl kustomize      de observability/ (que todos los manifiestos armen)
 # promtool y amtool corren en contenedor, con la misma versión de las imágenes de los manifiestos.
 # Si no hay Docker pero promtool/amtool están en el PATH, se usan esos.
 # Uso: bash observability/pruebas/validar.sh
@@ -37,24 +40,35 @@ elif command -v promtool >/dev/null 2>&1; then
   RAIZ_OBS="$OBS"
   if [ ! -d /etc/prometheus/reglas ]; then
     # prometheus.yml busca las reglas en /etc/prometheus/reglas: se valida una copia que apunta aquí
-    TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-    sed "s#/etc/prometheus/reglas/#${OBS}/prometheus/reglas/#" "$OBS/prometheus/prometheus.yml" > "$TMP/prometheus.yml"
+    COPIA="$(mktemp -d)"; trap 'rm -rf "$COPIA"' EXIT
+    sed "s#/etc/prometheus/reglas/#${OBS}/prometheus/reglas/#" "$OBS/prometheus/prometheus.yml" > "$COPIA/prometheus.yml"
   fi
 else
   echo "Hace falta Docker (o promtool y amtool en el PATH) para validar." >&2
   exit 2
 fi
 
-CONFIG="${TMP:+$TMP/prometheus.yml}"
+CONFIG="${COPIA:+$COPIA/prometheus.yml}"
 CONFIG="${CONFIG:-${RAIZ_OBS}/prometheus/prometheus.yml}"
 paso "prometheus.yml es válido" promtool check config "$CONFIG"
-paso "las reglas de alerta son válidas" promtool check rules "${RAIZ_OBS}"/prometheus/reglas/*.yml
+REGLAS=(); for f in "$OBS"/prometheus/reglas/*.yml; do REGLAS+=("${RAIZ_OBS}/prometheus/reglas/$(basename "$f")"); done
+paso "las reglas de alerta son válidas" promtool check rules "${REGLAS[@]}"
 paso "SitioCaido pasa sus pruebas" promtool test rules "${RAIZ_OBS}/pruebas/reglas_test.yml"
+paso "las alertas de presupuesto de error pasan sus pruebas" promtool test rules "${RAIZ_OBS}/pruebas/presupuesto_test.yml"
+paso "el tablero calcula bien el SLI y el presupuesto de error" promtool test rules "${RAIZ_OBS}/pruebas/tablero_test.yml"
+if command -v python >/dev/null 2>&1; then
+  # Las expresiones del tablero salen como reglas temporales para que promtool revise su sintaxis
+  python "$OBS/pruebas/expresiones_tablero.py" > "$OBS/pruebas/.tablero-reglas.yml" 2>/dev/null
+  paso "las expresiones del tablero de Grafana son PromQL válido" promtool check rules "${RAIZ_OBS}/pruebas/.tablero-reglas.yml"
+  rm -f "$OBS/pruebas/.tablero-reglas.yml"
+else
+  echo "(sin Python: no se revisaron las expresiones del tablero)"
+fi
 if [ -f "$OBS/alertmanager/alertmanager.yml" ]; then
   paso "alertmanager.yml es válido" amtool check-config "${RAIZ_OBS}/alertmanager/alertmanager.yml"
 fi
 if command -v kubectl >/dev/null 2>&1; then
-  paso "observability/ arma con kustomize" bash -c "kubectl kustomize '$OBS' >/dev/null"
+  paso "observability/ arma con kustomize" bash -c "kubectl kustomize '$OBS_HOST' >/dev/null"
 else
   echo "(sin kubectl: no se revisó kustomize)"
 fi
