@@ -14,3 +14,4 @@ configMapGenerator:
   - name: prometheus-reglas
     files:
       - reglas/sitios.yml
+      - reglas/presupuesto.yml

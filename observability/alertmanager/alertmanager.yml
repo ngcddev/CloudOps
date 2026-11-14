@@ -11,8 +11,15 @@ route:
   group_interval: 10s
   # Alertmanager repite el aviso de una falla que sigue; el Hub los descarta por fingerprint
   repeat_interval: 1h
+  routes:
+    # Las alertas de presupuesto de error (spec 016) son una señal temprana, no una caída: se ven en Alertmanager y Prometheus
+    # y no van al Hub, que abriría un incidente por cada aviso con namespace.
+    - receiver: solo-ver
+      matchers:
+        - alertname =~ "PresupuestoQuemado.*"
 
 receivers:
+  - name: solo-ver
   - name: hub
     webhook_configs:
       - url: http://api.hub.svc:8000/api/alerts/alertmanager
