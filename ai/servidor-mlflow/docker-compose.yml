@@ -1,0 +1,49 @@
+# Servidor MLflow del laboratorio (spec 012, T08): registro de experimentos y de modelos de la IA local.
+# Va en el PC B junto a Ollama (no usa GPU). Un solo comando:
+#   docker compose -f ai/servidor-mlflow/docker-compose.yml up -d --build
+# Interfaz en http://localhost:5000. Los clientes (train.py, run_eval.py) apuntan con:
+#   MLFLOW_TRACKING_URI=http://localhost:5000
+# Si el servidor corre en otro equipo, agrega su host al listado de MLFLOW_ALLOWED_HOSTS (con el puerto).
+services:
+  mlflow:
+    build: .
+    image: hub/mlflow:3.18.0
+    restart: unless-stopped
+    # Límite de memoria: el PC B ya carga Ollama (convenciones, Contenedores)
+    mem_limit: 768m
+    environment:
+      MLFLOW_ALLOWED_HOSTS: ${MLFLOW_ALLOWED_HOSTS:-localhost:5000,127.0.0.1:5000,mlflow:5000}
+    ports:
+      - "${MLFLOW_PORT:-5000}:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:5000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # Endpoint versionado de la compuerta (spec 016): sirve `compuerta-asistente@production` del Model Registry con `mlflow models serve`
+  # (POST /invocations). Al promover otra versión basta reiniciar este servicio: el Hub no cambia. Si el endpoint cae, el Hub usa el JSON local.
+  modelo-compuerta:
+    image: hub/mlflow:3.18.0
+    restart: unless-stopped
+    mem_limit: 512m
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    # --env-manager local: usa las librerías de la imagen (mlflow, pandas); el modelo trae assistant_gate.py en su code_path
+    command: ["mlflow", "models", "serve", "-m", "models:/compuerta-asistente@production", "--host", "0.0.0.0", "--port", "5001", "--env-manager", "local"]
+    ports:
+      - "${MODELO_COMPUERTA_PORT:-5001}:5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:5001/ping', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+
+volumes:
+  mlflow_data:

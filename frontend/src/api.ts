@@ -933,6 +933,103 @@ export async function listAuditLogs(filters: AuditLogFilters = {}): Promise<Audi
 }
 
 
+// ---------- Asistente local (spec 012) ----------
+
+export type GateLabel = "en_tema" | "fuera_de_tema";
+
+export interface AssistantAnswer {
+  id: number;
+  answer: string;
+  // Quién respondió: la compuerta (LLM dormido) o el LLM local
+  answered_by: "compuerta" | "ayuda" | "llm";
+  // Secciones de la ayuda del Hub en las que se basó la respuesta
+  context_sections: string[];
+  // Cómo se eligió ese contexto (el RAG puede caer a la búsqueda por palabras) y la similitud del mejor trozo
+  context_mode?: "completo" | "recuperacion" | "rag" | null;
+  retrieval_score?: number | null;
+  gate_label: GateLabel;
+  p_fuera_de_tema: number;
+  llm_woken: boolean;
+  // Falso si se llamó al LLM y no respondió
+  llm_ok: boolean | null;
+  model: string | null;
+  latency_ms: number | null;
+}
+
+export interface AssistantStats {
+  total: number;
+  llm_despertado: number;
+  llm_evitado: number;
+  llm_evitado_pct: number | null;
+  llm_sin_respuesta: number;
+  latencia_llm_ms: number | null;
+  con_opinion: number;
+  decisiones_corregidas: number;
+  decisiones_corregidas_pct: number | null;
+}
+
+// Datos de muestra para cuando la API no está disponible (modo sin conexión de la consola)
+let mockAssistantId = 0;
+const mockAssistantLog: { label: GateLabel; woken: boolean; feedback?: GateLabel }[] = [];
+
+export async function askAssistant(question: string): Promise<AssistantAnswer> {
+  if ((await detectMode()) === "mock") {
+    const delHub = /ticket|incidente|sla|rollback|prioridad|cliente|plan|cambio|servicio|hub/i.test(question);
+    mockAssistantId += 1;
+    mockAssistantLog[mockAssistantId] = { label: delHub ? "en_tema" : "fuera_de_tema", woken: delHub };
+    return {
+      id: mockAssistantId,
+      answer: delHub
+        ? "Respuesta de muestra: con la API conectada, aquí contesta el asistente local."
+        : "Solo puedo ayudarte con el uso del Hub. Reformula tu pregunta sobre clientes, tickets, SLA, cambios o incidentes.",
+      answered_by: delHub ? "llm" : "compuerta",
+      context_sections: delHub ? ["Ayuda de muestra"] : [],
+      gate_label: delHub ? "en_tema" : "fuera_de_tema",
+      p_fuera_de_tema: delHub ? 0.02 : 0.98,
+      llm_woken: delHub,
+      llm_ok: delHub ? true : null,
+      model: delHub ? "muestra" : null,
+      latency_ms: delHub ? 900 : null,
+    };
+  }
+  return request<AssistantAnswer>("/assistant/ask", { method: "POST", body: JSON.stringify({ question }) });
+}
+
+export async function sendAssistantFeedback(id: number, label: GateLabel): Promise<void> {
+  if ((await detectMode()) === "mock") {
+    if (mockAssistantLog[id]) mockAssistantLog[id].feedback = label;
+    return;
+  }
+  // 204 sin cuerpo: no se usa request(), que espera JSON
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch(`/api/assistant/${id}/feedback`, { method: "POST", headers, body: JSON.stringify({ label }) });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+}
+
+export async function getAssistantStats(): Promise<AssistantStats> {
+  if ((await detectMode()) === "mock") {
+    const rows = mockAssistantLog.filter(Boolean);
+    const woken = rows.filter((r) => r.woken).length;
+    const opinadas = rows.filter((r) => r.feedback);
+    const erradas = opinadas.filter((r) => r.feedback !== r.label).length;
+    return {
+      total: rows.length,
+      llm_despertado: woken,
+      llm_evitado: rows.length - woken,
+      llm_evitado_pct: rows.length ? Math.round((1000 * (rows.length - woken)) / rows.length) / 10 : null,
+      llm_sin_respuesta: 0,
+      latencia_llm_ms: woken ? 900 : null,
+      con_opinion: opinadas.length,
+      decisiones_corregidas: erradas,
+      decisiones_corregidas_pct: opinadas.length ? Math.round((1000 * erradas) / opinadas.length) / 10 : null,
+    };
+  }
+  return request<AssistantStats>("/assistant/stats");
+}
+
+
 // ---------- Puerta de seguridad (spec 006) ----------
 
 export type GateStatus = "sin_corrida" | "en_curso" | "ok" | "fallo";

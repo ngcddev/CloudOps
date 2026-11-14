@@ -1275,3 +1275,69 @@ section {
     transition: none !important;
   }
 }
+
+/* ---------- Asistente local (spec 012) ---------- */
+.assistant-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assistant-form input {
+  flex: 1 1 280px;
+}
+
+.assistant-turn {
+  padding: 12px 0;
+  border-top: 1px solid var(--edge);
+}
+
+.assistant-turn:first-child {
+  border-top: 0;
+}
+
+.assistant-question {
+  font-weight: 500;
+  margin: 0 0 6px;
+}
+
+.assistant-answer {
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+}
+
+.assistant-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.assistant-by {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border: 1px solid var(--edge-strong);
+  border-radius: 6px;
+}
+
+.assistant-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.assistant-stats dt {
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+
+.assistant-stats dd {
+  margin: 2px 0 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}

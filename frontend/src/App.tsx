@@ -7,6 +7,7 @@ import PortalLayout from "./components/PortalLayout";
 import RequireRole from "./components/RequireRole";
 import ClientDetail from "./pages/agencia/ClientDetail";
 import ClientForm from "./pages/agencia/ClientForm";
+import Assistant from "./pages/agencia/Assistant";
 import AuditLogList from "./pages/agencia/AuditLogList";
 import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="clientes/nuevo" element={<ClientForm />} />
           <Route path="clientes/:id" element={<ClientDetail />} />
           <Route path="clientes/:id/metricas" element={<ClientMetrics />} />
+          <Route path="asistente" element={<Assistant />} />
           <Route path="bitacora" element={<AuditLogList />} />
           <Route path="cambios" element={<ChangeList />} />
           <Route path="servicios" element={<ServiceList />} />

@@ -1,0 +1,6 @@
+# Dependencias para correr train.py, run_eval.py y las pruebas de ai/ en un equipo de desarrollo (spec 012).
+# El Hub NO las necesita: la API solo carga el JSON del modelo ya exportado.
+mlflow==3.18.0
+pytest==9.1.1
+# Para importar la configuración y los servicios del Hub (los mismos que usa la API)
+-r ../backend/requirements.txt

@@ -47,6 +47,16 @@ services:
       ALERTMANAGER_TOKEN: ${ALERTMANAGER_TOKEN:-}
       # Dashboards y métricas (spec 010): la API consulta Prometheus para disponibilidad y latencia
       PROMETHEUS_URL: ${PROMETHEUS_URL:-}
+      # Asistente local (spec 012): vacío = sin IA; la compuerta responde igual a lo ajeno al Hub
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-2m}
+      # RAG (spec 012): completo | recuperacion | rag; el RAG usa el modelo de embeddings de Ollama
+      ASSISTANT_CONTEXT_MODE: ${ASSISTANT_CONTEXT_MODE:-completo}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      RAG_TOP_K: ${RAG_TOP_K:-4}
+      RAG_MIN_SCORE: ${RAG_MIN_SCORE:-0.60}
+      GATE_MODEL_URL: ${GATE_MODEL_URL:-}   # endpoint de mlflow models serve (spec 016); vacío = compuerta local
     # Solo para desarrollo: las pruebas (docker compose exec api pytest) leen seed/ y gitops/ en las
     # rutas del repo (/seed, /gitops y /pipelines). La imagen de producción no los lleva.
     volumes:

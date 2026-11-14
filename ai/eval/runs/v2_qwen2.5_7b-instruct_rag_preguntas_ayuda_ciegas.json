@@ -1,0 +1,19 @@
+{
+  "fecha_utc": "2026-11-14T08:32:18.201334+00:00",
+  "modelo": "qwen2.5:7b-instruct",
+  "prompt": "v2",
+  "contexto": "rag",
+  "embeddings": "nomic-embed-text",
+  "metricas": {
+    "preguntas": 16,
+    "recuperacion_pct": 100.0,
+    "sin_info_correctas": 4,
+    "sin_info_total": 4,
+    "rag_k": 4,
+    "rag_umbral": 0.6,
+    "acierto_pct": 100.0,
+    "latencia_media_s": 0.9
+  },
+  "umbral_sugerido": null,
+  "fallos": []
+}

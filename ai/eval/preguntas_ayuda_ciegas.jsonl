@@ -1,0 +1,16 @@
+{"tipo": "respondible", "q": "necesito saber cómo le asigno un ticket a un técnico", "seccion": "Asignar, cambiar estado y registrar horas", "debe": [["asignar"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿qué pasa si me equivoco con la prioridad que sugiere el sistema?", "seccion": "Clasificar una solicitud y prioridad", "debe": [["motivo"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿cuántas horas de soporte incluye el plan más barato?", "seccion": "Planes", "debe": [["4"]], "no_debe": ["10 horas", "20 horas"]}
+{"tipo": "respondible", "q": "¿el cliente puede usar el asistente?", "seccion": "Portal del cliente", "debe": [["no"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿qué hago después de un rollback si el sitio ya responde?", "seccion": "Mitigar y cerrar un incidente", "debe": [["mitig"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿cuándo se abre un incidente solo?", "seccion": "Abrir un incidente", "debe": [["alertmanager", "alerta", "monitoreo", "no responde"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿qué plantillas de sitio hay para un cliente nuevo?", "seccion": "Registrar un cliente", "debe": [["landing"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿cuál es el precio mensual del plan Estándar?", "seccion": "Planes", "debe": [["350"]], "no_debe": ["150.000", "700"]}
+{"tipo": "respondible", "q": "¿qué quiere decir que un servicio esté con fallas?", "seccion": "Estados de un servicio", "debe": [["con fallas", "degradado"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿cómo salgo de mi sesión?", "seccion": "Cómo entrar y salir", "debe": [["cerrar sesión"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿el Hub puede mandarle el mensaje al cliente por correo?", "seccion": "Mensaje al cliente tras un incidente", "debe": [["no"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿qué es un rechazo por seguridad?", "seccion": "Puerta de seguridad", "debe": [["control", "segur"]], "no_debe": []}
+{"tipo": "sin_info", "q": "¿cómo agrego un técnico nuevo al equipo?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿puedo cambiar el idioma de la consola?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿qué base de datos usa el Hub?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿cómo programo una reunión con el cliente desde el Hub?", "seccion": null, "debe": [], "no_debe": []}

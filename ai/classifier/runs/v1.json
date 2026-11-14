@@ -1,0 +1,14 @@
+{
+  "fecha_utc": "2026-11-14T19:44:31.998430+00:00",
+  "version": "v1",
+  "umbral": 0.9,
+  "huella_datos": "af1af1bdfc5472c9",
+  "commit_git": "desconocido",
+  "metricas": {
+    "exactitud": 0.9583,
+    "en_tema_perdidas": 0,
+    "fuera_de_tema_que_despiertan": 1,
+    "llm_evitado_pct": 91.7,
+    "ejemplos_prueba": 24
+  }
+}

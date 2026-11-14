@@ -164,3 +164,13 @@ temp/
 .cache/
 *.mp4
 *.mov
+
+# Embeddings calculados por ai/eval/run_eval.py (se regeneran con Ollama)
+ai/eval/cache/
+
+# Tareas privadas de Claude: solo local, no se sube a GitHub
+tareas-claude.md
+
+# Estado remoto de OpenTofu (spec 016): credenciales generadas y backend activado
+infra/.estado-remoto.env
+infra/tofu/backend_override.tf

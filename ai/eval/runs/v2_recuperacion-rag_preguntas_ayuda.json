@@ -1,0 +1,29 @@
+{
+  "fecha_utc": "2026-11-14T08:20:16.622158+00:00",
+  "modelo": null,
+  "prompt": "v2",
+  "contexto": "rag",
+  "embeddings": "nomic-embed-text",
+  "metricas": {
+    "preguntas": 40,
+    "recuperacion_pct": 93.5,
+    "sin_info_correctas": 0,
+    "sin_info_total": 9,
+    "rag_k": 4,
+    "rag_umbral": 0.55
+  },
+  "umbral_sugerido": 0.66,
+  "fallos": [
+    "[recuperación] ¿Qué pasa cuando el sitio de un cliente cae?  → vio ['Portal del cliente', 'Crear una solicitud (cliente)', 'Mensaje al cliente tras un incidente', 'Registrar un cliente'], esperaba «Abrir un incidente»",
+    "[recuperación] ¿El asistente puede aprobar cambios por mí?  → vio ['Aprobar o rechazar un cambio', 'Estados de un cambio', 'Asignar, cambiar estado y registrar horas', 'Pedir un cambio de versión'], esperaba «Este asistente»",
+    "[recuperación] ¿Cómo exporto un reporte en PDF?  → la ayuda devolvió ['Reportes', 'Pedir un cambio de versión', 'Lenguaje para el cliente', 'Este asistente'], debía estar vacía",
+    "[recuperación] ¿Cómo cambio mi contraseña?  → la ayuda devolvió ['Pedir un cambio de versión', 'Cómo entrar y salir', 'Puerta de seguridad', 'Estados de un cambio'], debía estar vacía",
+    "[recuperación] ¿Cómo elimino un cliente?  → la ayuda devolvió ['Crear una solicitud (cliente)', 'Portal del cliente', 'Mensaje al cliente tras un incidente', 'Registrar un cliente'], debía estar vacía",
+    "[recuperación] ¿Cuántos usuarios soporta el Hub al mismo tiempo?  → la ayuda devolvió ['Este asistente', 'Qué es el Hub y quién lo usa', 'Lo que el Hub no hace', 'Cómo entrar y salir'], debía estar vacía",
+    "[recuperación] ¿Cómo cambio el logo del Hub?  → la ayuda devolvió ['Este asistente', 'Qué es el Hub y quién lo usa', 'Lo que el Hub no hace', 'Cómo entrar y salir'], debía estar vacía",
+    "[recuperación] ¿En qué lenguaje de programación está hecho el backend?  → la ayuda devolvió ['Lenguaje para el cliente', 'Portal del cliente', 'Detalle de un cliente', 'Qué es el Hub y quién lo usa'], debía estar vacía",
+    "[recuperación] ¿Cómo configuro una alerta nueva en Prometheus?  → la ayuda devolvió ['Abrir un incidente', 'Lo que el Hub no hace', 'Puerta de seguridad', 'Rollback'], debía estar vacía",
+    "[recuperación] ¿Cómo conecto el Hub con WhatsApp para avisar a los clientes?  → la ayuda devolvió ['Qué es el Hub y quién lo usa', 'Mensaje al cliente tras un incidente', 'Este asistente', 'Cómo entrar y salir'], debía estar vacía",
+    "[recuperación] ¿Cómo restauro una copia de seguridad de la base de datos?  → la ayuda devolvió ['Puerta de seguridad', 'Rollback', 'Asignar, cambiar estado y registrar horas', 'Este asistente'], debía estar vacía"
+  ]
+}
