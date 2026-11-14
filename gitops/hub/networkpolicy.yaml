@@ -1,0 +1,30 @@
+# Aislamiento de red del Hub (misma idea que la de los clientes, gitops/clients/_base/networkpolicy.yaml): se deniega toda entrada y
+# solo pasan Traefik (el Ingress de k3s, en kube-system), Alertmanager (en monitoring, que avisa por webhook) y los Pods del propio
+# namespace (la API habla con PostgreSQL y el CronJob de respaldo también). Solo restringe la entrada: la API sigue llamando hacia
+# afuera a Gitea, Argo CD, Prometheus y Ollama. El runner de la puerta de seguridad llega por el Ingress, es decir, por Traefik.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: hub
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: permitir-traefik-alertmanager-y-propio
+  namespace: hub
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system   # Traefik
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring    # Alertmanager
+        - podSelector: {}                                # los Pods del Hub

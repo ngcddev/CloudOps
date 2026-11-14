@@ -5,6 +5,12 @@ kind: Namespace
 metadata:
   name: hub
   labels:
+    # Pod Security `restricted` también en el Hub (igual que en los clientes): sin root ni privilegios. Todas sus cargas
+    # (postgres, api, web y el CronJob de respaldo) lo cumplen: gitops/pruebas/psa_restringido.py
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
     app.kubernetes.io/part-of: cloudops-hub
 ---
 apiVersion: v1
