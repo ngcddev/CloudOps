@@ -2,7 +2,7 @@
 
 > **Acciona:** Industrial (contenido y formato) y Sistemas (Backend, Frontend)
 >
-> **Módulo:** 5 (puede adelantarse con datos del Hub) · **Requerimientos:** RF-20 · **Depende de:** 010 · **Estado:** Spec y plan
+> **Módulo:** 5 (puede adelantarse con datos del Hub) · **Requerimientos:** RF-20 · **Depende de:** 010 · **Estado:** En curso
 
 ## Qué y por qué
 
