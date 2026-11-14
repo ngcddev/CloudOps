@@ -2,14 +2,17 @@
 # Simula en una sola máquina lo que hará el workflow de la puerta de seguridad (spec 006, T08-T11): corre
 # los mismos pasos de pipelines/puerta.sh contra el Hub real y un registro local, sin Gitea ni runner.
 #
-#   limpia    versión sin problemas: pasa los seis controles, queda firmada y verificada
+#   limpia    versión sin problemas: pasa los seis controles, queda firmada, con procedencia SLSA y verificada
 #   secreto   un commit nuevo con una clave de AWS falsa: falla en «secretos» y no construye nada
 #   vulnerable  imagen base vieja con CVE críticas: falla en «vulnerabilidades»
+#   configuracion  el Dockerfile termina corriendo como root: falla en «vulnerabilidades» (trivy config, spec 016)
 #   firma-ajena  se verifica con otra clave pública: falla en «verificación»
-#   todas     las cuatro, en ese orden (por defecto)
+#   procedencia  la verificación espera otro commit que el declarado en la procedencia SLSA: falla en «verificación»
+#   pruebas   (solo SITE=consultorio) un cambio rompe las pruebas del sitio: falla en «construcción» y no construye nada
+#   todas     las anteriores, en ese orden (por defecto; «pruebas» solo si el sitio tiene backend con pytest)
 #
 # Uso:  HUB_URL=http://localhost:8000 HUB_PIPELINE_TOKEN=<token> bash pipelines/pruebas/simular-puerta.sh [escenario]
-#   SITE=ferreteria (por defecto) debe existir en el Hub; cada corrida usa una versión nueva (sim-<n>).
+#   SITE=ferreteria (por defecto) debe existir en el Hub; cada corrida usa una versión nueva (sim-<n>), o la de VERSION_FIJA.
 #   La primera vez baja las imágenes de las herramientas y la base de datos de Trivy (unos minutos).
 # No toca nada del repositorio: todo ocurre en una carpeta temporal y en contenedores que se borran al terminar.
 set -uo pipefail
@@ -64,17 +67,23 @@ printf '.puerta\n' >> "$REPO/.dockerignore"
 
 siguiente=$(( $(date +%s) % 100000 ))
 # Deja en V la versión siguiente (sin subshell: el contador tiene que avanzar de verdad)
-nueva_version() { siguiente=$((siguiente + 1)); V="sim-${siguiente}"; }
+# Con VERSION_FIJA (por ejemplo v2) la corrida usa esa etiqueta: así se deja la puerta en «ok» para una versión real del sitio
+nueva_version() { siguiente=$((siguiente + 1)); V="${VERSION_FIJA:-sim-${siguiente}}"; }
 
-# correr <escenario> <versión> <clave pública>: los pasos del workflow, y el cierre que corre siempre
+# correr <versión> <clave pública> [commit que espera la verificación]: los pasos del workflow, y el cierre que corre siempre
 correr() {
-  local version="$1" pub="$2" estado=success
+  local version="$1" pub="$2" otro_commit="${3:-}" estado=success
+  rm -rf "$REPO/.puerta"  # cada escenario parte sin imágenes ni reportes del anterior
   (
     cd "$REPO" || exit 1
     export SITE VERSION="$version" HUB_URL HUB_PIPELINE_TOKEN COSIGN_PUB="$pub" PUERTA_OUT=.puerta
     export REGISTRY="${REGISTRO}:5000" ORG=forja-digital DOCKER_NETWORK="$RED" REGISTRY_INSEGURO=1 TRIVY_SKIP_DB_UPDATE="${TRIVY_SKIP_DB_UPDATE:-}"
     for paso in inicio secretos construir vulnerabilidades sbom firmar verificar; do
-      bash "$PUERTA" "$paso" || exit 1
+      if [ "$paso" = verificar ] && [ -n "$otro_commit" ]; then
+        COMMIT_SHA="$otro_commit" bash "$PUERTA" "$paso" || exit 1
+      else
+        bash "$PUERTA" "$paso" || exit 1
+      fi
     done
   ) || estado=failure
   (cd "$REPO" && SITE="$SITE" VERSION="$version" HUB_URL="$HUB_URL" HUB_PIPELINE_TOKEN="$HUB_PIPELINE_TOKEN" \
@@ -130,8 +139,18 @@ escenario_secreto() {
 escenario_vulnerable() {
   echo "== Escenario «vulnerable»: imagen base vieja =="
   local v; nueva_version; v="$V"
-  (cd "$REPO" && git checkout -q -B vulnerable base && sed -i 's#^FROM .*#FROM nginx:1.14-alpine#' Dockerfile && git commit -qam "build: imagen base" && git tag "$v")
+  (cd "$REPO" && git checkout -q -B vulnerable base && sed -i -e '/^RUN apk upgrade/d' -e 's#^FROM .*#FROM nginx:1.14-alpine#' Dockerfile && git commit -qam "build: imagen base" && git tag "$v")
   if correr "$v" "$TMP/claves/cosign.pub"; then falla "la puerta dejó pasar una imagen vulnerable"; else ok "la puerta se detuvo"; fi
+  verificar_corrida "$v" fallo vulnerabilidades
+}
+
+escenario_configuracion() {
+  echo "== Escenario «configuracion»: el contenedor correría como root =="
+  local v; nueva_version; v="$V"
+  (cd "$REPO" && git checkout -q -B configuracion base && printf '
+USER root
+' >> Dockerfile && git commit -qam "build: usuario" && git tag "$v")
+  if correr "$v" "$TMP/claves/cosign.pub"; then falla "la puerta dejó pasar un contenedor que corre como root"; else ok "la puerta se detuvo"; fi
   verificar_corrida "$v" fallo vulnerabilidades
 }
 
@@ -143,12 +162,34 @@ escenario_firma_ajena() {
   verificar_corrida "$v" fallo verificacion
 }
 
+escenario_procedencia() {
+  echo "== Escenario «procedencia»: la procedencia declara otro commit que el de la versión =="
+  local v; nueva_version; v="$V"
+  (cd "$REPO" && git checkout -q -B procedencia base && echo "<!-- ${v} -->" >> "$WEB/index.html" && git commit -qam "feat: ajuste" && git tag "$v")
+  if correr "$v" "$TMP/claves/cosign.pub" "0000000000000000000000000000000000000000"; then falla "la verificación aceptó una procedencia de otro commit"; else ok "la puerta se detuvo"; fi
+  verificar_corrida "$v" fallo verificacion
+}
+
+escenario_pruebas() {
+  echo "== Escenario «pruebas»: un cambio rompe las pruebas del sitio =="
+  if [ ! -f "$REPO/backend/pytest.ini" ]; then echo "   (el sitio ${SITE} no tiene backend con pytest: se omite; usa SITE=consultorio)"; return 0; fi
+  local v; nueva_version; v="$V"
+  (cd "$REPO" && git checkout -q -B pruebas base && sed -i 's/"status": "ok"/"status": "roto"/' backend/app/main.py \
+    && git commit -qam "feat: cambio que rompe el /health" && git tag "$v")
+  if correr "$v" "$TMP/claves/cosign.pub"; then falla "la puerta dejó pasar un cambio que rompe las pruebas"; else ok "la puerta se detuvo"; fi
+  verificar_corrida "$v" fallo construccion
+  [ ! -e "$REPO/.puerta/${SITE}-web.tar" ] && ok "no se construyó ninguna imagen" || falla "se construyó una imagen a pesar de las pruebas rotas"
+}
+
 case "$ESCENARIO" in
+  procedencia) escenario_procedencia ;;
+  pruebas) escenario_pruebas ;;
   limpia) escenario_limpia ;;
   secreto) escenario_secreto ;;
   vulnerable) escenario_vulnerable ;;
+  configuracion) escenario_configuracion ;;
   firma-ajena) escenario_firma_ajena ;;
-  todas) escenario_limpia; escenario_secreto; escenario_vulnerable; escenario_firma_ajena ;;
+  todas) escenario_limpia; escenario_secreto; escenario_vulnerable; { [ -f "$REPO/Dockerfile" ] && escenario_configuracion; }; escenario_firma_ajena; escenario_procedencia; escenario_pruebas ;;
   *) echo "Escenario desconocido: $ESCENARIO" >&2; exit 2 ;;
 esac
 
