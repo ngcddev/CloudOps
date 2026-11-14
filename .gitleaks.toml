@@ -8,6 +8,11 @@ useDefault = true
 [allowlist]
 description = "Valores de desarrollo de .env.example: nunca son reales, y en k3s las claves salen de Secrets"
 # Solo este valor exacto; cualquier otra clave que aparezca (en .env.example o en otro archivo) sigue bloqueada
+# Las expresiones se comparan con la línea completa: así se pueden fijar a un contexto (JWT_SECRET=..., -u usuario:clave) y no a una palabra suelta
+regexTarget = "line"
 regexes = [
   '''clave-de-desarrollo-cambiala-en-produccion-0123456789''',
+  # Contraseñas de laboratorio de las pruebas de humo (spec 006 y 008): viven solo en contenedores efímeros que la propia prueba crea y borra
+  '''JWT_SECRET=humo-0123456789-0123456789-0123''',
+  '''-u admin:prueba''',
 ]
