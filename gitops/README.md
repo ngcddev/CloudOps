@@ -315,3 +315,11 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 
 
 `pruebas/drift.sh` escala a mano el Deployment de un sitio y borra su Ingress; Argo CD los detecta (OutOfSync) y los devuelve a lo que dice Git sin que nadie toque Git (medido: 4 s y menos de 1 s). Falla si `selfHeal` está apagado.
+
+## Plantilla y documentación en Backstage (spec 017)
+
+
+
+- **Crear → Sitio de cliente** registra en el catálogo el `catalog-info.yaml` que el Hub escribió al dar de alta el sitio (sin editar la configuración de Backstage). La plantilla vive en `platform/backstage/templates/` y se publica con `actualizar-hub-gitops.sh gitops/platform/backstage`.
+
+- **TechDocs:** la imagen de Backstage no trae mkdocs ni Docker; `platform/backstage/publicar-docs.sh` genera el sitio con la imagen `spotify/techdocs` y lo copia al volumen `backstage-techdocs` (`builder: external`). La fuente está en `platform/backstage/docs/` y se ve en `http://backstage.hub.local/docs/default/component/plataforma-cloudops`.

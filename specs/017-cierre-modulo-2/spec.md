@@ -10,7 +10,7 @@ El módulo pesa el 15 % de la nota y alimenta el 20 % del proyecto (Kubernetes, 
 ## Criterios de aceptación
 
 - [x] CA-1. Una prueba provoca *drift* a propósito (escalar a mano, borrar un recurso) y muestra a Argo CD detectándolo y corrigiéndolo desde Git.
-- [ ] CA-2. Backstage tiene una plantilla («golden path») para dar de alta un sitio de cliente y la documentación como código (TechDocs) se ve en el portal.
+- [x] CA-2. Backstage tiene una plantilla («golden path») para dar de alta un sitio de cliente y la documentación como código (TechDocs) se ve en el portal.
 - [ ] CA-3. Existe un ambiente `staging` y una versión se promueve de `staging` a producción por un cambio en Git.
 - [ ] CA-4. Un chart de Helm empaqueta el sitio de un cliente y su `helm template` coincide con lo que produce Kustomize.
 - [ ] CA-5. Un tutor de IA responde sobre la documentación de Kubernetes y los lineamientos del curso, con la matriz de aciertos, omisiones y alucinaciones.

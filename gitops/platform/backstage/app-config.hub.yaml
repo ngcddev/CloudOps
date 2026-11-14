@@ -33,9 +33,16 @@ integrations:
   gitea:
     - host: gitea.gitea.svc:3000
       baseUrl: http://gitea.gitea.svc:3000
+# TechDocs (spec 017, T02): la imagen no trae mkdocs ni Docker, así que la documentación se genera fuera (publicar-docs.sh) y Backstage solo la sirve
+techdocs:
+  builder: external
+  publisher:
+    type: local
+    local:
+      publishDirectory: /techdocs
 catalog:
   rules:
-    - allow: [Component, Group, Location]
+    - allow: [Component, Group, Location, Template]
   locations:
     - type: url
       target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/platform/backstage/group.yaml
@@ -48,3 +55,9 @@ catalog:
     # El colegio de la demo (spec 016): el Hub escribe su catalog-info.yaml al dar de alta el sitio; antes de eso Backstage avisa que no existe
     - type: url
       target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/colegio/catalog-info.yaml
+    # Plantilla de «Crear → Sitio de cliente» (spec 017, T02)
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/platform/backstage/templates/sitio-de-cliente.yaml
+    # Documentación de la plataforma con TechDocs (spec 017, T02)
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/platform/backstage/docs/catalog-info.yaml
