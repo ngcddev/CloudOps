@@ -123,6 +123,46 @@ class GiteaClient:
         )
         return data["commit"]["sha"]
 
+    def file_exists(self, path: str) -> bool:
+        """True si el archivo ya está en la rama; cualquier error que no sea 404 se propaga."""
+        try:
+            self.get_file(path)
+        except GiteaError as error:
+            if error.status == 404:
+                return False
+            raise
+        return True
+
+    def create_file(self, path: str, text: str, message: str, author_name: str, author_email: str) -> str:
+        """Crea un archivo nuevo con un único commit y devuelve el SHA del commit (la API usa POST para crear)."""
+        person = {"name": author_name, "email": author_email}
+        data = self._call(
+            "POST",
+            path,
+            {
+                "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
+                "message": message,
+                "branch": self.branch,
+                "author": person,
+                "committer": person,
+            },
+        )
+        return data["commit"]["sha"]
+
+    def image_exists(self, owner: str, name: str, tag: str) -> bool | None:
+        """¿Está `name:tag` en el registro de Gitea? None si no se puede saber (sin permiso o sin conexión)."""
+        url = f"{self.base_url}/api/v1/packages/{owner}/container/{urllib.parse.quote(name)}/{urllib.parse.quote(tag)}"
+        request = urllib.request.Request(url, method="GET")
+        request.add_header("Authorization", f"token {self.token}")
+        request.add_header("Accept", "application/json")
+        try:
+            status, _ = self.transport(request, self.timeout)
+        except (urllib.error.URLError, OSError):
+            return None
+        if status == 404:
+            return False
+        return True if status < 400 else None
+
 
 def gitea_from_settings() -> GiteaClient:
     """Cliente con la configuración del entorno (GITEA_URL, GITEA_REPO, GITEA_TOKEN)."""

@@ -23,6 +23,8 @@ class FakeGitea:
         self.requests: list[tuple[str, str]] = []
         # SHA que devuelve la rama; si es None, el del último commit (o ceros si no hay ninguno)
         self.head: str | None = None
+        # Imágenes «nombre:tag» del registro; None = el registro dice que todas existen
+        self.images: set[str] | None = None
         fake = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -56,6 +58,10 @@ class FakeGitea:
                     return
                 base = f"/api/v1/repos/{fake.repo}/"
                 url = urlparse(self.path)
+                paquete = re.fullmatch(r"/api/v1/packages/[^/]+/container/([^/]+)/([^/]+)", url.path)
+                if paquete:
+                    existe = fake.images is None or f"{paquete.group(1)}:{paquete.group(2)}" in fake.images
+                    return self._send(200 if existe else 404, {})
                 if url.path.startswith(base + "branches/"):
                     head = fake.head or (fake.commits[-1]["sha"] if fake.commits else "0" * 40)
                     return self._send(200, {"commit": {"id": head}})
@@ -76,6 +82,25 @@ class FakeGitea:
                     "sha": _blob_sha(text),
                     "content": base64.b64encode(text.encode()).decode(),
                 })
+
+            def do_POST(self):
+                if not self._authorized():
+                    return
+                path = self._contents_path()
+                if path is None:
+                    return
+                body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                if path in fake.files:
+                    return self._send(422, {"message": "repository file already exists"})
+                fake.files[path] = base64.b64decode(body["content"]).decode()
+                sha = hashlib.sha1(f"{len(fake.commits)}{body['message']}".encode()).hexdigest()
+                fake.commits.append({
+                    "sha": sha,
+                    "message": body["message"],
+                    "author": body["author"],
+                    "path": path,
+                })
+                self._send(201, {"commit": {"sha": sha, "message": body["message"]}, "content": {"path": path}})
 
             def do_PUT(self):
                 if not self._authorized():
