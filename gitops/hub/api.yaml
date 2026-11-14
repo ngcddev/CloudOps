@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: gitea.hub.local/forja-digital/hub-api:v1.6
+          image: gitea.hub.local/forja-digital/hub-api:v1.11
           ports:
             - name: http
               containerPort: 8000
@@ -72,6 +72,15 @@ spec:
             # Dashboards y métricas (spec 010): la API consulta Prometheus (jobs `sitios` y Traefik) para los
             # KPIs de disponibilidad y latencia; con la URL vacía el panel responde «sin datos».
             - { name: PROMETHEUS_URL, value: "http://prometheus.monitoring.svc:9090" }
+            # Trazas (OpenTelemetry): la API manda spans a Tempo (observability/tempo). Sin Tempo la API sigue igual; solo se pierden las trazas.
+            # Los spans llevan tiempos y estados, nunca el texto de las preguntas ni de las respuestas.
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://tempo.monitoring.svc:4318"
+          # Asistente local (spec 012): OLLAMA_URL, OLLAMA_MODEL, OLLAMA_EMBED_MODEL, ASSISTANT_CONTEXT_MODE (completo | recuperacion | rag),
+          # RAG_TOP_K y RAG_MIN_SCORE salen del ConfigMap hub-ia, que crea gitops/hub/configurar-ia.sh con la IP del PC B (no va en el
+          # repo). Sin el ConfigMap la API arranca igual y el asistente avisa que la IA no está disponible.
+          envFrom:
+            - configMapRef: { name: hub-ia, optional: true }
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
