@@ -13,6 +13,7 @@ const sections: { label: string; to?: string; spec?: string }[] = [
   { label: "Cambios", to: "/agencia/cambios" },
   { label: "Servicios", to: "/agencia/servicios" },
   { label: "Incidentes", to: "/agencia/incidentes" },
+  { label: "Asistente", to: "/agencia/asistente" },
   { label: "Reportes", spec: "013" },
   { label: "Bitácora", to: "/agencia/bitacora" },
 ];
