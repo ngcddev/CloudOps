@@ -1,0 +1,43 @@
+# Política de admisión de imágenes de los clientes (spec 016): en cualquier namespace de un cliente (etiqueta hub/client) un Pod solo puede
+# usar imágenes del registro propio, con una etiqueta o un digest fijos. Es un ValidatingAdmissionPolicy de Kubernetes (CEL, GA desde 1.30):
+# se evalúa dentro del API server, sin instalar nada (el nodo no tiene RAM para Kyverno). Lo que NO hace es verificar la firma de Cosign:
+# eso necesita un controlador (Kyverno verifyImages o policy-controller de Sigstore) y está anotado como mejora en gitops/README.md.
+# La firma y la procedencia ya se verifican en la puerta de seguridad (pipelines/puerta.sh) antes de que una versión pueda aprobarse.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: imagenes-de-clientes
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  variables:
+    - name: imagenes
+      expression: >-
+        object.spec.containers.map(c, c.image) +
+        (has(object.spec.initContainers) ? object.spec.initContainers.map(c, c.image) : [])
+  validations:
+    - expression: variables.imagenes.all(i, i.startsWith('gitea.hub.local/forja-digital/'))
+      messageExpression: >-
+        'Imagen no permitida en un namespace de cliente: solo gitea.hub.local/forja-digital/. Recibido: ' +
+        variables.imagenes.filter(i, !i.startsWith('gitea.hub.local/forja-digital/')).join(', ')
+      reason: Forbidden
+    - expression: variables.imagenes.all(i, !i.endsWith(':latest') && (i.contains('@sha256:') || i.substring(i.lastIndexOf('/')).contains(':')))
+      message: "Toda imagen necesita una etiqueta o un digest fijos; «latest» o sin etiqueta no se admiten (la versión es lo que se publica y se revierte)."
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: imagenes-de-clientes
+spec:
+  policyName: imagenes-de-clientes
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - { key: hub/client, operator: Exists }

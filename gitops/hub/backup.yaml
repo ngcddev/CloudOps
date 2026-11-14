@@ -1,0 +1,80 @@
+# Respaldo diario de la base del Hub (spec 003): un CronJob corre respaldar.sh (ConfigMap hub-respaldo) y deja los
+# últimos 7 pg_dump en un volumen propio. Cumple el perfil Pod Security `restricted`. Las credenciales salen del Secret hub-db.
+# Limitación: el volumen vive en el mismo nodo que la base (k3s con un solo nodo); copiar los respaldos fuera del nodo es un paso
+# manual del runbook. Probar un respaldo: gitops/pruebas/respaldo.sh.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hub-respaldos
+  namespace: hub
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hub-db-backup
+  namespace: hub
+  labels:
+    app: hub-db-backup
+spec:
+  # 03:00 UTC = 22:00 en Bogotá, cuando el Hub casi no se usa
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app: hub-db-backup
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            fsGroup: 70
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: respaldo
+              image: postgres:16-alpine
+              command: ["sh", "/scripts/respaldar.sh"]
+              env:
+                - { name: PGHOST, value: postgres.hub.svc }
+                - { name: RESPALDO_DIR, value: /respaldos }
+                - { name: RESPALDO_CONSERVAR, value: "7" }
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef: { name: hub-db, key: POSTGRES_USER }
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: { name: hub-db, key: POSTGRES_PASSWORD }
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef: { name: hub-db, key: POSTGRES_DB }
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests: { cpu: 50m, memory: 64Mi }
+                limits: { cpu: 250m, memory: 128Mi }
+              volumeMounts:
+                - { name: scripts, mountPath: /scripts, readOnly: true }
+                - { name: respaldos, mountPath: /respaldos }
+          volumes:
+            - name: scripts
+              configMap:
+                name: hub-respaldo
+            - name: respaldos
+              persistentVolumeClaim:
+                claimName: hub-respaldos

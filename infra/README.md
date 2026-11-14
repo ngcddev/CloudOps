@@ -25,3 +25,10 @@ Las cuotas se obtendrán de `seed/plans.json`; ese archivo es la fuente única d
 Ejemplo: `GITEA_TOKEN=<token> infra/tofu.sh tofu plan`.
 
 No guardes tokens, kubeconfigs ni archivos de estado en el repositorio. Antes de ejecutar cambios sobre un cliente existente, revisa el plan de ejecución y confirma que no propone recrearlo.
+
+## Kit offline
+
+`bash infra/kit-offline.sh exportar kit-offline` junta las imágenes OCI del proyecto, los paquetes de Python del backend, la caché de npm del frontend, la base de
+Trivy y el inventario de los modelos de Ollama (`--con-modelos` copia la carpeta de modelos), con sumas SHA-256. `verificar` detecta archivos corruptos y `restaurar`
+carga las imágenes y muestra cómo instalar sin red. Probado el 14 nov: exportar, verificar, detectar un archivo alterado, borrar una imagen y restaurarla,
+`pip install --no-index` y `npm ci --offline` con la red cortada. Pendiente de probar a escala: el kit completo con todas las imágenes (varios GB).
