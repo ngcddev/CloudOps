@@ -1,0 +1,55 @@
+# Alertas de presupuesto de error (spec 016, fila «alertas de presupuesto de error» del techstack): avisan cuando el sitio gasta el margen
+# de su SLO demasiado rápido, antes de que el mes se pierda. Es la receta de burn rate de varias ventanas (SRE Workbook): una ventana larga
+# confirma que el gasto es real y una corta que sigue ocurriendo.
+#   quemado = (1 − disponibilidad de la ventana) / (1 − SLO del plan);  1 = el margen alcanza justo para el mes.
+#   PresupuestoQuemadoRapido  : quemado > 14,4 en 1 h y en 5 min → en ~2 días se gastaría todo el mes (crítica)
+#   PresupuestoQuemadoLento   : quemado > 3 en 6 h y en 30 min    → en ~10 días se gastaría todo el mes (advertencia)
+# Los avisos NO llevan la etiqueta `namespace`: el Hub la usa para abrir incidentes y estos son una señal temprana, no una caída.
+# El SLO por cliente espeja seed/plans.json (Premium 99,9 · Estándar 99,5 · Básico 99,0); un cliente sin fila usa el Básico (el más holgado).
+groups:
+  - name: presupuesto-slo
+    interval: 30s
+    rules:
+      - record: sitio:slo_objetivo:ratio
+        expr: |
+          label_replace(vector(0.999), "client", "restaurante", "", "")
+          or label_replace(vector(0.995), "client", "ferreteria", "", "")
+          or label_replace(vector(0.99), "client", "consultorio", "", "")
+      - record: sitio:disponibilidad:ratio_5m
+        expr: avg by (client) (avg_over_time(probe_success{job="sitios"}[5m]))
+      - record: sitio:disponibilidad:ratio_30m
+        expr: avg by (client) (avg_over_time(probe_success{job="sitios"}[30m]))
+      - record: sitio:disponibilidad:ratio_1h
+        expr: avg by (client) (avg_over_time(probe_success{job="sitios"}[1h]))
+      - record: sitio:disponibilidad:ratio_6h
+        expr: avg by (client) (avg_over_time(probe_success{job="sitios"}[6h]))
+      # Margen de error del plan: 1 − SLO; sin fila para el cliente, el del Básico (0,01)
+      - record: sitio:margen_error:ratio
+        expr: 1 - (sitio:slo_objetivo:ratio or on (client) (0 * sitio:disponibilidad:ratio_5m + 0.99))
+      - record: sitio:quemado:ratio_5m
+        expr: (1 - sitio:disponibilidad:ratio_5m) / on (client) sitio:margen_error:ratio
+      - record: sitio:quemado:ratio_30m
+        expr: (1 - sitio:disponibilidad:ratio_30m) / on (client) sitio:margen_error:ratio
+      - record: sitio:quemado:ratio_1h
+        expr: (1 - sitio:disponibilidad:ratio_1h) / on (client) sitio:margen_error:ratio
+      - record: sitio:quemado:ratio_6h
+        expr: (1 - sitio:disponibilidad:ratio_6h) / on (client) sitio:margen_error:ratio
+
+      - alert: PresupuestoQuemadoRapido
+        expr: sitio:quemado:ratio_1h > 14.4 and sitio:quemado:ratio_5m > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          priority: P2
+        annotations:
+          summary: "El sitio de {{ $labels.client }} gasta su margen de error {{ $value | printf \"%.0f\" }} veces más rápido de lo permitido"
+          description: "A este ritmo el margen del mes se agota en unos 2 días. Revise la última publicación."
+      - alert: PresupuestoQuemadoLento
+        expr: sitio:quemado:ratio_6h > 3 and sitio:quemado:ratio_30m > 3
+        for: 15m
+        labels:
+          severity: warning
+          priority: P3
+        annotations:
+          summary: "El sitio de {{ $labels.client }} gasta su margen de error {{ $value | printf \"%.0f\" }} veces más rápido de lo permitido"
+          description: "A este ritmo el margen del mes se agota en unos 10 días: conviene revisarlo con calma."

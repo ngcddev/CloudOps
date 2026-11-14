@@ -1,0 +1,31 @@
+# Configuración de Grafana Tempo (monolítico) para las trazas del Hub: recibe OTLP/HTTP en el puerto 4318, guarda 24 horas en disco local y
+# responde las consultas de Grafana en el 3200. Sin reportes de uso a terceros (principio 2).
+server:
+  http_listen_port: 3200
+  log_level: warn
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+
+ingester:
+  # Un bloque se cierra a los 2 minutos: una traza se puede buscar casi enseguida en la demo
+  max_block_duration: 2m
+
+compactor:
+  compaction:
+    block_retention: 24h
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+
+usage_report:
+  reporting_enabled: false

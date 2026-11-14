@@ -18,3 +18,10 @@ datasources:
     access: proxy
     url: http://loki.monitoring.svc:3100
     editable: false
+  # Trazas del Hub (OpenTelemetry → Tempo): Explore → Tempo → buscar por service.name = hub-api
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo.monitoring.svc:3200
+    editable: false
