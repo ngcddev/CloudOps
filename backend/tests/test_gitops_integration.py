@@ -42,7 +42,6 @@ def _pedir_y_aprobar(client, db, gitea_client: GiteaClient, to_version: str, pas
     """Crea la solicitud de cambio de El Tornillo y la aprueba con el cliente de Gitea indicado."""
     pass_gate("cliente-ferreteria", to_version)
     service = db.scalar(select(Service).where(Service.namespace == "cliente-ferreteria"))
-    tecnico = db.scalar(select(User).where(User.role == "agencia"))
     ticket = client.post(
         "/api/tickets",
         json={"service_id": service.id, "title": "Publicar la nueva portada", "description": "Portada", "kind": "cambio"},

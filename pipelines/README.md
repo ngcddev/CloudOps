@@ -115,3 +115,17 @@ prueba el sitio de dos imágenes.
   usa `--allow-http-registry` en Cosign. Con certificado, ponerlo en `0`.
 - Eventos con reportes muy grandes (SBOM de varios MB) viajan en el cuerpo de la petición; la API no los limita
   hoy.
+
+## Pruebas del sitio y procedencia SLSA
+
+- **Pruebas:** si el repositorio del sitio trae `backend/pytest.ini` (hoy, el consultorio), `puerta.sh construir` corre sus pruebas en un contenedor antes de
+  construir; si fallan no se construye nada y el Hub registra el fallo en «construcción» con la salida de pytest.
+- **Procedencia:** `puerta.sh firmar` adjunta a cada imagen una atestación SLSA v1 firmada con la misma clave (`cosign attest --type slsaprovenance1`) con el
+  repositorio, la etiqueta, el **commit**, las herramientas con su versión y la corrida. `puerta.sh verificar` la comprueba (`cosign verify-attestation`) y
+  exige que declare el commit de la versión. No certifica un nivel SLSA: demuestra qué commit produjo qué imagen y que no fue sustituida.
+- **Simulación** (`pipelines/pruebas/simular-puerta.sh`, contra el Hub real y un registro local): escenarios `limpia`, `secreto`, `vulnerable`, `firma-ajena`,
+  `procedencia` (otro commit) y `pruebas` (con `SITE=consultorio`). Pasan los seis.
+- **Hallazgo real (14 nov):** `nginxinc/nginx-unprivileged:1.30-alpine` trae `brotli-libs` con una vulnerabilidad crítica ya corregida en Alpine y la puerta bloqueó
+  la versión limpia; los Dockerfile de los sitios nginx llevan ahora `apk upgrade brotli-libs` (con la nota para quitarlo cuando la base lo traiga).
+- **Imagen del Hub:** `backend/Dockerfile` tiene dos destinos: `dev` (con pytest y las pruebas, la usa `docker-compose.yml`) y `prod` (la etapa final, sin pruebas).
+  `pipelines/pruebas/humo-hub-api.sh` comprueba que la de producción arranque, migre, siembre, corra sin root y no lleve pytest. La CI del Hub está en `.github/workflows/ci.yml`.

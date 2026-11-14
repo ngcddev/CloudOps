@@ -1,0 +1,15 @@
+# Excepciones de `trivy config` (spec 016), cada una con su razón y fecha de vencimiento: al vencer vuelve a fallar y obliga a revisarla.
+misconfigurations:
+  - id: KSV-0014   # Root file system is not read-only
+    statement: >-
+      Los Pods ya corren sin root, sin escalada de privilegios y sin capacidades (Pod Security `restricted`), que es lo que impone el clúster.
+      Un sistema de archivos de solo lectura exige montar un emptyDir en cada ruta donde escriben nginx, uvicorn y PostgreSQL; se hará workload
+      por workload con prueba de arranque, no en bloque. Pendiente en bitácora.
+    expired_at: 2027-03-31
+  - id: DS-0002    # Image user should not be 'root'
+    paths:
+      - pipelines/runner/Dockerfile
+    statement: >-
+      El runner de Gitea Actions lanza las herramientas como contenedores hermanos con el socket de Docker del equipo, que exige root.
+      Solo corre en el equipo de desarrollo, nunca en el clúster ni en un namespace de clientes.
+    expired_at: 2027-03-31

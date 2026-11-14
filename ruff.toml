@@ -1,0 +1,20 @@
+# Configuración de ruff (lint de Python) para el Hub, los sitios y ai/: reglas que atrapan errores reales (pycodestyle,
+# pyflakes, bugbear de lo grave) sin imponer estilo. La CI corre `ruff check .` (.github/workflows/ci.yml).
+line-length = 140
+target-version = "py312"
+extend-exclude = ["frontend", "node_modules", "mlruns"]
+
+[lint]
+# E/W: errores y avisos de pycodestyle · F: pyflakes (imports sin usar, nombres sin definir) · B: errores típicos (bugbear)
+select = ["E", "W", "F", "B"]
+ignore = [
+  "B008",  # FastAPI usa Depends(...) como valor por defecto: es el patrón de la librería
+  "E501",  # el largo de línea no bloquea la CI (los comentarios en español son largos)
+  "W191",  # backend/app/models/__init__.py usa tabuladores desde el inicio del proyecto
+  "W292",  # varios archivos del proyecto terminan sin salto de línea; no es un error
+]
+
+[lint.per-file-ignores]
+# Las pruebas y los scripts de ai/ cambian sys.path antes de importar (por eso los imports van después)
+"ai/**" = ["E402"]
+"backend/tests/**" = ["E402"]

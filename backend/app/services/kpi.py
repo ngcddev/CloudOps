@@ -3,7 +3,6 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

@@ -109,7 +109,7 @@ def test_solicitudes_del_mes_cuentan_abiertas_y_cerradas(db):
     response_due_at = created_at + timedelta(minutes=15)
     resolution_due_at = created_at + timedelta(hours=4)
 
-    abierto = _solicitud(db, service.id, "abierto", created_at, response_due_at=response_due_at, resolution_due_at=resolution_due_at)
+    _solicitud(db, service.id, "abierto", created_at, response_due_at=response_due_at, resolution_due_at=resolution_due_at)
     _solicitud(
         db, service.id, "cerrado", created_at, response_due_at=response_due_at, resolution_due_at=resolution_due_at,
         first_response_at=created_at + timedelta(minutes=5), resolved_at=created_at + timedelta(minutes=10),
