@@ -45,3 +45,6 @@ catalog:
       target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/ferreteria/catalog-info.yaml
     - type: url
       target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/consultorio/catalog-info.yaml
+    # El colegio de la demo (spec 016): el Hub escribe su catalog-info.yaml al dar de alta el sitio; antes de eso Backstage avisa que no existe
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/colegio/catalog-info.yaml
