@@ -1,0 +1,43 @@
+# Pruebas de las cuentas del tablero «Servicio de los sitios» (spec 010): disponibilidad (SLI) y presupuesto de error
+# frente al SLO del plan. Mismas fórmulas que observability/grafana/dashboards/servicio-sitios.json, con `$__range` = 1h.
+# La ventana `[1h]` en el instante 1h no incluye la primera muestra (el rango es abierto por la izquierda): 719 o 720
+# sondeos de 5 s según la serie. promtool compara decimales exactos: los valores incluyen el ruido de coma flotante (−150 es −149,99999999999991). Se corre con observability/pruebas/validar.sh.
+evaluation_interval: 5s
+tests:
+  - interval: 5s
+    input_series:
+      # Sin caídas
+      - series: 'probe_success{job="sitios",client="restaurante"}'
+        values: '1x719'
+      # 3 sondeos caídos de 719 (716/719 = 99,583 %) con SLO Básico 99,0 %: se gastó 41,7 % del margen
+      - series: 'probe_success{job="sitios",client="consultorio"}'
+        values: '1x716 0 0 0'
+      # 9 caídos de 720 (98,75 %) con SLO Estándar 99,5 %: se gastó el 250 % del margen, el SLO se incumplió
+      - series: 'probe_success{job="sitios",client="ferreteria"}'
+        values: '1x711 0x8'
+    promql_expr_test:
+      - expr: '100 * avg_over_time(probe_success{job="sitios",client="restaurante"}[1h])'
+        eval_time: 1h
+        exp_samples:
+          - labels: '{client="restaurante", job="sitios"}'
+            value: 100
+      - expr: '100 * (1 - (1 - avg_over_time(probe_success{job="sitios",client="restaurante"}[1h])) / 0.001)'
+        eval_time: 1h
+        exp_samples:
+          - labels: '{client="restaurante", job="sitios"}'
+            value: 100
+      - expr: '100 * avg_over_time(probe_success{job="sitios",client="consultorio"}[1h])'
+        eval_time: 1h
+        exp_samples:
+          - labels: '{client="consultorio", job="sitios"}'
+            value: 99.58275382475661
+      - expr: '100 * (1 - (1 - avg_over_time(probe_success{job="sitios",client="consultorio"}[1h])) / 0.01)'
+        eval_time: 1h
+        exp_samples:
+          - labels: '{client="consultorio", job="sitios"}'
+            value: 58.275382475660905
+      - expr: '100 * (1 - (1 - avg_over_time(probe_success{job="sitios",client="ferreteria"}[1h])) / 0.005)'
+        eval_time: 1h
+        exp_samples:
+          - labels: '{client="ferreteria", job="sitios"}'
+            value: -149.99999999999912

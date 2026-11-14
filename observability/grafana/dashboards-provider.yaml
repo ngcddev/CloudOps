@@ -1,0 +1,13 @@
+# Proveedor de tableros de Grafana (spec 010): carga al arrancar los JSON de /etc/grafana/dashboards-hub, que salen del
+# ConfigMap grafana-dashboards. No son editables desde la interfaz: el cambio va por Git y Argo CD.
+apiVersion: 1
+providers:
+  - name: cloudops
+    orgId: 1
+    folder: CloudOps
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 60
+    options:
+      path: /etc/grafana/dashboards-hub
