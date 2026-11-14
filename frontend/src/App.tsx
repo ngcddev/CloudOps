@@ -8,6 +8,7 @@ import RequireRole from "./components/RequireRole";
 import ClientDetail from "./pages/agencia/ClientDetail";
 import ClientForm from "./pages/agencia/ClientForm";
 import Assistant from "./pages/agencia/Assistant";
+import Reports from "./pages/agencia/Reports";
 import AuditLogList from "./pages/agencia/AuditLogList";
 import ChangeList from "./pages/agencia/ChangeList";
 import ClientList from "./pages/agencia/ClientList";
@@ -18,6 +19,7 @@ import IncidentList from "./pages/agencia/IncidentList";
 import ServiceList from "./pages/agencia/ServiceList";
 import TicketDetail from "./pages/agencia/TicketDetail";
 import TicketList from "./pages/agencia/TicketList";
+import PortalReports from "./pages/portal/Reports";
 import PortalTicketList from "./pages/portal/TicketList";
 import PortalHome from "./pages/portal/Home";
 import Login from "./pages/Login";
@@ -36,6 +38,7 @@ export default function App() {
           <Route path="clientes/:id" element={<ClientDetail />} />
           <Route path="clientes/:id/metricas" element={<ClientMetrics />} />
           <Route path="asistente" element={<Assistant />} />
+          <Route path="reportes" element={<Reports />} />
           <Route path="bitacora" element={<AuditLogList />} />
           <Route path="cambios" element={<ChangeList />} />
           <Route path="servicios" element={<ServiceList />} />
@@ -50,6 +53,7 @@ export default function App() {
         <Route path="/portal" element={<PortalLayout />}>
           <Route index element={<PortalHome />} />
           <Route path="solicitudes" element={<PortalTicketList />} />
+          <Route path="reportes" element={<PortalReports />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

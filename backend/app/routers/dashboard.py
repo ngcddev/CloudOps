@@ -19,7 +19,7 @@ from app.schemas.dashboard import (
     SeriesPoint,
     TechnicianLoad,
 )
-from app.services import kpi
+from app.services import ai_drafts, kpi
 
 # Mes en formato YYYY-MM: cualquier otro valor responde 422 en vez de romper el cálculo.
 MONTH_PATTERN = r"^[0-9]{4}-(0[1-9]|1[0-2])$"
@@ -143,6 +143,7 @@ def dashboard_client_incidents(
             title=incident.title,
             status=incident.status,
             started_at=incident.started_at,
+            message=ai_drafts.mensaje_aprobado(db, incident.id),
         )
         for incident in incidents
     ]

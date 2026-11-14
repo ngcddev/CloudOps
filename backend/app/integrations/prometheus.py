@@ -1,6 +1,7 @@
 # Consulta HTTP a Prometheus para los dashboards (spec 010, T09 y T11): el job `sitios` expone el
 # Blackbox y el job `traefik` la latencia; la API las consulta y las convierte en KPI y series.
 import json
+import math
 import time
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -52,6 +53,9 @@ def query(promql: str, at: str, transport: Transport | None = None) -> float | N
             resultados = payload.get("data", {}).get("result") or []
             if resultados:
                 valor = float(resultados[0]["value"][1])
+                # Prometheus devuelve NaN (p. ej. la latencia p95 de un sitio sin tráfico): es «sin datos», no un número que comparar con el SLO
+                if not math.isfinite(valor):
+                    valor = None
     except Exception:
         valor = None
 
@@ -97,9 +101,8 @@ def query_range(
             puntos = []
             if resultados:
                 for marca, valor in resultados[0].get("values") or []:
-                    puntos.append(
-                        (datetime.fromtimestamp(float(marca), tz=timezone.utc), float(valor))
-                    )
+                    if math.isfinite(float(valor)):  # un NaN no es un punto de la gráfica
+                        puntos.append((datetime.fromtimestamp(float(marca), tz=timezone.utc), float(valor)))
     except Exception:
         puntos = None
 

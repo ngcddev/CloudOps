@@ -1,0 +1,54 @@
+# Términos que un texto para el cliente no puede traer (principio 8, docs/glosario.md: «Traducción técnico → cliente»).
+# Una palabra o frase por línea, en minúsculas y sin tildes; se buscan como palabras completas. Las líneas que empiezan con # no cuentan.
+# La consola de la agencia sí puede usarlos; el portal, los reportes ejecutivos y los mensajes al cliente, no.
+rollback
+incidente
+p1
+p2
+p3
+p4
+mttr
+sla
+slo
+ticket
+tickets
+uptime
+latencia
+vulnerabilidad
+vulnerabilidades
+despliegue
+deploy
+sync
+argo
+argocd
+commit
+git
+gitops
+gitea
+gitleaks
+trivy
+cosign
+sbom
+namespace
+pod
+pods
+ingress
+cluster
+kubernetes
+k3s
+docker
+contenedor
+prometheus
+grafana
+alertmanager
+loki
+http
+https
+error 500
+500
+5xx
+servidor
+backend
+frontend
+base de datos
+version estable
