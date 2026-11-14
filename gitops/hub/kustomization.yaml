@@ -6,3 +6,15 @@ resources:
   - api.yaml
   - web.yaml
   - ingress.yaml
+  - backup.yaml
+# Los scripts del respaldo viajan como ConfigMap (el CronJob corre respaldar.sh); restaurar.sh se usa a mano.
+# Sin sufijo con hash: kustomize no lo actualiza en la referencia de un CronJob y el volumen apuntaría a un ConfigMap
+# inexistente. El CronJob lee el script en cada ejecución, así que un cambio se toma en la siguiente corrida.
+configMapGenerator:
+  - name: hub-respaldo
+    # Sin esta línea el ConfigMap se crea en el namespace del contexto (default) y el CronJob del namespace hub no lo encuentra
+    namespace: hub
+    files:
+      - respaldo/respaldar.sh
+    options:
+      disableNameSuffixHash: true
