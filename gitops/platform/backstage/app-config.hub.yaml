@@ -1,6 +1,6 @@
 # Configuración de Backstage para el Hub (spec 005, T22): se suma a app-config.yaml y
-# app-config.production.yaml de la imagen. Catálogo mínimo, sin base de datos (SQLite en memoria):
-# al reiniciar, el catálogo se vuelve a leer de hub-gitops.
+# app-config.production.yaml de la imagen. Catálogo mínimo con SQLite en un volumen (spec 017): las ubicaciones fijas
+# de abajo se releen de hub-gitops en cada arranque y lo registrado con la plantilla se conserva.
 app:
   title: Catálogo · Forja Digital
   baseUrl: http://backstage.hub.local
@@ -15,9 +15,12 @@ backend:
   # ERR_CERT_AUTHORITY_INVALID. Con un certificado real se puede volver a activar.
   csp:
     upgrade-insecure-requests: false
+  # SQLite en un archivo del volumen backstage-data (spec 017, T02): lo que registra la plantilla «Sitio de cliente» sobrevive a los reinicios.
+  # Con ':memory:' el catálogo se rearmaba solo con las ubicaciones fijas de este archivo y el sitio registrado desaparecía.
   database:
     client: better-sqlite3
-    connection: ':memory:'
+    connection:
+      directory: /data/sqlite
   # Entorno de pruebas del PC A, solo accesible desde la red local: la API del catálogo se lee sin
   # token (la demo y `curl` lo necesitan). Si Backstage se expone fuera, quitar esta línea.
   auth:

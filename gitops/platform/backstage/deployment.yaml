@@ -8,6 +8,8 @@ metadata:
     app: backstage
 spec:
   replicas: 1
+  strategy:
+    type: Recreate   # SQLite en un volumen ReadWriteOnce: nunca dos Pods con el mismo archivo
   selector:
     matchLabels:
       app: backstage
@@ -56,6 +58,7 @@ spec:
           volumeMounts:
             - { name: config, mountPath: /config, readOnly: true }
             - { name: techdocs, mountPath: /techdocs }
+            - { name: datos, mountPath: /data }
       volumes:
         - name: config
           configMap:
@@ -63,6 +66,9 @@ spec:
         - name: techdocs
           persistentVolumeClaim:
             claimName: backstage-techdocs
+        - name: datos
+          persistentVolumeClaim:
+            claimName: backstage-datos
 ---
 apiVersion: v1
 kind: Service
@@ -87,3 +93,15 @@ spec:
   resources:
     requests:
       storage: 256Mi
+---
+# Base SQLite del catálogo de Backstage (spec 017, T02): conserva lo que se registra desde la interfaz o con la plantilla.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backstage-datos
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 512Mi

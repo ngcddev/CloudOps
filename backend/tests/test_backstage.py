@@ -69,3 +69,17 @@ def test_techdocs_se_sirve_desde_un_volumen_que_sobrevive_a_los_reinicios():
     assert any(v["name"] == "techdocs" and "persistentVolumeClaim" in v for v in pod["volumes"])
     assert pod["securityContext"]["fsGroup"] == 1000
     assert any(d["kind"] == "PersistentVolumeClaim" and d["metadata"]["name"] == "backstage-techdocs" for d in _yaml("deployment.yaml"))
+
+
+def test_el_catalogo_guarda_lo_registrado_en_un_volumen_y_no_en_memoria():
+    """Con ':memory:' lo que registra la plantilla desaparecía en el siguiente reinicio (lo mostró la revisión de T02)."""
+    conexion = _config()["backend"]["database"]["connection"]
+    despliegue = next(d for d in _yaml("deployment.yaml") if d["kind"] == "Deployment")
+    pod = despliegue["spec"]["template"]["spec"]
+    montajes = {m["name"]: m["mountPath"] for m in pod["containers"][0]["volumeMounts"]}
+
+    assert conexion != ":memory:" and conexion["directory"].startswith(montajes["datos"])
+    assert any(v["name"] == "datos" and v["persistentVolumeClaim"]["claimName"] == "backstage-datos" for v in pod["volumes"])
+    assert any(d["kind"] == "PersistentVolumeClaim" and d["metadata"]["name"] == "backstage-datos" for d in _yaml("deployment.yaml"))
+    # SQLite en un volumen ReadWriteOnce: dos Pods a la vez se pisarían el archivo
+    assert despliegue["spec"]["strategy"]["type"] == "Recreate"

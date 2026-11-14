@@ -323,3 +323,4 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 - **Crear → Sitio de cliente** registra en el catálogo el `catalog-info.yaml` que el Hub escribió al dar de alta el sitio (sin editar la configuración de Backstage). La plantilla vive en `platform/backstage/templates/` y se publica con `actualizar-hub-gitops.sh gitops/platform/backstage`.
 
 - **TechDocs:** la imagen de Backstage no trae mkdocs ni Docker; `platform/backstage/publicar-docs.sh` genera el sitio con la imagen `spotify/techdocs` y lo copia al volumen `backstage-techdocs` (`builder: external`). La fuente está en `platform/backstage/docs/` y se ve en `http://backstage.hub.local/docs/default/component/plataforma-cloudops`.
+- **El catálogo persiste:** Backstage guarda su base SQLite en el volumen `backstage-datos`; lo que se registra con la plantilla sobrevive a los reinicios (con `:memory:` se perdía). Probado reiniciando el Pod con un sitio registrado.
