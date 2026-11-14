@@ -1,0 +1,141 @@
+{"text": "¿Cuál es el horario de atención del plan Básico?", "label": "en_tema"}
+{"text": "tickets vencidos por cliente", "label": "en_tema"}
+{"text": "Cuál es la mejor marca de zapatos", "label": "fuera_de_tema"}
+{"text": "dime la receta del sancocho", "label": "fuera_de_tema"}
+{"text": "¿Cuánto cuesta un vuelo a Madrid?", "label": "fuera_de_tema"}
+{"text": "¿Cómo despliego una versión nueva del sitio del restaurante?", "label": "en_tema"}
+{"text": "¿Qué cliente tiene más tickets vencidos?", "label": "en_tema"}
+{"text": "¿Qué significa el error de Trivy en mi cambio?", "label": "en_tema"}
+{"text": "¿Qué significa la prioridad P1?", "label": "en_tema"}
+{"text": "Ayúdame a elegir un regalo de cumpleaños", "label": "fuera_de_tema"}
+{"text": "¿Cómo cuido a mi perro?", "label": "fuera_de_tema"}
+{"text": "¿Cómo califico si un ticket es de prioridad alta?", "label": "en_tema"}
+{"text": "¿Cuál es el mejor celular del mercado?", "label": "fuera_de_tema"}
+{"text": "versión estable del servicio", "label": "en_tema"}
+{"text": "Escribe un poema sobre el mar", "label": "fuera_de_tema"}
+{"text": "¿Dónde está el enlace a los registros del incidente en Grafana?", "label": "en_tema"}
+{"text": "¿Cuántos clientes tiene la agencia Forja Digital?", "label": "en_tema"}
+{"text": "¿Cómo explico un incidente al cliente sin jerga técnica?", "label": "en_tema"}
+{"text": "¿Por qué el servicio aparece como caído?", "label": "en_tema"}
+{"text": "¿Cuál es el sentido de la vida?", "label": "fuera_de_tema"}
+{"text": "Gracias", "label": "fuera_de_tema"}
+{"text": "¿Cómo veo quién desplegó la versión actual?", "label": "en_tema"}
+{"text": "quién descubrió américa", "label": "fuera_de_tema"}
+{"text": "¿Qué namespace usa el consultorio?", "label": "en_tema"}
+{"text": "¿Cómo hago una torta de chocolate?", "label": "fuera_de_tema"}
+{"text": "¿Cuántos días tiene un año bisiesto?", "label": "fuera_de_tema"}
+{"text": "¿Qué carga de trabajo tiene cada técnico?", "label": "en_tema"}
+{"text": "¿Cómo aprendo a tocar guitarra?", "label": "fuera_de_tema"}
+{"text": "¿Cómo se dice gato en francés?", "label": "fuera_de_tema"}
+{"text": "Háblame de política internacional", "label": "fuera_de_tema"}
+{"text": "¿Cómo declaro renta en Colombia?", "label": "fuera_de_tema"}
+{"text": "¿Cómo se cultiva el café?", "label": "fuera_de_tema"}
+{"text": "¿Cuál es el planeta más grande?", "label": "fuera_de_tema"}
+{"text": "¿Quién escribió Cien años de soledad?", "label": "fuera_de_tema"}
+{"text": "¿Cómo bajo de peso rápido?", "label": "fuera_de_tema"}
+{"text": "¿Qué datos semilla trae la demo?", "label": "en_tema"}
+{"text": "Recomiéndame una película para esta noche", "label": "fuera_de_tema"}
+{"text": "¿Cuándo se considera cumplido el SLA de solución?", "label": "en_tema"}
+{"text": "¿Cuál es la matriz de prioridades?", "label": "en_tema"}
+{"text": "¿Qué diferencia hay entre el plan Básico y el Premium?", "label": "en_tema"}
+{"text": "¿Cómo apruebo el mensaje al cliente?", "label": "en_tema"}
+{"text": "¿Cuál es la distancia de la Tierra a la Luna?", "label": "fuera_de_tema"}
+{"text": "¿Cómo agrego un usuario de la agencia?", "label": "en_tema"}
+{"text": "¿Qué es la inteligencia artificial en general?", "label": "fuera_de_tema"}
+{"text": "¿Qué es un servicio operativo, degradado o caído?", "label": "en_tema"}
+{"text": "¿Cómo hago rollback a la versión estable?", "label": "en_tema"}
+{"text": "¿Qué ropa uso para una boda?", "label": "fuera_de_tema"}
+{"text": "¿Quién eres?", "label": "fuera_de_tema"}
+{"text": "¿Quién es el presidente de Estados Unidos?", "label": "fuera_de_tema"}
+{"text": "¿Cómo funciona la solicitud de cambio por GitOps?", "label": "en_tema"}
+{"text": "¿Dónde queda la Torre Eiffel?", "label": "fuera_de_tema"}
+{"text": "¿Qué hago si me duele la cabeza?", "label": "fuera_de_tema"}
+{"text": "¿Qué es el bitcoin y cómo invierto?", "label": "fuera_de_tema"}
+{"text": "¿Qué debo comer antes de correr?", "label": "fuera_de_tema"}
+{"text": "¿Cómo se llama el río más largo del mundo?", "label": "fuera_de_tema"}
+{"text": "¿Cómo inicio sesión en el portal del cliente?", "label": "en_tema"}
+{"text": "¿Cómo entreno para una maratón?", "label": "fuera_de_tema"}
+{"text": "¿Qué es un rollback y cuándo se usa?", "label": "en_tema"}
+{"text": "¿Cómo se calcula el costo por cliente?", "label": "en_tema"}
+{"text": "¿Qué significa que un cambio esté en validación?", "label": "en_tema"}
+{"text": "¿Cómo cambio la prioridad de un ticket?", "label": "en_tema"}
+{"text": "¿Qué signo del zodiaco soy si nací en mayo?", "label": "fuera_de_tema"}
+{"text": "¿Cuál es el SLA de respuesta de un ticket P2?", "label": "en_tema"}
+{"text": "¿A qué hora juega la selección?", "label": "fuera_de_tema"}
+{"text": "¿Por qué mi cambio quedó rechazado por seguridad?", "label": "en_tema"}
+{"text": "¿Qué plan tiene Dental Popayán?", "label": "en_tema"}
+{"text": "Dame consejos para una entrevista de trabajo", "label": "fuera_de_tema"}
+{"text": "resumen del último incidente del restaurante", "label": "en_tema"}
+{"text": "¿Cómo veo el historial de incidentes de un cliente?", "label": "en_tema"}
+{"text": "¿Cómo registro una nota en un incidente?", "label": "en_tema"}
+{"text": "¿Cómo apruebo una solicitud de cambio?", "label": "en_tema"}
+{"text": "¿Qué versión corre hoy el sitio de la ferretería?", "label": "en_tema"}
+{"text": "Resuelve esta ecuación: 2x + 3 = 9", "label": "fuera_de_tema"}
+{"text": "¿Cómo sé si Argo CD sincronizó el cambio?", "label": "en_tema"}
+{"text": "¿Cuántos habitantes tiene China?", "label": "fuera_de_tema"}
+{"text": "¿Quién pintó la Mona Lisa?", "label": "fuera_de_tema"}
+{"text": "¿Qué tiempo hará mañana en Bogotá?", "label": "fuera_de_tema"}
+{"text": "¿Qué es el MTTR en el tablero?", "label": "en_tema"}
+{"text": "Cuéntame la historia de Roma", "label": "fuera_de_tema"}
+{"text": "¿Por qué me aparece sin plazo en una solicitud?", "label": "en_tema"}
+{"text": "¿Cómo creo un cliente nuevo en el Hub?", "label": "en_tema"}
+{"text": "¿Cómo reviso la bitácora de auditoría?", "label": "en_tema"}
+{"text": "como reviso el sla de un ticket", "label": "en_tema"}
+{"text": "¿Qué es la fotosíntesis?", "label": "fuera_de_tema"}
+{"text": "Ayúdame con mi tarea de matemáticas", "label": "fuera_de_tema"}
+{"text": "Ayúdame a escribir mi hoja de vida", "label": "fuera_de_tema"}
+{"text": "¿Cómo preparo una receta de arepas?", "label": "fuera_de_tema"}
+{"text": "¿Cómo abro un incidente manual?", "label": "en_tema"}
+{"text": "¿Dónde veo la disponibilidad del mes?", "label": "en_tema"}
+{"text": "¿Quién ganó el último mundial de fútbol?", "label": "fuera_de_tema"}
+{"text": "Recomienda un libro de ciencia ficción", "label": "fuera_de_tema"}
+{"text": "¿Qué significa soñar con agua?", "label": "fuera_de_tema"}
+{"text": "¿Qué significa el estado en espera de un ticket?", "label": "en_tema"}
+{"text": "¿Qué es un incidente mitigado?", "label": "en_tema"}
+{"text": "¿Cuál es el mejor restaurante de Popayán para cenar?", "label": "fuera_de_tema"}
+{"text": "¿Cómo se juega ajedrez?", "label": "fuera_de_tema"}
+{"text": "¿Cómo está el dólar hoy?", "label": "fuera_de_tema"}
+{"text": "¿Qué ve el cliente en su portal?", "label": "en_tema"}
+{"text": "Hola, ¿cómo estás?", "label": "fuera_de_tema"}
+{"text": "¿Cómo se cierra un incidente?", "label": "en_tema"}
+{"text": "¿Cuál es la montaña más alta del mundo?", "label": "fuera_de_tema"}
+{"text": "¿Cómo hago pan en casa?", "label": "fuera_de_tema"}
+{"text": "Dame ideas para una fiesta infantil", "label": "fuera_de_tema"}
+{"text": "¿Qué es un agujero negro?", "label": "fuera_de_tema"}
+{"text": "¿Cuántos goles metió Messi?", "label": "fuera_de_tema"}
+{"text": "¿Cómo se escribe hola en inglés?", "label": "fuera_de_tema"}
+{"text": "Cuéntame un cuento corto", "label": "fuera_de_tema"}
+{"text": "¿Qué día es hoy?", "label": "fuera_de_tema"}
+{"text": "¿Qué hora es en Tokio?", "label": "fuera_de_tema"}
+{"text": "¿Cómo cambio una llanta del carro?", "label": "fuera_de_tema"}
+{"text": "¿Cuál es la mejor dieta para ganar músculo?", "label": "fuera_de_tema"}
+{"text": "¿Qué significa la palabra efímero?", "label": "fuera_de_tema"}
+{"text": "¿Quién fue Simón Bolívar?", "label": "fuera_de_tema"}
+{"text": "Sugiéreme un destino para vacaciones", "label": "fuera_de_tema"}
+{"text": "¿Cómo se hace un nudo de corbata?", "label": "fuera_de_tema"}
+{"text": "¿Cuántas calorías tiene una manzana?", "label": "fuera_de_tema"}
+{"text": "Quiero aprender a nadar", "label": "fuera_de_tema"}
+{"text": "¿Cómo funciona un motor de combustión?", "label": "fuera_de_tema"}
+{"text": "¿Qué plantas puedo tener en un apartamento?", "label": "fuera_de_tema"}
+{"text": "¿Cuál es la capital de Japón?", "label": "fuera_de_tema"}
+{"text": "Hola", "label": "fuera_de_tema"}
+{"text": "Hola, ¿qué tal?", "label": "fuera_de_tema"}
+{"text": "Buenas tardes", "label": "fuera_de_tema"}
+{"text": "Muchas gracias", "label": "fuera_de_tema"}
+{"text": "¿Cómo te llamas?", "label": "fuera_de_tema"}
+{"text": "¿Puedes ayudarme con mi tesis de historia?", "label": "fuera_de_tema"}
+{"text": "Escribe un cuento sobre un dragón", "label": "fuera_de_tema"}
+{"text": "¿Cuántos kilómetros hay entre Cali y Popayán?", "label": "fuera_de_tema"}
+{"text": "¿Cuál es el mejor equipo de fútbol de Colombia?", "label": "fuera_de_tema"}
+{"text": "Recomiéndame música para estudiar", "label": "fuera_de_tema"}
+{"text": "¿Cómo se prepara el café perfecto?", "label": "fuera_de_tema"}
+{"text": "¿Qué es el cambio climático?", "label": "fuera_de_tema"}
+{"text": "¿Cómo hago una presentación de PowerPoint bonita?", "label": "fuera_de_tema"}
+{"text": "Dame un horóscopo", "label": "fuera_de_tema"}
+{"text": "¿Cuál es el animal más rápido?", "label": "fuera_de_tema"}
+{"text": "¿Cómo funciona el internet en general?", "label": "fuera_de_tema"}
+{"text": "¿Cuánto vale un apartamento en Bogotá?", "label": "fuera_de_tema"}
+{"text": "¿Qué es el yoga?", "label": "fuera_de_tema"}
+{"text": "Ayúdame a planear mi semana de estudio", "label": "fuera_de_tema"}
+{"text": "¿Quién inventó la bombilla?", "label": "fuera_de_tema"}
+{"text": "¿Cómo se dice gracias en alemán?", "label": "fuera_de_tema"}
