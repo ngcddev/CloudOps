@@ -38,6 +38,8 @@ export interface Service {
   template: Template;
   namespace: string;
   status: ServiceStatus;
+  // Estado que informa Argo CD; «Unknown» = el sitio todavía no se dio de alta en GitOps (spec 016)
+  sync_status?: string;
   plan: Plan;
 }
 
@@ -633,6 +635,22 @@ export async function createWorkLog(id: number, input: WorkLogInput): Promise<Wo
     return workLog;
   }
   return request<WorkLog>(`/tickets/${id}/work-logs`, { method: "POST", body: JSON.stringify(input) });
+}
+
+export interface ProvisionResult {
+  service_id: number;
+  namespace: string;
+  host: string;
+  files: string[];
+  commits: string[];
+}
+
+// Da de alta el sitio en GitOps: el Hub escribe sus manifiestos en hub-gitops y Argo CD lo crea (spec 016).
+export async function provisionService(serviceId: number): Promise<ProvisionResult> {
+  if ((await detectMode()) === "mock") {
+    return { service_id: serviceId, namespace: "cliente-demo", host: "demo.hub.local", files: ["clients/demo/kustomization.yaml"], commits: ["0000000"] };
+  }
+  return request<ProvisionResult>(`/services/${serviceId}/provision`, { method: "POST" });
 }
 
 export async function registerClient(
