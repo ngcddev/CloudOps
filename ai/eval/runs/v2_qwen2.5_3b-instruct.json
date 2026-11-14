@@ -1,0 +1,20 @@
+{
+  "fecha_utc": "2026-11-13T22:09:52.382342+00:00",
+  "modelo": "qwen2.5:3b-instruct",
+  "prompt": "v2",
+  "metricas": {
+    "preguntas": 40,
+    "recuperacion_pct": 100.0,
+    "sin_info_correctas": 9,
+    "sin_info_total": 9,
+    "acierto_pct": 87.5,
+    "latencia_media_s": 2.8
+  },
+  "fallos": [
+    "[respuesta] ¿Una solicitud puede pasar de abierto a resuelto directamente?  → falta: en progreso\n      «No, una solicitud no puede pasar de abierto a resuelto directamente. Para pasar de abierto a resuelto, primero debe pasar a en espera.»",
+    "[respuesta] ¿Puedo editar la bitácora?  → dijo que no sabía, pero la ayuda sí lo tiene\n      «No tengo esa información en mi ayuda del Hub.»",
+    "[respuesta] ¿Qué ve el cliente en su portal?  → falta: solicitudes\n      «El cliente ve en Inicio: \n- Si su sitio está disponible.\n- La disponibilidad del mes en comparación con el objetivo de su plan.\n- Los incidentes del mes.\n- El tiempo que tardamos en recuperar su sitio.\n- Todo en lenguaje»",
+    "[respuesta] ¿Cuánto tiempo tiene un cambio para quedar publicado antes de fallar?  → dijo que no sabía, pero la ayuda sí lo tiene\n      «No tengo esa información en mi ayuda del Hub.»",
+    "[respuesta] ¿Dónde veo los reportes?  → dijo que no sabía, pero la ayuda sí lo tiene\n      «No tengo esa información en mi ayuda del Hub.»"
+  ]
+}

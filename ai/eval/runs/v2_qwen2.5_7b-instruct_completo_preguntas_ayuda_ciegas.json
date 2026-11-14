@@ -1,0 +1,14 @@
+{
+  "fecha_utc": "2026-11-13T22:14:05.855372+00:00",
+  "modelo": "qwen2.5:7b-instruct",
+  "prompt": "v2",
+  "metricas": {
+    "preguntas": 16,
+    "recuperacion_pct": 100.0,
+    "sin_info_correctas": 4,
+    "sin_info_total": 4,
+    "acierto_pct": 100.0,
+    "latencia_media_s": 3.2
+  },
+  "fallos": []
+}

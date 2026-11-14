@@ -1,0 +1,25 @@
+{
+  "fecha_utc": "2026-11-14T08:34:48.667916+00:00",
+  "modelo": "qwen2.5:7b-instruct",
+  "prompt": "v3",
+  "contexto": "rag",
+  "embeddings": "nomic-embed-text",
+  "metricas": {
+    "preguntas": 40,
+    "recuperacion_pct": 93.5,
+    "sin_info_correctas": 9,
+    "sin_info_total": 9,
+    "rag_k": 4,
+    "rag_umbral": 0.6,
+    "acierto_pct": 92.5,
+    "latencia_media_s": 1.0
+  },
+  "umbral_sugerido": null,
+  "fallos": [
+    "[recuperación] ¿Qué pasa cuando el sitio de un cliente cae?  → vio ['Portal del cliente', 'Crear una solicitud (cliente)', 'Mensaje al cliente tras un incidente', 'Registrar un cliente'], esperaba «Abrir un incidente»",
+    "[respuesta] ¿Qué pasa cuando el sitio de un cliente cae?  → falta: p1, alertmanager\n      «Cuando el sitio de un cliente cae, el cliente puede crear una nueva solicitud en la pantalla Solicitudes. Elige \"Reportar un problema\", escribe un título y una descripción sobre el incidente y envía la solicitud.»",
+    "[recuperación] ¿El asistente puede aprobar cambios por mí?  → vio ['Aprobar o rechazar un cambio', 'Estados de un cambio', 'Asignar, cambiar estado y registrar horas', 'Pedir un cambio de versión'], esperaba «Este asistente»",
+    "[respuesta] ¿El asistente puede aprobar cambios por mí?  → dijo que no sabía, pero la ayuda sí lo tiene\n      «No tengo esa información en mi ayuda del Hub.»",
+    "[respuesta] ¿Dónde veo los reportes?  → dijo que no sabía, pero la ayuda sí lo tiene\n      «No tengo esa información en mi ayuda del Hub.»"
+  ]
+}
