@@ -26,6 +26,9 @@ TABLES = {
     "security_checks",
     "incidents",
     "incident_events",
+    "ai_queries",
+    "kb_documents",
+    "kb_chunks",
 }
 
 
@@ -57,6 +60,23 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
         assert {"password_hash", "is_active", "last_login_at"} <= {
             c["name"] for c in inspect(connection).get_columns("users")
         }
+
+        # 0012 (spec 012): quita la base de conocimiento del RAG y las dos columnas de ai_queries; la tabla sigue
+        consultas = {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+        assert {"context_mode", "retrieval_score", "context_sections"} <= consultas
+        command.downgrade(_config(connection), "-1")
+        consultas = {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+        assert not {"context_mode", "retrieval_score"} & consultas and "context_sections" in consultas
+        assert not {"kb_documents", "kb_chunks"} & set(inspect(connection).get_table_names())
+
+        # 0011 (spec 012): quita las secciones de ayuda de cada consulta; la tabla sigue
+        assert "context_sections" in {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+        command.downgrade(_config(connection), "-1")
+        assert "context_sections" not in {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+
+        # 0010 (spec 012): quita el registro de preguntas al asistente
+        command.downgrade(_config(connection), "-1")
+        assert "ai_queries" not in set(inspect(connection).get_table_names())
 
         # 0009 (spec 009): quita las columnas del rollback; los incidentes de la 008 siguen ahí
         incident_columns = {c["name"] for c in inspect(connection).get_columns("incidents")}
