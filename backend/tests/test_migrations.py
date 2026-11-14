@@ -29,6 +29,8 @@ TABLES = {
     "ai_queries",
     "kb_documents",
     "kb_chunks",
+    "ai_drafts",
+    "reports",
 }
 
 
@@ -60,6 +62,16 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
         assert {"password_hash", "is_active", "last_login_at"} <= {
             c["name"] for c in inspect(connection).get_columns("users")
         }
+
+        # 0014 (spec 013): quita los reportes; lo anterior sigue ahí
+        assert "reports" in set(inspect(connection).get_table_names())
+        command.downgrade(_config(connection), "-1")
+        assert "reports" not in set(inspect(connection).get_table_names())
+
+        # 0013 (spec 012): quita los borradores del asistente; lo anterior sigue ahí
+        assert "ai_drafts" in set(inspect(connection).get_table_names())
+        command.downgrade(_config(connection), "-1")
+        assert "ai_drafts" not in set(inspect(connection).get_table_names())
 
         # 0012 (spec 012): quita la base de conocimiento del RAG y las dos columnas de ai_queries; la tabla sigue
         consultas = {c["name"] for c in inspect(connection).get_columns("ai_queries")}
