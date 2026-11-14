@@ -1,0 +1,92 @@
+# Respaldo diario de la configuración de Argo CD (spec 016): Applications, ApplicationSets, proyectos y los ConfigMaps de configuración, en YAML.
+# NO incluye Secrets (credenciales de repositorios): se vuelven a crear con los scripts del clúster. Solo lectura: el Role no escribe nada.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: respaldo
+  namespace: argocd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: respaldo
+  namespace: argocd
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications", "applicationsets", "appprojects"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: respaldo
+  namespace: argocd
+subjects:
+  - { kind: ServiceAccount, name: respaldo, namespace: argocd }
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: respaldo
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: argocd-respaldos
+  namespace: argocd
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: argocd-respaldo
+  namespace: argocd
+spec:
+  schedule: "40 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: respaldo
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            fsGroup: 65532
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: exportar
+              image: alpine/k8s:1.32.9
+              command: ["sh", "-c"]
+              args:
+                - |
+                  set -e
+                  destino="/respaldos/argocd-$(date -u +%Y%m%d-%H%M%S).yaml"
+                  kubectl -n argocd get applications.argoproj.io,applicationsets.argoproj.io,appprojects.argoproj.io -o yaml > "$destino"
+                  kubectl -n argocd get configmap argocd-cm argocd-cmd-params-cm argocd-rbac-cm -o yaml >> "$destino"
+                  echo "respaldo: $destino ($(wc -l < "$destino") líneas)"
+                  ls -t /respaldos/argocd-*.yaml | tail -n +6 | xargs -r rm -f
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: { drop: [ALL] }
+              resources:
+                requests: { cpu: 20m, memory: 32Mi }
+                limits: { cpu: 200m, memory: 128Mi }
+              volumeMounts:
+                - { name: respaldos, mountPath: /respaldos }
+          volumes:
+            - name: respaldos
+              persistentVolumeClaim: { claimName: argocd-respaldos }
