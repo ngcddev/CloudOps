@@ -6,7 +6,7 @@ CloudOps Client Hub **no es otro Vercel**. Ayuda a una agencia digital a gestion
 
 Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep – 30 nov 2026. Equipo de 5: 4 ingenieros de sistemas y 1 ingeniero industrial.
 
-**Documentos de referencia:** [constitución](constitution/README.md) ([misión](constitution/mission.md) · [principios](constitution/principles.md) · [roadmap](constitution/roadmap.md) · [tech stack](constitution/tech-stack.md) · [convenciones](constitution/conventions.md) · [nombres canónicos](constitution/canonical-names.md)) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [glosario](docs/glosario.md)
+**Documentos de referencia:** [constitución](constitution/README.md) ([misión](constitution/mission.md) · [principios](constitution/principles.md) · [roadmap](constitution/roadmap.md) · [tech stack](constitution/tech-stack.md) · [convenciones](constitution/conventions.md) · [nombres canónicos](constitution/canonical-names.md)) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [glosario](docs/glosario.md) · [documento del diplomado](docs/diplomado-cloudforge-ai-5.0.md) · [cumplimiento del diplomado](docs/cumplimiento-diplomado.md)
 
 ## Tabla de contenidos
 
@@ -39,20 +39,19 @@ Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep 
 
 ## Estado actual
 
-> Módulo 1 (28 sep – 1 oct). El repositorio contiene **solo documentación**: todavía no hay código,
-> contenedores ni plataforma instalada.
+> Módulo 4 (24 oct – 3 nov). El Hub (backend y frontend), los sitios demo, los manifiestos GitOps, la puerta de
+> seguridad, la observabilidad y la infraestructura como código ya existen en este repositorio.
 
 | Qué | Estado |
 |---|---|
 | Constitución, requerimientos, calendario, stack, glosario y guía SDD | Listos |
-| 16 specs (`spec.md` + `plan.md`, de 000 a 015) | Listas |
-| `tasks.md` de 000, 001 y 002 (módulo 1) | Listos, sin tareas tomadas |
-| `tasks.md` de 003 a 015 | Se escriben al empezar su módulo |
-| Código del Hub, sitios demo, manifiestos, pipelines | Aún no existen |
+| Specs 001 a 007, 009 y 010 | Terminadas |
+| Specs 000, 008 y 011 | En curso (quedan la demo de la 000, T29/T32/T33 de la 008 y T15 de la 011) |
+| Spec 012 | En curso: compuerta de ML, asistente con Ollama, MLflow (registro y alias `production`), RAG con embeddings y evaluación de inyección de prompts listos ([bitácora](docs/bitacora.md)); los borradores de incidente con IA también; falta llevarlo al clúster (T27) |
+| Spec 013 | En curso: reportes operativo y ejecutivo (datos congelados, PDF, pantallas de agencia y portal) listos; falta revisarlos con Industrial |
+| Specs 014 y 015 | Solo spec y plan; esperan su módulo |
 
-**Siguiente paso:** el Industrial arranca la [spec 000](specs/000-modelo-de-servicio/tasks.md)
-(matriz P1–P4 antes del 2 oct), y Sistemas arranca las [specs 001](specs/001-clientes-y-planes/tasks.md)
-y [002](specs/002-plantillas-de-sitio/tasks.md).
+Estado por spec y tareas abiertas: [mapa de specs](specs/README.md).
 
 ## El problema
 
@@ -165,7 +164,7 @@ Todos los datos de la demo son ficticios.
 
 **Roles:** `agencia` (administrador y técnico: ve todo) y `cliente` (usuario de una PyME: ve solo lo suyo).
 
-**Estados:** ticket `abierto → en_progreso → en_espera → resuelto → cerrado` · incidente `abierto → mitigado → cerrado` · servicio `operativo · degradado · caido` · solicitud de cambio `pendiente → aprobada → en_validacion → desplegada | rechazada` · texto de IA `borrador_ia → aprobado | descartado`.
+**Estados:** ticket `abierto → en_progreso → en_espera → resuelto → cerrado` · incidente `abierto → mitigado → cerrado` · servicio `operativo · degradado · caido` · solicitud de cambio `pendiente → aprobada → en_validacion → desplegada | fallida`, o `pendiente → rechazada` · texto de IA `borrador_ia → aprobado | descartado`.
 
 ## Tech stack
 
@@ -189,25 +188,28 @@ Cada herramienta de plataforma se instala cuando el diplomado cubre su módulo. 
 | Git, CI y registro | **Gitea + Gitea Actions** | 2–3 | Autoalojado; incluye registro de imágenes |
 | GitOps | **Argo CD** | 2 | Fuente de verdad = repo Git; detecta drift; hace rollback |
 | Platform Engineering | **Backstage** | 2 | Catálogo mínimo de clientes y servicios; se apaga si falta RAM |
+| CI del Hub | **GitHub Actions / Gitea Actions** (`.github/workflows/ci.yml`) | 3 | ruff, pytest, `tsc`/`vite build`, validación de observabilidad, trazas y respaldo, y para la imagen de producción: Gitleaks, humo, Trivy y Syft |
 | Secretos en código | **Gitleaks** | 3 | Bloquea commits con secretos |
 | Vulnerabilidades | **Trivy** | 3 | Bloquea imágenes con CVE críticas |
 | SBOM | **Syft** | 3 | Inventario de componentes de cada imagen |
-| Firma | **Cosign / Sigstore** | 3 | Firma y `cosign verify` en el pipeline |
+| Firma y procedencia | **Cosign / Sigstore** | 3 | Firma, `cosign verify` y atestación de procedencia SLSA v1 (commit, repositorio y corrida) verificada contra el commit de la versión |
 | Seguridad de Pods | **Pod Security Admission** | 3 | Nativo de Kubernetes, perfil `restricted` |
 | IaC | **OpenTofu** (compatible con Terraform) | 4 | HCL genérico; binario final según el profesor |
 | Bootstrap de SO | Ansible (opcional) | 4 | Solo para instalar k3s |
 | Métricas y alertas | **Prometheus + Grafana + Alertmanager** | 4 | Alertmanager dispara el webhook que abre el incidente |
 | Logs | **Loki** | 4 | Retención corta |
+| Trazas | **Tempo** | 4 | Recibe las trazas OTLP del Hub (peticiones y etapas del asistente, sin el texto de las preguntas); se ven en Grafana → Explore → Tempo |
 | Uptime | **Blackbox Exporter** | 4 | Sonda HTTP a cada sitio |
-| Instrumentación | **OpenTelemetry** | 4 | Métricas custom (formularios recibidos/fallidos) |
+| Instrumentación | **OpenTelemetry** | 4 | Métricas custom de los sitios (formularios) y trazas del Hub (FastAPI y etapas del asistente) |
 
 ### IA local
 
 | Capa | Herramienta | Módulo | Notas |
 |---|---|---|---|
 | LLM | **Ollama** | 5 | Qwen2.5 7B-Instruct o Llama 3.1 8B (Q4, ≈ 5 GB VRAM); respaldo Qwen2.5 3B |
-| RAG | **AnythingLLM** | 5 | Embeddings con `nomic-embed-text` servido desde Ollama |
-| MLOps | **MLflow** (Docker Compose) | 5 | Versiones de prompt y modelo con sus evaluaciones |
+| RAG | **RAG propio** en el Hub: `nomic-embed-text` (Ollama) + índice en PostgreSQL (`kb_documents`, `kb_chunks`) | 5 | Similitud coseno en Python, sin extensiones; cae a búsqueda léxica si Ollama no responde. Reemplaza a AnythingLLM (ver [bitácora](docs/bitacora.md)) |
+| MLOps | **MLflow** (Docker Compose, `ai/servidor-mlflow/`) | 5 | Experimentos, Model Registry (`compuerta-asistente` con alias `production`) y evaluaciones del asistente |
+| Compuerta del asistente | **Clasificador Naive Bayes** (Python puro, JSON de ~40 KB) | 5 | Decide si la pregunta trata del Hub antes de despertar al LLM; se entrena con `ai/classifier/train.py` y se registra en MLflow |
 | Multimodal | **Stability Matrix + ComfyUI** | 6 | SD 1.5 (SDXL Turbo solo si cabe en 6 GB); ilustración de la infografía |
 
 Detalle y justificación de cada elección en [constitution/tech-stack.md](constitution/tech-stack.md).
@@ -323,11 +325,11 @@ Guía completa en [docs/sdd.md](docs/sdd.md).
 | [004](specs/004-mesa-de-servicio/spec.md) | Mesa de servicio: tickets y prioridad | Sistemas · apoya Industrial | 2 | RF-04, RF-05 | 000, 001 |
 | [005](specs/005-cambios-gitops/spec.md) | Cambios por GitOps | Sistemas | 2 | RF-06, RF-07, RF-22, RNF-04 | 003, 004 |
 | [006](specs/006-puerta-de-seguridad/spec.md) | Puerta de calidad y seguridad | Sistemas | 3 | RF-08, RF-09, RNF-05, RNF-06 | 005 |
-| [007](specs/007-roles-y-auditoria/spec.md) | Acceso por roles y auditoría | Sistemas | 3 | RF-01 (roles), RF-10 | 001 |
-| [008](specs/008-monitoreo-e-incidentes/spec.md) | Monitoreo e incidente automático | Sistemas · apoya Industrial | 4 | RF-11, RF-12, RF-13, RNF-07 | 000, 003, 004 |
+| [007](specs/007-roles-y-auditoria/spec.md) | Acceso por roles y auditoría | Sistemas | 3 | RF-01 (roles), RF-10 | 001, 004, 005 |
+| [008](specs/008-monitoreo-e-incidentes/spec.md) | Monitoreo e incidente automático | Sistemas · apoya Industrial | 4 | RF-11, RF-12, RF-13, RNF-07 | 000, 003, 004, 005, 007 |
 | [009](specs/009-rollback/spec.md) | Recuperación por rollback | Sistemas | 4 | RF-14 | 005, 008 |
-| [010](specs/010-dashboards/spec.md) | Dashboards y métricas del servicio | Sistemas · apoya Industrial | 4 | RF-15, RF-16, RF-17, RNF-10 | 008, 009 |
-| [011](specs/011-infraestructura-como-codigo/spec.md) | Infraestructura como código | Sistemas | 4 | RNF-08 | 003 |
+| [010](specs/010-dashboards/spec.md) | Dashboards y métricas del servicio | Sistemas · apoya Industrial | 4 | RF-15, RF-16, RF-17, RNF-10 | 004, 005, 007, 008, 009 |
+| [011](specs/011-infraestructura-como-codigo/spec.md) | Infraestructura como código | Sistemas | 4 | RNF-08 | 003, 005 |
 | [012](specs/012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas · apoya Industrial | 5 | RF-18, RF-19, RNF-09 | 008 |
 | [013](specs/013-reportes/spec.md) | Reportes operativo y ejecutivo | Industrial + Sistemas | 5 | RF-20 | 010 |
 | [014](specs/014-infografia/spec.md) | Infografía mensual | Sistemas · apoya Industrial | 6 | RF-21, RF-23 | 010, 013 |
@@ -357,7 +359,7 @@ Detalle en [constitution/roadmap.md](constitution/roadmap.md).
 
 ## Alcance de la demo
 
-Meta para la sustentación final (30 nov). Ningún punto está hecho todavía.
+Meta para la sustentación final (30 nov). Avance: los puntos de las specs 000 a 011 ya tienen su código; faltan el resto de la 012, la 013, la 014 y el ensayo integrado (015). Estas 12 casillas desglosan los 10 puntos de la [matriz de trazabilidad](docs/requerimientos.md#matriz-de-trazabilidad-demo-final--requerimientos--specs); se marcan en la demo final.
 
 - [ ] Registrar una agencia y tres clientes ficticios — [001](specs/001-clientes-y-planes/spec.md)
 - [ ] Crear un proyecto o servicio por cliente — [001](specs/001-clientes-y-planes/spec.md)
@@ -407,39 +409,28 @@ Los ingenieros de sistemas construyen la plataforma que publica, monitorea y rec
 
 ```
 cloudops/
-├── README.md
-├── constitution/
-│   ├── README.md                    # índice y cómo se usa
-│   ├── mission.md                   # qué construimos, para quién y caso demo
-│   ├── principles.md                # los 10 principios y reglas derivadas
-│   ├── roadmap.md                   # módulos, hitos, dependencias y riesgos
-│   ├── tech-stack.md                # stack por módulo, hardware y flujo de despliegue
-│   ├── conventions.md               # estructura, dónde va cada cosa, idioma, Git
-│   └── canonical-names.md           # clientes, planes, prioridades, estados, roles
-├── CLAUDE.md                        # reglas para trabajar con asistentes de código
-├── .github/pull_request_template.md # revisión de cada PR contra la constitución
-├── docs/
-│   ├── requerimientos.md            # RF/RNF, MoSCoW y trazabilidad con la demo
-│   ├── sdd.md                       # cómo trabajamos y plantillas recomendadas
-│   └── glosario.md                  # términos técnicos → lenguaje del cliente
-└── specs/
-    ├── README.md                    # mapa de specs
-    ├── _plantilla/                  # spec.md · plan.md · tasks.md para specs nuevas
-    └── 000-… a 015-…/               # spec.md + plan.md (tasks.md en 000, 001 y 002)
+├── README.md · CLAUDE.md
+├── constitution/       # misión, principios, roadmap, stack, convenciones y nombres canónicos
+├── docs/               # requerimientos, glosario, guía SDD, KPI, prioridades, proceso, personas
+├── specs/              # mapa, plantilla y specs 000 a 015
+├── backend/            # API FastAPI (app/, alembic/, tests/)
+├── frontend/           # React + Vite + TS (consola de agencia y portal del cliente)
+├── apps/               # sitios demo (restaurante, ferreteria, consultorio) y plantillas
+├── gitops/             # manifiestos Kubernetes: hub, clients, platform, pruebas
+├── pipelines/          # puerta de seguridad (Gitea Actions) y runner
+├── observability/      # Prometheus, Alertmanager, Grafana, Loki, Alloy, Blackbox
+├── infra/              # OpenTofu y scripts de cliente nuevo
+├── ai/                 # asistente local: compuerta de ML, datos y entrenamiento (spec 012)
+├── seed/               # datos semilla en JSON
+├── .github/            # plantilla de PR
+└── docker-compose.yml  # entorno de desarrollo
 ```
 
 **Lo que se agregará**, cada carpeta cuando empiece su spec:
 
 | Carpeta | Contenido | Spec |
 |---|---|---|
-| `backend/`, `frontend/`, `docker-compose.yml` | Hub: API FastAPI y consola/portal en React | 001 |
-| `seed/` | Datos semilla (planes, SLA, clientes, usuarios) | 000, 001, 015 |
-| `apps/` | Plantillas y sitios demo de clientes | 002 |
-| `gitops/` | Manifiestos Kubernetes → repo `hub-gitops` en Gitea | 003 |
-| `pipelines/` | Gitea Actions | 006 |
-| `observability/` | Prometheus, Alertmanager, Grafana, Loki | 008 |
-| `infra/` | OpenTofu y Ansible | 011 |
-| `ai/` | Prompts, evaluación, Ollama, MLflow, ComfyUI | 012, 014 |
+| `ai/` (resto) | Prompts, evaluación, MLflow, ComfyUI | 012, 014 |
 | `demo/` | Guion y reinicio de la demo | 015 |
 
 ## Convenciones
@@ -474,8 +465,6 @@ Para abrir una spec nueva, copiar [`specs/_plantilla/`](specs/_plantilla/spec.md
 
 | Decisión | Quién decide | Spec | Fecha límite |
 |---|---|---|---|
-| Tiempos SLA por plan y matriz P1–P4 definitiva | Industrial + equipo | 000 | 2 oct |
-| Precio y horas incluidas por plan | Industrial | 000 | 2 oct |
 | OpenTofu o Terraform | Profesor | 011 | 24 oct |
 | Qué se presenta en la sustentación del 3 nov | Equipo | 015 | 27 oct |
 | Qwen2.5 7B o Llama 3.1 8B | Prueba en PC B | 012 | 3 nov |
