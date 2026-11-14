@@ -9,6 +9,7 @@ resources:
   - prometheus
   - alertmanager
   - loki
+  - tempo
   - alloy
   - grafana
   - traefik

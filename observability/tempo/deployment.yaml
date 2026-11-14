@@ -1,0 +1,78 @@
+# Tempo (spec 008/012): guarda las trazas del Hub, que Grafana consulta. Una réplica con un volumen efímero (emptyDir de 512Mi: las trazas
+# duran 24 h y no son un dato que haya que respaldar). Cumple el perfil Pod Security `restricted`.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo
+  labels:
+    app: tempo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: tempo
+  template:
+    metadata:
+      labels:
+        app: tempo
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001      # usuario `tempo` de la imagen
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tempo
+          image: grafana/tempo:2.8.2
+          args: ["-config.file=/etc/tempo/tempo.yaml"]
+          ports:
+            - { name: http, containerPort: 3200 }
+            - { name: otlp-http, containerPort: 4318 }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          # /ready tarda en dar 200 al arrancar y se enlentece cuando el nodo está cargado (compilaciones, descargas): con sondas de 1 s el
+          # kubelet lo reiniciaba sin motivo (se vio en k3s). Margen amplio antes de darlo por caído.
+          readinessProbe:
+            httpGet: { path: /ready, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: { path: /ready, port: http }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
+          volumeMounts:
+            - { name: config, mountPath: /etc/tempo, readOnly: true }
+            - { name: datos, mountPath: /var/tempo }
+      volumes:
+        - name: config
+          configMap:
+            name: tempo-config
+        - name: datos
+          emptyDir:
+            sizeLimit: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo
+  labels:
+    app: tempo
+spec:
+  selector:
+    app: tempo
+  ports:
+    - { name: http, port: 3200, targetPort: http }
+    - { name: otlp-http, port: 4318, targetPort: otlp-http }
