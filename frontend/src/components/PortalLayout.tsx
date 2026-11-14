@@ -18,6 +18,7 @@ export default function PortalLayout() {
             Inicio
           </NavLink>
           <NavLink to="/portal/solicitudes">Solicitudes</NavLink>
+          <NavLink to="/portal/reportes">Reportes</NavLink>
         </nav>
         <SessionBar />
       </header>

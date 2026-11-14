@@ -128,6 +128,7 @@ export default function PortalHome() {
                     <div className="muted">
                       {formatDateTime(incident.started_at)} · {estadosIncidente[incident.status]}
                     </div>
+                    {incident.message && <p>{incident.message}</p>}
                   </li>
                 ))}
               </ul>

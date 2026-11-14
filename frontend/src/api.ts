@@ -1479,6 +1479,8 @@ export interface ClientIncident {
   title: string;
   status: IncidentStatus;
   started_at: string;
+  // Mensaje de la agencia sobre la falla: lo redactó la IA y lo aprobó una persona (spec 012); nulo si aún no hay uno aprobado
+  message?: string | null;
 }
 
 export interface TechnicianLoad {
@@ -1771,4 +1773,97 @@ export async function getClientMessage(id: number): Promise<{ message: string }>
     };
   }
   return request<{ message: string }>(`/incidents/${id}/client-message`);
+}
+
+// ---------- Borradores de IA del incidente (spec 012) ----------
+
+export type AiDraftKind = "resumen" | "mensaje_cliente";
+
+export interface AiDraft {
+  id: number;
+  incident_id: number;
+  kind: AiDraftKind;
+  status: "borrador_ia" | "aprobado" | "descartado";
+  // llm: lo redactó el modelo · plantilla: texto base (la IA no respondió o su texto no pasó las verificaciones)
+  source: "llm" | "plantilla";
+  model: string | null;
+  prompt_version: string | null;
+  generated_text: string;
+  final_text: string | null;
+  // Por qué se usó el texto base o qué se rechazó de lo que escribió la IA
+  notice: string | null;
+  latency_ms: number | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+
+// Los borradores necesitan la API (la IA vive en el laboratorio): en el modo de muestra se avisa en vez de inventar un texto
+async function requireApi(): Promise<void> {
+  if ((await detectMode()) === "mock") throw new ApiError("Los borradores de IA necesitan la API conectada.", 503);
+}
+
+export async function listAiDrafts(incidentId: number): Promise<AiDraft[]> {
+  if ((await detectMode()) === "mock") return [];
+  return request<AiDraft[]>(`/incidents/${incidentId}/ai-drafts`);
+}
+
+export async function generateAiDrafts(incidentId: number): Promise<AiDraft[]> {
+  await requireApi();
+  return request<AiDraft[]>(`/incidents/${incidentId}/ai-drafts`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function approveAiDraft(id: number, text?: string): Promise<AiDraft> {
+  await requireApi();
+  return request<AiDraft>(`/ai-drafts/${id}/approve`, { method: "POST", body: JSON.stringify({ text }) });
+}
+
+export async function discardAiDraft(id: number): Promise<AiDraft> {
+  await requireApi();
+  return request<AiDraft>(`/ai-drafts/${id}/discard`, { method: "POST" });
+}
+
+// ---------- Reportes mensuales (spec 013) ----------
+
+export type ReportKind = "operativo" | "ejecutivo";
+
+export interface ReportSummary {
+  id: number;
+  kind: ReportKind;
+  client_id: number | null;
+  client_name: string | null;
+  month: string;
+  month_label: string;
+  generated_by: string | null;
+  created_at: string;
+}
+
+export interface Report extends ReportSummary {
+  // Los datos del mes, congelados al generar el reporte
+  data: Record<string, unknown>;
+}
+
+export async function listReports(): Promise<ReportSummary[]> {
+  if ((await detectMode()) === "mock") return [];
+  return request<ReportSummary[]>("/reports");
+}
+
+export async function generateReport(input: { kind: ReportKind; client_id?: number | null; month?: string }): Promise<Report> {
+  if ((await detectMode()) === "mock") throw new ApiError("Los reportes necesitan la API conectada.", 503);
+  return request<Report>("/reports", { method: "POST", body: JSON.stringify(input) });
+}
+
+// Descarga el PDF con la sesión del usuario (un enlace directo no llevaría el token) y lo entrega al navegador
+export async function downloadReportPdf(id: number): Promise<void> {
+  if ((await detectMode()) === "mock") throw new ApiError("Los reportes necesitan la API conectada.", 503);
+  const res = await fetch(`/api/reports/${id}/pdf`, { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+  const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? `reporte-${id}.pdf`;
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
 }

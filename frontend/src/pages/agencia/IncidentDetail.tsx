@@ -12,6 +12,7 @@ import {
   type IncidentDetail as IncidentDetailData,
   type IncidentEventType,
 } from "../../api";
+import AiDraftsPanel from "../../components/AiDraftsPanel";
 import RecoveryPanel from "../../components/RecoveryPanel";
 import SlaClock from "../../components/SlaClock";
 import { formatDateTime } from "../../format";
@@ -245,6 +246,8 @@ export default function IncidentDetail() {
           )}
         </section>
       </div>
+
+      {(incident.status === "mitigado" || incident.status === "cerrado") && <AiDraftsPanel incidentId={incidentId} />}
 
       <section className="card" aria-label="Línea de tiempo">
         <h2>Línea de tiempo</h2>
