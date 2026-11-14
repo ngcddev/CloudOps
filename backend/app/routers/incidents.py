@@ -10,7 +10,6 @@ from app.integrations.argocd import AppStatus, ArgoCDClient, ArgoCDError, argocd
 from app.integrations.gitea import GiteaClient, GiteaError
 from app.db import get_db
 from app.deps import require_agency
-from app.models.client import Client
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
 from app.models.project import Project

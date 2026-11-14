@@ -25,7 +25,6 @@ from app.schemas.ticket import (
     TicketDetail,
     TicketOut,
     TicketTransition,
-    TicketEventOut,
     WorkLogCreate,
     WorkLogOut,
 )

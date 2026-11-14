@@ -127,5 +127,5 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
     try:
         db.execute(text("SELECT 1"))
     except Exception:
-        raise HTTPException(status_code=503, detail="No hay conexión con la base de datos")
+        raise HTTPException(status_code=503, detail="No hay conexión con la base de datos") from None
     return {"status": "ok"}
