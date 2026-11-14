@@ -1,0 +1,96 @@
+# MLflow 3.18.0 con un solo worker y 768 MiB (más trabajadores o la ejecución de trabajos en segundo plano lo sacan de memoria). Cumple Pod Security `restricted`.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlflow-data
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  labels:
+    app: mlflow
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # volumen ReadWriteOnce con SQLite: nunca dos Pods a la vez
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: mlflow
+          image: gitea.hub.local/forja-digital/mlflow:3.18.0
+          ports:
+            - { name: http, containerPort: 5000 }
+          env:
+            - name: MLFLOW_ALLOWED_HOSTS
+              value: "mlflow.hub.local,mlflow.mlops.svc,mlflow.mlops.svc:5000,mlflow:5000,localhost:5000,127.0.0.1:5000"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 100m, memory: 384Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+          readinessProbe:
+            httpGet: { path: /health, port: http, httpHeaders: [{ name: Host, value: localhost:5000 }] }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: http, httpHeaders: [{ name: Host, value: localhost:5000 }] }
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
+          volumeMounts:
+            - { name: datos, mountPath: /mlflow }
+      volumes:
+        - name: datos
+          persistentVolumeClaim: { claimName: mlflow-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+  labels:
+    app: mlflow
+spec:
+  selector:
+    app: mlflow
+  ports:
+    - { name: http, port: 5000, targetPort: http }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlflow
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: mlflow.hub.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mlflow
+                port:
+                  name: http

@@ -33,3 +33,13 @@ metadata:
   name: gitea
   labels:
     app.kubernetes.io/part-of: cloudops-hub
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlops
+  labels:
+    # MLflow (spec 016) cumple `restricted`: sin root, sin privilegios, seccomp por defecto
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    app.kubernetes.io/part-of: cloudops-hub
