@@ -5,6 +5,8 @@
 services:
   # Base de datos del Hub (spec 001)
   db:
+    # Límite de memoria: el PC A queda justo de RAM (convenciones, Contenedores)
+    mem_limit: 512m
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?Falta .env; copia .env.example a .env}
@@ -22,8 +24,12 @@ services:
 
   # API del Hub (spec 001): FastAPI en :8000, espera a que la base esté sana
   api:
+    # Límite de memoria: el PC A queda justo de RAM (convenciones, Contenedores)
+    mem_limit: 384m
     build:
       context: ./backend
+      # Desarrollo: la imagen lleva pytest y las pruebas (docker compose exec api pytest). Producción es la etapa final.
+      target: dev
       # seed/ entra a la imagen: la API lo carga la primera vez que la base está vacía
       additional_contexts:
         seed: ./seed
@@ -71,6 +77,8 @@ services:
 
   # Consola de agencia (spec 001): nginx en :5173 (dentro del contenedor, 8080)
   web:
+    # Límite de memoria: el PC A queda justo de RAM (convenciones, Contenedores)
+    mem_limit: 64m
     build:
       context: ./frontend
       # seed/ entra a la imagen como datos de prueba mientras la API no responde
@@ -87,6 +95,8 @@ services:
 
   # Sitio de La Sazón (plantilla landing) en :8081
   restaurante:
+    # Límite de memoria: el PC A queda justo de RAM (convenciones, Contenedores)
+    mem_limit: 64m
     build:
       context: ./apps/restaurante
       args:
@@ -97,6 +107,8 @@ services:
 
   # Sitio de El Tornillo (plantilla landing) en :8082
   ferreteria:
+    # Límite de memoria: el PC A queda justo de RAM (convenciones, Contenedores)
+    mem_limit: 64m
     build:
       context: ./apps/ferreteria
       args:
@@ -107,6 +119,8 @@ services:
 
   # Sitio de Dental Popayán (plantilla landing-form) en :8083; /api pasa a consultorio-api
   consultorio-web:
+    # Límite de memoria: el PC A queda justo de RAM (convenciones, Contenedores)
+    mem_limit: 64m
     build:
       context: ./apps/consultorio
       dockerfile: Dockerfile.frontend
@@ -122,6 +136,8 @@ services:
 
   # Backend del formulario de citas de Dental Popayán (solo se publica a través de consultorio-web)
   consultorio-api:
+    # Límite de memoria: el PC A queda justo de RAM (convenciones, Contenedores)
+    mem_limit: 128m
     build:
       context: ./apps/consultorio
       dockerfile: Dockerfile.backend
