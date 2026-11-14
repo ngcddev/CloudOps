@@ -37,8 +37,8 @@
 Todas ──> 015
 ```
 
-- **Terminadas:** 001, 002 (la 000 sigue con tareas abiertas del industrial).
-- **Ahora (módulo 2):** 003, 004, 005.
+- **Terminadas:** 001 a 007, 009 y 010 (la 000 sigue con la demo T11 abierta).
+- **Ahora (módulo 4):** cerrar 008 y 011; después el módulo 5 (012 y 013).
 - **Pueden adelantarse (solo producto):** 004 y la parte de backend/frontend de 007, 008 (incidentes manuales), 010 y 013.
 - **Esperan su módulo:** todo lo que instala herramientas de plataforma (003, 005, 006, 008-monitoreo, 009, 011, 012, 014).
 

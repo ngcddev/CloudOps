@@ -54,6 +54,7 @@ Los entregables de este levantamiento son tareas de la [spec 000](../specs/000-m
 | RF-22 | Catálogo mínimo de clientes y servicios en Backstage | S | 2 | 005 |
 | RF-23 | Sugerir la causa del incidente con un modelo de código | C | 6 | 014 |
 | RF-24 | Facturación, pagos y dominios reales | W | — | — |
+| RF-25 | Asistente de ayuda con compuerta de ML: el LLM solo se despierta si la pregunta trata del Hub | S | 5 | 012 |
 
 ## Requerimientos no funcionales
 
@@ -83,7 +84,7 @@ Los entregables de este levantamiento son tareas de la [spec 000](../specs/000-m
 | 6. Prioridad, responsable y SLA medido | RF-05, RF-13 | 2–4 | 004, 008 | Matriz P1–P4 y tiempos SLA |
 | 7. Rollback | RF-14, RF-06 | 2–4 | 005, 009 | — |
 | 8. Reporte operativo y ejecutivo | RF-17, RF-20 | 4–5 | 010, 013 | Formato del reporte, costos y MTTR |
-| 9. Asistente IA con verificación humana | RF-18, RF-19, RNF-09 | 5 | 012 | — |
+| 9. Asistente IA con verificación humana | RF-18, RF-19, RF-25, RNF-09 | 5 | 012 | — |
 | 10. Infografía operativa | RF-21 | 6 | 014 | Contenido de la infografía |
 
 ## Decisiones pendientes
