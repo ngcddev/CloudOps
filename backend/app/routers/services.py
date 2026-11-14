@@ -1,10 +1,11 @@
 # Endpoints del estado de los servicios y su historial de versiones (spec 005, T16). Solo agencia (spec 007).
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import require_agency
+from app.integrations.gitea import GiteaClient, GiteaError
 from app.models.change_request import ChangeRequest
 from app.models.client import Client
 from app.models.deployment import Deployment
@@ -12,8 +13,10 @@ from app.models.incident import Incident
 from app.models.project import Project
 from app.models.security_run import SecurityRun
 from app.models.service import Service
-from app.routers.change_requests import OPEN_STATUSES
-from app.schemas.service_status import DeploymentOut, ServiceStatusOut
+from app.models.user import User
+from app.routers.change_requests import OPEN_STATUSES, get_gitea
+from app.services import audit, provisioning
+from app.schemas.service_status import DeploymentOut, ProvisionOut, ServiceStatusOut
 
 router = APIRouter(prefix="/api/services", tags=["services"], dependencies=[Depends(require_agency)])
 
@@ -92,3 +95,45 @@ def service_deployments(service_id: int, db: Session = Depends(get_db)):
     return db.scalars(
         select(Deployment).where(Deployment.service_id == service_id).order_by(Deployment.id.desc())
     ).all()
+
+
+@router.post("/{service_id}/provision", response_model=ProvisionOut, status_code=201)
+def provision_service(
+    service_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_agency),
+    gitea: GiteaClient = Depends(get_gitea),
+):
+    """Da de alta el sitio en GitOps: escribe sus manifiestos en hub-gitops (spec 016).
+
+    El Hub no habla con Kubernetes: Argo CD ve la carpeta nueva y crea el sitio. Exige que la versión
+    inicial ya esté publicada en el registro; si la carpeta ya existe responde 409 y no cambia nada.
+    """
+    service = db.get(Service, service_id)
+    if service is None:
+        raise HTTPException(status_code=404, detail="El servicio no existe.")
+    try:
+        missing = provisioning.missing_images(gitea, service)
+        if missing:
+            raise HTTPException(
+                status_code=422,
+                detail="Faltan imágenes en el registro: " + ", ".join(missing) + ". Publíquelas con el pipeline y reintente.",
+            )
+        commits = provisioning.provision(gitea, service, service.plan, user.name, user.email)
+    except provisioning.AlreadyProvisioned as error:
+        raise HTTPException(status_code=409, detail="El sitio ya está dado de alta en GitOps.") from error
+    except GiteaError as error:
+        raise HTTPException(status_code=502, detail=f"No se pudo escribir en Gitea: {error}") from error
+    audit.record(
+        db, user, "aprovisionar", "service", service.id,
+        {"namespace": service.namespace, "commits": [c[:7] for c in commits]}, audit.request_ip(request),
+    )
+    db.commit()
+    return ProvisionOut(
+        service_id=service.id,
+        namespace=service.namespace,
+        host=service.host,
+        files=list(provisioning.render_files(service, service.plan)),
+        commits=commits,
+    )

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!-- Sitio del Colegio San Marcos (spec 016): copia de la plantilla landing-form con formulario de inscripciones. -->
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Colegio San Marcos</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Colegio San Marcos</div>
+      <nav>
+        <a href="#inicio">Inicio</a>
+        <a href="#servicios">Propuesta</a>
+        <a href="#inscripciones">Inscripciones</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div class="hero-copy">
+          <p class="eyebrow">Educación preescolar, básica y media · Popayán</p>
+          <h1>Aprender con propósito, crecer con valores.</h1>
+          <p>
+            Un colegio con grupos pequeños, acompañamiento cercano y formación en tecnología y
+            ciudadanía. Inicie la inscripción de su hijo en línea y la coordinación le llama para continuar.
+          </p>
+          <div class="actions">
+            <a href="#inscripciones" class="button primary">Inscribir a mi hijo</a>
+            <a href="#servicios" class="button secondary">Ver propuesta</a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <span class="label">Atención a familias</span>
+          <strong>Lun–Vie</strong>
+          <strong>7:00–15:00</strong>
+          <span class="label">Cupos abiertos para el próximo año</span>
+        </div>
+      </section>
+
+      <section class="features" id="servicios">
+        <div class="section-heading">
+          <p class="eyebrow">Propuesta</p>
+          <h2>Una formación completa para cada etapa.</h2>
+        </div>
+        <div class="cards">
+          <article>
+            <h3>Grupos pequeños</h3>
+            <p>Máximo veinte estudiantes por salón, con seguimiento individual del avance académico.</p>
+          </article>
+          <article>
+            <h3>Tecnología y bilingüismo</h3>
+            <p>Programación desde primaria, laboratorio de ciencias e inglés en todos los grados.</p>
+          </article>
+          <article>
+            <h3>Formación en valores</h3>
+            <p>Proyectos de servicio a la comunidad y acompañamiento psicosocial para las familias.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="cta" id="inscripciones">
+        <h2>Inicie la inscripción.</h2>
+        <p>Déjenos los datos del acudiente y el grado de interés; la coordinación le llama en horario de atención.</p>
+
+        <form class="contact-form" id="contact-form" novalidate>
+          <label>
+            Nombre del acudiente
+            <input type="text" name="name" maxlength="120" autocomplete="name" required />
+          </label>
+          <label>
+            Teléfono
+            <input type="tel" name="phone" minlength="7" maxlength="20" autocomplete="tel" required />
+          </label>
+          <label>
+            Grado de interés
+            <textarea
+              name="reason"
+              rows="4"
+              maxlength="500"
+              placeholder="Por ejemplo: transición para 2027, o séptimo grado con traslado desde otro colegio"
+              required
+            ></textarea>
+          </label>
+          <button type="submit" class="button primary">Solicitar inscripción</button>
+          <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="version">Versión v1</span>
+      <span>Colegio San Marcos</span>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
