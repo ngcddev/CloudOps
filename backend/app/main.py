@@ -15,6 +15,7 @@ from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
 from app.routers import (
+    ai_drafts,
     assistant,
     alerts,
     audit_logs,
@@ -25,6 +26,7 @@ from app.routers import (
     dashboard,
     incidents,
     pipeline,
+    reports,
     security,
     services,
     tickets,
@@ -68,6 +70,8 @@ app.include_router(security.router)
 app.include_router(incidents.router)
 app.include_router(alerts.router)
 app.include_router(assistant.router)
+app.include_router(ai_drafts.router)
+app.include_router(reports.router)
 
 # Trazas hacia Tempo si OTEL_EXPORTER_OTLP_ENDPOINT está definido; sin él no hace nada (spec 008)
 telemetry.configurar(app)

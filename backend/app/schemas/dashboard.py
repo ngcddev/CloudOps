@@ -51,6 +51,8 @@ class ClientIncident(BaseModel):
     title: str
     status: str
     started_at: datetime
+    # Mensaje de la agencia sobre la falla, redactado con ayuda de la IA pero aprobado por una persona; nulo si aún no hay uno aprobado
+    message: str | None = None
 
 
 class TechnicianLoad(BaseModel):
