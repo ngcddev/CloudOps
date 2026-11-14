@@ -253,3 +253,59 @@ menos de 3 minutos" no estaba garantizado. `gitops/platform/argocd` fija `timeou
 kubectl apply -k gitops/platform/argocd
 kubectl -n argocd rollout restart statefulset/argocd-application-controller deploy/argocd-repo-server
 ```
+
+## El Hub: respaldo, aislamiento y asistente
+
+| Qué | Archivo | Cómo se prueba |
+|---|---|---|
+| Respaldo diario de PostgreSQL (03:00 UTC, últimos 7, verificado con `pg_restore --list`) | `hub/backup.yaml`, `hub/respaldo/respaldar.sh` | `bash gitops/pruebas/respaldo.sh`: respalda, rota, restaura en `hub_restaurada` y compara las filas de las 21 tablas |
+| Restaurar un respaldo en una base nueva | `hub/respaldo/restaurar.sh` (se niega a pisar una base y rechaza nombres con SQL) | el mismo script de prueba |
+| Pod Security `restricted` y NetworkPolicy en el namespace `hub` | `platform/namespaces.yaml`, `hub/networkpolicy.yaml` | `kubectl kustomize gitops/hub \| python gitops/pruebas/psa_restringido.py` (verifica sin clúster las reglas del perfil) |
+| Conectar el Hub con Ollama del PC B y elegir el modo del asistente | `hub/configurar-ia.sh <url> [completo\|recuperacion\|rag]` crea el ConfigMap `hub-ia` | `--solo-mostrar` imprime el ConfigMap sin clúster |
+| Trazas hacia Tempo | `OTEL_EXPORTER_OTLP_ENDPOINT` en `hub/api.yaml` | `observability/pruebas/trazas.sh` |
+
+Limitaciones: el volumen de respaldos está en el mismo nodo que la base (copiarlos fuera es un paso manual); la NetworkPolicy del Hub, el CronJob y las
+variables nuevas **no se probaron en un clúster** (solo se renderizaron con `kubectl kustomize` y se validaron con `kubeconform` y el verificador de Pod Security).
+Para restaurar la base viva: detener la API (`kubectl -n hub scale deploy/api --replicas=0`), restaurar con `REEMPLAZAR=1` y volver a escalar.
+
+## Levantar el clúster sin instalar k3d (Windows con Docker Desktop)
+
+Probado el 14 nov. `k3d` corre desde su imagen oficial de Docker y el kubeconfig queda en un archivo aparte:
+
+```bash
+docker network create k3d-hub --subnet 172.30.0.0/24 --gateway 172.30.0.1
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/gitops/platform/k3s/registries.yaml:/cfg/registries.yaml:ro" \
+  ghcr.io/k3d-io/k3d:5.8.3 cluster create hub --image rancher/k3s:v1.32.9-k3s1 --network k3d-hub -p "80:80@loadbalancer" -p "443:443@loadbalancer" \
+  --registry-config /cfg/registries.yaml --host-alias "172.30.0.1:gitea.hub.local" --wait
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/k3d-io/k3d:5.8.3 kubeconfig get hub > ~/.kube/k3d-hub.yaml   # y corregir server: a https://127.0.0.1:<puerto>
+export KUBECONFIG=C:/Users/<tú>/.kube/k3d-hub.yaml     # kubectl de Windows necesita la ruta de Windows, no /c/...
+```
+
+Orden de lo demás: `kubectl apply -f platform/namespaces.yaml` → Gitea (`-k platform/gitea`, administrador y organización `forja-digital` pública) →
+`apps/publicar-imagenes.sh` → Argo CD (`-k platform/argocd`) → `platform/gitea/sembrar-hub-gitops.sh` → `hub/crear-secretos.sh` → `hub/crear-tokens.sh` →
+`platform/gitea/actualizar-hub-gitops.sh observability` → `kubectl apply -k hub` → `kubectl apply -k platform/argocd/applications` y `-f platform/argocd/applications/monitoring.yaml` →
+`hub/configurar-ia.sh <url de Ollama> [modo]`. Sin editar el archivo `hosts`, los scripts de `curl` y `git` funcionan con `CURL_HOME` apuntando a una carpeta con un `.curlrc`
+(`resolve = "gitea.hub.local:80:127.0.0.1"`, una línea por nombre) y `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.curloptResolve GIT_CONFIG_VALUE_0=gitea.hub.local:80:127.0.0.1`.
+En Git Bash no se debe exportar `MSYS_NO_PATHCONV=1` al correr scripts que usen `curl -o /dev/null`. La prueba `pruebas/aislamiento-red.sh` necesita `busybox:v1` en el registro
+(`skopeo copy docker://docker.io/library/busybox:1.36 docker://gitea.hub.local/forja-digital/busybox:v1`). Para dejar la puerta de un sitio en `ok` sin runner:
+`SITE=restaurante VERSION_FIJA=v2 bash pipelines/pruebas/simular-puerta.sh limpia`. El caso completo: `HUB_PASSWORD=... CORRIDAS=1 bash gitops/pruebas/demo-caso-restaurante.sh`.
+
+## Alta de un sitio nuevo por GitOps (spec 016)
+
+El Hub escribe `clients/<cliente>/` en hub-gitops (`POST /api/services/{id}/provision`, botón «Dar de alta en GitOps» en la ficha del cliente). El
+ApplicationSet `clientes` (`platform/argocd/applications/clientes-appset.yaml`) ve la carpeta cada 20 s y crea la Application `cliente-<nombre>`; los tres clientes
+sembrados conservan su Application propia y están excluidos. Las imágenes `<cliente>:v1` (o `-web` y `-api`) deben estar antes en el registro (`apps/publicar-imagenes.sh`).
+`demo/reiniciar-cluster.sh` lo deshace para ensayar de nuevo.
+
+## Política de admisión y simulaciones (spec 016)
+
+`kubectl apply -f platform/politicas/` aplica el `ValidatingAdmissionPolicy` que solo admite imágenes de `gitea.hub.local/forja-digital/` con etiqueta o digest fijos en los namespaces de
+clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyverno o policy-controller y el nodo no tiene RAM; la firma se verifica en la puerta de seguridad.
+`pruebas/simulaciones.sh` provoca réplica caída, latencia (netem en los veth del nodo) y saturación (HPA) y comprueba lo que se ve en Prometheus y en el HPA.
+
+## Respaldo de la plataforma, MLflow y Backstage (spec 016)
+
+- `kubectl apply -k platform/respaldo` crea los CronJob de Gitea y Argo CD (02:30 y 02:40 UTC, últimos 5). `pruebas/respaldo-plataforma.sh` los lanza, los copia fuera del nodo y comprueba que hub-gitops se puede clonar del dump.
+- `kubectl apply -f platform/namespaces.yaml && kubectl apply -k platform/mlops` despliega MLflow en el namespace `mlops` (imagen: `bash apps/publicar-imagenes.sh mlflow`); interfaz en `mlflow.hub.local`.
+- `kubectl apply -k platform/backstage` despliega Backstage (≈ 400 MiB); el alta de un sitio añade su `catalog-info.yaml` y aparece en el catálogo.
+- Runner de Gitea Actions: `pipelines/README.md`. Con el runner encendido, `demo/preparar-colegio.sh` vuelve a subir las etiquetas del colegio y la puerta corre sola.
