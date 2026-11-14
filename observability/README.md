@@ -18,7 +18,9 @@ Pods cliente-* ──registros──> Alloy ──> Loki ──> Grafana (Explor
 | `alloy/` | Lee por la API de Kubernetes los registros de los Pods de `cliente-*` y los manda a Loki |
 | `grafana/` | `http://grafana.hub.local`, con las fuentes `prometheus` y `loki` ya configuradas |
 | `traefik/` | Service `traefik-metrics` en `kube-system` para las métricas de Traefik (spec 010) |
-| `pruebas/` | `validar.sh`, pruebas de la regla, `cronometro.sh` y `publicacion-sana.sh` |
+| `tempo/` | Recibe las trazas OTLP del Hub (puerto 4318), 24 horas en un volumen efímero; Grafana lo lee con la fuente `tempo` |
+| `grafana/dashboards/` | Tablero «Servicio de los sitios · SLI y SLO»: disponibilidad frente al SLO de cada plan, presupuesto de error, latencia p95, errores 5xx, formularios y registros |
+| `pruebas/` | `validar.sh`, pruebas de la regla, `tablero_test.yml`, `grafana.sh`, `trazas.sh`, `cronometro.sh` y `publicacion-sana.sh` |
 
 ## Tiempos de detección
 
@@ -68,10 +70,27 @@ incidentes, manuales o automáticos, no dependen de ellos.
 | Loki | 128Mi / 256Mi | pendiente (T29) |
 | Grafana Alloy | 64Mi / 128Mi | pendiente (T29) |
 | Grafana | 128Mi / 256Mi | pendiente (T29) |
+| Tempo | 96Mi / 256Mi | pendiente (el nodo ya estaba justo: si falta RAM, `replicas: 0` en Tempo antes que en Prometheus) |
 | **Total** | **≈ 640Mi / 1280Mi** | pendiente (T29) |
 
 ## Versiones
 
 Imágenes fijadas en los manifiestos: `prom/prometheus:v3.5.0`, `prom/alertmanager:v0.28.1`,
-`prom/blackbox-exporter:v0.27.0`, `grafana/loki:3.5.3`, `grafana/alloy:v1.10.2` y `grafana/grafana:12.1.1`.
+`prom/blackbox-exporter:v0.27.0`, `grafana/loki:3.5.3`, `grafana/alloy:v1.10.2`, `grafana/grafana:12.1.1` y `grafana/tempo:2.8.2`.
 Cambiar una versión es un cambio deliberado en su `deployment.yaml` (y en `validar.sh` para promtool y amtool).
+
+## Tablero de Grafana y trazas
+
+El tablero `servicio-sitios` se carga solo al arrancar Grafana (ConfigMap `grafana-dashboards`, no editable desde la interfaz: el cambio va por Git).
+Sus cuentas se prueban sin Prometheus real:
+
+```bash
+bash observability/pruebas/validar.sh   # además: cuentas del SLI y del presupuesto de error (tablero_test.yml) y sintaxis de cada consulta
+bash observability/pruebas/grafana.sh   # levanta Grafana 12.1.1 con los mismos archivos y comprueba el tablero (13 paneles) y las fuentes prometheus, loki y tempo
+bash observability/pruebas/trazas.sh    # Tempo real + API de producción: llegan los spans de la API y del asistente, /health no genera trazas
+                                        # y ninguna traza lleva el texto de las preguntas
+```
+
+Las trazas del Hub se activan con `OTEL_EXPORTER_OTLP_ENDPOINT` (ya puesta en `gitops/hub/api.yaml`). Los spans llevan tiempos, estados y contadores;
+**nunca** el texto de las preguntas, de las respuestas ni de los cuerpos de las peticiones. No hay spans de SQL: la instrumentación de SQLAlchemy de
+OpenTelemetry soporta hasta la 2.0 y el Hub usa la 2.1. `validar.sh` pasa también en Windows (se corrigieron el comodín de las reglas, la variable `TMP` y la ruta de `kubectl`).
