@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Cloud / Platform)
 >
-> **Módulo:** 4 · **Requerimientos:** RNF-08 · **Depende de:** 003, 005 · **Estado:** Tareas listas
+> **Módulo:** 4 · **Requerimientos:** RNF-08 · **Depende de:** 003, 005 · **Estado:** En curso
 
 ## Qué y por qué
 

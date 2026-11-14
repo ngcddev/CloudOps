@@ -10,7 +10,7 @@
 
 | Spec | Nombre | Acciona | Módulo | Requerimientos | Depende de | Estado |
 |---|---|---|---|---|---|---|
-| [000](000-modelo-de-servicio/spec.md) | Modelo de servicio (industrial) | Industrial | 1–2 | Planes, P1–P4, SLA, KPI | — | Tareas listas |
+| [000](000-modelo-de-servicio/spec.md) | Modelo de servicio (industrial) | Industrial | 1–2 | Planes, P1–P4, SLA, KPI | — | En curso |
 | [001](001-clientes-y-planes/spec.md) | Clientes y planes | Sistemas · apoya Industrial | 1 | RF-01, RF-02 | 000 | Terminada |
 | [002](002-plantillas-de-sitio/spec.md) | Plantillas de sitio y apps demo | Sistemas | 1 | RNF-01, RNF-02 | — | Terminada |
 | [003](003-plataforma-k3s/spec.md) | Plataforma multi-cliente en k3s | Sistemas · apoya Industrial | 2 | RF-03, RNF-03 | 002 | Terminada |
@@ -20,10 +20,10 @@
 | [007](007-roles-y-auditoria/spec.md) | Acceso por roles y auditoría | Sistemas | 3 | RF-01 (roles), RF-10 | 001, 004, 005 | Terminada |
 | [008](008-monitoreo-e-incidentes/spec.md) | Monitoreo e incidente automático | Sistemas · apoya Industrial | 4 | RF-11, RF-12, RF-13, RNF-07 | 000, 003, 004, 005, 007 | En curso |
 | [009](009-rollback/spec.md) | Recuperación por rollback | Sistemas | 4 | RF-14 | 005, 008 | Terminada |
-| [010](010-dashboards/spec.md) | Dashboards y métricas del servicio | Sistemas · apoya Industrial | 4 | RF-15, RF-16, RF-17, RNF-10 | 004, 005, 007, 008, 009 | En curso |
-| [011](011-infraestructura-como-codigo/spec.md) | Infraestructura como código | Sistemas | 4 | RNF-08 | 003, 005 | Tareas listas |
-| [012](012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas · apoya Industrial | 5 | RF-18, RF-19, RNF-09 | 008 | Spec y plan |
-| [013](013-reportes/spec.md) | Reportes operativo y ejecutivo | Industrial + Sistemas | 5 | RF-20 | 010 | Spec y plan |
+| [010](010-dashboards/spec.md) | Dashboards y métricas del servicio | Sistemas · apoya Industrial | 4 | RF-15, RF-16, RF-17, RNF-10 | 004, 005, 007, 008, 009 | Terminada |
+| [011](011-infraestructura-como-codigo/spec.md) | Infraestructura como código | Sistemas | 4 | RNF-08 | 003, 005 | En curso |
+| [012](012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas · apoya Industrial | 5 | RF-18, RF-19, RF-25, RNF-09 | 008 | En curso |
+| [013](013-reportes/spec.md) | Reportes operativo y ejecutivo | Industrial + Sistemas | 5 | RF-20 | 010 | En curso |
 | [014](014-infografia/spec.md) | Infografía mensual | Sistemas · apoya Industrial | 6 | RF-21, RF-23 | 010, 013 | Spec y plan |
 | [015](015-demo-integrada/spec.md) | Demo integrada | Todo el equipo | 7 | RNF-11 | todas | Spec y plan |
 
@@ -31,13 +31,8 @@
 
 ## Orden de arranque
 
-- **Terminadas:** 001 a 007 (la 000 sigue con tareas abiertas del industrial).
-- **Ahora (módulo 4, meta 31 oct para el caso del restaurante):** 008, 009, 010 y 011, con tareas repartidas
-  por carril en cada `tasks.md`.
-- **En paralelo desde hoy:** 011 (no depende de la 008 ni de la 009); el backend y el frontend de la 008
-  (incidentes manuales) y de la 010 (con datos del Hub).
-- **Esperan a otra spec:** la 009 espera las tablas y el detalle de incidente de la 008; la parte de
-  Prometheus de la 010 espera a la 008 (T22).
+- **Terminadas:** 001 a 007, 009 y 010 (la 000 sigue con la demo T11 abierta).
+- **Ahora (módulo 4):** cerrar 008 (T29, T32, T33) y 011 (T15); en el módulo 5 sigue la 012 (la compuerta, el asistente con Ollama, MLflow y el RAG ya están; faltan llevarlos al clúster y los borradores) y la 013.
 - **Esperan su módulo:** 012, 013, 014 y 015.
 
 ## Dependencias
