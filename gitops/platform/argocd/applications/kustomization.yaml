@@ -6,3 +6,4 @@ resources:
   - cliente-restaurante.yaml
   - cliente-ferreteria.yaml
   - cliente-consultorio.yaml
+  - clientes-appset.yaml
