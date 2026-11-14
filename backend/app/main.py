@@ -10,10 +10,12 @@ from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.config import settings
+from app import telemetry
 from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
 from app.routers import (
+    assistant,
     alerts,
     audit_logs,
     auth,
@@ -65,6 +67,10 @@ app.include_router(pipeline.router)
 app.include_router(security.router)
 app.include_router(incidents.router)
 app.include_router(alerts.router)
+app.include_router(assistant.router)
+
+# Trazas hacia Tempo si OTEL_EXPORTER_OTLP_ENDPOINT está definido; sin él no hace nada (spec 008)
+telemetry.configurar(app)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
 _CAMPOS = {
