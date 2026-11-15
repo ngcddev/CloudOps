@@ -81,9 +81,12 @@ jobs:
       - name: Respaldo y restauración de PostgreSQL
         run: |
           cp .env.example .env
+          # Desde la auditoría (CT-01) la API no arranca con el JWT_SECRET de ejemplo: en el CI se genera uno aleatorio
+          sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 24)/" .env
           # La API migra y siembra la base al arrancar: sin tablas, la prueba de respaldo no tiene nada que comparar
           docker compose up -d --build db api
-          until curl -fs http://localhost:8000/health >/dev/null; do sleep 2; done
+          # Con tope de tiempo: si la API no llega a estar sana, falla mostrando su registro en vez de esperar para siempre
+          timeout 180 bash -c 'until curl -fs http://localhost:8000/health >/dev/null; do sleep 2; done' || { docker compose logs api | tail -40; exit 1; }
           bash gitops/pruebas/respaldo.sh
 
   analisis:
