@@ -19,6 +19,11 @@ Lo que ya se corrió contra el clúster real y el Hub en el navegador. Los ítem
 | 4.2 Tablero RED y USE | Fallaba: la sonda de vida de Grafana (1 s) lo reiniciaba en bucle con el nodo saturado. Corregido (PR 180: CPU 1, memoria 384Mi, sondas con margen); ahora los 7 paneles dibujan series. |
 | 4.4 Capacidad por cliente | `capacidad.sh` sale con código 1 al forzar una cuota excedida. |
 | Sincronía hub-gitops | Hub bajo Argo CD y reglas de quién escribe qué (spec 022). |
+| 1.2 Parte B, scripts de demo | `demo-005`, `demo-006`, `demo-caso-restaurante` y `staging/promover.sh` terminan con salida 0 (tras sembrar los repos de los sitios y renovar los secretos de la puerta). |
+| 4.1 Runbooks | Respaldo de PostgreSQL y de la plataforma en verde; réplica, latencia y saturación como se esperaba (con `SITIO=restaurante`). Caída y rollback cubiertos por el caso del restaurante. Falta el reinicio del clúster (solo al reiniciar el PC). |
+| 4.3 Diagnóstico con IA | Borrador con «Hipótesis sin confirmar.», citas y métricas/registros; una hipótesis razonó mal (ver bitácora). |
+| 6.1 TechDocs | Publicado y renderizado en navegador real. |
+| 7.1 / 7.2 Runner y Cosign | Repos de ferretería, restaurante y consultorio sembrados; puerta en verde; firmas verificadas de ferretería y restaurante. |
 | 8.1 Pruebas del backend | 924 pasadas, 3 omitidas, 0 fallos (pytest en la imagen de desarrollo, 15 nov). |
 
 ## Cómo leer esta guía

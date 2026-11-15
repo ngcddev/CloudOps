@@ -404,6 +404,18 @@ Inyección de prompts, 10 intentos: v2 resistió 7 (completo) y 8 (RAG); **v3 re
 - Las tareas T25 y T26 se marcaron como hechas con esos resultados; T27, T28 y T29 quedan abiertas.
 - No se agregó AnythingLLM ni Open WebUI: el diplomado los nombra como referencia de la capa de RAG y frontend (sección 8.2), con competencias independientes del proveedor.
 
+## 15 nov 2026 · Verificación en el clúster real (módulos 2 al 6)
+
+Se corrió el [checklist](checklist-verificacion.md) contra el clúster, Gitea, el Hub en navegador real y los scripts de demo. Resultado y hallazgos:
+
+- **Corregido:** la redacción de secretos tapaba 4 de 7 formatos y la guarda del contexto detectaba 0 de 10 variantes de inyección → ampliadas, con pruebas de regresión. `promover.py` exportaba el JSON con otra suma que el del repositorio → exportación canónica. Grafana se reiniciaba en bucle por una sonda de vida de 1 s con el nodo saturado → CPU 1, memoria 384Mi y sondas con margen (PR 180). El CI se colgaba esperando a una API que rechaza el `JWT_SECRET` de ejemplo → secreto aleatorio y tope de tiempo. Los secretos de la puerta en Gitea guardaban la contraseña vieja del administrador → `configurar-gitea.sh` los renovó.
+- **Rediseño (spec 022):** `hub-gitops` tiene dueños claros (qué escribe el equipo y qué escribe el Hub), el Hub corre bajo Argo CD y `gitops/sincronizar-hub-gitops.sh` es la única vía de promoción.
+- **Verificado:** voz de punta a punta en el clúster; segregación de funciones en pantalla (Sofía no aprueba lo suyo, Camilo sí, queda en la bitácora); sitios de solo lectura; tablero RED/USE con datos; TechDocs y plantilla de Backstage en navegador; `demo-005`, `demo-006`, `demo-caso-restaurante` y `promover.sh`; respaldo de PostgreSQL y de la plataforma; simulaciones de réplica, latencia y saturación; firmas de Cosign de ferretería y restaurante; diagnóstico con IA con métricas y registros; 924 pruebas del backend.
+- **Hallazgo abierto:** el Hub da un cambio por publicado solo si la revisión de Argo CD es exactamente su commit. Cualquier commit posterior en `hub-gitops` (otro cliente, otra promoción) deja un cambio en validación hasta que caduca como «fallida» aunque el sitio ya esté publicado (se vio con el cambio #6 tras `demo-006`). Falta compararlo por ascendencia del commit.
+- **Hallazgo abierto:** una hipótesis del diagnóstico con IA razonó al revés (tomó un tiempo de respuesta muy bajo como señal de problema); por eso es un borrador que una persona aprueba.
+- **Notas:** las simulaciones usan por defecto el sitio `colegio`, que ya no está dado de alta (hay que pasar `SITIO=restaurante`). Las imágenes de los sitios publicadas con `apps/publicar-imagenes.sh` no están firmadas; solo las que pasan por la puerta.
+- **Sigue siendo de personas:** voz con una persona real, medición en el PC B de 6 GB, revisión de Industrial, ensayo del guion de 15 minutos y las esperas de 24 h.
+
 ## 13 nov 2026 y antes
 
 Ver `docs/cumplimiento-diplomado.md` (revisión del 13 nov) y `docs/auditoria-cloudforge.md` (auditoría del 14 nov): compuerta de ML, evaluación del asistente con

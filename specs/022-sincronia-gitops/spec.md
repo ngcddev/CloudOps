@@ -20,11 +20,11 @@ El funcionamiento de la aplicación no cambia: el Hub sigue escribiendo versione
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Un solo comando (`gitops/sincronizar-hub-gitops.sh`) promueve a `hub-gitops` solo lo que es del equipo, con modo `--simular`, y **no pisa** la versión ni el `catalog-info.yaml` que escribe el Hub.
-- [ ] CA-2. Solo promueve commits limpios y ya mezclados (`origin/dev` u `origin/main`); `--forzar` lo salta y lo avisa. El commit en `hub-gitops` dice de qué commit y rama salió.
-- [ ] CA-3. Un chequeo (`gitops/pruebas/sincronia.sh`) dice si `hub-gitops` está en sincronía con el repositorio principal y lista los archivos distintos.
-- [ ] CA-4. Las copias sin uso de `platform/` en `hub-gitops` se retiran y la documentación dice quién escribe qué.
-- [ ] CA-5. El Hub se despliega por Argo CD desde `hub-gitops` (Application `hub`), sin `kubectl apply` a mano, sin cambiar su funcionamiento.
+- [x] CA-1. Un solo comando (`gitops/sincronizar-hub-gitops.sh`) promueve a `hub-gitops` solo lo que es del equipo, con modo `--simular`, y **no pisa** la versión ni el `catalog-info.yaml` que escribe el Hub.
+- [x] CA-2. Solo promueve commits limpios y ya mezclados (`origin/dev` u `origin/main`); `--forzar` lo salta y lo avisa. El commit en `hub-gitops` dice de qué commit y rama salió.
+- [x] CA-3. Un chequeo (`gitops/pruebas/sincronia.sh`) dice si `hub-gitops` está en sincronía con el repositorio principal y lista los archivos distintos.
+- [x] CA-4. Las copias sin uso de `platform/` en `hub-gitops` se retiran y la documentación dice quién escribe qué.
+- [x] CA-5. El Hub se despliega por Argo CD desde `hub-gitops` (Application `hub`), sin `kubectl apply` a mano, sin cambiar su funcionamiento.
 
 ## Fuera de alcance
 
