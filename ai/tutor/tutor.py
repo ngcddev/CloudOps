@@ -116,7 +116,8 @@ def _llamar_ollama(url: str, modelo: str, sistema: str, pregunta: str, timeout: 
     cuerpo = json.dumps(ollama.build_payload(sistema, pregunta, modelo, "10m")).encode("utf-8")
     req = urllib.request.Request(f"{url}/api/chat", data=cuerpo, headers={"Content-Type": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        # bandit B310: herramienta de desarrollo: la URL de Ollama la pone quien la corre
+        with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310
             return json.load(r).get("message", {}).get("content", "").strip() or None
     except Exception as error:  # noqa: BLE001
         print(f"  (Ollama no respondió: {error})", file=sys.stderr)

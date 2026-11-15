@@ -24,8 +24,11 @@ def urllib_transport(url: str, timeout: float) -> tuple[int, bytes]:
     import urllib.error
     import urllib.request
 
+    from app.integrations.http import validar_esquema
+
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as response:
+        # bandit B310: esquema validado
+        with urllib.request.urlopen(validar_esquema(url), timeout=timeout) as response:  # nosec B310
             return response.status, response.read()
     except urllib.error.HTTPError as error_:
         return error_.code, error_.read()

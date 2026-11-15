@@ -68,7 +68,8 @@ def commit_git() -> str:
 def digest_modelo(url: str, nombre: str) -> str:
     """Digest del modelo en Ollama (`/api/tags`): fija con qué pesos exactos se midió. «desconocido» si no responde."""
     try:
-        with urllib.request.urlopen(f"{url}/api/tags", timeout=10) as respuesta:
+        # bandit B310: herramienta de desarrollo: la URL de Ollama la pone quien la corre
+        with urllib.request.urlopen(f"{url}/api/tags", timeout=10) as respuesta:  # nosec B310
             for modelo in json.load(respuesta).get("models", []):
                 if nombre in (modelo.get("name"), modelo.get("model")):
                     return str(modelo.get("digest", "desconocido"))[:12]
