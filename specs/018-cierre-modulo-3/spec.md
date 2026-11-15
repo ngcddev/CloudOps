@@ -14,7 +14,7 @@ manifiesto con permisos excesivos) no tienen escenario. El módulo pesa el 15 % 
 - [x] CA-2. Cada hallazgo aceptado tiene una decisión escrita (VEX con estado, justificación y vencimiento) que Trivy lee, y un script genera el registro desde los reportes.
 - [x] CA-3. El SBOM se adjunta a la imagen con Cosign y la puerta lo verifica junto con la procedencia.
 - [x] CA-4. El simulador tiene los escenarios «dependencia vulnerable» y «manifiesto con permisos excesivos», y la puerta se detiene en los dos.
-- [ ] CA-5. Quien solicita un cambio no puede aprobarlo (segregación de funciones), con la bitácora y la demo al día.
+- [x] CA-5. Quien solicita un cambio no puede aprobarlo (segregación de funciones), con la bitácora y la demo al día.
 - [ ] CA-6. Los sitios de clientes corren con el sistema de archivos de solo lectura y la excepción KSV-0014 de los sitios se cierra.
 - [ ] CA-7. La plantilla de PR tiene la lista de verificación del código generado con IA y existe el modelo de amenazas del Hub.
 

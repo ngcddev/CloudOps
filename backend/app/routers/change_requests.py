@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.config import settings
 from app.db import get_db
 from app.deps import require_agency
 from app.models.change_request import ChangeRequest
@@ -167,6 +168,18 @@ def approve_change_request(
         raise HTTPException(
             status_code=409,
             detail=f"No se permite pasar de «{change.status}» a «aprobada».",
+        )
+    # Segregación de funciones (spec 018): quien pidió el cambio no lo aprueba; el intento queda en la bitácora
+    if settings.segregacion_funciones and change.requested_by_id is not None and change.requested_by_id == approver.id:
+        audit.record(
+            db, approver, "denegar", "change_request", change.id,
+            {"motivo": "segregación de funciones: quien pide el cambio no lo aprueba", "a": change.to_version},
+            audit.request_ip(request),
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=403,
+            detail="Quien pidió el cambio no puede aprobarlo: debe aprobarlo otra persona de la agencia.",
         )
     # Puerta de seguridad (spec 006): solo se publica una versión cuyos controles pasaron
     current = gate.gate_status(db, change.service_id, change.to_version)

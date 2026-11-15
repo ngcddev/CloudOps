@@ -8,6 +8,8 @@ os.environ["JWT_SECRET"] = "clave-de-pruebas-que-no-es-secreta-0123456789"
 os.environ["SEED_USER_PASSWORD"] = "clave-de-desarrollo"
 os.environ["BCRYPT_ROUNDS"] = "4"
 os.environ["PIPELINE_TOKEN"] = "token-del-pipeline-de-pruebas"
+# Las pruebas de flujo piden y aprueban con la misma cuenta; la segregación de funciones (spec 018) se prueba en test_segregacion_funciones.py
+os.environ["SEGREGACION_FUNCIONES"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
