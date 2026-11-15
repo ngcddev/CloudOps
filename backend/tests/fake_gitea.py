@@ -66,10 +66,20 @@ class FakeGitea:
                     head = fake.head or (fake.commits[-1]["sha"] if fake.commits else "0" * 40)
                     return self._send(200, {"commit": {"id": head}})
                 if url.path == base + "commits":
-                    path = parse_qs(url.query).get("path", [None])[0]
-                    found = [c for c in reversed(fake.commits) if path is None or c["path"] == path]
+                    consulta = parse_qs(url.query)
+                    path = consulta.get("path", [None])[0]
+                    historia = fake.commits
+                    desde = consulta.get("sha", [None])[0]
+                    if desde and re.fullmatch(r"[0-9a-f]{40}", desde):
+                        # Como Gitea: la historia llega hasta el commit pedido; si no existe, 404
+                        posicion = next((i for i, c in enumerate(fake.commits) if c["sha"] == desde), None)
+                        if posicion is None:
+                            return self._send(404, {"message": "commit not found"})
+                        historia = fake.commits[: posicion + 1]
+                    limite = int(consulta.get("limit", [1])[0])
+                    found = [c for c in reversed(historia) if path is None or c["path"] == path]
                     return self._send(
-                        200, [{"sha": c["sha"], "commit": {"message": c["message"] + "\n"}} for c in found[:1]]
+                        200, [{"sha": c["sha"], "commit": {"message": c["message"] + "\n"}} for c in found[:limite]]
                     )
                 path = self._contents_path()
                 if path is None:
