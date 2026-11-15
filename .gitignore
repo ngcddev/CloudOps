@@ -175,3 +175,6 @@ tareas-claude.md
 infra/.estado-remoto.env
 infra/tofu/backend_override.tf
 capturas-backstage/
+
+# Salida de los análisis y del registro de hallazgos (spec 018): se genera en cada corrida
+evidencias/
