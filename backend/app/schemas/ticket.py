@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class TicketCreate(BaseModel):
     service_id: int
     title: str = Field(max_length=200)
-    description: str
+    description: str = Field(max_length=5000)   # tope de texto libre (auditoría BE-05)
     kind: Literal["solicitud", "cambio"] = "solicitud"
 
     @field_validator("title", "description")
@@ -25,7 +25,7 @@ class TicketClassify(BaseModel):
     impact: Literal["alto", "medio", "bajo"]
     urgency: Literal["alta", "media", "baja"]
     priority: Literal["P1", "P2", "P3", "P4"] | None = None
-    correction_reason: str | None = None
+    correction_reason: str | None = Field(default=None, max_length=1000)
 
     @field_validator("correction_reason")
     @classmethod
@@ -43,7 +43,7 @@ class TicketTransition(BaseModel):
 
 class WorkLogCreate(BaseModel):
     hours: Decimal
-    note: str | None = None
+    note: str | None = Field(default=None, max_length=2000)
 
     @field_validator("hours")
     @classmethod

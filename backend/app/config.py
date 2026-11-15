@@ -67,6 +67,21 @@ class Settings(BaseSettings):
     ollama_embed_model: str = "nomic-embed-text"
     rag_top_k: int = 4
     rag_min_score: float = 0.60
+    # Pool de conexiones a PostgreSQL (auditoría BE-02): con el pool por defecto (5 + 10) unas 15 peticiones lentas a la vez dejaban a las demás
+    # esperando 30 s y fallando. Esperar una conexión más de DB_POOL_TIMEOUT segundos falla rápido, y la base corta lo que se queda colgado.
+    db_pool_size: int = 10
+    db_max_overflow: int = 5
+    db_pool_timeout: int = 10
+    # Milisegundos que puede tardar una sola sentencia, y que puede quedar una transacción abierta sin hacer nada (una conexión «idle in transaction»).
+    # Lo segundo es una red de seguridad por si algo olvida cerrar: debe superar con holgura lo que tarda una llamada lenta que sí la sostiene
+    # (diagnóstico con Prometheus, Loki y Ollama; altas con Gitea), por eso son 5 minutos.
+    db_statement_timeout_ms: int = 15000
+    db_idle_in_transaction_timeout_ms: int = 300000
+    # Tope del cuerpo de una petición (auditoría BE-05), con el Ingress directo al Pod de 256 Mi: lo general, el informe del pipeline (Trivy y SBOM
+    # miden unos 600 KB) y el audio de voz (2 MB más lo que añade el formato).
+    body_limit_bytes: int = 1_048_576
+    pipeline_body_limit_bytes: int = 8_388_608
+    voice_body_limit_bytes: int = 2_100_000
 
 
 JWT_SECRET_MIN_LENGTH = 32
