@@ -324,3 +324,9 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 
 - **TechDocs:** la imagen de Backstage no trae mkdocs ni Docker; `platform/backstage/publicar-docs.sh` genera el sitio con la imagen `spotify/techdocs` y lo copia al volumen `backstage-techdocs` (`builder: external`). La fuente está en `platform/backstage/docs/` y se ve en `http://backstage.hub.local/docs/default/component/plataforma-cloudops`.
 - **El catálogo persiste:** Backstage guarda su base SQLite en el volumen `backstage-datos`; lo que se registra con la plantilla sobrevive a los reinicios (con `:memory:` se perdía). Probado reiniciando el Pod con un sitio registrado.
+
+## Staging y promoción (spec 017)
+
+
+
+`clients/ferreteria-staging` es el mismo sitio en `cliente-ferreteria-staging` (`ferreteria-staging.hub.local`, cuota menor); el ApplicationSet crea su Application al ver la carpeta. `staging/publicar.sh <cliente> <versión>` la publica con un commit y `staging/promover.sh <cliente>` la pasa a producción **solo si está lista y sana en staging**, pidiendo el cambio por el Hub (ticket → puerta → aprobación). La v2 rota se frena en staging (producción no se toca); la v1.1 sana se promueve. Staging no está en el Hub: una falla ahí no abre incidentes. La imagen de la versión debe estar antes en el registro (`apps/publicar-imagenes.sh ferreteria:v1.1`).

@@ -61,3 +61,5 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Estado remoto de OpenTofu (laboratorio) | `bash infra/estado-remoto.sh iniciar` · `probar` · `activar` |
 | Probar el drift con selfHeal (Argo CD corrige cambios a mano) | `bash gitops/pruebas/drift.sh` |
 | Publicar la documentación de la plataforma en Backstage (TechDocs) | `bash gitops/platform/backstage/publicar-docs.sh` |
+| Publicar una versión en staging de un cliente | `bash gitops/staging/publicar.sh ferreteria v1.1` |
+| Promover a producción lo que está sano en staging | `bash gitops/staging/promover.sh ferreteria` |
