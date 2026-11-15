@@ -129,3 +129,12 @@ prueba el sitio de dos imágenes.
   la versión limpia; los Dockerfile de los sitios nginx llevan ahora `apk upgrade brotli-libs` (con la nota para quitarlo cuando la base lo traiga).
 - **Imagen del Hub:** `backend/Dockerfile` tiene dos destinos: `dev` (con pytest y las pruebas, la usa `docker-compose.yml`) y `prod` (la etapa final, sin pruebas).
   `pipelines/pruebas/humo-hub-api.sh` comprueba que la de producción arranque, migre, siembre, corra sin root y no lleve pytest. La CI del Hub está en `.github/workflows/ci.yml`.
+
+## Registro de hallazgos y VEX (spec 018)
+
+La puerta frena las vulnerabilidades **críticas con arreglo** (`--ignore-unfixed`). Lo demás, las **altas** y lo que **no tiene arreglo**, no desaparece: `pipelines/hallazgos.yaml` es el registro de las decisiones
+(explotabilidad, tratamiento, justificación y fecha de revisión, como máximo a 6 meses) y `pipelines/hallazgos.py` lo cruza con los reportes de Trivy. `bash pipelines/pruebas/hallazgos.sh` construye las imágenes
+del Hub y del sitio de ejemplo, las escanea mostrando también lo que no tiene arreglo y falla si algo es **corregible**, no tiene **decisión** o la tiene **vencida**. Deja la tabla, el JSON y el VEX (OpenVEX) en
+`evidencias/hallazgos/`, y el CI los guarda como artefacto. Con los hallazgos reales de hoy: 94 altas (47 por imagen de Python) sin arreglo, todas con regla vigente; el resto se corrigió actualizando paquetes.
+El VEX es un documento de salida: Trivy no lo consume porque los productos se identifican por nombre de imagen y no por el digest que Trivy espera.
+
