@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.change_request import ChangeRequest
@@ -137,9 +138,15 @@ def add_check(
         raise GateError(f"La imagen «{image}» no es una de las que declaró la corrida: {', '.join(run.images)}.")
     if any(c.step == step and c.image == image for c in run.checks):
         raise GateError("Ese control ya se registró en esta corrida.")
-    check = SecurityCheck(run=run, step=step, image=image, status=status, summary=summary, report=report)
-    db.add(check)
-    db.flush()
+    try:
+        # En un punto de guardado: si dos reintentos del pipeline llegan a la vez, el índice único de la base deja pasar a uno (auditoría BD-02).
+        # El control se crea dentro del bloque: así no hay nada a medias en la colección de la corrida cuando el punto de guardado vacía la sesión.
+        with db.begin_nested():
+            check = SecurityCheck(run=run, step=step, image=image, status=status, summary=summary, report=report)
+            db.add(check)
+            db.flush()
+    except IntegrityError:
+        raise GateError("Ese control ya se registró en esta corrida.") from None
     if status == FALLO:
         close_run(db, run, FALLO, failed_step=step)
     return check

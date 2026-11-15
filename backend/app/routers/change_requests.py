@@ -2,6 +2,7 @@
 # el actor tomado de la sesión (spec 007).
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
@@ -104,7 +105,12 @@ def create_change_request(
         requested_by_id=actor.id,
     )
     db.add(change)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # Dos peticiones a la vez pasaron la comprobación de arriba: el índice único de la base deja pasar solo a una (auditoría BD-02)
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya hay un cambio en curso para este sitio.") from None
     db.add(
         step_event(
             change, None, actor.id,

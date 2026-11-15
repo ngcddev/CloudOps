@@ -1,7 +1,7 @@
 # Modelo de usuario de la agencia o de un cliente (tabla users, specs 004 y 007).
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,7 @@ from app.db import Base
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (Index("ix_users_client_id", "client_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
