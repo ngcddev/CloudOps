@@ -1,0 +1,30 @@
+# Proyecto de Argo CD de los clientes (spec 017, T06): fuera del proyecto `default`, que permite desplegar cualquier cosa en cualquier lugar. Las Applications de los
+# clientes (las tres sembradas y las que crea el ApplicationSet) solo pueden leer hub-gitops, desplegar en namespaces cliente-* y crear lo que un sitio necesita:
+# su namespace y, dentro de él, cuota, límites, red, Deployments, Services e Ingress. Un ClusterRole, un Secret, un Role o un recurso en kube-system
+# se rechaza aunque alguien lo escriba en la carpeta de un cliente (gitops/pruebas/appproject.sh lo demuestra).
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: clientes
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+spec:
+  description: Sitios de los clientes de Forja Digital
+  sourceRepos:
+    - http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "cliente-*"
+  clusterResourceWhitelist:
+    - { group: "", kind: Namespace }
+  namespaceResourceWhitelist:
+    - { group: apps, kind: Deployment }
+    - { group: "", kind: Service }
+    - { group: networking.k8s.io, kind: Ingress }
+    - { group: networking.k8s.io, kind: NetworkPolicy }
+    - { group: "", kind: ResourceQuota }
+    - { group: "", kind: LimitRange }
+    - { group: "", kind: ConfigMap }
+  orphanedResources:
+    warn: true
