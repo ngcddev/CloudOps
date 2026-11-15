@@ -3,6 +3,29 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Cierre del módulo 4 (spec 019)
+
+**Pedido:** completar al máximo el módulo 4 (IaC, observabilidad, SRE y operación sostenible), una brecha a la vez.
+
+| Tarea | Resultado |
+|---|---|
+| T01 · Runbooks | `runbooks/` con caída del sitio, rollback, respaldo y restauración, reinicio del clúster, saturación y latencia (síntoma, diagnóstico, acción, verificación, cuándo escalar). `test_runbooks.py` comprueba las cinco secciones y que todo lo que citan existe |
+| T02 · Alertas accionables | Las tres alertas (`SitioCaido`, `PresupuestoQuemadoRapido`, `PresupuestoQuemadoLento`) llevan `accion` y `runbook_url`; `test_alertas_accionables.py` falla si una nueva no los trae; `promtool test rules` actualizado |
+| T03 · Tablero RED y USE | `red-use.json` (8 gráficas) y un job `cadvisor` en Prometheus con el permiso `nodes/metrics`. Publicado por Git (`actualizar-hub-gitops.sh`), el objetivo de cAdvisor quedó sano y las expresiones devuelven datos en el clúster; Grafana lo carga (`grafana.sh`) |
+| T04 · Capacidad | `observability/capacidad.sh`: cuota, reservado, uso y margen por cliente y del nodo (hoy el consultorio está «ajustado»: 80 % de CPU reservada) |
+| T05 · AIOps con IA local | `POST /api/incidents/{id}/ai-diagnosis` y panel «Diagnóstico con IA»: evidencia numerada (incidente, Prometheus, Loki y lo que se aporte) → hipótesis y borrador de runbook con Qwen2.5 7B. Se verifican las citas `[E#]` (no pueden inventarse), que cite algo y que no proponga cambios a mano; si falla queda un texto base con el runbook que corresponde. Es un borrador que una persona aprueba |
+| T06 · Operación responsable y drift | `docs/operacion-responsable.md` (retención, uso medido, modelo más pequeño que cumple, qué se apaga y se programa) con una prueba que lo ata a los manifiestos; `infra/pruebas/drift.sh`: el cambio a mano da código 2 y un apply lo corrige |
+
+**Hallazgo por medir:** el tablero USE mostró a Alloy en el 87 % de su memoria con 14 reinicios (código 137) en 4 horas; se subió su límite a 256 MiB y el Pod nuevo arrancó sin reinicios.
+
+**Verificado:** 800+ pruebas del backend, ruff, tsc, `validar.sh` y `grafana.sh`; el diagnóstico con el Ollama real (Qwen2.5 7B, 8 a 23 s): citó evidencia que existe e ignoró una orden escondida en la evidencia.
+
+**Pendiente y no verificado:**
+- La imagen del Hub del clúster no incluye aún el diagnóstico con IA (ni, de la spec 018, la segregación de funciones); el endpoint y el panel funcionan en el entorno de desarrollo.
+- En el diagnóstico las citas se verifican por existencia, no por pertinencia: el modelo llegó a citar una evidencia que no trata de lo que afirma. Por eso es un borrador.
+- `drift.sh` prueba el mecanismo con un recurso local; la pila real de OpenTofu no tiene estado propio (los clientes los crea el ApplicationSet), así que no hay drift real que medir.
+- Estabilidad de Alloy tras el cambio: solo se observaron los primeros minutos.
+
 ## 15 nov 2026 · Cierre del módulo 3 (spec 018)
 
 **Pedido:** completar al máximo el módulo 3 (DevSecOps y cadena de suministro), una brecha a la vez.

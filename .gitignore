@@ -178,3 +178,6 @@ capturas-backstage/
 
 # Salida de los análisis y del registro de hallazgos (spec 018): se genera en cada corrida
 evidencias/
+
+# Carpeta temporal de la prueba de drift (spec 019)
+infra/pruebas/.drift/
