@@ -86,6 +86,14 @@ jobs:
           until curl -fs http://localhost:8000/health >/dev/null; do sleep 2; done
           bash gitops/pruebas/respaldo.sh
 
+  analisis:
+    name: Análisis estático y de composición
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bandit (SAST), trivy fs (dependencias) e imagen del frontend (spec 018)
+        run: bash pipelines/pruebas/analisis-estatico.sh
+
   seguridad:
     name: Seguridad de la imagen de producción
     runs-on: ubuntu-latest

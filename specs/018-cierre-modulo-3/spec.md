@@ -10,7 +10,7 @@ manifiesto con permisos excesivos) no tienen escenario. El módulo pesa el 15 % 
 
 ## Criterios de aceptación
 
-- [ ] CA-1. El CI corre análisis estático (bandit) y análisis de composición (`trivy fs` sobre las dependencias de Python y npm, y la imagen del frontend); Dependabot vigila las dependencias.
+- [x] CA-1. El CI corre análisis estático (bandit) y análisis de composición (`trivy fs` sobre las dependencias de Python y npm, y la imagen del frontend); Dependabot vigila las dependencias.
 - [ ] CA-2. Cada hallazgo aceptado tiene una decisión escrita (VEX con estado, justificación y vencimiento) que Trivy lee, y un script genera el registro desde los reportes.
 - [ ] CA-3. El SBOM se adjunta a la imagen con Cosign y la puerta lo verifica junto con la procedencia.
 - [ ] CA-4. El simulador tiene los escenarios «dependencia vulnerable» y «manifiesto con permisos excesivos», y la puerta se detiene en los dos.
