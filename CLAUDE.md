@@ -70,6 +70,8 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Respaldo de la plataforma (Gitea, Argo CD) fuera del nodo | `bash gitops/pruebas/respaldo-plataforma.sh` |
 | Estado remoto de OpenTofu (laboratorio) | `bash infra/estado-remoto.sh iniciar` · `probar` · `activar` |
 | Probar el drift con selfHeal (Argo CD corrige cambios a mano) | `bash gitops/pruebas/drift.sh` |
+| Promover a hub-gitops lo que escribe el equipo (--simular para ver antes) | `bash gitops/sincronizar-hub-gitops.sh --simular` |
+| ¿hub-gitops está en sincronía con el repositorio principal? | `bash gitops/pruebas/sincronia.sh` |
 | Publicar la documentación de la plataforma en Backstage (TechDocs) | `bash gitops/platform/backstage/publicar-docs.sh` |
 | Publicar una versión en staging de un cliente | `bash gitops/staging/publicar.sh ferreteria v1.1` |
 | Promover a producción lo que está sano en staging | `bash gitops/staging/promover.sh ferreteria` |
