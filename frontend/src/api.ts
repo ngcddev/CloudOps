@@ -1891,3 +1891,17 @@ export async function downloadReportPdf(id: number): Promise<void> {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+// ---------- Deriva del asistente (spec 020) ----------
+
+export interface AssistantDrift {
+  ventana_dias: number;
+  estado: "ok" | "atencion" | "sin_datos";
+  avisos: { codigo: string; mensaje: string }[];
+}
+
+// Sin la API (modo de muestra) no hay deriva que calcular: se devuelve «sin datos»
+export async function getAssistantDrift(days = 7): Promise<AssistantDrift> {
+  if ((await detectMode()) === "mock") return { ventana_dias: days, estado: "sin_datos", avisos: [] };
+  return request<AssistantDrift>(`/assistant/drift?days=${days}`);
+}

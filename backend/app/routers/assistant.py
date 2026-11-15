@@ -1,14 +1,14 @@
 # Endpoints del asistente local de ayuda (spec 012): preguntar, opinar sobre la decisión de la compuerta, ver
 # estadísticas y reindexar la ayuda para el RAG. Solo agencia: el cliente no ve jerga técnica (principio 8) y el asistente responde sobre el Hub.
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import require_agency
 from app.models.ai_query import AiQuery
 from app.models.user import User
-from app.schemas.assistant import AskIn, AskOut, FeedbackIn, ReindexOut, StatsOut
-from app.services import assistant, knowledge
+from app.schemas.assistant import AskIn, AskOut, DriftOut, FeedbackIn, ReindexOut, StatsOut
+from app.services import ai_drift, assistant, knowledge
 
 router = APIRouter(prefix="/api/assistant", tags=["asistente"])
 
@@ -59,3 +59,12 @@ def feedback(query_id: int, body: FeedbackIn, user: User = Depends(require_agenc
 def stats(db: Session = Depends(get_db)):
     """Cuántas veces se despertó el LLM, cuántas se evitaron y cuántas decisiones corrigió la gente."""
     return assistant.stats(db)
+
+
+@router.get("/drift", response_model=DriftOut, dependencies=[Depends(require_agency)])
+def drift(days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_db)):
+    """Deriva del asistente: los últimos `days` días frente a los `days` anteriores, con los avisos que pasan su umbral (spec 020).
+
+    Las rutas fijas van antes que `/{query_id}/feedback`, que solo es POST: no chocan.
+    """
+    return ai_drift.calcular(db, days)
