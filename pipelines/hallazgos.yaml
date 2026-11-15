@@ -1,0 +1,74 @@
+# Registro de hallazgos aceptados (spec 018, T02): vulnerabilidades ALTAS o CRÍTICAS de las imágenes que NO tienen arreglo publicado y la decisión de tratamiento de cada una.
+# Es la fuente de verdad: pipelines/hallazgos.py lo cruza con los reportes de Trivy, genera el VEX (OpenVEX) y frena si queda un hallazgo sin decisión, con arreglo disponible
+# (lo corregible se corrige, no se acepta) o con la decisión vencida. Cada regla se revisa como máximo a los 6 meses.
+#
+# Campos de una regla:
+#   id             nombre corto de la regla
+#   paquetes       paquetes del sistema a los que aplica (y/o `cves`: la regla aplica si coincide el paquete Y el CVE cuando están los dos)
+#   estado         not_affected = el código vulnerable no se puede alcanzar aquí (VEX); affected = sí está, pero se acepta con mitigaciones
+#   justificacion  (solo not_affected) vocabulario de OpenVEX: component_not_present, vulnerable_code_not_present, vulnerable_code_not_in_execute_path,
+#                  vulnerable_code_cannot_be_controlled_by_adversary o inline_mitigations_already_exist
+#   explotabilidad quién puede explotarlo y con qué condiciones (criticidad contextual, no solo la nota CVSS)
+#   tratamiento    aceptar | mitigar (qué se hace mientras no haya arreglo)
+#   detalle        por qué es razonable
+#   revisar_en     fecha en que la decisión vence y vuelve a revisarse
+version: 1
+mitigaciones_comunes: >-
+  Todos los contenedores corren sin root (UID fijo), con allowPrivilegeEscalation en false, todas las capacidades de Linux retiradas, seccomp RuntimeDefault,
+  Pod Security restricted, NetworkPolicy que solo deja entrar a Traefik y al monitoreo, y sin token de la API de Kubernetes montado (spec 017, T06).
+reglas:
+  - id: util-linux-mount
+    paquetes: [bsdutils, libblkid1, libmount1, libsmartcols1, liblastlog2-2, libuuid1, login, mount, util-linux]
+    cves: [CVE-2026-76642, CVE-2026-78408, CVE-2026-78409, CVE-2026-78410]
+    estado: not_affected
+    justificacion: vulnerable_code_not_in_execute_path
+    explotabilidad: "Local: exige poder ejecutar mount, nsenter o login dentro del contenedor, es decir, ya tener ejecución de código y privilegios que el Pod no tiene."
+    tratamiento: aceptar
+    detalle: "La aplicación no invoca mount, nsenter ni login; sin root ni capacidades (CAP_SYS_ADMIN) esas herramientas no pueden montar nada. Debian aún no publica el arreglo."
+    revisar_en: "2027-02-15"
+  - id: acl-symlink
+    paquetes: [libacl1]
+    cves: [CVE-2026-54369]
+    estado: not_affected
+    justificacion: vulnerable_code_not_in_execute_path
+    explotabilidad: "Local: el recorrido de enlaces simbólicos ocurre al usar las utilidades de listas de control de acceso (setfacl/getfacl) sobre rutas controladas por otro usuario."
+    tratamiento: aceptar
+    detalle: "Las utilidades de ACL no están instaladas ni se invocan; libacl1 solo llega como dependencia de otras bibliotecas del sistema."
+    revisar_en: "2027-02-15"
+  - id: ncurses-terminal
+    paquetes: [libncursesw6, libtinfo6, ncurses-base, ncurses-bin]
+    cves: [CVE-2025-69720]
+    estado: not_affected
+    justificacion: vulnerable_code_not_in_execute_path
+    explotabilidad: "Local: requiere un terminal interactivo que procese una base de datos terminfo manipulada."
+    tratamiento: aceptar
+    detalle: "Los contenedores no abren terminales interactivos ni procesan archivos terminfo de terceros; ncurses está por dependencia de bash/dpkg."
+    revisar_en: "2027-02-15"
+  - id: systemd-udev
+    paquetes: [libsystemd0, libudev1]
+    cves: [CVE-2026-16742]
+    estado: not_affected
+    justificacion: vulnerable_code_not_present
+    explotabilidad: "Requiere un systemd o udev en ejecución que atienda al atacante."
+    tratamiento: aceptar
+    detalle: "En un contenedor no corre systemd ni udev; solo están las bibliotecas por dependencia de util-linux."
+    revisar_en: "2027-02-15"
+  - id: perl-base
+    paquetes: [perl-base]
+    cves: [CVE-2026-9538]
+    estado: not_affected
+    justificacion: vulnerable_code_not_in_execute_path
+    explotabilidad: "Requiere ejecutar un script de Perl con entrada del atacante."
+    tratamiento: aceptar
+    detalle: "Perl solo está por dpkg; la aplicación no ejecuta Perl y el usuario sin root no instala paquetes."
+    revisar_en: "2027-02-15"
+  - id: sqlite-demostracion
+    paquetes: [libsqlite3-0]
+    cves: [CVE-2026-119373, CVE-2026-119374, CVE-2026-119379]
+    estado: affected
+    explotabilidad: "Remota y por entrada del visitante SOLO si llega SQL armado con ese texto; los sitios con formulario guardan el contacto en SQLite."
+    tratamiento: mitigar
+    detalle: >-
+      Las sentencias SQL son fijas en el código y la entrada del visitante va solo como parámetros, nunca concatenada; el dato es de demostración y vive en /tmp del Pod.
+      Se acepta mientras Debian no publique el arreglo; si el sitio pasara a guardar datos reales se migra a PostgreSQL.
+    revisar_en: "2027-02-15"
