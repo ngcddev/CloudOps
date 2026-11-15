@@ -79,3 +79,23 @@ class DriftOut(BaseModel):
     actual: DriftWindowOut
     anterior: DriftWindowOut
     avisos: list[DriftWarningOut]
+
+
+class VoiceStatusOut(BaseModel):
+    habilitada: bool  # hay un servicio de voz configurado
+    disponible: bool  # y responde ahora
+
+
+class TranscriptionOut(BaseModel):
+    """Lo que el servicio de voz entendió; la persona lo revisa y lo corrige antes de enviarlo como pregunta."""
+
+    text: str
+    duration_s: float
+    elapsed_ms: int
+    model: str
+    # Tipos de secreto que se taparon en la transcripción (vacío = ninguno)
+    secrets_redacted: list[str] = []
+
+
+class SpeakIn(BaseModel):
+    text: str = Field(min_length=1, max_length=5000)

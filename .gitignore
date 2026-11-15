@@ -184,3 +184,4 @@ infra/pruebas/.drift/
 
 # Modelos de voz descargados en local (spec 021)
 voz/modelos/
+capturas-voz/

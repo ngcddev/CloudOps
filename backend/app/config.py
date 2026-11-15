@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     prometheus_url: str = ""
     # URL de Loki (spec 019): el diagnóstico con IA lee las últimas líneas de registro del cliente. Vacío = sin registros como evidencia.
     loki_url: str = ""
+    # Servicio de voz (spec 021): voz a texto y texto a voz en CPU. Vacío = el asistente solo funciona por texto. El token, si se define, lo exige el servicio.
+    voz_url: str = ""
+    voz_token: str = ""
     # Trazas (OpenTelemetry): URL base del receptor OTLP/HTTP de Tempo, por ejemplo http://tempo.monitoring.svc:4318. Vacío = sin trazas.
     otel_exporter_otlp_endpoint: str = ""
     # Asistente local (spec 012): Ollama en el PC B. Vacío = el asistente responde que la IA no está disponible.

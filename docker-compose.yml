@@ -55,6 +55,9 @@ services:
       PROMETHEUS_URL: ${PROMETHEUS_URL:-}
       # Registros como evidencia del diagnóstico con IA (spec 019); vacío = sin registros
       LOKI_URL: ${LOKI_URL:-}
+      # Voz del asistente (spec 021): el servicio corre con el perfil «voz»; sin él la voz queda no disponible y el asistente sigue por texto
+      VOZ_URL: ${VOZ_URL:-http://voz:8100}
+      VOZ_TOKEN: ${VOZ_TOKEN:-}
       # Asistente local (spec 012): vacío = sin IA; la compuerta responde igual a lo ajeno al Hub
       OLLAMA_URL: ${OLLAMA_URL:-}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}
@@ -78,6 +81,31 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+
+  # Servicio de voz (spec 021): voz a texto y texto a voz en CPU, sin servicios externos. Solo arranca con el perfil «voz»:
+  #   docker compose --profile voz up -d --build voz        (la primera vez baja los modelos, unos 210 MB, con su suma SHA-256 verificada)
+  # Sin él, el asistente sigue por texto y la pantalla no muestra el micrófono. Con WHISPER=small (build arg) usa el modelo de 484 MB.
+  voz:
+    profiles: ["voz"]
+    mem_limit: 1g
+    build:
+      context: ./voz
+      additional_contexts:
+        vocab: ./ai/classifier/data
+      args:
+        WHISPER: ${WHISPER:-base}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      VOZ_TOKEN: ${VOZ_TOKEN:-}
+    ports:
+      - "127.0.0.1:${VOZ_PORT:-8100}:8100"
 
   # Consola de agencia (spec 001): nginx en :5173 (dentro del contenedor, 8080)
   web:

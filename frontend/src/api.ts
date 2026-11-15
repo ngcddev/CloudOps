@@ -1905,3 +1905,45 @@ export async function getAssistantDrift(days = 7): Promise<AssistantDrift> {
   if ((await detectMode()) === "mock") return { ventana_dias: days, estado: "sin_datos", avisos: [] };
   return request<AssistantDrift>(`/assistant/drift?days=${days}`);
 }
+
+// ---------- Voz del asistente (spec 021) ----------
+
+export interface VoiceStatus {
+  habilitada: boolean; // hay un servicio de voz configurado
+  disponible: boolean; // y responde ahora
+}
+
+export interface Transcription {
+  text: string;
+  duration_s: number;
+  elapsed_ms: number;
+  model: string;
+  // Tipos de secreto que se taparon en lo dictado
+  secrets_redacted: string[];
+}
+
+// Sin la API (modo de muestra) no hay voz: el micrófono no se ofrece
+export async function getVoiceStatus(): Promise<VoiceStatus> {
+  if ((await detectMode()) === "mock") return { habilitada: false, disponible: false };
+  return request<VoiceStatus>("/assistant/voice/status");
+}
+
+// El audio va en el cuerpo tal cual (webm, ogg o wav); la API no lo guarda
+export async function transcribeAudio(audio: Blob): Promise<Transcription> {
+  const headers: Record<string, string> = { "Content-Type": audio.type || "application/octet-stream" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch("/api/assistant/voice/transcribe", { method: "POST", headers, body: audio });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+  return res.json() as Promise<Transcription>;
+}
+
+// El texto se lee con la voz del laboratorio; devuelve el audio WAV
+export async function speakText(text: string): Promise<Blob> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch("/api/assistant/voice/speak", { method: "POST", headers, body: JSON.stringify({ text }) });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+  return res.blob();
+}

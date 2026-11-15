@@ -1,14 +1,16 @@
 # Endpoints del asistente local de ayuda (spec 012): preguntar, opinar sobre la decisión de la compuerta, ver
 # estadísticas y reindexar la ayuda para el RAG. Solo agencia: el cliente no ve jerga técnica (principio 8) y el asistente responde sobre el Hub.
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import require_agency
 from app.models.ai_query import AiQuery
 from app.models.user import User
-from app.schemas.assistant import AskIn, AskOut, DriftOut, FeedbackIn, ReindexOut, StatsOut
-from app.services import ai_drift, assistant, knowledge
+from app.integrations import voz
+from app.schemas.assistant import AskIn, AskOut, DriftOut, FeedbackIn, ReindexOut, SpeakIn, StatsOut, TranscriptionOut, VoiceStatusOut
+from app.services import ai_drift, assistant, knowledge, redaccion
 from app.services.assistant_gate import ModeloAlterado
 
 router = APIRouter(prefix="/api/assistant", tags=["asistente"])
@@ -74,3 +76,43 @@ def drift(days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_d
     Las rutas fijas van antes que `/{query_id}/feedback`, que solo es POST: no chocan.
     """
     return ai_drift.calcular(db, days)
+
+
+# ---------- Voz (spec 021): hablarle al asistente y escuchar su respuesta ----------
+# El audio pasa por la API hacia el servicio de voz y no se guarda en ninguna parte; de la voz solo queda, si la persona envía la pregunta, su texto ya sin secretos.
+MAX_AUDIO_BYTES = 2_000_000
+
+
+@router.get("/voice/status", response_model=VoiceStatusOut, dependencies=[Depends(require_agency)])
+def voice_status():
+    """Si la voz está configurada y responde; la pantalla muestra el micrófono solo si está disponible."""
+    return voz.estado()
+
+
+@router.post("/voice/transcribe", response_model=TranscriptionOut, dependencies=[Depends(require_agency)])
+async def voice_transcribe(request: Request):
+    """Convierte el audio del cuerpo (webm, ogg o wav, hasta 30 s) en texto. No envía la pregunta: la persona revisa la transcripción y la manda aparte."""
+    audio = await request.body()
+    if not audio:
+        raise HTTPException(status_code=400, detail="No llegó audio.")
+    if len(audio) > MAX_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="El audio es demasiado grande: habla en frases de menos de 30 segundos.")
+    try:
+        resultado = voz.transcribir(audio, request.headers.get("content-type", ""))
+    except voz.VozError as error:
+        raise HTTPException(status_code=error.status, detail=error.detail) from None
+    texto, secretos = redaccion.redactar(resultado.get("texto", ""))
+    return TranscriptionOut(
+        text=texto, duration_s=resultado.get("duracion_s", 0), elapsed_ms=resultado.get("tiempo_ms", 0), model=resultado.get("modelo", ""), secrets_redacted=secretos
+    )
+
+
+@router.post("/voice/speak", dependencies=[Depends(require_agency)], responses={200: {"content": {"audio/wav": {}}}})
+def voice_speak(body: SpeakIn):
+    """Lee un texto en voz alta (la respuesta del asistente) y devuelve el audio WAV."""
+    texto, _ = redaccion.redactar(body.text)
+    try:
+        audio = voz.sintetizar(texto)
+    except voz.VozError as error:
+        raise HTTPException(status_code=error.status, detail=error.detail) from None
+    return Response(content=audio, media_type="audio/wav")
