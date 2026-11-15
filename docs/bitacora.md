@@ -25,10 +25,26 @@ y ctranslate2) y la memoria con `small` es de 1,2 GiB, no los 0,5 GiB previstos.
 
 **Pendiente y no verificado:**
 - Las cifras son con voz sintetizada (el mejor caso); con una persona, un micrófono de portátil y ruido el error será mayor. No se probó con una voz humana real.
-- No hay manifiesto del servicio de voz para el clúster y la imagen del Hub del clúster no incluye la voz (ni lo de las specs 018 a 020); el micrófono tampoco funciona sobre `http://hub.local`.
+- ~~No hay manifiesto del servicio de voz para el clúster ni imágenes nuevas del Hub~~ → hecho el mismo día (T06, más abajo).
 - Fase 2 sin hacer: memoria de la conversación («¿y cómo lo rechazo?») y voz frase por frase mientras llega la respuesta.
 - La voz de Piper es mexicana y lee mal las palabras en inglés y las siglas.
 
+
+### T06 · La voz en el clúster (15 nov 2026, más tarde)
+
+**Pedido:** que la voz funcione sí o sí en el clúster.
+
+| Qué | Resultado |
+|---|---|
+| Imágenes | `apps/publicar-imagenes.sh hub-api hub-web hub-voz` publicó `hub-api:v1.12`, `hub-web:v1.9` y `hub-voz:v1.0` en el registro de Gitea; con esto el Hub del clúster trae por primera vez lo de las specs 018 a 021 (segregación de funciones, runbooks y alertas con enlace, diagnóstico con IA, deriva, redacción de secretos, voz) |
+| Manifiestos | `gitops/hub/voz.yaml` (sin root, solo lectura, token, sin Ingress), `hub-https` en `ingress.yaml`, `VOZ_URL` y `VOZ_TOKEN` en la API, Secret `hub-voz` en `crear-secretos.sh`; pruebas de los manifiestos (`test_voz_cluster.py`) y Pod Security `restricted` sin clúster |
+| Aplicación | `bash gitops/hub/crear-secretos.sh` y `kubectl apply -k gitops/hub` (el Hub no lo gestiona Argo CD). El modo automático pidió autorización explícita antes de tocar el clúster; se dio |
+| Verificado en el clúster | Los Pods `api`, `web` y `voz` quedan Ready sin reinicios; `https://hub.local` inicia sesión; `/api/assistant/voice/status` dice disponible; transcribir un audio webm devuelve «Para aprobar un cambio de versión, abre cambios y pulsa aprobar»; hablar devuelve un WAV; el servicio responde 401 sin token (desde otro Pod) y `/voz` por el Ingress devuelve la consola, no el servicio |
+| Navegador real contra el clúster | `voz/pruebas/voz-ui.sh` con `HUB_WEB=https://hub.local`: hablar, transcribir, enviar, respuesta del asistente y lectura en voz alta, sin errores de JavaScript |
+
+**Medido:** el Pod de voz usa ~950 MiB con Whisper `small`; la primera transcripción tarda ~10 s (carga del modelo) y las siguientes ~2 s; la API sube a ~118 MiB.
+
+**Pendiente y no verificado:** no se probó con una voz humana real ni desde un navegador de otra persona (hace falta la entrada de `hub.local` en `hosts` y aceptar el certificado autofirmado); de lo nuevo del Hub en el clúster solo se comprobó la voz, el inicio de sesión y el estado del asistente, no cada funcionalidad de las specs 018 a 020; el servicio de voz no tiene escalado ni réplica.
 ## 15 nov 2026 · Cierre del módulo 5 (spec 020)
 
 **Pedido:** completar al máximo el módulo 5 (MLOps, LLMOps y serving de IA local), una brecha a la vez.
@@ -46,7 +62,7 @@ y ctranslate2) y la memoria con `small` es de 1,2 GiB, no los 0,5 GiB previstos.
 **Verificado:** pruebas del backend y de `ai/`, ruff, tsc; las mediciones y el script de documentos maliciosos contra el Ollama real; `verificar_modelos.py` con los tres digests iguales a sus fichas.
 
 **Pendiente y no verificado:**
-- La imagen del Hub del clúster no incluye aún la redacción de secretos, la guarda del contexto, la deriva ni el diagnóstico (módulo 4) ni la segregación de funciones (módulo 3).
+- La imagen del Hub del clúster no incluye aún la redacción de secretos, la guarda del contexto, la deriva ni el diagnóstico (módulo 4) ni la segregación de funciones (módulo 3). **Resuelto el mismo día: `hub-api:v1.12` ya corre en el clúster (ver T06 del módulo 6).**
 - La redacción de secretos es de patrones conocidos: un secreto con otro formato pasa. La guarda del contexto también es de patrones: una orden redactada de otra forma pasaría.
 - La comparación de `promover.py` usa el conjunto de prueba de 24 ejemplos: orientativa, no una garantía.
 - El digest de los modelos se comprueba cuando se corre el script, no en cada arranque.
@@ -70,7 +86,7 @@ y ctranslate2) y la memoria con `small` es de 1,2 GiB, no los 0,5 GiB previstos.
 **Verificado:** 800+ pruebas del backend, ruff, tsc, `validar.sh` y `grafana.sh`; el diagnóstico con el Ollama real (Qwen2.5 7B, 8 a 23 s): citó evidencia que existe e ignoró una orden escondida en la evidencia.
 
 **Pendiente y no verificado:**
-- La imagen del Hub del clúster no incluye aún el diagnóstico con IA (ni, de la spec 018, la segregación de funciones); el endpoint y el panel funcionan en el entorno de desarrollo.
+- La imagen del Hub del clúster no incluye aún el diagnóstico con IA (ni, de la spec 018, la segregación de funciones); el endpoint y el panel funcionan en el entorno de desarrollo. **Resuelto el mismo día: `hub-api:v1.12` ya corre en el clúster (ver T06 del módulo 6).**
 - En el diagnóstico las citas se verifican por existencia, no por pertinencia: el modelo llegó a citar una evidencia que no trata de lo que afirma. Por eso es un borrador.
 - `drift.sh` prueba el mecanismo con un recurso local; la pila real de OpenTofu no tiene estado propio (los clientes los crea el ApplicationSet), así que no hay drift real que medir.
 - Estabilidad de Alloy tras el cambio: solo se observaron los primeros minutos.
@@ -93,7 +109,7 @@ y ctranslate2) y la memoria con `small` es de 1,2 GiB, no los 0,5 GiB previstos.
 
 **Pendiente y no verificado:**
 - Los sitios de solo lectura **no se han desplegado en el clúster**: Argo CD los toma de `hub-gitops`, y se verán sanos cuando se publiquen por Git.
-- La imagen del Hub del clúster no incluye aún la segregación de funciones; hasta publicarla, el clúster sigue dejando aprobar el propio cambio.
+- La imagen del Hub del clúster no incluye aún la segregación de funciones; hasta publicarla, el clúster sigue dejando aprobar el propio cambio. **Resuelto el mismo día: `hub-api:v1.12` ya corre en el clúster (ver T06 del módulo 6).**
 - La plataforma (Hub, Gitea, Grafana, Tempo, Backstage…) sigue con la excepción KSV-0014 hasta 2027-03-31.
 - Kyverno queda como mejora (decisión: la política de admisión actual cubre registro y etiqueta).
 

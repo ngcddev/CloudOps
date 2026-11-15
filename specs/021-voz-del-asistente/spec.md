@@ -18,7 +18,7 @@ y sin acciones por voz: el asistente solo explica (principio 6).
 - [x] CA-3. La pantalla del asistente permite pulsar para hablar, corregir la transcripción antes de enviar, ver el estado (escuchando, pensando, hablando) y escuchar la respuesta, con opción de silenciar.
 - [x] CA-4. Una evaluación sin micrófono (las 40 preguntas sintetizadas y transcritas) mide la tasa de error de palabras, la latencia por etapa y la memoria, y elige entre los modelos `base` y `small`.
 - [x] CA-5. Los dos modelos tienen su ficha y el análisis de riesgos; la documentación dice qué exige el micrófono (HTTPS o `localhost`).
-- [ ] CA-6. El servicio de voz y el asistente con voz funcionan en el clúster: imágenes publicadas, Deployment del servicio sin Ingress y con token, Hub con HTTPS para el micrófono, y una prueba en navegador real contra `https://hub.local`.
+- [x] CA-6. El servicio de voz y el asistente con voz funcionan en el clúster: imágenes publicadas, Deployment del servicio sin Ingress y con token, Hub con HTTPS para el micrófono, y una prueba en navegador real contra `https://hub.local`.
 
 ## Fuera de alcance
 

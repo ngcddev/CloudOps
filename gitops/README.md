@@ -299,6 +299,8 @@ sembrados conservan su Application propia y están excluidos. Las imágenes `<cl
 
 ## Política de admisión y simulaciones (spec 016)
 
+El servicio de voz del asistente (`hub/voz.yaml`, spec 021) va en el namespace `hub` sin Ingress y con el token del Secret `hub-voz`; `hub/ingress.yaml` suma `hub-https` (https://hub.local) para que el navegador dé el micrófono. Las imágenes del Hub (`hub-api`, `hub-web`, `hub-voz`) se publican con `apps/publicar-imagenes.sh`.
+
 `kubectl apply -f platform/politicas/` aplica el `ValidatingAdmissionPolicy` que solo admite imágenes de `gitea.hub.local/forja-digital/` con etiqueta o digest fijos en los namespaces de
 clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyverno o policy-controller y el nodo no tiene RAM; la firma se verifica en la puerta de seguridad.
 `pruebas/simulaciones.sh` provoca réplica caída, latencia (netem en los veth del nodo) y saturación (HPA) y comprueba lo que se ve en Prometheus y en el HPA.

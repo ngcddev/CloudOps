@@ -24,8 +24,8 @@ en vez de 1,2 GiB y 1,9 s, pero acierta menos términos del Hub: 84 % frente a 9
 
 ## Qué exige el micrófono
 
-El navegador solo da micrófono en HTTPS o en `localhost` (o `*.localhost`). La demo local (`http://localhost:5173`) funciona; el Hub del clúster en `http://hub.local` no, igual que
-`crypto.randomUUID`. Para el clúster haría falta un Ingress con HTTPS como el de Backstage. Sin micrófono disponible, la pantalla lo dice y se escribe la pregunta.
+El navegador solo da micrófono en HTTPS o en `localhost` (o `*.localhost`). La demo local (`http://localhost:5173`) y `https://hub.local` del clúster funcionan; `http://hub.local` no, igual que
+`crypto.randomUUID`. Sin micrófono disponible, la pantalla lo dice y se escribe la pregunta.
 
 ## Pruebas y medición
 
@@ -49,4 +49,18 @@ Una vuelta completa suma la transcripción, la compuerta y el LLM (3,6 s medidos
 
 ## Fuera de alcance (a propósito)
 
-Escucha continua, detección de voz, interrumpir al asistente, WebSocket o WebRTC, acciones por voz, memoria de la conversación (fase 2) y publicarlo en el clúster.
+Escucha continua, detección de voz, interrumpir al asistente, WebSocket o WebRTC, acciones por voz y memoria de la conversación (fase 2).
+
+## En el clúster (T06)
+
+| Pieza | Dónde |
+|---|---|
+| Servicio | `gitops/hub/voz.yaml`: Deployment `voz` en el namespace `hub`, sin root, sistema de archivos de solo lectura (`/tmp` es un emptyDir), 768 MiB pedidos y 1,5 GiB de tope, sin Ingress: solo la API lo llama (`http://voz.hub.svc:8100`) |
+| Token | Secret `hub-voz` (lo crea `gitops/hub/crear-secretos.sh`): `/stt` y `/tts` responden 401 sin él; `/health` queda abierto para las sondas |
+| HTTPS | Ingress `hub-https` en `gitops/hub/ingress.yaml`: `https://hub.local` con el certificado autofirmado de Traefik (se acepta una vez); el micrófono lo exige. El HTTP sigue abierto para scripts, runner y Alertmanager |
+| Imágenes | `apps/publicar-imagenes.sh hub-api hub-web hub-voz` las publica en el registro de Gitea (`hub-api:v1.12`, `hub-web:v1.9`, `hub-voz:v1.0`) |
+| Aplicar | `kubectl apply -k gitops/hub` (el Hub no lo gestiona Argo CD; es el arranque documentado en `gitops/README.md`) |
+| Probar | `HUB_WEB=https://hub.local HUB_NOMBRE=hub.local AUDIO_PRACTICA=ruta.wav HUB_USUARIO=... HUB_PASSWORD=... bash voz/pruebas/voz-ui.sh` (la contraseña: `kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' \| base64 -d`) |
+
+Medido en el clúster el 15 nov 2026: el Pod usa unos 950 MiB con Whisper `small` cargado; la primera transcripción tarda unos 10 s (carga del modelo) y las siguientes unos 2 s.
+Para abrir `https://hub.local` en tu navegador hace falta la entrada de `hub.local` en el archivo `hosts` (apunta a 127.0.0.1) y aceptar el certificado.
