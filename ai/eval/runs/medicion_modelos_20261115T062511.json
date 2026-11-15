@@ -1,0 +1,17 @@
+{
+  "commit_git": "desconocido",
+  "resultados": [
+    {
+      "modelo": "nomic-embed-text",
+      "tipo": "embeddings",
+      "repeticiones": 3,
+      "arranque_en_frio_s": 0.12,
+      "latencia_media_s": 0.08,
+      "textos_por_s": 101.0,
+      "memoria_total_mib": 320,
+      "vram_mib": 320,
+      "digest": "0a109f422b47",
+      "fecha_utc": "2026-11-15T06:25:11.336071+00:00"
+    }
+  ]
+}

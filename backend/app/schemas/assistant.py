@@ -1,4 +1,5 @@
 # Esquemas del asistente local (spec 012): pregunta, respuesta con la decisión de la compuerta, opinión y estadísticas.
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -25,6 +26,8 @@ class AskOut(BaseModel):
     # Cómo se eligió ese contexto (el RAG puede caer a la recuperación léxica) y la similitud del mejor trozo
     context_mode: Literal["completo", "recuperacion", "rag"] | None = None
     retrieval_score: float | None = None
+    # Tipos de secreto que se taparon en la pregunta antes de guardarla y de enviarla al modelo (vacío = ninguno)
+    secrets_redacted: list[str] = []
 
 
 class ReindexOut(BaseModel):
@@ -49,3 +52,30 @@ class StatsOut(BaseModel):
     con_opinion: int
     decisiones_corregidas: int
     decisiones_corregidas_pct: float | None
+
+
+class DriftWindowOut(BaseModel):
+    desde: datetime
+    hasta: datetime
+    consultas: int
+    fuera_de_tema_pct: float | None
+    con_opinion: int
+    corregidas_pct: float | None
+    llm_consultas: int
+    llm_fallidas_pct: float | None
+    latencia_llm_ms: int | None
+
+
+class DriftWarningOut(BaseModel):
+    codigo: str
+    mensaje: str
+
+
+class DriftOut(BaseModel):
+    """Deriva del asistente (spec 020): ventana actual frente a la anterior y los avisos que pasan sus umbrales."""
+
+    ventana_dias: int
+    estado: str  # ok | atencion | sin_datos
+    actual: DriftWindowOut
+    anterior: DriftWindowOut
+    avisos: list[DriftWarningOut]

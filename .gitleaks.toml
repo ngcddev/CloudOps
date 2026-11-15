@@ -15,4 +15,6 @@ regexes = [
   # Contraseñas de laboratorio de las pruebas de humo (spec 006 y 008): viven solo en contenedores efímeros que la propia prueba crea y borra
   '''JWT_SECRET=humo-0123456789-0123456789-0123''',
   '''-u admin:prueba''',
+  # JWT de ejemplo (el de jwt.io) en las pruebas de redacción de secretos (spec 020): no firma nada real; la prueba comprueba que el redactor lo tapa
+  '''eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.dBjftJeZ4CVPmB92K27uhbUJU1p1r''',
 ]

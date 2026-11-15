@@ -13,6 +13,7 @@ from app.models.ai_query import AiQuery
 from app.models.user import User
 from app.services import assistant_context, knowledge
 from app.services.assistant_gate import GateModel, load_model
+from app.services.redaccion import redactar
 
 PROMPT_VERSION = assistant_context.PROMPT_VERSION
 
@@ -46,6 +47,8 @@ def _contexto(db: Session, question: str, transport=None) -> tuple[list[assistan
 
 def ask(db: Session, user: User, question: str, gate: GateModel | None = None, transport=None) -> AiQuery:
     """Procesa la pregunta y devuelve la fila registrada (hace commit)."""
+    # Spec 020: una clave pegada en la pregunta no se guarda ni viaja al modelo; se tapa antes de cualquier otra cosa
+    question, secretos = redactar(question)
     gate = gate or load_model()
     umbral = settings.assistant_gate_threshold or None
     tracer = telemetry.tracer()
@@ -98,6 +101,8 @@ def ask(db: Session, user: User, question: str, gate: GateModel | None = None, t
     db.add(registro)
     db.commit()
     db.refresh(registro)
+    # No es una columna: solo avisa a quien pregunta que se taparon secretos (el aviso no se guarda)
+    registro.secretos_tapados = secretos
     return registro
 
 

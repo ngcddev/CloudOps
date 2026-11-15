@@ -17,6 +17,7 @@ from app.integrations import loki, ollama, prometheus
 from app.models.ai_draft import AiDraft
 from app.models.incident import Incident
 from app.services.ai_drafts import ASSETS, hhmm
+from app.services import redaccion
 
 PROMPT_VERSION = "v1"
 PROMPT = f"diagnostico.{PROMPT_VERSION}.md"
@@ -78,7 +79,8 @@ def reunir_evidencia(incident: Incident, aportada: list[str] | None = None, tran
     desde, hasta = int((inicio.timestamp() - 300) * 1e9), int(time.time() * 1e9)
     textos += [("registro", linea) for linea in loki.lineas(namespace, desde, hasta, transport_loki)[-10:]]
     textos += [("aportada", t.strip()[:MAX_LARGO_APORTADA]) for t in (aportada or [])[:MAX_APORTADA] if t.strip()]
-    return [Evidencia(f"E{i}", tipo, texto) for i, (tipo, texto) in enumerate(textos, start=1)]
+    # Spec 020: un registro o una nota con una clave no viaja al modelo ni se guarda en el borrador
+    return [Evidencia(f"E{i}", tipo, redaccion.redactar(texto)[0]) for i, (tipo, texto) in enumerate(textos, start=1)]
 
 
 def datos_para_el_modelo(evidencia: list[Evidencia]) -> str:

@@ -5,9 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   askAssistant,
+  getAssistantDrift,
   getAssistantStats,
   sendAssistantFeedback,
   type AssistantAnswer,
+  type AssistantDrift,
   type AssistantStats,
   type GateLabel,
 } from "../../api";
@@ -25,12 +27,14 @@ export default function Assistant() {
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [stats, setStats] = useState<AssistantStats | null>(null);
+  const [drift, setDrift] = useState<AssistantDrift | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadStats = useCallback(async () => {
     try {
       setStats(await getAssistantStats());
+      setDrift(await getAssistantDrift());
     } catch (statsError) {
       setError((statsError as Error).message);
     }
@@ -159,6 +163,16 @@ export default function Assistant() {
           <span className="muted">Se calcula con todas las preguntas de la agencia</span>
         </div>
         {stats === null && !error && <p className="muted">Cargando…</p>}
+        {drift !== null && drift.avisos.length > 0 && (
+          <div role="note" aria-label="Deriva del asistente">
+            <h3>Deriva en los últimos {drift.ventana_dias} días</h3>
+            <ul>
+              {drift.avisos.map((aviso) => (
+                <li key={aviso.codigo}>⚠ {aviso.mensaje}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         {stats !== null && stats.total === 0 && <p>Todavía no hay preguntas. Haz la primera arriba.</p>}
         {stats !== null && stats.total > 0 && (
           <dl className="assistant-stats">

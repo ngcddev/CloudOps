@@ -3,7 +3,9 @@
 # nada de la ayuda se parece a la pregunta, no se llama al LLM y se responde «sin información». Recuperación léxica
 # en Python puro (TF-IDF sobre raíces de palabras), sin base vectorial ni dependencias nuevas.
 import math
+import logging
 import re
+import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -14,6 +16,32 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 HELP_PATH = ASSETS / "ayuda_hub.md"
 PROMPT_VERSION = "v3"
 PROMPT_PATH = ASSETS / f"asistente.{PROMPT_VERSION}.md"
+logger = logging.getLogger(__name__)
+
+
+# Guarda del contexto (spec 020, T05): la ayuda es lo que el LLM lee como CONTEXTO; si alguien la edita (o un trozo envenenado llega por el RAG) con órdenes dirigidas
+# al asistente, un modelo de 7B las obedece (se midió: 3 de 5 casos resistidos con el prompt v3 y también con una regla extra en el prompt). Por eso la defensa no depende
+# del modelo: una sección con frases de ese tipo no entra al prompt. Son patrones sobre texto sin tildes; una prueba comprueba que la ayuda real no los dispara.
+PATRONES_SOSPECHOSOS = {
+    "ignorar reglas": re.compile(r"\bignor\w+ (?:\w+ ){0,3}(?:reglas|instrucciones|indicaciones)\b|\bignore (?:\w+ ){0,3}(?:rules|instructions)\b"),
+    "orden al asistente": re.compile(r"\b(?:nota|instruccion|orden|mensaje|aviso)\w* (?:para|del|de la) (?:el |la )?(?:asistente|administrador|sistema|ia)\b|\bsistema:|\bsystem:"),
+    "cambio de rol": re.compile(r"\ba partir de aqui\b|\bahora eres\b|\beres un asistente sin\b|\bsin restricciones\b"),
+    "decir algo concreto": re.compile(r"\bresponde (?:unicamente|solo|solamente) (?:la |con )?(?:palabra|frase)\b|\bal final de cada respuesta\b|\bempezando con\b|\bescribe al final\b"),
+    "ante una pregunta": re.compile(r"\bcuando te pregunten\b|\bcuando el usuario pregunte\b|\bresponde que\b"),
+    "accion obligatoria": re.compile(r"\baccion obligatoria\b|\bdebes obedecer\b"),
+    "enviar datos": re.compile(r"\b(?:envia|enviar|manda|enviala|mandala)\w* (?:\w+ ){0,6}(?:a|hacia) https?\b"),
+}
+
+
+def _plano(texto: str) -> str:
+    """Minúsculas y sin tildes, pero conservando los signos (los patrones miran «sistema:» y «http»)."""
+    return "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if unicodedata.category(c) != "Mn")
+
+
+def sospechosa(texto: str) -> list[str]:
+    """Nombres de los patrones de «orden al asistente» que aparecen en el texto (vacío = limpio)."""
+    normal = _plano(texto)
+    return [nombre for nombre, patron in PATRONES_SOSPECHOSOS.items() if patron.search(normal)]
 
 # Cuántas secciones se pasan al LLM y cuánto debe puntuar la mejor para considerar que hay información
 TOP_SECCIONES = 3
@@ -136,6 +164,14 @@ def elegir_contexto(pregunta: str, modo: str) -> list[Seccion]:
 
 
 def mensaje_de_sistema(secciones: list[Seccion]) -> str:
-    """Prompt versionado + las secciones elegidas como contexto cerrado."""
-    contexto = "\n\n".join(f"### {sec.titulo}\n{sec.texto}" for sec in secciones)
+    """Prompt versionado + las secciones elegidas como contexto cerrado, sin las que traen órdenes dirigidas al asistente."""
+    limpias = []
+    for sec in secciones:
+        hallazgos = sospechosa(f"{sec.titulo}\n{sec.texto}")
+        if hallazgos:
+            logger.warning("Sección de la ayuda descartada del contexto por parecer una orden al asistente: %s (%s)", sec.titulo, ", ".join(hallazgos))
+        else:
+            limpias.append(sec)
+    secciones = limpias
+    contexto ="\n\n".join(f"### {sec.titulo}\n{sec.texto}" for sec in secciones)
     return f"{PROMPT_PATH.read_text(encoding='utf-8').strip()}\n\nCONTEXTO:\n{contexto}"

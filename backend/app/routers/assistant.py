@@ -1,14 +1,15 @@
 # Endpoints del asistente local de ayuda (spec 012): preguntar, opinar sobre la decisión de la compuerta, ver
 # estadísticas y reindexar la ayuda para el RAG. Solo agencia: el cliente no ve jerga técnica (principio 8) y el asistente responde sobre el Hub.
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import require_agency
 from app.models.ai_query import AiQuery
 from app.models.user import User
-from app.schemas.assistant import AskIn, AskOut, FeedbackIn, ReindexOut, StatsOut
-from app.services import assistant, knowledge
+from app.schemas.assistant import AskIn, AskOut, DriftOut, FeedbackIn, ReindexOut, StatsOut
+from app.services import ai_drift, assistant, knowledge
+from app.services.assistant_gate import ModeloAlterado
 
 router = APIRouter(prefix="/api/assistant", tags=["asistente"])
 
@@ -27,13 +28,18 @@ def _out(q: AiQuery) -> AskOut:
         context_sections=q.context_sections or [],
         context_mode=q.context_mode,
         retrieval_score=q.retrieval_score,
+        secrets_redacted=getattr(q, "secretos_tapados", []),
     )
 
 
 @router.post("/ask", response_model=AskOut)
 def ask(body: AskIn, user: User = Depends(require_agency), db: Session = Depends(get_db)):
     """Responde una pregunta sobre el Hub; la compuerta decide si hace falta despertar al LLM."""
-    return _out(assistant.ask(db, user, body.question.strip()))
+    try:
+        return _out(assistant.ask(db, user, body.question.strip()))
+    except ModeloAlterado:
+        # La compuerta no pasó la verificación de integridad (spec 020): no se responde con un modelo que alguien modificó a mano
+        raise HTTPException(status_code=503, detail="El modelo de la compuerta no pasó la verificación de integridad; avisa a Sistemas.") from None
 
 
 @router.post("/reindex", response_model=ReindexOut, dependencies=[Depends(require_agency)])
@@ -59,3 +65,12 @@ def feedback(query_id: int, body: FeedbackIn, user: User = Depends(require_agenc
 def stats(db: Session = Depends(get_db)):
     """Cuántas veces se despertó el LLM, cuántas se evitaron y cuántas decisiones corrigió la gente."""
     return assistant.stats(db)
+
+
+@router.get("/drift", response_model=DriftOut, dependencies=[Depends(require_agency)])
+def drift(days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_db)):
+    """Deriva del asistente: los últimos `days` días frente a los `days` anteriores, con los avisos que pasan su umbral (spec 020).
+
+    Las rutas fijas van antes que `/{query_id}/feedback`, que solo es POST: no chocan.
+    """
+    return ai_drift.calcular(db, days)
