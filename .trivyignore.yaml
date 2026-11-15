@@ -1,10 +1,25 @@
 # Excepciones de `trivy config` (spec 016), cada una con su razón y fecha de vencimiento: al vencer vuelve a fallar y obliga a revisarla.
 misconfigurations:
   - id: KSV-0014   # Root file system is not read-only
+    # Los sitios de los clientes (gitops/clients, el chart sitio-cliente y la plantilla del backend) ya corren con sistema de archivos de solo lectura
+    # (spec 018, T06). Quedan fuera de la excepción: si uno vuelve a escribir en el disco del contenedor, Trivy lo frena. Lo que sigue en la lista es la
+    # plataforma, que escribe en rutas propias de cada programa.
+    paths:
+      - gitops/hub/api.yaml
+      - gitops/hub/backup.yaml
+      - gitops/hub/postgres.yaml
+      - gitops/hub/web.yaml
+      - gitops/platform/backstage/deployment.yaml
+      - gitops/platform/gitea/deployment.yaml
+      - gitops/platform/mlops/mlflow.yaml
+      - gitops/platform/respaldo/argocd.yaml
+      - gitops/platform/respaldo/gitea.yaml
+      - observability/grafana/deployment.yaml
+      - observability/tempo/deployment.yaml
     statement: >-
-      Los Pods ya corren sin root, sin escalada de privilegios y sin capacidades (Pod Security `restricted`), que es lo que impone el clúster.
-      Un sistema de archivos de solo lectura exige montar un emptyDir en cada ruta donde escriben nginx, uvicorn y PostgreSQL; se hará workload
-      por workload con prueba de arranque, no en bloque. Pendiente en bitácora.
+      La plataforma ya corre sin root, sin escalada de privilegios y sin capacidades (Pod Security `restricted`). Un sistema de archivos de solo lectura
+      exige montar un emptyDir en cada ruta donde escriben uvicorn, PostgreSQL, Gitea, Grafana, Tempo y Backstage; se hará workload por workload con
+      prueba de arranque, no en bloque.
     expired_at: 2027-03-31
   - id: DS-0002    # Image user should not be 'root'
     paths:
