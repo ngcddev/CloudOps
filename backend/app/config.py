@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # URL de Prometheus (spec 010): la API consulta el job `sitios` y el de Traefik para los dashboards.
     # Vacío = sin conexión: las tarjetas de disponibilidad responden «sin datos» (CA-8).
     prometheus_url: str = ""
+    # URL de Loki (spec 019): el diagnóstico con IA lee las últimas líneas de registro del cliente. Vacío = sin registros como evidencia.
+    loki_url: str = ""
     # Trazas (OpenTelemetry): URL base del receptor OTLP/HTTP de Tempo, por ejemplo http://tempo.monitoring.svc:4318. Vacío = sin trazas.
     otel_exporter_otlp_endpoint: str = ""
     # Asistente local (spec 012): Ollama en el PC B. Vacío = el asistente responde que la IA no está disponible.

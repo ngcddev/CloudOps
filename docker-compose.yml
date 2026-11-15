@@ -53,6 +53,8 @@ services:
       ALERTMANAGER_TOKEN: ${ALERTMANAGER_TOKEN:-}
       # Dashboards y métricas (spec 010): la API consulta Prometheus para disponibilidad y latencia
       PROMETHEUS_URL: ${PROMETHEUS_URL:-}
+      # Registros como evidencia del diagnóstico con IA (spec 019); vacío = sin registros
+      LOKI_URL: ${LOKI_URL:-}
       # Asistente local (spec 012): vacío = sin IA; la compuerta responde igual a lo ajeno al Hub
       OLLAMA_URL: ${OLLAMA_URL:-}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}

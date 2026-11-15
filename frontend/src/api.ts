@@ -1795,7 +1795,7 @@ export async function getClientMessage(id: number): Promise<{ message: string }>
 
 // ---------- Borradores de IA del incidente (spec 012) ----------
 
-export type AiDraftKind = "resumen" | "mensaje_cliente";
+export type AiDraftKind = "resumen" | "mensaje_cliente" | "diagnostico";
 
 export interface AiDraft {
   id: number;
@@ -1829,6 +1829,12 @@ export async function listAiDrafts(incidentId: number): Promise<AiDraft[]> {
 export async function generateAiDrafts(incidentId: number): Promise<AiDraft[]> {
   await requireApi();
   return request<AiDraft[]>(`/incidents/${incidentId}/ai-drafts`, { method: "POST", body: JSON.stringify({}) });
+}
+
+// Hipótesis de diagnóstico y borrador de runbook (spec 019): sirve con el incidente abierto; `evidence` suma datos a la evidencia reunida
+export async function requestAiDiagnosis(incidentId: number, evidence: string[] = []): Promise<AiDraft> {
+  await requireApi();
+  return request<AiDraft>(`/incidents/${incidentId}/ai-diagnosis`, { method: "POST", body: JSON.stringify({ evidence }) });
 }
 
 export async function approveAiDraft(id: number, text?: string): Promise<AiDraft> {

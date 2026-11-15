@@ -14,7 +14,7 @@ uso de recursos) y el drift de OpenTofu no están medidos ni documentados. El m�
 - [x] CA-2. Toda alerta lleva `runbook_url` y una acción; una prueba falla si una alerta nueva no los trae.
 - [x] CA-3. Un tablero de Grafana muestra RED (tasa, errores, duración) y USE (CPU y memoria frente a la cuota), con expresiones probadas.
 - [x] CA-4. Un script informa por namespace el uso frente a la cuota y el margen que queda.
-- [ ] CA-5. Un incidente puede pedir a la IA local una hipótesis de diagnóstico y un borrador de runbook con logs y métricas; queda como borrador que una persona aprueba.
+- [x] CA-5. Un incidente puede pedir a la IA local una hipótesis de diagnóstico y un borrador de runbook con logs y métricas; queda como borrador que una persona aprueba.
 - [ ] CA-6. La política de retención y de recursos está documentada con cifras medidas, y una prueba detecta el drift de OpenTofu (`plan -detailed-exitcode`).
 
 ## Fuera de alcance

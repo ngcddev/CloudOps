@@ -9,6 +9,7 @@ import { formatDateTime } from "../format";
 const KIND_LABELS: Record<AiDraftKind, string> = {
   resumen: "Resumen técnico (solo agencia)",
   mensaje_cliente: "Mensaje al cliente (llega al portal al aprobarlo)",
+  diagnostico: "Diagnóstico con IA (solo agencia)",
 };
 const STATUS_LABELS = { borrador_ia: "Borrador", aprobado: "Aprobado", descartado: "Descartado" } as const;
 

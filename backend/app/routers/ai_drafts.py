@@ -11,8 +11,8 @@ from app.models.incident import Incident
 from app.models.project import Project
 from app.models.service import Service
 from app.models.user import User
-from app.schemas.ai_draft import ApproveIn, DraftOut, GenerateIn
-from app.services import ai_drafts, audit
+from app.schemas.ai_draft import ApproveIn, DiagnosisIn, DraftOut, GenerateIn
+from app.services import ai_drafts, aiops, audit
 from app.services.incident_flow import IncidentFlowError
 
 router = APIRouter(prefix="/api", tags=["borradores-ia"], dependencies=[Depends(require_agency)])
@@ -45,6 +45,12 @@ def _salida(b: AiDraft) -> DraftOut:
         avisos.append(f"La IA usó términos técnicos que se rechazaron: {', '.join(checks['terminos_prohibidos'])}.")
     if checks.get("horas_que_no_coinciden"):
         avisos.append(f"La IA mencionó horas o tiempos que no son los del incidente: {', '.join(checks['horas_que_no_coinciden'])}.")
+    if checks.get("citas_inexistentes"):
+        avisos.append(f"La IA citó evidencia que no existe: {', '.join(checks['citas_inexistentes'])}.")
+    if checks.get("sin_citas"):
+        avisos.append("La IA no citó ninguna evidencia.")
+    if checks.get("comandos_prohibidos"):
+        avisos.append(f"La IA propuso cambios a mano que no se permiten: {', '.join(checks['comandos_prohibidos'])}.")
     return DraftOut(
         id=b.id, incident_id=b.incident_id, kind=b.kind, status=b.status, source=b.source, model=b.model, prompt_version=b.prompt_version,
         generated_text=b.generated_text, final_text=b.final_text, notice=" ".join(avisos) or None, latency_ms=b.latency_ms,
@@ -61,6 +67,15 @@ def generate(incident_id: int, body: GenerateIn | None = None, db: Session = Dep
         return [_salida(b) for b in ai_drafts.generar(db, incident, kinds)]
     except IncidentFlowError as error:
         raise HTTPException(status_code=409, detail=str(error)) from None
+
+
+@router.post("/incidents/{incident_id}/ai-diagnosis", response_model=DraftOut, status_code=201)
+def diagnose(incident_id: int, body: DiagnosisIn | None = None, db: Session = Depends(get_db)):
+    """Hipótesis de diagnóstico y borrador de runbook con la evidencia del incidente (métricas, registros y lo que se aporte). Sirve con el incidente abierto.
+
+    Es un borrador: una persona lo edita y lo aprueba; la IA no ejecuta nada. Si no responde o su texto no pasa las verificaciones, queda un texto base.
+    """
+    return _salida(aiops.diagnosticar(db, _incidente(db, incident_id), body.evidence if body else None))
 
 
 @router.get("/incidents/{incident_id}/ai-drafts", response_model=list[DraftOut])

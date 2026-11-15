@@ -30,23 +30,23 @@ def urllib_transport(url: str, body: bytes, timeout: float) -> tuple[int, bytes]
 OPCIONES = {"temperature": 0, "top_p": 0.1, "seed": 7, "num_ctx": 8192, "num_predict": 350}
 
 
-def build_payload(system: str, question: str, model: str, keep_alive: str) -> dict:
+def build_payload(system: str, question: str, model: str, keep_alive: str, max_tokens: int | None = None) -> dict:
     """Cuerpo de /api/chat; lo comparten el Hub y el script de evaluación para medir lo que de verdad se usa."""
     return {
         "model": model,
         "stream": False,
         # Libera la VRAM pronto: el PC B comparte GPU con ComfyUI (spec 014)
         "keep_alive": keep_alive,
-        "options": OPCIONES,
+        "options": {**OPCIONES, "num_predict": max_tokens} if max_tokens else OPCIONES,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": question}],
     }
 
 
-def chat(system: str, question: str, transport: Transport | None = None) -> str | None:
+def chat(system: str, question: str, transport: Transport | None = None, max_tokens: int | None = None) -> str | None:
     """Respuesta del modelo local, o `None` si Ollama no está configurado o no respondió a tiempo."""
     if not settings.ollama_url:
         return None
-    payload = build_payload(system, question, settings.ollama_model, settings.ollama_keep_alive)
+    payload = build_payload(system, question, settings.ollama_model, settings.ollama_keep_alive, max_tokens)
     try:
         status, body = (transport or urllib_transport)(
             f"{settings.ollama_url}/api/chat", json.dumps(payload).encode("utf-8"), float(settings.assistant_timeout_seconds)

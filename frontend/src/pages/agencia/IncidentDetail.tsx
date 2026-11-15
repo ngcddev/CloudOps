@@ -13,6 +13,7 @@ import {
   type IncidentEventType,
 } from "../../api";
 import AiDraftsPanel from "../../components/AiDraftsPanel";
+import DiagnosisPanel from "../../components/DiagnosisPanel";
 import RecoveryPanel from "../../components/RecoveryPanel";
 import SlaClock from "../../components/SlaClock";
 import { formatDateTime } from "../../format";
@@ -246,6 +247,8 @@ export default function IncidentDetail() {
           )}
         </section>
       </div>
+
+      <DiagnosisPanel incidentId={incidentId} />
 
       {(incident.status === "mitigado" || incident.status === "cerrado") && <AiDraftsPanel incidentId={incidentId} />}
 
