@@ -44,6 +44,8 @@ groups:
         annotations:
           summary: "El sitio de {{ $labels.client }} gasta su margen de error {{ $value | printf \"%.0f\" }} veces más rápido de lo permitido"
           description: "A este ritmo el margen del mes se agota en unos 2 días. Revise la última publicación."
+          accion: "Revisar la última publicación del cliente y, si empeoró el sitio, hacer rollback."
+          runbook_url: "runbooks/rollback.md"
       - alert: PresupuestoQuemadoLento
         expr: sitio:quemado:ratio_6h > 3 and sitio:quemado:ratio_30m > 3
         for: 15m
@@ -53,3 +55,5 @@ groups:
         annotations:
           summary: "El sitio de {{ $labels.client }} gasta su margen de error {{ $value | printf \"%.0f\" }} veces más rápido de lo permitido"
           description: "A este ritmo el margen del mes se agota en unos 10 días: conviene revisarlo con calma."
+          accion: "Ver en el tablero si la duración o los errores suben y buscar la causa (saturación, red o una publicación reciente)."
+          runbook_url: "runbooks/latencia.md"

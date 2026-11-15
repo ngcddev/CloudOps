@@ -52,7 +52,7 @@ jobs:
         run: |
           docker build --target dev --build-context seed=./seed -t hub-api:dev backend
           docker run --rm -e SEED_DIR=/app/seed \
-            -v "$PWD/seed:/app/seed:ro" -v "$PWD/seed:/seed:ro" -v "$PWD/gitops:/gitops:ro" -v "$PWD/pipelines:/pipelines:ro" \
+            -v "$PWD/seed:/app/seed:ro" -v "$PWD/seed:/seed:ro" -v "$PWD/gitops:/gitops:ro" -v "$PWD/pipelines:/pipelines:ro" -v "$PWD:/repo:ro" \
             hub-api:dev pytest -q
       - uses: actions/setup-python@v5
         with:

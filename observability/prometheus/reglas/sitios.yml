@@ -14,3 +14,6 @@ groups:
           priority: P1
         annotations:
           summary: "El sitio de {{ $labels.client }} no responde"
+          accion: "Mirar si hubo una publicación reciente: si la hubo, hacer rollback desde el incidente; si no, revisar el Pod y sus registros."
+          # Ruta dentro del repositorio (el laboratorio no depende de servicios externos); una prueba comprueba que el archivo existe
+          runbook_url: "runbooks/caida-del-sitio.md"

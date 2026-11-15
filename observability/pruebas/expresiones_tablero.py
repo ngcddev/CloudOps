@@ -4,9 +4,9 @@ import json
 import sys
 from pathlib import Path
 
-tablero = json.loads((Path(__file__).parent.parent / "grafana" / "dashboards" / "servicio-sitios.json").read_text(encoding="utf-8"))
+tableros = [json.loads(ruta.read_text(encoding="utf-8")) for ruta in sorted((Path(__file__).parent.parent / "grafana" / "dashboards").glob("*.json"))]
 reglas = []
-for panel in tablero["panels"]:
+for panel in [p for t in tableros for p in t["panels"]]:
     for destino in panel.get("targets", []):
         if panel.get("datasource", {}).get("type") == "prometheus":
             reglas.append(destino["expr"].replace("$__range", "30d"))

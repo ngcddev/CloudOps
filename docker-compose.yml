@@ -69,6 +69,8 @@ services:
       - ./seed:/seed:ro
       - ./gitops:/gitops:ro
       - ./pipelines:/pipelines:ro
+      # Raíz del repositorio de solo lectura: las pruebas de los runbooks y de las alertas (spec 019) comprueban que lo que citan existe
+      - ./:/repo:ro
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:

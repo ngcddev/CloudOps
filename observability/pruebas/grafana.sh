@@ -33,6 +33,11 @@ tablero="$(curl -fs -u admin:prueba "http://localhost:${PUERTO}/api/dashboards/u
 paneles="$(echo "$tablero" | grep -o '"type":"\(stat\|timeseries\|logs\|text\)"' | wc -l | tr -d ' ')"
 if [ "${paneles:-0}" -ge 13 ]; then echo "✓ el tablero tiene ${paneles} paneles"; else echo "✗ el tablero tiene ${paneles:-0} paneles (se esperaban 13)"; fallos=$((fallos + 1)); fi
 
+# Tablero RED y USE (spec 019, T03)
+ru="$(curl -fs -u admin:prueba "http://localhost:${PUERTO}/api/dashboards/uid/red-use")" || ru=""
+paneles_ru="$(echo "$ru" | grep -o '"type":"timeseries"' | wc -l | tr -d ' ')"
+if [ "${paneles_ru:-0}" -ge 8 ]; then echo "✓ el tablero red-use tiene ${paneles_ru} gráficas (RED y USE)"; else echo "✗ el tablero red-use tiene ${paneles_ru:-0} gráficas (se esperaban 8)"; fallos=$((fallos + 1)); fi
+
 fuentes="$(curl -fs -u admin:prueba "http://localhost:${PUERTO}/api/datasources")" || fuentes=""
 for uid in prometheus loki tempo; do
   if echo "$fuentes" | grep -q "\"uid\":\"${uid}\""; then echo "✓ fuente de datos ${uid} provisionada"; else echo "✗ falta la fuente ${uid}"; fallos=$((fallos + 1)); fi
