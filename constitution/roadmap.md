@@ -22,7 +22,7 @@
 | 3 · DevSecOps | 16 – 24 oct | Un cambio inseguro no llega a producción y el Hub muestra por qué | 006, 007 | Un commit con contraseña lo bloquea Gitleaks y el Hub marca "rechazado por seguridad" |
 | 4 · IaC, observabilidad, SRE | 24 oct – 3 nov | El caso del restaurante de punta a punta, sin IA | 008, 009, 010, 011 | v2 rota → alerta → P1 → rollback → métrica verde → MTTR |
 | 5 · MLOps, LLMOps, IA local | 3 – 12 nov | El Hub redacta el resumen con IA local y un humano lo aprueba | 012, 013 | Del incidente sale el mensaje al cliente, revisado y aprobado |
-| 6 · IA multimodal | 13 – 20 nov | Infografía mensual de cada cliente | 014 | Se genera la infografía del restaurante en menos de 2 min |
+| 6 · IA multimodal | 13 – 20 nov | El asistente recibe voz y responde con voz | 021 | Se pregunta hablando, se corrige lo entendido y se escucha la respuesta (spec 014, la infografía, queda como mejora) |
 | 7 · Integrador | 24 – 30 nov | Demo final ensayada; ninguna funcionalidad nueva | 015 | Los 10 puntos en menos de 15 min |
 
 ## Orden de arranque y dependencias

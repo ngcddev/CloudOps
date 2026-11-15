@@ -1,18 +1,21 @@
 // Asistente de ayuda de la consola (spec 012): se pregunta cómo usar el Hub; una compuerta de ML decide si hace
 // falta despertar al LLM local. Cada respuesta dice quién la dio, y la persona puede corregir la decisión
 // («era / no era del Hub»); el panel mide cuánto LLM se evitó y cuántas decisiones se corrigieron.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   askAssistant,
   getAssistantDrift,
   getAssistantStats,
+  getVoiceStatus,
   sendAssistantFeedback,
+  speakText,
   type AssistantAnswer,
   type AssistantDrift,
   type AssistantStats,
   type GateLabel,
 } from "../../api";
+import VoiceInput from "../../components/VoiceInput";
 
 interface Turn {
   question: string;
@@ -44,9 +47,71 @@ export default function Assistant() {
     void loadStats();
   }, [loadStats]);
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const text = question.trim();
+  // Voz (spec 021): si el servicio responde se puede dictar y escuchar la respuesta; la preferencia de leer en voz alta se recuerda en este navegador
+  const [vozDisponible, setVozDisponible] = useState(false);
+  const [leerRespuestas, setLeerRespuestas] = useState(() => {
+    try {
+      return window.localStorage.getItem("asistente.leerRespuestas") !== "no";
+    } catch {
+      return true;
+    }
+  });
+  const [habla, setHabla] = useState<"callado" | "preparando" | "hablando">("callado");
+  const audio = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    getVoiceStatus()
+      .then((estado) => setVozDisponible(estado.disponible))
+      .catch(() => setVozDisponible(false));
+  }, []);
+
+  const callar = useCallback(() => {
+    if (audio.current) {
+      audio.current.pause();
+      audio.current = null;
+    }
+    setHabla("callado");
+  }, []);
+
+  useEffect(() => callar, [callar]);
+
+  function cambiarLeer(valor: boolean) {
+    setLeerRespuestas(valor);
+    if (!valor) callar();
+    try {
+      window.localStorage.setItem("asistente.leerRespuestas", valor ? "si" : "no");
+    } catch {
+      // sin almacenamiento del navegador solo se pierde la preferencia
+    }
+  }
+
+  async function leerEnVoz(texto: string) {
+    callar();
+    setHabla("preparando");
+    try {
+      const url = URL.createObjectURL(await speakText(texto));
+      const reproductor = new Audio(url);
+      audio.current = reproductor;
+      const terminar = () => {
+        URL.revokeObjectURL(url);
+        if (audio.current === reproductor) {
+          audio.current = null;
+          setHabla("callado");
+        }
+      };
+      reproductor.onended = terminar;
+      reproductor.onerror = terminar;
+      setHabla("hablando");
+      await reproductor.play();
+    } catch (e) {
+      setHabla("callado");
+      // Sin voz la respuesta ya está en pantalla: solo se avisa
+      setError(`No se pudo leer la respuesta en voz alta: ${(e as Error).message}`);
+    }
+  }
+
+  async function enviar(texto: string) {
+    const text = texto.trim();
     if (text.length < 3 || busy) return;
     setBusy(true);
     setError(null);
@@ -55,12 +120,27 @@ export default function Assistant() {
       setTurns((current) => [{ question: text, answer, feedback: null }, ...current]);
       setQuestion("");
       await loadStats();
+      if (vozDisponible && leerRespuestas) void leerEnVoz(answer.answer);
     } catch (askError) {
       setError((askError as Error).message);
     } finally {
       setBusy(false);
     }
   }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    await enviar(question);
+  }
+
+  // Lo dictado queda en el cuadro para corregirlo; con «enviar sin revisar» se manda de una vez
+  const alTranscribir = useCallback(
+    (texto: string, mandar: boolean) => {
+      setQuestion(texto);
+      if (mandar) void enviar(texto);
+    },
+    [busy, vozDisponible, leerRespuestas],
+  );
 
   async function opine(id: number, label: GateLabel) {
     try {
@@ -103,6 +183,25 @@ export default function Assistant() {
             {busy ? "Consultando…" : "Preguntar"}
           </button>
         </form>
+        <VoiceInput onTranscript={alTranscribir} onStart={callar} disabled={busy} />
+        {vozDisponible && (
+          <div className="voice-output">
+            <label className="muted voice-option">
+              <input type="checkbox" checked={leerRespuestas} onChange={(event) => cambiarLeer(event.target.checked)} /> Leer las respuestas en voz alta
+            </label>
+            <p className="muted" role="status" aria-live="polite">
+              {busy ? "Pensando la respuesta…" : habla === "preparando" ? "Preparando la voz…" : habla === "hablando" ? "Hablando…" : ""}
+              {habla === "hablando" && (
+                <>
+                  {" "}
+                  <button type="button" className="button button-secondary" onClick={callar}>
+                    Callar
+                  </button>
+                </>
+              )}
+            </p>
+          </div>
+        )}
       </section>
 
       {turns.length > 0 && (

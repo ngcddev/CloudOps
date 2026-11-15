@@ -3,6 +3,65 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Auditoría de rendimiento y buenas prácticas, y corrección de CT-01 (spec 021, T07)
+
+**Pedido:** auditar todo el proyecto con skills y corregir primero el hallazgo crítico CT-01. Informe en `docs/auditoria-2026-11.md` (3 críticos, 29 medios, 52 leves; revisión
+estática, sin medir en vivo).
+
+**CT-01:** la base y la API se publicaban en todas las interfaces y el `.env` local usaba el `JWT_SECRET` y la clave de Postgres del `.env.example`, que está en el repositorio.
+Ahora `db` y `api` se publican solo en `127.0.0.1`, la API no arranca con un `JWT_SECRET` de menos de 32 caracteres o igual al de ejemplo, y se rotó el `JWT_SECRET` del `.env` local.
+**Verificado:** `docker compose config`, 883 pruebas pasadas (3 omitidas) y, tras recrear `db` y `api` con respaldo previo, la API sana en `127.0.0.1`, los datos intactos y el proxy de la web
+respondiendo (401, no 502). **No verificado:** las pruebas de humo y de trazas de punta a punta. **Pendiente:** la clave de Postgres sigue siendo la del ejemplo (cambiarla en una base existente
+exige `ALTER USER` o recrear el volumen).
+
+**K8-01 (T08):** el `host` del servicio debe ser un nombre de host en minúsculas y los nombres de cliente y de servicio no pueden traer saltos de línea ni caracteres de control; el generador de
+manifiestos lo revalida y `provision` responde 422 sin escribir en Gitea si un servicio guardado antes trae datos peligrosos. **BE-01 (T09):** `voice_transcribe` y `/stt` del servicio de voz
+llaman al transcriptor en un hilo, y la liveness y la readiness de la API declaran `timeoutSeconds: 3`. **Verificado:** 907 pruebas pasadas (3 omitidas); las dos pruebas nuevas de bucle fallan con el
+código anterior y pasan con el nuevo. **No verificado:** `kustomize build` con un host malicioso; el clúster. **Pendiente:** recrear `api` y `voz` en compose y publicar `hub-api` y `hub-voz` y aplicar
+`gitops/hub/api.yaml` en el clúster para que lleguen allí.
+
+## 15 nov 2026 · Módulo 6: la voz del asistente (spec 021)
+
+**Pedido:** cumplir el componente multimodal obligatorio con el menor consumo posible. Se descartó la imagen con ComfyUI (≈5 GB, PyTorch y turnos de VRAM con el 7B de Ollama) y se
+eligió **audio**: el asistente recibe voz y responde con voz, en una charla por turnos. La constitución, el cuadro de cumplimiento y la hoja de ruta quedaron al día; la infografía
+(spec 014) queda como mejora.
+
+| Tarea | Resultado |
+|---|---|
+| T01 · Servicio de voz | `voz/`: faster-whisper (voz a texto) y Piper es_MX «claude» (texto a voz) en CPU, con los modelos descargados de una revisión fija y su SHA-256 verificado; límites de 2 MB, 30 s y 700 caracteres, una transcripción a la vez, token opcional; contenedor sin root y de solo lectura. El vocabulario del Hub sesga a Whisper |
+| T02 · API del Hub | `/api/assistant/voice/status`, `/transcribe` y `/speak`, solo para la agencia; el audio no se guarda; la transcripción pasa por la redacción de secretos; sin `VOZ_URL` responde 503 y el asistente sigue por texto |
+| T03 · Pantalla | Botón «Hablar» (MediaRecorder), transcripción editable, «enviar sin revisar» opcional, estados visibles (escuchando, pensando, hablando), leer la respuesta en voz alta con «Callar» y la preferencia recordada. De paso se arregló el cuadro de la pregunta, que salía enorme por un `flex` mal puesto |
+| T04 · Evaluación | 56 preguntas sintetizadas y transcritas sin micrófono: Whisper `small` 6,6 % de error de palabras y 93,7 % de términos del Hub bien; `base` 9,1 % y 84,1 %. `small` cuesta 1,9 s y 1,2 GiB frente a 0,7 s y 433 MiB. Quedó `small` por defecto y `base` como opción. Corridas en MLflow y cifras en las fichas |
+| T05 · Seguridad y documentación | Fichas de los dos modelos y de la voz, amenaza 13 en el modelo de amenazas, bandit y Trivy sin hallazgos (también sobre la imagen), Dependabot, pruebas |
+
+**Verificado:** prueba en un Chromium real con micrófono falso (`voz/pruebas/voz-ui.sh`): se pulsa «Hablar», se transcribe «Para aprobar un cambio de versión, abre cambios y pulsa aprobar»,
+llega al cuadro, se envía, el asistente responde y el Hub pide reproducir el audio; sin errores de JavaScript. Pruebas del servicio (10) y de la API (13) con el servicio simulado.
+
+**Hallazgos:** `av` 19 rompió faster-whisper 1.2.1 (`metadata_errors`), se fijó 16.1.0; el micrófono exige HTTPS o `localhost`; la imagen del servicio pesa 2 GB (más de lo estimado, por onnxruntime
+y ctranslate2) y la memoria con `small` es de 1,2 GiB, no los 0,5 GiB previstos.
+
+**Pendiente y no verificado:**
+- Las cifras son con voz sintetizada (el mejor caso); con una persona, un micrófono de portátil y ruido el error será mayor. No se probó con una voz humana real.
+- ~~No hay manifiesto del servicio de voz para el clúster ni imágenes nuevas del Hub~~ → hecho el mismo día (T06, más abajo).
+- Fase 2 sin hacer: memoria de la conversación («¿y cómo lo rechazo?») y voz frase por frase mientras llega la respuesta.
+- La voz de Piper es mexicana y lee mal las palabras en inglés y las siglas.
+
+
+### T06 · La voz en el clúster (15 nov 2026, más tarde)
+
+**Pedido:** que la voz funcione sí o sí en el clúster.
+
+| Qué | Resultado |
+|---|---|
+| Imágenes | `apps/publicar-imagenes.sh hub-api hub-web hub-voz` publicó `hub-api:v1.12`, `hub-web:v1.9` y `hub-voz:v1.0` en el registro de Gitea; con esto el Hub del clúster trae por primera vez lo de las specs 018 a 021 (segregación de funciones, runbooks y alertas con enlace, diagnóstico con IA, deriva, redacción de secretos, voz) |
+| Manifiestos | `gitops/hub/voz.yaml` (sin root, solo lectura, token, sin Ingress), `hub-https` en `ingress.yaml`, `VOZ_URL` y `VOZ_TOKEN` en la API, Secret `hub-voz` en `crear-secretos.sh`; pruebas de los manifiestos (`test_voz_cluster.py`) y Pod Security `restricted` sin clúster |
+| Aplicación | `bash gitops/hub/crear-secretos.sh` y `kubectl apply -k gitops/hub` (el Hub no lo gestiona Argo CD). El modo automático pidió autorización explícita antes de tocar el clúster; se dio |
+| Verificado en el clúster | Los Pods `api`, `web` y `voz` quedan Ready sin reinicios; `https://hub.local` inicia sesión; `/api/assistant/voice/status` dice disponible; transcribir un audio webm devuelve «Para aprobar un cambio de versión, abre cambios y pulsa aprobar»; hablar devuelve un WAV; el servicio responde 401 sin token (desde otro Pod) y `/voz` por el Ingress devuelve la consola, no el servicio |
+| Navegador real contra el clúster | `voz/pruebas/voz-ui.sh` con `HUB_WEB=https://hub.local`: hablar, transcribir, enviar, respuesta del asistente y lectura en voz alta, sin errores de JavaScript |
+
+**Medido:** el Pod de voz usa ~950 MiB con Whisper `small`; la primera transcripción tarda ~10 s (carga del modelo) y las siguientes ~2 s; la API sube a ~118 MiB.
+
+**Pendiente y no verificado:** no se probó con una voz humana real ni desde un navegador de otra persona (hace falta la entrada de `hub.local` en `hosts` y aceptar el certificado autofirmado); de lo nuevo del Hub en el clúster solo se comprobó la voz, el inicio de sesión y el estado del asistente, no cada funcionalidad de las specs 018 a 020; el servicio de voz no tiene escalado ni réplica.
 ## 15 nov 2026 · Cierre del módulo 5 (spec 020)
 
 **Pedido:** completar al máximo el módulo 5 (MLOps, LLMOps y serving de IA local), una brecha a la vez.
@@ -20,7 +79,7 @@
 **Verificado:** pruebas del backend y de `ai/`, ruff, tsc; las mediciones y el script de documentos maliciosos contra el Ollama real; `verificar_modelos.py` con los tres digests iguales a sus fichas.
 
 **Pendiente y no verificado:**
-- La imagen del Hub del clúster no incluye aún la redacción de secretos, la guarda del contexto, la deriva ni el diagnóstico (módulo 4) ni la segregación de funciones (módulo 3).
+- La imagen del Hub del clúster no incluye aún la redacción de secretos, la guarda del contexto, la deriva ni el diagnóstico (módulo 4) ni la segregación de funciones (módulo 3). **Resuelto el mismo día: `hub-api:v1.12` ya corre en el clúster (ver T06 del módulo 6).**
 - La redacción de secretos es de patrones conocidos: un secreto con otro formato pasa. La guarda del contexto también es de patrones: una orden redactada de otra forma pasaría.
 - La comparación de `promover.py` usa el conjunto de prueba de 24 ejemplos: orientativa, no una garantía.
 - El digest de los modelos se comprueba cuando se corre el script, no en cada arranque.
@@ -44,7 +103,7 @@
 **Verificado:** 800+ pruebas del backend, ruff, tsc, `validar.sh` y `grafana.sh`; el diagnóstico con el Ollama real (Qwen2.5 7B, 8 a 23 s): citó evidencia que existe e ignoró una orden escondida en la evidencia.
 
 **Pendiente y no verificado:**
-- La imagen del Hub del clúster no incluye aún el diagnóstico con IA (ni, de la spec 018, la segregación de funciones); el endpoint y el panel funcionan en el entorno de desarrollo.
+- La imagen del Hub del clúster no incluye aún el diagnóstico con IA (ni, de la spec 018, la segregación de funciones); el endpoint y el panel funcionan en el entorno de desarrollo. **Resuelto el mismo día: `hub-api:v1.12` ya corre en el clúster (ver T06 del módulo 6).**
 - En el diagnóstico las citas se verifican por existencia, no por pertinencia: el modelo llegó a citar una evidencia que no trata de lo que afirma. Por eso es un borrador.
 - `drift.sh` prueba el mecanismo con un recurso local; la pila real de OpenTofu no tiene estado propio (los clientes los crea el ApplicationSet), así que no hay drift real que medir.
 - Estabilidad de Alloy tras el cambio: solo se observaron los primeros minutos.
@@ -61,13 +120,13 @@
 | T04 · Escenarios nuevos | `dependencia` (flask 0.12) y `manifiesto` (Deployment con `privileged` y `hostNetwork`): la puerta se detiene en los dos, en «vulnerabilidades». Para esto la puerta ahora corre `trivy fs` sobre el repositorio del sitio |
 | T05 · Segregación de funciones | Quien pide un cambio no lo aprueba (403, intento en la bitácora como «denegar»); activa por defecto (`SEGREGACION_FUNCIONES`). Las demos y `promover.sh` piden con Sofía y aprueban con Camilo (`HUB_USUARIO_APROBADOR`) |
 | T06 · Solo lectura en los sitios | `readOnlyRootFilesystem` con emptyDir en `/tmp` y `/etc/nginx/conf.d` (web) o `/tmp` (backend) en la base, el consultorio, el chart y la plantilla del Hub; KSV-0014 deja de excepcionarse para los sitios y queda solo para la plataforma |
-| T07 · IA y amenazas | La plantilla de PR trae la lista de verificación del código generado con IA y `docs/modelo-de-amenazas.md` cubre activos, fronteras, 12 amenazas con su control y el riesgo que queda |
+| T07 · IA y amenazas | La plantilla de PR trae la lista de verificación del código generado con IA y `docs/modelo-de-amenazas.md` cubre activos, fronteras, 13 amenazas con su control y el riesgo que queda |
 
 **Verificado:** 770 pruebas del backend, ruff, simulador de la puerta (`limpia`, `dependencia`, `manifiesto`), `trivy config` sin hallazgos con las excepciones vigentes, Helm igual a Kustomize, nginx y el backend del consultorio arrancan en contenedores reales con `--read-only`, y el `dry-run` del servidor acepta los manifiestos.
 
 **Pendiente y no verificado:**
 - Los sitios de solo lectura **no se han desplegado en el clúster**: Argo CD los toma de `hub-gitops`, y se verán sanos cuando se publiquen por Git.
-- La imagen del Hub del clúster no incluye aún la segregación de funciones; hasta publicarla, el clúster sigue dejando aprobar el propio cambio.
+- La imagen del Hub del clúster no incluye aún la segregación de funciones; hasta publicarla, el clúster sigue dejando aprobar el propio cambio. **Resuelto el mismo día: `hub-api:v1.12` ya corre en el clúster (ver T06 del módulo 6).**
 - La plataforma (Hub, Gitea, Grafana, Tempo, Backstage…) sigue con la excepción KSV-0014 hasta 2027-03-31.
 - Kyverno queda como mejora (decisión: la política de admisión actual cubre registro y etiqueta).
 

@@ -29,7 +29,7 @@ Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([pri
 | 3 · DevSecOps y cadena de suministro | 16 – 24 oct | Gitea Actions, Gitleaks, Trivy, Syft, Cosign, Pod Security Admission |
 | 4 · IaC, observabilidad, SRE | 24 oct – 3 nov | OpenTofu/Terraform, Ansible (opcional), Prometheus, Grafana, Alertmanager, Loki, Blackbox Exporter, OpenTelemetry |
 | 5 · MLOps, LLMOps, IA local | 3 – 12 nov | Ollama (Qwen2.5 7B o Llama 3.1 8B Q4; respaldo Qwen2.5 3B), AnythingLLM + nomic-embed-text, MLflow |
-| 6 · IA local multimodal | 13 – 20 nov | Stability Matrix + ComfyUI (SD 1.5; SDXL Turbo solo si cabe en 6 GB) |
+| 6 · IA local multimodal | 13 – 20 nov | Audio: faster-whisper (voz a texto) + Piper (texto a voz), en CPU (decisión 15 nov 2026: reemplaza a Stability Matrix + ComfyUI por consumo; ver `specs/021-voz-del-asistente/`) |
 | 7 · Integrador | 24 – 30 nov | Sin herramientas nuevas: integración, ensayo y documentación |
 
 ## Stack de producto (fijo desde el módulo 1)
@@ -60,7 +60,7 @@ Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([pri
 | LLM local | **Ollama** | Modelo: Qwen2.5 7B-Instruct o Llama 3.1 8B (Q4, ~5 GB de VRAM); respaldo Qwen2.5 3B |
 | Compuerta del asistente | **Clasificador Naive Bayes** (Python puro) | Corre en el Hub (PC A), entrenado y registrado en MLflow; el LLM solo se despierta si la pregunta trata del Hub (spec 012) |
 | RAG | **RAG propio en el Hub** (decisión 14 nov 2026, ver `docs/bitacora.md`) | Embeddings `nomic-embed-text` servidos por Ollama; índice en PostgreSQL (`kb_documents`, `kb_chunks`) con similitud coseno en Python. AnythingLLM queda como alternativa opcional, no se despliega |
-| Multimodal obligatorio | **Stability Matrix + ComfyUI** | Modelo: SD 1.5; SDXL Turbo solo si corre bien en 6 GB — genera la ilustración de la infografía operativa |
+| Multimodal obligatorio | **Voz del asistente: faster-whisper `small` + Piper** (decisión 15 nov 2026) | Voz a texto y texto a voz en CPU, sin VRAM ni PyTorch: no compite con el 7B de Ollama. Reemplaza a Stability Matrix + ComfyUI (SD 1.5), que pedían ~5 GB y turnos de GPU; la infografía de la spec 014 queda como mejora |
 
 ## Distribución del hardware
 

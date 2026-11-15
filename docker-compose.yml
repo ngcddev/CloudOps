@@ -12,8 +12,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?Falta .env; copia .env.example a .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta .env; copia .env.example a .env}
       POSTGRES_DB: ${POSTGRES_DB:?Falta .env; copia .env.example a .env}
+    # Solo en esta máquina (127.0.0.1): sin IP de enlace Docker publica en todas las interfaces y la red vería la base (auditoría CT-01)
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -55,6 +56,9 @@ services:
       PROMETHEUS_URL: ${PROMETHEUS_URL:-}
       # Registros como evidencia del diagnóstico con IA (spec 019); vacío = sin registros
       LOKI_URL: ${LOKI_URL:-}
+      # Voz del asistente (spec 021): el servicio corre con el perfil «voz»; sin él la voz queda no disponible y el asistente sigue por texto
+      VOZ_URL: ${VOZ_URL:-http://voz:8100}
+      VOZ_TOKEN: ${VOZ_TOKEN:-}
       # Asistente local (spec 012): vacío = sin IA; la compuerta responde igual a lo ajeno al Hub
       OLLAMA_URL: ${OLLAMA_URL:-}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}
@@ -73,11 +77,37 @@ services:
       - ./pipelines:/pipelines:ro
       # Raíz del repositorio de solo lectura: las pruebas de los runbooks y de las alertas (spec 019) comprueban que lo que citan existe
       - ./:/repo:ro
+    # Solo en esta máquina (127.0.0.1); la web y el proxy de Vite llegan por localhost (auditoría CT-01)
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
+
+
+  # Servicio de voz (spec 021): voz a texto y texto a voz en CPU, sin servicios externos. Solo arranca con el perfil «voz»:
+  #   docker compose --profile voz up -d --build voz        (la primera vez baja los modelos, unos 550 MB, con su suma SHA-256 verificada; la imagen pesa unos 2 GB)
+  # Sin él, el asistente sigue por texto y la pantalla no muestra el micrófono. Con WHISPER=base usa el modelo de 145 MB: usa 433 MiB en vez de 1,2 GiB y transcribe 2,5 veces más rápido, pero acierta menos términos del Hub (84 % frente a 94 %).
+  voz:
+    profiles: ["voz"]
+    mem_limit: 1536m
+    build:
+      context: ./voz
+      additional_contexts:
+        vocab: ./ai/classifier/data
+      args:
+        WHISPER: ${WHISPER:-small}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      VOZ_TOKEN: ${VOZ_TOKEN:-}
+    ports:
+      - "127.0.0.1:${VOZ_PORT:-8100}:8100"
 
   # Consola de agencia (spec 001): nginx en :5173 (dentro del contenedor, 8080)
   web:

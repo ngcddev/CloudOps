@@ -15,6 +15,14 @@ regexes = [
   # Contraseñas de laboratorio de las pruebas de humo (spec 006 y 008): viven solo en contenedores efímeros que la propia prueba crea y borra
   '''JWT_SECRET=humo-0123456789-0123456789-0123''',
   '''-u admin:prueba''',
+  # Valores falsos del checklist de verificación (docs/checklist-verificacion.md, pasos 3.1 y 3.3): el primero y el segundo son los formatos que se le dan al redactor
+  # de secretos para ver si los tapa; el tercero es la clave de un contenedor desechable. Ninguno es real. Gitleaks revisa la historia, así que editar el
+  # documento no los quita del commit que ya los trae.
+  '''AccountKey=Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MGFiY2RlZmdoaWprbG1ub3A=''',
+  # Gitleaks también decodifica los tramos en base64 y revisa el texto resultante: este es el mismo valor, decodificado
+  '''AccountKey=foobarbazqux1234567890abcdefghijklmnop''',
+  '''api_key=sk-live-51Habcdefghijklmnopqrstu''',
+  '''JWT_SECRET=x-0123456789-0123456789-0123456789''',
   # JWT de ejemplo (el de jwt.io) en las pruebas de redacción de secretos (spec 020): no firma nada real; la prueba comprueba que el redactor lo tapa
   '''eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.dBjftJeZ4CVPmB92K27uhbUJU1p1r''',
 ]

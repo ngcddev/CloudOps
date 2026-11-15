@@ -7,6 +7,23 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.sla_policy import SlaPolicyOut
 
 
+# Dirección de un sitio: nombre de host en minúsculas (etiquetas DNS separadas por puntos). Entra en el kustomization que el Hub
+# escribe en hub-gitops y que Argo CD aplica, así que no puede traer saltos de línea ni caracteres de YAML (auditoría K8-01).
+HOST_PATTERN = re.compile(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*")
+_SALTOS_UNICODE = "\u0085  "
+
+
+def tiene_caracteres_de_control(value: str) -> bool:
+    """Hay saltos de línea u otros caracteres de control: en un nombre abrirían una línea nueva dentro del YAML generado."""
+    return any(ord(c) < 32 or ord(c) == 127 or c in _SALTOS_UNICODE for c in value)
+
+
+def _nombre_sin_control(value: str) -> str:
+    if tiene_caracteres_de_control(value):
+        raise ValueError("El nombre no puede tener saltos de línea ni caracteres de control.")
+    return value
+
+
 def _limpiar(value: str | None) -> str | None:
     """Quita espacios; un texto vacío cuenta como dato ausente."""
     if value is None:
@@ -34,7 +51,7 @@ class ClientCreate(ClientBase):
         value = value.strip()
         if not value:
             raise ValueError("El nombre del cliente es obligatorio.")
-        return value
+        return _nombre_sin_control(value)
 
 
 class ClientUpdate(ClientBase):
@@ -47,7 +64,7 @@ class ClientUpdate(ClientBase):
     def _nombre_no_vacio(cls, value: str | None) -> str:
         if value is None or not value.strip():
             raise ValueError("El nombre del cliente es obligatorio.")
-        return value.strip()
+        return _nombre_sin_control(value.strip())
 
 
 class ClientOut(ClientBase):
@@ -90,6 +107,20 @@ class ServiceCreate(BaseModel):
         value = value.strip()
         if not value:
             raise ValueError("Este campo es obligatorio.")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def _servicio_sin_control(cls, value: str) -> str:
+        return _nombre_sin_control(value)
+
+    @field_validator("host")
+    @classmethod
+    def _host_valido(cls, value: str) -> str:
+        # Los nombres de host no distinguen mayúsculas: se guardan en minúsculas (así también la comprobación de duplicados)
+        value = value.lower()
+        if not HOST_PATTERN.fullmatch(value):
+            raise ValueError("La dirección debe ser un nombre de host (por ejemplo colegio.hub.local): minúsculas, números, guiones y puntos.")
         return value
 
     @field_validator("namespace")

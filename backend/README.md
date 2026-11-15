@@ -35,7 +35,7 @@ agrégalas desde `.env.example`; sin `JWT_SECRET` la API no arranca:
 
 | Variable | Para qué |
 |---|---|
-| `JWT_SECRET` | Clave con la que se firman las sesiones (60 min) |
+| `JWT_SECRET` | Clave con la que se firman las sesiones (60 min). Debe tener al menos 32 caracteres y no puede ser la de `.env.example` (está publicada): la API se niega a arrancar y dice cómo generarla con `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
 | `SEED_USER_PASSWORD` | Contraseña de desarrollo de todos los usuarios sembrados (`sofia@forjadigital.test`, `contacto@lasazon.test`, …); en la base solo se guarda su hash |
 
 Una base creada antes de la 007 no se pierde: al arrancar, la API da esa contraseña a los usuarios que no tienen.

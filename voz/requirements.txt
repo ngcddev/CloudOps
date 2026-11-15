@@ -1,0 +1,7 @@
+# Servicio de voz (spec 021): versiones fijas. faster-whisper trae ctranslate2, onnxruntime y av (decodifica webm/ogg sin ffmpeg); piper-tts trae espeak-ng.
+fastapi==0.142.2
+uvicorn==0.54.0
+faster-whisper==1.2.1
+piper-tts==1.8.0
+# av 17 en adelante ya no acepta `metadata_errors`, que faster-whisper 1.2.1 usa al abrir el audio: se fija la última que sí
+av==16.1.0

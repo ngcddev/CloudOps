@@ -5,6 +5,7 @@ resources:
   - postgres.yaml
   - api.yaml
   - web.yaml
+  - voz.yaml
   - ingress.yaml
   - backup.yaml
   - networkpolicy.yaml

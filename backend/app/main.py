@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
-from app.config import settings
+from app.config import settings, validar_jwt_secret
 from app import telemetry
 from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
@@ -37,6 +37,8 @@ from app.services.deploy_watch import watch_forever
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Sin una clave de firma válida la API no arranca (auditoría CT-01): con la del ejemplo cualquiera podría firmar sesiones
+    validar_jwt_secret(settings.jwt_secret)
     # Las tablas las crea Alembic (alembic upgrade head) al arrancar el contenedor;
     # aquí solo se cargan los datos semilla si la base está vacía.
     with SessionLocal() as db:

@@ -37,6 +37,7 @@ con Kubernetes: solo con Gitea, Argo CD y Prometheus).
 | 10 | La IA inventa una respuesta o expone datos | Todo texto de IA es un borrador que una persona aprueba; el modelo corre en el laboratorio (Ollama) y no recibe datos de clientes en servicios externos; el flujo funciona con la IA apagada | Una persona que aprueba sin leer; la lista de verificación del PR ayuda |
 | 11 | Código generado con IA trae fallos o dependencias inventadas | Lista de verificación en la plantilla de PR, SAST (bandit), análisis de dependencias, revisión de otra persona | Cambios revisados con prisa antes de la defensa |
 | 12 | Caída o pérdida de datos | Respaldo y restauración de PostgreSQL, respaldo de Gitea y Argo CD fuera del nodo, simulaciones de falla | El laboratorio corre en un solo nodo |
+| 13 | La voz expone un secreto o se transcribe mal | El audio no se guarda y pasa solo por la red del laboratorio; la transcripción se muestra y se corrige antes de enviarla, y se le tapan los secretos (spec 020); el servicio limita tamaño, duración y turnos y acepta un token; la voz no ejecuta acciones | Una persona que envía sin revisar (opción «enviar sin revisar»); el micrófono exige HTTPS o localhost |
 
 ## Lo que no cubre (decisiones conscientes)
 

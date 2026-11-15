@@ -22,7 +22,9 @@ def _slug(modelo: str) -> str:
 
 def _modelos_en_uso() -> list[str]:
     por_defecto = Settings.model_fields
-    return [por_defecto["ollama_model"].default, por_defecto["ollama_embed_model"].default, "compuerta-asistente", "qwen2.5:3b-instruct"]
+    # Los de voz (spec 021): Whisper small (el del servicio por defecto) y base (la alternativa más liviana que se evaluó) y la voz de Piper
+    voz = ["faster-whisper-base", "faster-whisper-small", "piper-es-mx-claude-high"]
+    return [por_defecto["ollama_model"].default, por_defecto["ollama_embed_model"].default, "compuerta-asistente", "qwen2.5:3b-instruct", *voz]
 
 
 @pytest.mark.parametrize("modelo", _modelos_en_uso())

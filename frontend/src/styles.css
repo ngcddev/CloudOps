@@ -1284,7 +1284,7 @@ section {
 }
 
 .assistant-form input {
-  flex: 1 1 280px;
+  width: 100%;
 }
 
 .assistant-turn {
@@ -1340,4 +1340,26 @@ section {
   margin: 2px 0 0;
   font-size: 1.4rem;
   font-weight: 600;
+}
+
+/* Voz del asistente (spec 021) */
+.voice-input,
+.voice-output {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.voice-input p,
+.voice-output p {
+  margin: 0;
+  flex-basis: 100%;
+}
+
+.voice-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }

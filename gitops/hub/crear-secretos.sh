@@ -5,6 +5,7 @@
 #   hub-pipeline  PIPELINE_TOKEN (con él la puerta de seguridad de Gitea Actions cuenta sus resultados al Hub, spec 006)
 #   hub-alertmanager  token (con él Alertmanager avisa al Hub de una caída, spec 008); va en los namespaces
 #                     hub (lo lee la API) y monitoring (lo lee Alertmanager) con el mismo valor
+#   hub-voz  VOZ_TOKEN (con él la API del Hub llama al servicio de voz y el servicio lo exige, spec 021)
 #   grafana-admin  admin-user y admin-password de Grafana (spec 008), en el namespace monitoring
 # Los valores se generan al azar y solo existen en el clúster: no se escriben en el repo ni en la
 # pantalla. Si un Secret ya existe no se toca (cambiar hub-db con la base ya creada la dejaría fuera;
@@ -14,6 +15,7 @@
 #   kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d
 #   kubectl -n hub get secret hub-pipeline -o jsonpath='{.data.PIPELINE_TOKEN}' | base64 -d
 #   kubectl -n hub get secret hub-alertmanager -o jsonpath='{.data.token}' | base64 -d
+#   kubectl -n hub get secret hub-voz -o jsonpath='{.data.VOZ_TOKEN}' | base64 -d
 #   kubectl -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d
 # Para cambiar la contraseña de los usuarios sembrados: borrar hub-auth, volver a correr el script y
 # reiniciar la API (`kubectl -n hub rollout restart deploy/api`); la API solo da contraseña a quien no tiene.
@@ -82,6 +84,13 @@ for ns in "$NS" "$MONITORING_NS"; do
     echo "Secret hub-alertmanager creado en $ns."
   fi
 done
+
+if existe hub-voz; then
+  echo "El Secret hub-voz ya existe en $NS: no se cambia."
+else
+  kubectl -n "$NS" create secret generic hub-voz --from-literal=VOZ_TOKEN="$(clave 40)"
+  echo "Secret hub-voz creado en $NS."
+fi
 
 if existe grafana-admin "$MONITORING_NS"; then
   echo "El Secret grafana-admin ya existe en $MONITORING_NS: no se cambia."
