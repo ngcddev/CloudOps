@@ -4,7 +4,7 @@
 |---|---|
 | Nombre en Ollama | `qwen2.5:7b-instruct` |
 | Origen | Alibaba Cloud (Qwen); publicado en la biblioteca de Ollama |
-| Licencia | Apache 2.0 |
+| Licencia | Apache 2.0 (verificada el 15 nov 2026 en https://huggingface.co/Qwen/Qwen2.5-7B-Instruct y en la página de Ollama del modelo) |
 | Digest | `845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e` |
 | Parámetros y cuantización | 7,6 B, Q4_K_M |
 | Tamaño en disco | 4,7 GB |

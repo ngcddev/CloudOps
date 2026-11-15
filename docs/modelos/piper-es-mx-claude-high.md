@@ -4,7 +4,7 @@
 |---|---|
 | Nombre del modelo | `es_MX-claude-high` (voz de Piper) |
 | Origen | Proyecto Piper (rhasspy/piper-voices en Hugging Face), revisión `6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3`; datos de HirCoir/Piper-TTS-Spanish |
-| Licencia | Apache 2.0 (la de la voz, según su tarjeta); el motor `piper-tts` se instala desde PyPI, con la licencia de la versión instalada |
+| Licencia | **Voz:** Apache 2.0 (tarjeta de la voz). **Motor `piper-tts` 1.8.0: GPL-3.0-or-later** (verificado el 15 nov 2026 con `pip show` en la imagen y en https://github.com/OHF-voice/piper1-gpl): corre como servicio aparte que el Hub llama por HTTP, sin enlazarse con su código; si la imagen de voz se redistribuye hay que ofrecer su código fuente |
 | Digest | `3ef40a71ea63852cd8ab7e6fa7d2ecdcfa67a0b47c9c48e3f10e02ee02083ea0` |
 | Archivo | `voz/modelos/piper/voz.onnx` |
 | Parámetros y cuantización | modelo VITS en ONNX, 22.050 Hz, una voz |
