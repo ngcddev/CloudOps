@@ -4,7 +4,7 @@
 |---|---|
 | Nombre del modelo | `Systran/faster-whisper-small` (Whisper small convertido a CTranslate2) |
 | Origen | OpenAI Whisper, convertido por Systran; revisión `536b0662742c02347bc0e980a01041f333bce120` de Hugging Face |
-| Licencia | MIT |
+| Licencia | MIT (verificada el 15 nov 2026 en https://huggingface.co/Systran/faster-whisper-small) |
 | Digest | `3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671` |
 | Archivo | `voz/modelos/whisper-small/model.bin` |
 | Parámetros y cuantización | unos 244 M, int8 en CPU |

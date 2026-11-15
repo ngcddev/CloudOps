@@ -42,5 +42,17 @@ no trae todos los campos. Las cifras de latencia y memoria las mide `ai/eval/med
 
 ## Licencias
 
-Las licencias se verificaron en la página de cada modelo en Ollama y en Hugging Face. Antes de redistribuir un modelo (por ejemplo en el kit offline) hay que releer la licencia de la
-versión exacta. El **3B** de Qwen2.5 usa una licencia de investigación y se usa aquí solo para comparar; el **7B** usa Apache 2.0.
+Las licencias se **leyeron el 15 nov 2026** en la tarjeta de cada modelo en Hugging Face y, para los de Ollama, en su página; la de Piper también con `pip show` dentro de la imagen de voz:
+
+| Modelo o motor | Licencia | Fuente |
+|---|---|---|
+| Qwen2.5 7B Instruct | Apache 2.0 | Hugging Face y Ollama |
+| Qwen2.5 3B Instruct | Qwen Research License (`qwen-research`, solo investigación) | Hugging Face y Ollama |
+| nomic-embed-text | Apache 2.0 | Hugging Face (`nomic-embed-text-v1.5`) |
+| faster-whisper base y small | MIT | Hugging Face |
+| Voz Piper es_MX «claude» | Apache 2.0 | Tarjeta de la voz |
+| Motor `piper-tts` 1.8.0 | **GPL-3.0-or-later** | `pip show` y el repositorio `OHF-voice/piper1-gpl` |
+
+Lo que implica: el **3B** solo se usa para comparar y no se redistribuye. El motor **Piper es GPL**: corre en un servicio aparte (`voz/`) al que el Hub llama por HTTP, sin importar su código, así que el Hub
+no queda cubierto por la GPL; pero si la imagen `hub-voz` se entrega a un tercero hay que acompañarla de su código fuente (el del proyecto es abierto). Antes de redistribuir cualquier modelo
+(por ejemplo en el kit offline) hay que releer la licencia de la versión exacta.

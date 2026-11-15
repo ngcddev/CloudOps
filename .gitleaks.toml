@@ -25,4 +25,6 @@ regexes = [
   '''JWT_SECRET=x-0123456789-0123456789-0123456789''',
   # JWT de ejemplo (el de jwt.io) en las pruebas de redacción de secretos (spec 020): no firma nada real; la prueba comprueba que el redactor lo tapa
   '''eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.dBjftJeZ4CVPmB92K27uhbUJU1p1r''',
+  # Valor falso de las pruebas de redacción de secretos (backend/tests/test_seguridad_ia.py): no es una clave real
+  '''secret_key = abcd1234efgh5678''',
 ]

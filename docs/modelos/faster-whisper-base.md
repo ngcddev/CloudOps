@@ -4,7 +4,7 @@
 |---|---|
 | Nombre del modelo | `Systran/faster-whisper-base` (Whisper base convertido a CTranslate2) |
 | Origen | OpenAI Whisper, convertido por Systran; revisión `ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66` de Hugging Face |
-| Licencia | MIT |
+| Licencia | MIT (verificada el 15 nov 2026 en https://huggingface.co/Systran/faster-whisper-base) |
 | Digest | `d01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9` |
 | Archivo | `voz/modelos/whisper-base/model.bin` |
 | Parámetros y cuantización | unos 74 M, int8 en CPU |

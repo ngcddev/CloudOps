@@ -55,6 +55,27 @@ Cambia `127.0.0.1` por la IP fija del PC A cuando se entre desde otro equipo.
 Al editar el archivo, la línea nueva debe ir en su propia línea: si la última línea existente no
 termina en salto de línea, `Add-Content` la pega a ella y rompe las dos entradas.
 
+## Quién escribe qué en hub-gitops (spec 022)
+
+Hay dos lugares con manifiestos y cada cosa tiene **un solo dueño y un solo sentido**: la carpeta `gitops/` del repositorio principal (GitHub) es donde el equipo escribe y revisa por PR;
+`forja-digital/hub-gitops` (Gitea, dentro del clúster) es lo único que Argo CD vigila y donde el Hub escribe las versiones. No dependen de GitHub ni Argo CD ni el Hub (principios 2 y 5).
+
+| Quién escribe | Qué | Cómo llega a `hub-gitops` |
+|---|---|---|
+| El equipo | `clients/_base`, el resto de cada cliente (p. ej. `backend.yaml`), `observability/`, `hub/`, `platform/backstage/` | `bash gitops/sincronizar-hub-gitops.sh` (la carpeta destino se reemplaza; solo lo que ya se mezcló en `origin/dev` u `origin/main`, con el árbol limpio) |
+| El Hub (API de Gitea) | `clients/<cliente>/kustomization.yaml` (la versión: `images.newTag`) y `catalog-info.yaml`; los archivos de un cliente nuevo al dar de alta el sitio | Los escribe el Hub al aprobar, al hacer rollback y al provisionar; **la promoción nunca los pisa** |
+| Nadie (arranque único) | `platform/argocd`, `platform/gitea`, `platform/k3s`, `platform/namespaces.yaml` | `kubectl apply` una vez desde el repositorio principal; no se copian a `hub-gitops` (`--limpiar` retira las copias viejas) |
+
+```bash
+bash gitops/sincronizar-hub-gitops.sh --simular     # qué cambiaría en hub-gitops; no sube nada
+GITEA_USER=... GITEA_PASSWORD=... bash gitops/sincronizar-hub-gitops.sh      # promueve (commit en hub-gitops con el SHA y la rama de origen)
+bash gitops/pruebas/sincronia.sh                    # ¿están en sincronía? sale con 1 y lista lo distinto si no
+bash gitops/pruebas/sincronizar-prueba.sh           # prueba del sincronizador con repositorios locales (sin Gitea)
+```
+
+Un cliente que está en el repositorio principal pero no en `hub-gitops` se omite: lo crea el Hub. En un entorno real el CI promovería a un repositorio de configuración alcanzable por el clúster
+(con PR y revisión) y el CI de la aplicación solo subiría las etiquetas de imagen; aquí lo hace el comando porque el clúster está en un portátil al que GitHub no llega.
+
 ## Cómo se comprueba
 
 ```bash
@@ -129,7 +150,7 @@ GITEA_USER=forja-admin GITEA_PASSWORD='<contraseña>' bash gitops/platform/gitea
 ```
 
 El script es idempotente: si el repo ya tiene commits no lo vuelve a sembrar. Desde ese momento el
-contenido de `hub-gitops` manda; los cambios del monorepo en `gitops/` no se propagan solos.
+contenido de `hub-gitops` manda para lo que escribe el Hub (las versiones); lo que escribe el equipo se promueve con `bash gitops/sincronizar-hub-gitops.sh` (ver «Quién escribe qué en hub-gitops»). Tras sembrar un repo nuevo, corre `bash gitops/sincronizar-hub-gitops.sh --limpiar` para retirar las copias de `platform/` que nadie lee.
 
 ## Una Application por cliente
 
@@ -283,7 +304,7 @@ export KUBECONFIG=C:/Users/<tú>/.kube/k3d-hub.yaml     # kubectl de Windows nec
 
 Orden de lo demás: `kubectl apply -f platform/namespaces.yaml` → Gitea (`-k platform/gitea`, administrador y organización `forja-digital` pública) →
 `apps/publicar-imagenes.sh` → Argo CD (`-k platform/argocd`) → `platform/gitea/sembrar-hub-gitops.sh` → `hub/crear-secretos.sh` → `hub/crear-tokens.sh` →
-`platform/gitea/actualizar-hub-gitops.sh observability` → `kubectl apply -k hub` → `kubectl apply -k platform/argocd/applications` y `-f platform/argocd/applications/monitoring.yaml` →
+`sincronizar-hub-gitops.sh` → `kubectl apply -k hub` → `kubectl apply -k platform/argocd/applications` y `-f platform/argocd/applications/monitoring.yaml` →
 `hub/configurar-ia.sh <url de Ollama> [modo]`. Sin editar el archivo `hosts`, los scripts de `curl` y `git` funcionan con `CURL_HOME` apuntando a una carpeta con un `.curlrc`
 (`resolve = "gitea.hub.local:80:127.0.0.1"`, una línea por nombre) y `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.curloptResolve GIT_CONFIG_VALUE_0=gitea.hub.local:80:127.0.0.1`.
 En Git Bash no se debe exportar `MSYS_NO_PATHCONV=1` al correr scripts que usen `curl -o /dev/null`. La prueba `pruebas/aislamiento-red.sh` necesita `busybox:v1` en el registro

@@ -41,8 +41,8 @@ El Hub fija el inicio del incidente en `startsAt − 30 s` (la hora real de la c
 
 1. Secrets (una sola vez; no se cambian si ya existen): `bash gitops/hub/crear-secretos.sh`
    (crea `hub-alertmanager` en `hub` y `monitoring`, y `grafana-admin` en `monitoring`).
-2. Subir la carpeta a `hub-gitops`: `bash gitops/platform/gitea/actualizar-hub-gitops.sh observability`
-   (lo mismo con `gitops/clients/_base` para la estrategia `Recreate` y la anotación `hub/probe`).
+2. Subir la carpeta a `hub-gitops`: `bash gitops/sincronizar-hub-gitops.sh`
+   (promueve también `clients/_base`, `hub/` y `platform/backstage`; ver «Quién escribe qué en hub-gitops» en `gitops/README.md`).
 3. Aplicar la Application: `kubectl apply -f gitops/platform/argocd/applications/monitoring.yaml`.
 4. Agregar `grafana.hub.local` a la línea de `hosts` (ver `gitops/README.md`).
 

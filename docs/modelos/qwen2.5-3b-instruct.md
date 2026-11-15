@@ -4,7 +4,7 @@
 |---|---|
 | Nombre en Ollama | `qwen2.5:3b-instruct` |
 | Origen | Alibaba Cloud (Qwen); publicado en la biblioteca de Ollama |
-| Licencia | Licencia de investigación de Qwen (no es Apache 2.0): solo para comparar; no se redistribuye |
+| Licencia | Qwen Research License (`qwen-research`; **no es Apache 2.0**), verificada el 15 nov 2026 en https://huggingface.co/Qwen/Qwen2.5-3B-Instruct y en la página de Ollama: solo para comparar; no se redistribuye |
 | Digest | `357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b` |
 | Parámetros y cuantización | 3,1 B, Q4_K_M |
 | Tamaño en disco | 1,9 GB |

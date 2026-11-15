@@ -4,7 +4,7 @@
 |---|---|
 | Nombre en Ollama | `nomic-embed-text` |
 | Origen | Nomic AI; publicado en la biblioteca de Ollama |
-| Licencia | Apache 2.0 |
+| Licencia | Apache 2.0 (verificada el 15 nov 2026 en https://huggingface.co/nomic-ai/nomic-embed-text-v1.5; la página de Ollama no muestra el texto de la licencia) |
 | Digest | `0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f` |
 | Parámetros y cuantización | 137 M, F16 |
 | Tamaño en disco | 0,3 GB |

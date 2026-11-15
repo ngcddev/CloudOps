@@ -64,3 +64,14 @@ def test_el_hub_tiene_https_para_el_microfono_y_conserva_el_http():
 def test_la_kustomization_incluye_la_voz_y_los_secretos_la_crean():
     assert "voz.yaml" in yaml.safe_load((GITOPS / "kustomization.yaml").read_text(encoding="utf-8"))["resources"]
     assert "create secret generic hub-voz" in (GITOPS / "crear-secretos.sh").read_text(encoding="utf-8")
+
+
+def test_el_hub_se_despliega_por_argo_cd_desde_hub_gitops_sin_borrar_nada():
+    app = yaml.safe_load(Path("/gitops/platform/argocd/applications/hub.yaml").read_text(encoding="utf-8"))
+
+    assert app["spec"]["source"]["repoURL"].endswith("/forja-digital/hub-gitops.git") and app["spec"]["source"]["path"] == "hub"
+    assert app["spec"]["destination"]["namespace"] == "hub"
+    politica = app["spec"]["syncPolicy"]["automated"]
+    assert politica["selfHeal"] is True and politica["prune"] is False
+    ignoradas = {(d["kind"], tuple(d.get("jsonPointers", []))) for d in app["spec"]["ignoreDifferences"]}
+    assert ("Deployment", ("/spec/replicas",)) in ignoradas, "las réplicas las maneja el HPA"

@@ -11,7 +11,6 @@
 import argparse
 import hashlib
 import json
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -37,12 +36,15 @@ def bajar_json(mlflow, modelo: str, referencia: str, tmp: str) -> Path:
 
 
 def exportar(origen: Path, destino: Path) -> dict:
-    """Copia el JSON al destino y deja al lado su suma SHA-256 (`clasificador.sha256`); devuelve el contenido."""
+    """Escribe el JSON en su forma canónica (la misma de train.py: claves ordenadas, sin espacios y con salto de línea final) y deja al lado su suma SHA-256
+    (`clasificador.sha256`); devuelve el contenido. Canónica porque el archivo guardado en MLflow puede traer otra serialización del mismo contenido y la suma del Hub
+    tiene que ser la misma venga de donde venga (verificación del 15 nov: el exportado y el del repositorio tenían el mismo contenido y sumas distintas)."""
+    contenido = json.loads(origen.read_text(encoding="utf-8"))
     destino.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(origen, destino)
+    destino.write_text(json.dumps(contenido, ensure_ascii=False, separators=(",", ":"), sort_keys=True) + chr(10), encoding="utf-8", newline=chr(10))
     suma = hashlib.sha256(destino.read_bytes()).hexdigest()
-    destino.with_suffix(".sha256").write_text(f"{suma}  {destino.name}\n", encoding="utf-8")
-    return json.loads(destino.read_text(encoding="utf-8"))
+    destino.with_suffix(".sha256").write_text(f"{suma}  {destino.name}{chr(10)}", encoding="utf-8", newline=chr(10))
+    return contenido
 
 
 def produccion_actual(cliente, modelo: str, alias: str):
