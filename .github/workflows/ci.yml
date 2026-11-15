@@ -76,6 +76,8 @@ jobs:
         run: bash observability/pruebas/grafana.sh
       - name: Trazas del Hub de punta a punta (OpenTelemetry hacia Tempo)
         run: bash observability/pruebas/trazas.sh
+      - name: El chart de Helm del sitio coincide con Kustomize
+        run: bash gitops/pruebas/helm-vs-kustomize.sh
       - name: Respaldo y restauración de PostgreSQL
         run: |
           cp .env.example .env
