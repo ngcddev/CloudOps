@@ -22,7 +22,8 @@ BROKEN_VERSION = "v2"
 
 # SQLite dentro del contenedor: dato de demo que se pierde al reiniciar.
 # Va en /tmp porque es el único lugar con escritura para un usuario sin root.
-DB_PATH = os.getenv("CONTACT_DB_PATH", "/tmp/contact.db")
+# bandit B108: dato de demostración; la ruta se cambia con CONTACT_DB_PATH
+DB_PATH = os.getenv("CONTACT_DB_PATH", "/tmp/contact.db")  # nosec B108
 
 app = FastAPI(title="Formulario de inscripciones · Colegio San Marcos", version=APP_VERSION)
 

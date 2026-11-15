@@ -19,6 +19,9 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements-dev.txt
 
 # ---------- Base común ----------
 FROM python:3.12-slim AS base
+# Paquetes del sistema con arreglo ya publicado (zlib1g: dos HIGH que Trivy marca con versión corregida); el resto de los hallazgos de Debian no tiene arreglo
+# y está en pipelines/hallazgos.yaml con su decisión (spec 018, T02)
+RUN apt-get update && apt-get install -y --no-install-recommends --only-upgrade zlib1g && rm -rf /var/lib/apt/lists/*
 # SEED_DIR: carpeta con los datos semilla (docker compose la entrega como contexto "seed")
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 SEED_DIR=/app/seed
 RUN useradd --system --uid 10001 --no-create-home hub

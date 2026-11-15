@@ -28,6 +28,9 @@ spec:
         app: web
     spec:
       automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+      volumes:
+        - { name: tmp, emptyDir: { sizeLimit: 16Mi } }
+        - { name: conf, emptyDir: { sizeLimit: 1Mi } }
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
@@ -42,8 +45,12 @@ spec:
               containerPort: 8080
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true   # solo escribe en los emptyDir de abajo (spec 018, T06)
             capabilities:
               drop: [ALL]
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }                      # PID y temporales de nginx
+            - { name: conf, mountPath: /etc/nginx/conf.d }        # default.conf se genera al arrancar desde la plantilla
           resources:
             requests: { cpu: 50m, memory: 32Mi }
             limits: { cpu: 100m, memory: 64Mi }

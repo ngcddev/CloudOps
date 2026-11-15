@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     seed_user_password: str = ""
     # Token con el que el pipeline de seguridad (spec 006) cuenta sus resultados; vacío = no acepta eventos
     pipeline_token: str = ""
+    # Segregación de funciones (spec 018): quien pide un cambio de versión no puede aprobarlo; lo aprueba otra persona de la agencia.
+    # Activa por defecto; solo se apaga (SEGREGACION_FUNCIONES=false) en un laboratorio con una sola cuenta de agencia.
+    segregacion_funciones: bool = True
     # Costo de bcrypt; las pruebas lo bajan para no tardar
     bcrypt_rounds: int = 12
     # Gitea (spec 005): vacíos = sin conexión; la API arranca y los cambios por GitOps avisan

@@ -88,3 +88,29 @@ def test_los_clientes_se_despliegan_desde_su_proyecto():
             assert doc["spec"]["project"] == "clientes", ruta
         if doc["kind"] == "ApplicationSet":
             assert doc["spec"]["template"]["spec"]["project"] == "clientes"
+
+
+# Sistema de archivos de solo lectura en los sitios de los clientes (spec 018, T06): solo escriben en emptyDir
+def _contenedores_de_sitios():
+    for ruta, doc in _documentos():
+        if doc["kind"] == "Deployment" and ruta.parts[:2] in {("clients", "_base"), ("clients", "consultorio")}:
+            yield ruta, _pod(doc)
+
+
+def test_los_sitios_de_los_clientes_tienen_el_sistema_de_archivos_de_solo_lectura():
+    contenedores = list(_contenedores_de_sitios())
+    assert contenedores, "no se encontraron los Deployment de los sitios"
+    for ruta, pod in contenedores:
+        volumenes = {v["name"] for v in pod.get("volumes", []) if "emptyDir" in v}
+        for contenedor in pod["containers"]:
+            assert contenedor["securityContext"].get("readOnlyRootFilesystem") is True, f"{ruta}: {contenedor['name']} escribe en el disco del contenedor"
+            montados = {m["name"] for m in contenedor.get("volumeMounts", [])}
+            assert montados and montados <= volumenes, f"{ruta}: {contenedor['name']} monta algo que no es un emptyDir"
+
+
+def test_las_plantillas_de_helm_y_del_hub_tambien_son_de_solo_lectura():
+    plantillas = list((GITOPS / "charts/sitio-cliente/templates").glob("*.yaml")) + [Path("/app/app/assets/gitops/landing_form_backend.yaml")]
+    for plantilla in plantillas:
+        texto = plantilla.read_text(encoding="utf-8")
+        if "kind: Deployment" in texto:
+            assert "readOnlyRootFilesystem: true" in texto and "emptyDir" in texto, plantilla.name

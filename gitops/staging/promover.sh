@@ -54,6 +54,10 @@ fi
 paso "Pidiendo el cambio ${PROD} → ${STAGING} por el Hub"
 TOKEN="$(curl -fsS -m 15 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login" -d "{\"email\":\"${HUB_USUARIO}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
 [ -n "$TOKEN" ] || fallo "no se pudo entrar al Hub como ${HUB_USUARIO}"
+# Segregación de funciones (spec 018): quien pide el cambio no lo aprueba; lo aprueba otra cuenta de la agencia
+HUB_USUARIO_APROBADOR="${HUB_USUARIO_APROBADOR:-camilo@forjadigital.test}"
+TOKEN_APROBADOR="$(curl -fsS -m 15 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login" -d "{\"email\":\"${HUB_USUARIO_APROBADOR}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
+[ -n "$TOKEN_APROBADOR" ] || fallo "no se pudo entrar al Hub como ${HUB_USUARIO_APROBADOR}"
 hub() { curl -sS -m 30 -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' "$@"; }
 # El cuerpo va por archivo: con tildes en la línea de comandos, curl de Windows lo manda en otra codificación y el Hub responde «error parsing the body»
 CUERPO="$(mktemp)"; trap 'rm -f "$CUERPO"' EXIT
@@ -64,7 +68,7 @@ SERVICIO="$(hub "${HUB}/api/services/status" | tr '{' '\n' | grep "\"${NS_PROD}\
 ticket="$(enviar "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Promover ${STAGING} de staging a producción\",\"description\":\"Probada en ${NS_STAGING} (spec 017, T03).\",\"kind\":\"cambio\"}")"
 CAMBIO="$(enviar "${HUB}/api/change-requests" "{\"ticket_id\":$(echo "$ticket" | campo id),\"to_version\":\"${STAGING}\"}" | campo id)"
 [ -n "$CAMBIO" ] || fallo "no se pudo registrar el cambio a ${STAGING}: ticket=${ticket}"
-aprobado="$(enviar "${HUB}/api/change-requests/${CAMBIO}/approve" '{}')"
+aprobado="$(TOKEN="$TOKEN_APROBADOR" enviar "${HUB}/api/change-requests/${CAMBIO}/approve" '{}')"
 sha="$(echo "$aprobado" | campo gitops_commit_sha)"
 [ -n "$sha" ] || fallo "el Hub no aprobó el cambio (¿la puerta de seguridad de ${STAGING} no está en ok?): ${aprobado}"
 echo "   cambio #${CAMBIO} aprobado: commit ${sha:0:7} en hub-gitops"

@@ -7,7 +7,7 @@
 #   puerta.sh construir         pruebas del sitio (si tiene backend con pytest) y docker build de cada imagen
 #   puerta.sh vulnerabilidades  Trivy: falla si hay una CVE crítica con arreglo disponible
 #   puerta.sh sbom              Syft: inventario de componentes (SPDX), se guarda como evidencia
-#   puerta.sh firmar            sube la imagen al registro, la firma con Cosign y le adjunta la procedencia SLSA v1
+#   puerta.sh firmar            sube la imagen al registro, la firma con Cosign y le adjunta la procedencia SLSA v1 y el SBOM (SPDX)
 #   puerta.sh verificar         cosign verify y verify-attestation con la clave pública, sobre el digest que se subió
 #   puerta.sh fin               cierra la corrida (JOB_STATUS=success|failure|cancelled); corre siempre
 #
@@ -152,7 +152,18 @@ case "$paso" in
     else
       [ -s "$reporte_config" ] || fallo vulnerabilidades "Trivy no pudo revisar la configuración de los Dockerfile" "$(imagenes | cut -d' ' -f1)"
       detalle="$(jq_run -r '[.Results[]? | select(.Misconfigurations != null) | .Target as $t | .Misconfigurations[] | "\($t): \(.ID) \(.Title)"] | .[:5] | join(", ")' < "$reporte_config")"
-      fallo vulnerabilidades "Configuración insegura en el Dockerfile: ${detalle}" "$(imagenes | cut -d' ' -f1)" "$reporte_config"
+      fallo vulnerabilidades "Configuración insegura (Dockerfile o manifiestos): ${detalle}" "$(imagenes | cut -d' ' -f1)" "$reporte_config"
+    fi
+    # Dependencias declaradas por el sitio (spec 018, SCA): requirements.txt, package-lock.json…; un hallazgo ALTO o CRÍTICO con arreglo publicado frena la puerta.
+    reporte_deps="${OUT}/trivy-dependencias.json"
+    if docker_run -v "${HOST_PWD}:/repo:ro" -v "${HOST_PWD}/${OUT}:/out" -v puerta-trivy-cache:/root/.cache "$TRIVY_IMAGE" fs --scanners vuln \
+        --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --quiet ${TRIVY_SKIP_DB_UPDATE:+--skip-db-update} --skip-dirs /repo/.puerta --skip-dirs '**/node_modules' \
+        --format json --output /out/trivy-dependencias.json /repo; then
+      echo "Dependencias del sitio sin vulnerabilidades altas ni críticas con arreglo."
+    else
+      [ -s "$reporte_deps" ] || fallo vulnerabilidades "Trivy no pudo revisar las dependencias del sitio" "$(imagenes | cut -d' ' -f1)"
+      detalle="$(jq_run -r '[.Results[]? | .Target as $t | .Vulnerabilities[]? | "\($t): \(.PkgName) \(.InstalledVersion) a \(.FixedVersion) (\(.VulnerabilityID))"] | .[:4] | join(", ")' < "$reporte_deps")"
+      fallo vulnerabilidades "Dependencia vulnerable con arreglo publicado: ${detalle}" "$(imagenes | cut -d' ' -f1)" "$reporte_deps"
     fi
     ;;
 
@@ -204,12 +215,19 @@ case "$paso" in
               resolvedDependencies: [{uri: ("git+" + $repo + "@refs/tags/" + $version), digest: {gitCommit: $commit}}]},
             runDetails: {builder: {id: "https://forja-digital.local/puerta/runner"}, metadata: {invocationId: $corrida, finishedOn: $ahora}}}' \
           < /dev/null > "${OUT}/provenance-${imagen}.json"
-      if docker_run -e COSIGN_PRIVATE_KEY -e COSIGN_PASSWORD -v "${HOST_PWD}/${OUT}:/out" "$COSIGN_IMAGE" attest --key env://COSIGN_PRIVATE_KEY \
+      if ! docker_run -e COSIGN_PRIVATE_KEY -e COSIGN_PASSWORD -v "${HOST_PWD}/${OUT}:/out" "$COSIGN_IMAGE" attest --key env://COSIGN_PRIVATE_KEY \
           --yes --use-signing-config=false --tlog-upload=false --type slsaprovenance1 --predicate "/out/provenance-${imagen}.json" \
           "${cosign_reg[@]}" "${destino}@${digest}" >/dev/null; then
-        reportar paso firma ok "Imagen subida como ${imagen}:${VERSION} (${digest:0:19}…), firmada y con su procedencia SLSA" "$imagen" "${OUT}/provenance-${imagen}.json"
-      else
         fallo firma "La imagen se firmó pero no se pudo adjuntar su procedencia (${imagen}@${digest:0:19}…)" "$imagen"
+      fi
+      # SBOM (SPDX, spec 018): viaja con la imagen, firmado y atado al digest, para que quien reciba la imagen sepa qué contiene sin volver a escanearla
+      # ni fiarse de un archivo suelto. `verificar` lo comprueba con la misma clave.
+      if docker_run -e COSIGN_PRIVATE_KEY -e COSIGN_PASSWORD -v "${HOST_PWD}/${OUT}:/out" "$COSIGN_IMAGE" attest --key env://COSIGN_PRIVATE_KEY \
+          --yes --use-signing-config=false --tlog-upload=false --type spdxjson --predicate "/out/sbom-${imagen}.spdx.json" \
+          "${cosign_reg[@]}" "${destino}@${digest}" >/dev/null; then
+        reportar paso firma ok "Imagen subida como ${imagen}:${VERSION} (${digest:0:19}…), firmada y con su procedencia SLSA y su SBOM" "$imagen" "${OUT}/provenance-${imagen}.json"
+      else
+        fallo firma "La imagen se firmó pero no se pudo adjuntar su SBOM (${imagen}@${digest:0:19}…)" "$imagen"
       fi
     done
     ;;
@@ -239,7 +257,17 @@ case "$paso" in
       if [ -n "${COMMIT_SHA:-}" ] && [ "$commit_declarado" != "$COMMIT_SHA" ]; then
         fallo verificacion "La procedencia de ${imagen} declara el commit ${commit_declarado:0:12}, no el de la versión (${COMMIT_SHA:0:12})" "$imagen"
       fi
-      reportar paso verificacion ok "Firma y procedencia SLSA válidas con la clave pública del Hub (${digest:0:19}…, commit ${commit_declarado:0:12})" "$imagen" "$reporte"
+      # El SBOM atestado también debe estar firmado con la misma clave y traer componentes: un inventario vacío no describe nada
+      sbom_atestado="${OUT}/verify-attestation-sbom-${imagen}.json"
+      if ! docker_run -v "${carpeta_pub}:/pub:ro" "$COSIGN_IMAGE" verify-attestation --key "/pub/$(basename "$COSIGN_PUB")" \
+          --type spdxjson --insecure-ignore-tlog=true "${cosign_reg[@]}" "${REGISTRY}/${ORG}/${imagen}@${digest}" > "$sbom_atestado" 2>/dev/null; then
+        fallo verificacion "La imagen ${imagen}@${digest:0:19}… no tiene un SBOM firmado válido" "$imagen"
+      fi
+      componentes="$(jq_run -r '.payload' < "$sbom_atestado" | head -1 | base64 -d | jq_run -r '.predicate.packages | length' 2>/dev/null || echo 0)"
+      if [ "${componentes:-0}" -lt 1 ]; then
+        fallo verificacion "El SBOM atestado de ${imagen} no trae componentes" "$imagen"
+      fi
+      reportar paso verificacion ok "Firma, procedencia SLSA y SBOM (${componentes} componentes) válidos con la clave pública del Hub (${digest:0:19}…, commit ${commit_declarado:0:12})" "$imagen" "$reporte"
     done
     ;;
 

@@ -6,6 +6,8 @@
 #   secreto   un commit nuevo con una clave de AWS falsa: falla en «secretos» y no construye nada
 #   vulnerable  imagen base vieja con CVE críticas: falla en «vulnerabilidades»
 #   configuracion  el Dockerfile termina corriendo como root: falla en «vulnerabilidades» (trivy config, spec 016)
+#   dependencia  requirements.txt con librerías con CVE y arreglo publicado (SCA, spec 018): falla en «vulnerabilidades»
+#   manifiesto   un Deployment con privileged y hostNetwork (trivy config, spec 018): falla en «vulnerabilidades»
 #   firma-ajena  se verifica con otra clave pública: falla en «verificación»
 #   procedencia  la verificación espera otro commit que el declarado en la procedencia SLSA: falla en «verificación»
 #   pruebas   (solo SITE=consultorio) un cambio rompe las pruebas del sitio: falla en «construcción» y no construye nada
@@ -117,12 +119,30 @@ if [ -n "${HUB_USUARIO:-}" ] && [ -n "${HUB_PASSWORD:-}" ]; then
     -d "{\"email\":\"${HUB_USUARIO}\",\"password\":\"${HUB_PASSWORD}\"}" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')"
 fi
 
+# El SBOM atestado (spec 018): la imagen que subió la puerta lo trae firmado y se verifica con la clave buena, pero no con una ajena
+comprobar_sbom_atestado() {
+  local digest imagen carpeta
+  imagen="$(ls "$REPO/.puerta"/*.digest | head -1 | xargs -n1 basename | sed 's/.digest$//')"
+  digest="$(cat "$REPO/.puerta/${imagen}.digest")"
+  for caso in "claves:0" "claves-ajenas:1"; do
+    carpeta="$(cd "$TMP/${caso%%:*}" && (pwd -W 2>/dev/null || pwd))"
+    docker run --rm --network "$RED" -v "${carpeta}:/pub:ro" "$COSIGN_IMAGE" verify-attestation --key /pub/cosign.pub --type spdxjson       --insecure-ignore-tlog=true --allow-http-registry "${REGISTRO}:5000/forja-digital/${imagen}@${digest}" >/dev/null 2>&1
+    resultado=$?
+    if [ "${caso##*:}" = 0 ]; then
+      [ "$resultado" = 0 ] && ok "el SBOM atestado de ${imagen} se verifica con la clave del Hub" || falla "el SBOM atestado no se verifica con la clave del Hub"
+    else
+      [ "$resultado" != 0 ] && ok "el SBOM atestado NO se verifica con una clave ajena" || falla "el SBOM atestado se verificó con una clave ajena"
+    fi
+  done
+}
+
 escenario_limpia() {
   echo "== Escenario «limpia»: debe pasar los seis controles =="
   local v; nueva_version; v="$V"
   (cd "$REPO" && git checkout -q -B limpia base && echo "<!-- ${v} -->" >> "$WEB/index.html" && git commit -qam "feat: ajuste menor" && git tag "$v")
   if correr "$v" "$TMP/claves/cosign.pub"; then ok "la puerta terminó bien"; else falla "la puerta falló en una versión limpia"; fi
   verificar_corrida "$v" ok
+  comprobar_sbom_atestado
 }
 
 escenario_secreto() {
@@ -151,6 +171,37 @@ escenario_configuracion() {
 USER root
 ' >> Dockerfile && git commit -qam "build: usuario" && git tag "$v")
   if correr "$v" "$TMP/claves/cosign.pub"; then falla "la puerta dejó pasar un contenedor que corre como root"; else ok "la puerta se detuvo"; fi
+  verificar_corrida "$v" fallo vulnerabilidades
+}
+
+escenario_dependencia() {
+  echo "== Escenario «dependencia»: una librería con CVE y arreglo publicado =="
+  local v; nueva_version; v="$V"
+  (cd "$REPO" && git checkout -q -B dependencia base && printf 'flask==0.12\njinja2==2.10\n' > requirements.txt && git add -A && git commit -qm "feat: dependencias" && git tag "$v")
+  if correr "$v" "$TMP/claves/cosign.pub"; then falla "la puerta dejó pasar una dependencia vulnerable"; else ok "la puerta se detuvo"; fi
+  verificar_corrida "$v" fallo vulnerabilidades
+}
+
+escenario_manifiesto() {
+  echo "== Escenario «manifiesto»: un Deployment con permisos excesivos =="
+  local v; nueva_version; v="$V"
+  (cd "$REPO" && git checkout -q -B manifiesto base && mkdir -p k8s && cat > k8s/deployment.yaml <<'YAML'
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: sitio}
+spec:
+  selector: {matchLabels: {app: sitio}}
+  template:
+    metadata: {labels: {app: sitio}}
+    spec:
+      hostNetwork: true
+      containers:
+        - name: web
+          image: nginx
+          securityContext: {privileged: true}
+YAML
+  git add -A && git commit -qm "feat: manifiesto" && git tag "$v")
+  if correr "$v" "$TMP/claves/cosign.pub"; then falla "la puerta dejó pasar un manifiesto con permisos excesivos"; else ok "la puerta se detuvo"; fi
   verificar_corrida "$v" fallo vulnerabilidades
 }
 
@@ -188,8 +239,10 @@ case "$ESCENARIO" in
   secreto) escenario_secreto ;;
   vulnerable) escenario_vulnerable ;;
   configuracion) escenario_configuracion ;;
+  dependencia) escenario_dependencia ;;
+  manifiesto) escenario_manifiesto ;;
   firma-ajena) escenario_firma_ajena ;;
-  todas) escenario_limpia; escenario_secreto; escenario_vulnerable; { [ -f "$REPO/Dockerfile" ] && escenario_configuracion; }; escenario_firma_ajena; escenario_procedencia; escenario_pruebas ;;
+  todas) escenario_limpia; escenario_secreto; escenario_vulnerable; { [ -f "$REPO/Dockerfile" ] && escenario_configuracion; }; escenario_dependencia; escenario_manifiesto; escenario_firma_ajena; escenario_procedencia; escenario_pruebas ;;
   *) echo "Escenario desconocido: $ESCENARIO" >&2; exit 2 ;;
 esac
 

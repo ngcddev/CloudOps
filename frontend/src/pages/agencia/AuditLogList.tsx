@@ -23,6 +23,7 @@ const ACTION_LABELS: Record<string, string> = {
   editar: "Editó",
   aprobar: "Aprobó",
   rechazar: "Rechazó",
+  denegar: "Se le negó (segregación de funciones)",
   desplegar: "Publicó",
   fallar: "No se pudo publicar",
   // Incidentes (spec 008)

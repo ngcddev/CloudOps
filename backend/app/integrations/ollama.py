@@ -15,9 +15,12 @@ def urllib_transport(url: str, body: bytes, timeout: float) -> tuple[int, bytes]
     import urllib.error
     import urllib.request
 
-    request = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    from app.integrations.http import validar_esquema
+
+    request = urllib.request.Request(validar_esquema(url), data=body, headers={"Content-Type": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        # bandit B310: esquema validado en la línea anterior
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
             return response.status, response.read()
     except urllib.error.HTTPError as error_:
         return error_.code, error_.read()

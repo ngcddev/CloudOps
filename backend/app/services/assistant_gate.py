@@ -96,6 +96,8 @@ class RemoteGate:
     """
 
     def __init__(self, url: str, fallback: GateModel, timeout: float = 1.5, label: str = "mlflow:compuerta@production"):
+        if not url.lower().startswith(("http://", "https://")):  # sin importar app.integrations: este archivo viaja dentro del modelo de MLflow
+            raise ValueError(f"La URL de la compuerta «{url[:60]}» no es http ni https.")
         self.url = url.rstrip("/")
         self.fallback = fallback
         self.timeout = timeout
@@ -106,7 +108,8 @@ class RemoteGate:
         body = json.dumps({"dataframe_split": {"columns": ["text"], "data": [[text]]}}).encode()
         request = urllib.request.Request(f"{self.url}/invocations", data=body, headers={"Content-Type": "application/json"})
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            # bandit B310: esquema validado en __init__
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:  # nosec B310
                 fila = json.loads(response.read())["predictions"][0]
             p = float(fila["p_fuera_de_tema"])
         except (urllib.error.URLError, OSError, ValueError, KeyError, IndexError, TypeError) as error:
