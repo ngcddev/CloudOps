@@ -181,3 +181,6 @@ evidencias/
 
 # Carpeta temporal de la prueba de drift (spec 019)
 infra/pruebas/.drift/
+
+# Modelos de voz descargados en local (spec 021)
+voz/modelos/
