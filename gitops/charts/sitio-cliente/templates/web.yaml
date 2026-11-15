@@ -27,6 +27,7 @@ spec:
       labels:
         app: web
     spec:
+      automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
