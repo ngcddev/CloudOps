@@ -81,6 +81,15 @@ class GiteaClient:
         data = self._request("GET", f"branches/{urllib.parse.quote(self.branch)}")
         return data["commit"]["id"]
 
+    def is_ancestor(self, commit: str, descendant: str, limit: int = 100) -> bool:
+        """True si `commit` está entre los últimos `limit` commits de la historia de `descendant`.
+
+        No usa la API de comparación: Gitea 1.22 responde `BaseNotExist` cuando se le dan SHAs. Basta mirar los commits recientes porque un cambio
+        solo espera su confirmación unos minutos (validación de 10 min): lo que lo separa de la revisión de Argo CD son pocos commits.
+        """
+        data = self._request("GET", f"commits?sha={urllib.parse.quote(descendant)}&limit={limit}&stat=false&verification=false&files=false")
+        return isinstance(data, list) and any(str(c.get("sha", "")).lower() == commit.lower() for c in data)
+
     def latest_commit(self, path: str) -> tuple[str, str] | None:
         """(sha, mensaje) del último commit que tocó `path` en la rama, o None si no hay ninguno."""
         query = f"commits?path={urllib.parse.quote(path)}&sha={urllib.parse.quote(self.branch)}&limit=1"

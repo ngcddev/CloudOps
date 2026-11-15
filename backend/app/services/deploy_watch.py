@@ -28,14 +28,25 @@ logger = logging.getLogger("hub.deploy_watch")
 INTERVAL_SECONDS = 15
 
 
-def is_published(status: AppStatus, commit_sha: str | None) -> bool:
-    """El cambio está publicado cuando Argo CD aplicó justo ese commit y la aplicación está sana."""
-    return (
-        status.sync == "Synced"
-        and status.health == "Healthy"
-        and commit_sha is not None
-        and (status.revision or "").lower() == commit_sha.lower()
-    )
+def is_published(status: AppStatus, commit_sha: str | None, gitea=None) -> bool:
+    """El cambio está publicado cuando Argo CD aplicó ese commit (o uno posterior que lo incluye) y la aplicación está sana.
+
+    Argo CD sigue toda la rama de hub-gitops: si otro cliente hace un commit después, la revisión ya no es la del cambio aunque el sitio
+    siga publicado (verificación del 15 nov). Con `gitea` se comprueba que el commit del cambio está en la historia de la revisión; sin
+    `gitea`, o si Gitea no responde, solo vale la revisión exacta.
+    """
+    if status.sync != "Synced" or status.health != "Healthy" or commit_sha is None or not status.revision:
+        return False
+    revision = status.revision.lower()
+    if revision == commit_sha.lower():
+        return True
+    if gitea is None:
+        return False
+    try:
+        return gitea.is_ancestor(commit_sha.lower(), revision)
+    except GiteaError as error:
+        logger.warning("No se pudo comprobar si %s está en la revisión %s: %s", commit_sha[:7], revision[:7], error)
+        return False
 
 
 def validation_expired(change: ChangeRequest, now: datetime) -> bool:
@@ -125,7 +136,7 @@ def rollback_pending(db: Session, service_id: int) -> bool:
     )
 
 
-def confirm_rollbacks(db: Session, service: Service, status: AppStatus, now: datetime) -> list[int]:
+def confirm_rollbacks(db: Session, service: Service, status: AppStatus, now: datetime, gitea=None) -> list[int]:
     """Confirma los rollbacks que Argo CD ya aplicó y dejó sanos (spec 009, T07).
 
     Igual que con un cambio: `Synced`, `Healthy` y en la revisión del commit. Deja la versión de destino
@@ -143,7 +154,7 @@ def confirm_rollbacks(db: Session, service: Service, status: AppStatus, now: dat
         .order_by(Incident.id)
     ).all()
     for incident in pending:
-        if not is_published(status, incident.rollback_commit_sha):
+        if not is_published(status, incident.rollback_commit_sha, gitea):
             continue
         incident.rollback_confirmed_at = now
         service.current_version = incident.rollback_to_version
@@ -204,7 +215,7 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
             .order_by(ChangeRequest.id)
         ).all()
         for change in pending:
-            if not is_published(status, change.gitops_commit_sha):
+            if not is_published(status, change.gitops_commit_sha, gitea):
                 if validation_expired(change, timestamp):
                     transition(change, "fallida", actor_id=change.approved_by_id, now=timestamp)
                     logger.warning(
@@ -248,7 +259,7 @@ def check_cycle(db: Session, argocd, now: datetime | None = None, gitea=None) ->
                 )
             )
             deployed.append(change.id)
-        confirm_rollbacks(db, service, status, timestamp)
+        confirm_rollbacks(db, service, status, timestamp, gitea)
         if head is not None:
             reconcile_version(db, service, status, gitea, timestamp, head)
     db.commit()

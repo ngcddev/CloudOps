@@ -60,6 +60,62 @@ def test_is_published_exige_synced_healthy_y_la_revision_del_commit():
     assert not is_published(AppStatus("Synced", "Healthy", SHA), None)
 
 
+class GiteaConHistoria:
+    """Gitea simulado: dice qué commits están incluidos en la historia de otro (o falla)."""
+
+    def __init__(self, incluidos=(), error=None):
+        self.incluidos = set(incluidos)
+        self.error = error
+
+    def head_sha(self) -> str:
+        return "b" * 40
+
+    def is_ancestor(self, commit: str, descendant: str) -> bool:
+        if self.error:
+            raise self.error
+        return (commit, descendant) in self.incluidos
+
+
+def test_is_published_acepta_un_commit_posterior_que_incluye_el_del_cambio():
+    posterior = "b" * 40
+    estado = AppStatus("Synced", "Healthy", posterior)
+    assert is_published(estado, SHA, GiteaConHistoria({(SHA, posterior)}))
+    # un commit que no está en la historia (otra rama, o aún no llegó) no cuenta
+    assert not is_published(estado, SHA, GiteaConHistoria())
+    # sin Gitea, o con Gitea caído, solo vale la revisión exacta
+    assert not is_published(estado, SHA)
+    assert not is_published(estado, SHA, GiteaConHistoria(error=deploy_watch.GiteaError("sin conexión")))
+    # y sigue exigiendo sincronía y salud
+    assert not is_published(AppStatus("OutOfSync", "Healthy", posterior), SHA, GiteaConHistoria({(SHA, posterior)}))
+    assert not is_published(AppStatus("Synced", "Progressing", posterior), SHA, GiteaConHistoria({(SHA, posterior)}))
+
+
+def test_un_commit_de_otro_cliente_no_deja_el_cambio_en_validacion(seeded, en_validacion):
+    posterior = "c" * 40
+    argo = ArgoSimulado(**{"cliente-ferreteria": AppStatus("Synced", "Healthy", posterior)})
+
+    deployed = check_cycle(seeded, argo, now=AHORA, gitea=GiteaConHistoria({(SHA, posterior)}))
+
+    assert deployed == [en_validacion.id]
+    assert seeded.get(ChangeRequest, en_validacion.id).status == "desplegada"
+
+
+def test_gitea_is_ancestor_busca_el_commit_entre_los_recientes_de_la_revision():
+    from app.integrations.gitea import GiteaClient
+
+    pedidos = []
+
+    def transporte(request, timeout):
+        pedidos.append(request.full_url)
+        return 200, ('[{"sha": "%s"}, {"sha": "%s"}]' % ("c" * 40, SHA.upper())).encode()
+
+    cliente = GiteaClient("http://gitea", "org/repo", "token", transport=transporte)
+
+    assert cliente.is_ancestor(SHA, "c" * 40)
+    assert not cliente.is_ancestor("d" * 40, "c" * 40)
+    assert "commits?sha=" + "c" * 40 in pedidos[0]
+
+
 def test_pasa_a_desplegada_y_registra_el_despliegue(seeded, en_validacion):
     argo = ArgoSimulado(**{"cliente-ferreteria": AppStatus("Synced", "Healthy", SHA)})
 
