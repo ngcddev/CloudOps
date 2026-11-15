@@ -330,3 +330,9 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 
 
 `clients/ferreteria-staging` es el mismo sitio en `cliente-ferreteria-staging` (`ferreteria-staging.hub.local`, cuota menor); el ApplicationSet crea su Application al ver la carpeta. `staging/publicar.sh <cliente> <versión>` la publica con un commit y `staging/promover.sh <cliente>` la pasa a producción **solo si está lista y sana en staging**, pidiendo el cambio por el Hub (ticket → puerta → aprobación). La v2 rota se frena en staging (producción no se toca); la v1.1 sana se promueve. Staging no está en el Hub: una falla ahí no abre incidentes. La imagen de la versión debe estar antes en el registro (`apps/publicar-imagenes.sh ferreteria:v1.1`).
+
+## Chart de Helm del sitio (spec 017)
+
+
+
+`charts/sitio-cliente` empaqueta lo mismo que `clients/_base` (namespace con Pod Security restricted, cuota, red, sitio, servicio e Ingress, y el backend opcional de las plantillas con formulario) y trae un archivo de valores por cliente en `valores/`. `helm template ferreteria charts/sitio-cliente -f charts/sitio-cliente/valores/ferreteria.yaml` produce los mismos objetos que `kustomize build clients/ferreteria`: `pruebas/helm-vs-kustomize.sh` lo comprueba con `helm lint --strict` y una comparación objeto por objeto (corre en el CI y sin instalar Helm: usa la imagen `alpine/helm`). Argo CD sigue aplicando Kustomize; el chart es el artefacto empaquetable (`helm package`).
