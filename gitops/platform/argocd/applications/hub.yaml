@@ -1,0 +1,35 @@
+# Application de Argo CD del propio Hub (spec 022, T04): reconcilia hub/ de hub-gitops en el namespace hub (API, web, voz, PostgreSQL, respaldos, Ingress y NetworkPolicy).
+# Hasta ahora el Hub se aplicaba a mano con `kubectl apply -k gitops/hub`; con esta Application entra por Git como todo lo demás (principio 3) y un cambio a mano se revierte.
+# Los Secrets NO están en Git: los crea una vez `gitops/hub/crear-secretos.sh` y Argo CD no los toca (no los gestiona). El namespace lo crea platform/namespaces.yaml.
+# Antes de aplicarla, promover el contenido:  bash gitops/sincronizar-hub-gitops.sh
+# Se aplica una vez:                           kubectl apply -f gitops/platform/argocd/applications/hub.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hub
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+spec:
+  project: default
+  source:
+    repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+    targetRevision: main
+    path: hub
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hub
+  syncPolicy:
+    automated:
+      # Sin prune: este Application adopta lo que ya corre (la base de datos incluida) y un borrado por error en Git no debe llevarse un volumen ni un Secret
+      prune: false
+      selfHeal: true   # un cambio manual en el clúster se revierte a lo que dice Git
+  ignoreDifferences:
+    # Las réplicas de la API y la web las maneja el HPA (hub/escalado.yaml): Git no debe pelear con él
+    - group: apps
+      kind: Deployment
+      jsonPointers: [/spec/replicas]
+    # Kubernetes completa campos de la plantilla del volumen de PostgreSQL que Git no declara
+    - group: apps
+      kind: StatefulSet
+      jqPathExpressions: [".spec.volumeClaimTemplates[]?"]

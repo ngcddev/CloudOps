@@ -31,7 +31,7 @@ spec:
         - { name: tmp, emptyDir: { sizeLimit: 64Mi } }
       containers:
         - name: voz
-          image: gitea.hub.local/forja-digital/hub-voz:v1.0
+          image: gitea.hub.local/forja-digital/hub-voz:v1.1
           ports:
             - name: http
               containerPort: 8100

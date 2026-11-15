@@ -20,15 +20,28 @@ logger = logging.getLogger(__name__)
 
 
 # Guarda del contexto (spec 020, T05): la ayuda es lo que el LLM lee como CONTEXTO; si alguien la edita (o un trozo envenenado llega por el RAG) con órdenes dirigidas
-# al asistente, un modelo de 7B las obedece (se midió: 3 de 5 casos resistidos con el prompt v3 y también con una regla extra en el prompt). Por eso la defensa no depende
+# al asistente, un modelo de 7B las obedece (se midió: 3 de 5 casos resistidos con el prompt v3 y también con una regla extra en el prompt). Una primera versión de estos patrones detectó 0 de 10 variantes redactadas de otra forma (verificación del 15 nov): los de abajo cubren esas diez, y siguen siendo una red, no una garantía. Por eso la defensa no depende
 # del modelo: una sección con frases de ese tipo no entra al prompt. Son patrones sobre texto sin tildes; una prueba comprueba que la ayuda real no los dispara.
 PATRONES_SOSPECHOSOS = {
-    "ignorar reglas": re.compile(r"\bignor\w+ (?:\w+ ){0,3}(?:reglas|instrucciones|indicaciones)\b|\bignore (?:\w+ ){0,3}(?:rules|instructions)\b"),
-    "orden al asistente": re.compile(r"\b(?:nota|instruccion|orden|mensaje|aviso)\w* (?:para|del|de la) (?:el |la )?(?:asistente|administrador|sistema|ia)\b|\bsistema:|\bsystem:"),
-    "cambio de rol": re.compile(r"\ba partir de aqui\b|\bahora eres\b|\beres un asistente sin\b|\bsin restricciones\b"),
-    "decir algo concreto": re.compile(r"\bresponde (?:unicamente|solo|solamente) (?:la |con )?(?:palabra|frase)\b|\bal final de cada respuesta\b|\bempezando con\b|\bescribe al final\b"),
-    "ante una pregunta": re.compile(r"\bcuando te pregunten\b|\bcuando el usuario pregunte\b|\bresponde que\b"),
-    "accion obligatoria": re.compile(r"\baccion obligatoria\b|\bdebes obedecer\b"),
+    "ignorar reglas": re.compile(
+        r"\b(?:ignor\w+|olvid\w+|omit\w+|desobedec\w+|disregard|forget|override|bypass)\b (?:\w+ ){0,4}(?:reglas|instrucciones|indicaciones|restricciones|politicas|lo anterior|lo de arriba|el contexto|rules|instructions|above|previous|prior)\b"
+        r"|\bno sigas (?:\w+ ){0,3}(?:reglas|instrucciones|indicaciones)\b|\b(?:ignore|disregard) (?:all|the|previous)\b"
+    ),
+    "orden al asistente": re.compile(
+        r"\b(?:nota|instruccion|orden|mensaje|aviso)\w* (?:para|del|de la) (?:el |la )?(?:asistente|administrador|sistema|ia)\b|\bsistema:|\bsystem:|\bsystem prompt\b"
+        r"|\b(?:el|al) asistente (?:debe|tiene que|tienes? que|puede|podra)\b|\bcomo asistente\b|\bnuevas? (?:politica|regla|instruccion)s?\s*:|\breglas? nuevas?\s*:"
+    ),
+    "cambio de rol": re.compile(
+        r"\ba partir de aqui\b|\bahora eres\b|\beres un asistente sin\b|\bsin restricciones\b|\bactua como\b|\bact as\b|\byou are now\b|\bahora actuas\b|\bfinge ser\b|\bpretend\b"
+    ),
+    "decir algo concreto": re.compile(
+        r"\b(?:responde|contesta) (?:unicamente|solo|solamente|siempre)\b|\b(?:reply|answer) only\b|\bal final de cada respuesta\b|\bempezando con\b"
+        r"|\b(?:escribe|agrega|anade|menciona) (?:al final|al inicio|la clave|el texto)\b"
+    ),
+    "ante una pregunta": re.compile(r"\bcuando te pregunten\b|\bcuando el usuario pregunte\b|\bcuando pregunten por\b|\bresponde que\b|\bdile al usuario\b|\bdi que se\b"),
+    "accion obligatoria": re.compile(r"\baccion obligatoria\b|\bdebes obedecer\b|\btienes permiso para\b|\bestas autorizado\b"),
+    "saltar controles": re.compile(r"\b(?:salta|omite|evita|desactiva|apaga)\w* (?:\w+ ){0,3}(?:revision|verificacion|puerta de seguridad|controles|aprobacion)\b"),
+    "ejecutar comandos": re.compile(r"\b(?:ejecuta|ejecutar|run|corre)\s*:|\bcurl\b[^\n]*\|\s*(?:sh|bash)\b|\brm -rf\b"),
     "enviar datos": re.compile(r"\b(?:envia|enviar|manda|enviala|mandala)\w* (?:\w+ ){0,6}(?:a|hacia) https?\b"),
 }
 
