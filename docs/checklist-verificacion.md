@@ -5,6 +5,22 @@ Los nombres de botones, pestañas y mensajes están tomados del código del Hub 
 Cada verificación dice **dónde** (qué terminal o qué pestaña del navegador), **qué hacer** (comando o botón con su texto exacto), **qué debes ver** y **qué hacer si falla**.
 Marca la casilla cuando se cumpla el «OK si». Lo que se corrija va a la [bitácora](bitacora.md). Origen de cada punto: «Pendiente y no verificado» de cada módulo en la bitácora.
 
+## Resultados de la sesión de verificación del 15 nov 2026 (hecha por Claude)
+
+Lo que ya se corrió contra el clúster real y el Hub en el navegador. Los ítems de abajo siguen con su casilla para que el equipo repita lo que quiera; lo marcado aquí no necesita repetirse salvo que cambie el código.
+
+| Ítem | Resultado |
+|---|---|
+| 1.1 Sitios de solo lectura | Verificado en vivo; los sitios se publican desde hub-gitops (spec 022). |
+| 1.2 Segregación de funciones (parte pantalla) | Verificado en un navegador real: Sofía no puede aprobar su propio cambio, queda en la bitácora y Camilo sí. Los scripts de demo (parte B) quedan pendientes. |
+| 1.3 Licencias de las fichas | Verificadas con su fuente; el motor de Piper es GPL-3.0-or-later y está anotado. |
+| 2 Voz en el clúster | Funciona en el clúster (imágenes `hub-api:v1.13`, `hub-voz:v1.1`); con una persona real sigue pendiente (1.4). |
+| 3 Seguridad de la IA | La redacción tapaba 4 de 7 formatos y la guarda detectaba 0 de 10 variantes: se ampliaron y quedaron con pruebas de regresión. El archivo exportado por `promover.py` tenía otra suma que el del repositorio: ahora es canónico. El tutor varió 100 % / 96,7 % entre corridas. |
+| 4.2 Tablero RED y USE | Fallaba: la sonda de vida de Grafana (1 s) lo reiniciaba en bucle con el nodo saturado. Corregido (PR 180: CPU 1, memoria 384Mi, sondas con margen); ahora los 7 paneles dibujan series. |
+| 4.4 Capacidad por cliente | `capacidad.sh` sale con código 1 al forzar una cuota excedida. |
+| Sincronía hub-gitops | Hub bajo Argo CD y reglas de quién escribe qué (spec 022). |
+| 8.1 Pruebas del backend | 924 pasadas, 3 omitidas, 0 fallos (pytest en la imagen de desarrollo, 15 nov). |
+
 ## Cómo leer esta guía
 
 | Palabra | Significa |
