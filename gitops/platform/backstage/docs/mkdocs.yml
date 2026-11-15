@@ -1,0 +1,9 @@
+# Documentación como código de la plataforma (spec 017, T02): se publica en Backstage (TechDocs) con gitops/platform/backstage/publicar-docs.sh.
+site_name: Plataforma CloudOps Client Hub
+site_description: Cómo se despliega, cambia, monitorea y recupera un sitio de cliente
+plugins:
+  - techdocs-core
+nav:
+  - Inicio: index.md
+  - Flujo de un cambio: flujo-de-cambios.md
+  - Operar la plataforma: operar.md

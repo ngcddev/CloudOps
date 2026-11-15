@@ -59,3 +59,12 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Simulaciones de falla en el clúster | `bash gitops/pruebas/simulaciones.sh` · `admision.sh` |
 | Respaldo de la plataforma (Gitea, Argo CD) fuera del nodo | `bash gitops/pruebas/respaldo-plataforma.sh` |
 | Estado remoto de OpenTofu (laboratorio) | `bash infra/estado-remoto.sh iniciar` · `probar` · `activar` |
+| Probar el drift con selfHeal (Argo CD corrige cambios a mano) | `bash gitops/pruebas/drift.sh` |
+| Publicar la documentación de la plataforma en Backstage (TechDocs) | `bash gitops/platform/backstage/publicar-docs.sh` |
+| Publicar una versión en staging de un cliente | `bash gitops/staging/publicar.sh ferreteria v1.1` |
+| Promover a producción lo que está sano en staging | `bash gitops/staging/promover.sh ferreteria` |
+| El chart de Helm del sitio coincide con Kustomize | `bash gitops/pruebas/helm-vs-kustomize.sh` |
+| Preguntar al tutor del módulo 2 (Kubernetes y lineamientos) | `python ai/tutor/tutor.py "¿Para qué sirve un DaemonSet?"` |
+| Evaluar el tutor (matriz de aciertos, omisiones y alucinaciones) | `python ai/tutor/evaluar.py` |
+| Comprobar el AppProject de clientes y que los Pods no montan el token de la API | `bash gitops/pruebas/appproject.sh` |
+| Probar Backstage en un navegador real (plantilla y TechDocs) | `set -a; . ./.env.cluster; set +a; bash gitops/pruebas/backstage-ui.sh` |

@@ -1,0 +1,15 @@
+# Consultorio Dental Popayán · plan Básico · plantilla landing con formulario (equivale a gitops/clients/consultorio)
+cliente: consultorio
+plan: basico
+host: consultorio.hub.local
+cuota: { cpu: 250m, memoria: 256Mi }
+imagen:
+  repositorio: gitea.hub.local/forja-digital/consultorio-web
+  etiqueta: v1
+web:
+  actualizacionGradual: true
+backend:
+  habilitado: true
+  imagen:
+    repositorio: gitea.hub.local/forja-digital/consultorio-api
+    etiqueta: v1

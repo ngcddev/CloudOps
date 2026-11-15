@@ -213,7 +213,7 @@ kubectl apply -k gitops/platform/backstage
 kubectl -n hub rollout status deploy/backstage --timeout=300s
 ```
 
-Backstage queda en `http://backstage.hub.local` con un catálogo mínimo: la agencia (`forja-digital`) y
+Backstage queda en `https://backstage.hub.local` (certificado autofirmado de Traefik: el navegador pide aceptarlo una vez) con un catálogo mínimo: la agencia (`forja-digital`) y
 los 3 clientes con su servicio y el enlace a la consola del Hub. Lee los `catalog-info.yaml` de
 `hub-gitops`, así que primero hay que sembrar ese repo. Usa hasta 1 GiB de memoria: si el PC A queda
 justo, se apaga sin afectar nada más y `/agencia/servicios` del Hub cumple el rol:
@@ -309,3 +309,41 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 - `kubectl apply -f platform/namespaces.yaml && kubectl apply -k platform/mlops` despliega MLflow en el namespace `mlops` (imagen: `bash apps/publicar-imagenes.sh mlflow`); interfaz en `mlflow.hub.local`.
 - `kubectl apply -k platform/backstage` despliega Backstage (≈ 400 MiB); el alta de un sitio añade su `catalog-info.yaml` y aparece en el catálogo.
 - Runner de Gitea Actions: `pipelines/README.md`. Con el runner encendido, `demo/preparar-colegio.sh` vuelve a subir las etiquetas del colegio y la puerta corre sola.
+
+## Drift y selfHeal (spec 017)
+
+
+
+`pruebas/drift.sh` escala a mano el Deployment de un sitio y borra su Ingress; Argo CD los detecta (OutOfSync) y los devuelve a lo que dice Git sin que nadie toque Git (medido: 4 s y menos de 1 s). Falla si `selfHeal` está apagado.
+
+## Plantilla y documentación en Backstage (spec 017)
+
+
+
+- **Crear → Sitio de cliente** registra en el catálogo el `catalog-info.yaml` que el Hub escribió al dar de alta el sitio (sin editar la configuración de Backstage). La plantilla vive en `platform/backstage/templates/` y se publica con `actualizar-hub-gitops.sh gitops/platform/backstage`.
+
+- **TechDocs:** la imagen de Backstage no trae mkdocs ni Docker; `platform/backstage/publicar-docs.sh` genera el sitio con la imagen `spotify/techdocs` y lo copia al volumen `backstage-techdocs` (`builder: external`). La fuente está en `platform/backstage/docs/` y se ve en `https://backstage.hub.local/docs/default/component/plataforma-cloudops`.
+- **El catálogo persiste:** Backstage guarda su base SQLite en el volumen `backstage-datos`; lo que se registra con la plantilla sobrevive a los reinicios (con `:memory:` se perdía). Probado reiniciando el Pod con un sitio registrado.
+
+## Staging y promoción (spec 017)
+
+
+
+`clients/ferreteria-staging` es el mismo sitio en `cliente-ferreteria-staging` (`ferreteria-staging.hub.local`, cuota menor); el ApplicationSet crea su Application al ver la carpeta. `staging/publicar.sh <cliente> <versión>` la publica con un commit y `staging/promover.sh <cliente>` la pasa a producción **solo si está lista y sana en staging**, pidiendo el cambio por el Hub (ticket → puerta → aprobación). La v2 rota se frena en staging (producción no se toca); la v1.1 sana se promueve. Staging no está en el Hub: una falla ahí no abre incidentes. La imagen de la versión debe estar antes en el registro (`apps/publicar-imagenes.sh ferreteria:v1.1`).
+
+## Chart de Helm del sitio (spec 017)
+
+
+
+`charts/sitio-cliente` empaqueta lo mismo que `clients/_base` (namespace con Pod Security restricted, cuota, red, sitio, servicio e Ingress, y el backend opcional de las plantillas con formulario) y trae un archivo de valores por cliente en `valores/`. `helm template ferreteria charts/sitio-cliente -f charts/sitio-cliente/valores/ferreteria.yaml` produce los mismos objetos que `kustomize build clients/ferreteria`: `pruebas/helm-vs-kustomize.sh` lo comprueba con `helm lint --strict` y una comparación objeto por objeto (corre en el CI y sin instalar Helm: usa la imagen `alpine/helm`). Argo CD sigue aplicando Kustomize; el chart es el artefacto empaquetable (`helm package`).
+
+## Menor privilegio: token de la API, AppProject y Alloy (spec 017)
+
+
+
+- Ningún Pod monta el token de la API de Kubernetes si no la usa (`automountServiceAccountToken: false`); solo Prometheus, Alloy y el respaldo de Argo CD tienen ServiceAccount con un rol mínimo y sin comodines. `backend/tests/test_menor_privilegio.py` lo exige para todos los manifiestos de `gitops/`.
+
+- El AppProject `clientes` (`platform/argocd/projects/`) limita a las Applications de los clientes: solo `hub-gitops`, solo namespaces `cliente-*` y solo los recursos de un sitio. `pruebas/appproject.sh` muestra el rechazo de un ClusterRole y de un despliegue en kube-system. `monitoring` queda en `default`.
+
+- Alloy corre como DaemonSet y cada Pod recoge solo los registros de su nodo.
+- **Solo por HTTPS:** por HTTP plano el navegador no ofrece `crypto.randomUUID` (solo existe en contextos seguros) y Backstage mostraba «Error in extension 'nav-content:app'» y perdía el menú lateral. `pruebas/backstage-ui.sh` abre Backstage en un Chromium real (Playwright en un contenedor), ejecuta la plantilla desde la interfaz, abre TechDocs y falla si hay errores de JavaScript.

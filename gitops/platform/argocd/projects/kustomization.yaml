@@ -1,0 +1,5 @@
+# Proyectos de Argo CD (spec 017, T06). Se aplican junto con las Applications: `kubectl apply -k gitops/platform/argocd/applications`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - clientes.yaml

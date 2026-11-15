@@ -18,6 +18,7 @@ spec:
       labels:
         app: postgres
     spec:
+      automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
       securityContext:
         runAsNonRoot: true
         runAsUser: 70        # usuario `postgres` de la imagen alpine

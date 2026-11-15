@@ -1,0 +1,41 @@
+# Ambiente de pruebas (staging) de Ferretería El Tornillo (spec 017, T03): el mismo sitio en su propio namespace y dirección, con una cuota menor.
+# Una versión se publica primero aquí (gitops/staging/publicar.sh), se comprueba, y solo si está sana se promueve a producción por el Hub
+# (gitops/staging/promover.sh). El ApplicationSet `clientes` crea su Application al ver la carpeta; no está en el Hub, así que una falla aquí
+# no abre incidentes (Alertmanager avisa y el Hub la ignora por ser un namespace desconocido).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cliente-ferreteria-staging
+resources:
+  - ../_base
+images:
+  - name: gitea.hub.local/forja-digital/plantilla
+    newName: gitea.hub.local/forja-digital/ferreteria
+    newTag: v1
+patches:
+  - target: { kind: Namespace }
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: cliente-ferreteria-staging
+      - op: replace
+        path: /metadata/labels/hub~1client
+        value: ferreteria-staging
+      - op: replace
+        path: /metadata/labels/hub~1plan
+        value: estandar
+      - op: add
+        path: /metadata/labels/hub~1env
+        value: staging
+  - target: { kind: ResourceQuota }
+    patch: |-
+      - op: replace
+        path: /spec/hard/limits.cpu
+        value: 250m
+      - op: replace
+        path: /spec/hard/limits.memory
+        value: 256Mi
+  - target: { kind: Ingress }
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: ferreteria-staging.hub.local

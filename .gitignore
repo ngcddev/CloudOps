@@ -174,3 +174,4 @@ tareas-claude.md
 # Estado remoto de OpenTofu (spec 016): credenciales generadas y backend activado
 infra/.estado-remoto.env
 infra/tofu/backend_override.tf
+capturas-backstage/
