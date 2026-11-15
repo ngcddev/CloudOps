@@ -134,3 +134,67 @@ def test_un_servicio_inexistente_responde_404(client, seeded, gitea):
 
 def test_un_cliente_no_puede_dar_de_alta_sitios(as_client, seeded, gitea):
     assert as_client.post("/api/services/1/provision").status_code == 403
+
+
+# ---- Entradas que llegan al YAML de hub-gitops (T08, auditoría K8-01) ----
+
+INYECCION = "colegio.hub.local\n  - target: { kind: Namespace }\n    patch: |-\n      - op: add\n        path: /metadata/labels/pod-security.kubernetes.io~1enforce\n        value: privileged"
+
+
+def _alta_de_servicio(client, **cambios):
+    cliente = client.post("/api/clients", json={"name": "Colegio San Marcos"}).json()
+    proyecto = client.post(f"/api/clients/{cliente['id']}/projects", json={"name": "Sitio"}).json()
+    plan = next(p for p in client.get("/api/plans").json() if p["code"] == "basico")
+    cuerpo = {"name": "Landing", "host": "colegio.hub.local", "template": "landing", "namespace": "cliente-colegio", "plan_id": plan["id"], **cambios}
+    return client.post(f"/api/projects/{proyecto['id']}/services", json=cuerpo)
+
+
+@pytest.mark.parametrize("host", [INYECCION, "a.hub.local\nb", "a.hub.local\r\nb", "a b.hub.local", "a.hub.local: x", "-a.hub.local", "a..hub.local", "a/b.hub.local", "{x}.hub.local"])
+def test_un_host_con_saltos_o_caracteres_de_yaml_se_rechaza(client, seeded, host):
+    respuesta = _alta_de_servicio(client, host=host)
+    assert respuesta.status_code == 422, respuesta.text
+    assert seeded.scalar(select(Service).where(Service.namespace == "cliente-colegio")) is None
+
+
+def test_el_host_se_guarda_en_minusculas(client, seeded):
+    respuesta = _alta_de_servicio(client, host="  Colegio.Hub.Local ")
+    assert respuesta.status_code == 201, respuesta.text
+    assert respuesta.json()["host"] == "colegio.hub.local"
+
+
+@pytest.mark.parametrize("host", ["restaurante.hub.local", "ferreteria.hub.local", "consultorio.hub.local", "localhost", "a-b.c1.example.org"])
+def test_los_hosts_normales_se_aceptan(host):
+    assert provisioning.HOST_PATTERN.fullmatch(host)
+
+
+@pytest.mark.parametrize("nombre", ["Colegio\nSan Marcos", "Colegio\rSan Marcos", "Colegio San Marcos", "Colegio\x00San Marcos"])
+def test_un_nombre_de_cliente_con_saltos_de_linea_se_rechaza(client, nombre):
+    assert client.post("/api/clients", json={"name": nombre}).status_code == 422
+    existente = client.post("/api/clients", json={"name": "Colegio San Marcos"}).json()
+    assert client.patch(f"/api/clients/{existente['id']}", json={"name": nombre}).status_code == 422
+
+
+def test_un_nombre_con_acentos_y_signos_normales_se_acepta(client):
+    assert client.post("/api/clients", json={"name": "Ferretería «El Tornillo» · Sede 2"}).status_code == 201
+
+
+def test_un_servicio_guardado_con_un_host_malo_no_se_escribe_en_gitops(client, seeded, gitea):
+    servicio = _crear_sitio(client, "landing")
+    guardado = seeded.get(Service, servicio["id"])
+    guardado.host = INYECCION   # como si viniera de antes de la validación
+    seeded.commit()
+    respuesta = client.post(f"/api/services/{servicio['id']}/provision")
+    assert respuesta.status_code == 422, respuesta.text
+    assert gitea.files == {} and gitea.commits == []
+
+
+def test_el_generador_no_acepta_un_host_ni_un_nombre_peligrosos(seeded):
+    service = seeded.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
+    service.host = INYECCION
+    with pytest.raises(provisioning.EntradaInvalida):
+        provisioning.render_kustomization(service, service.plan)
+    seeded.rollback()
+    service.project.client.name = "Cliente\nvalue: privileged"
+    with pytest.raises(provisioning.EntradaInvalida):
+        provisioning.render_kustomization(service, service.plan)
+    seeded.rollback()

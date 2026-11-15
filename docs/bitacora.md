@@ -3,6 +3,23 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Auditoría de rendimiento y buenas prácticas, y corrección de CT-01 (spec 021, T07)
+
+**Pedido:** auditar todo el proyecto con skills y corregir primero el hallazgo crítico CT-01. Informe en `docs/auditoria-2026-11.md` (3 críticos, 29 medios, 52 leves; revisión
+estática, sin medir en vivo).
+
+**CT-01:** la base y la API se publicaban en todas las interfaces y el `.env` local usaba el `JWT_SECRET` y la clave de Postgres del `.env.example`, que está en el repositorio.
+Ahora `db` y `api` se publican solo en `127.0.0.1`, la API no arranca con un `JWT_SECRET` de menos de 32 caracteres o igual al de ejemplo, y se rotó el `JWT_SECRET` del `.env` local.
+**Verificado:** `docker compose config`, 883 pruebas pasadas (3 omitidas) y, tras recrear `db` y `api` con respaldo previo, la API sana en `127.0.0.1`, los datos intactos y el proxy de la web
+respondiendo (401, no 502). **No verificado:** las pruebas de humo y de trazas de punta a punta. **Pendiente:** la clave de Postgres sigue siendo la del ejemplo (cambiarla en una base existente
+exige `ALTER USER` o recrear el volumen).
+
+**K8-01 (T08):** el `host` del servicio debe ser un nombre de host en minúsculas y los nombres de cliente y de servicio no pueden traer saltos de línea ni caracteres de control; el generador de
+manifiestos lo revalida y `provision` responde 422 sin escribir en Gitea si un servicio guardado antes trae datos peligrosos. **BE-01 (T09):** `voice_transcribe` y `/stt` del servicio de voz
+llaman al transcriptor en un hilo, y la liveness y la readiness de la API declaran `timeoutSeconds: 3`. **Verificado:** 907 pruebas pasadas (3 omitidas); las dos pruebas nuevas de bucle fallan con el
+código anterior y pasan con el nuevo. **No verificado:** `kustomize build` con un host malicioso; el clúster. **Pendiente:** recrear `api` y `voz` en compose y publicar `hub-api` y `hub-voz` y aplicar
+`gitops/hub/api.yaml` en el clúster para que lleguen allí.
+
 ## 15 nov 2026 · Módulo 6: la voz del asistente (spec 021)
 
 **Pedido:** cumplir el componente multimodal obligatorio con el menor consumo posible. Se descartó la imagen con ComfyUI (≈5 GB, PyTorch y turnos de VRAM con el 7B de Ollama) y se

@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.db import get_db
 from app.deps import require_agency
@@ -98,7 +99,9 @@ async def voice_transcribe(request: Request):
     if len(audio) > MAX_AUDIO_BYTES:
         raise HTTPException(status_code=413, detail="El audio es demasiado grande: habla en frases de menos de 30 segundos.")
     try:
-        resultado = voz.transcribir(audio, request.headers.get("content-type", ""))
+        # La llamada al servicio de voz es síncrona y puede tardar hasta su timeout: en un hilo, para no congelar el bucle de eventos
+        # (y con él /health y las demás peticiones); auditoría BE-01.
+        resultado = await run_in_threadpool(voz.transcribir, audio, request.headers.get("content-type", ""))
     except voz.VozError as error:
         raise HTTPException(status_code=error.status, detail=error.detail) from None
     texto, secretos = redaccion.redactar(resultado.get("texto", ""))

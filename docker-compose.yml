@@ -12,8 +12,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?Falta .env; copia .env.example a .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta .env; copia .env.example a .env}
       POSTGRES_DB: ${POSTGRES_DB:?Falta .env; copia .env.example a .env}
+    # Solo en esta máquina (127.0.0.1): sin IP de enlace Docker publica en todas las interfaces y la red vería la base (auditoría CT-01)
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -76,8 +77,9 @@ services:
       - ./pipelines:/pipelines:ro
       # Raíz del repositorio de solo lectura: las pruebas de los runbooks y de las alertas (spec 019) comprueban que lo que citan existe
       - ./:/repo:ro
+    # Solo en esta máquina (127.0.0.1); la web y el proxy de Vite llegan por localhost (auditoría CT-01)
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy

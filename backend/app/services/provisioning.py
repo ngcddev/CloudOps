@@ -6,6 +6,7 @@ from pathlib import Path
 from app.integrations.gitea import GiteaClient
 from app.models.plan import Plan
 from app.models.service import Service
+from app.schemas.client import HOST_PATTERN, tiene_caracteres_de_control
 from app.services.gitops_publish import client_slug
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets" / "gitops"
@@ -16,6 +17,19 @@ FIRST_VERSION = "v1"
 
 class AlreadyProvisioned(Exception):
     """La carpeta del cliente ya existe en hub-gitops: no se pisa."""
+
+
+class EntradaInvalida(ValueError):
+    """La dirección o el nombre del cliente no son seguros para escribirlos en un manifiesto."""
+
+
+def comprobar_entradas(service: Service) -> None:
+    """Defensa en profundidad (auditoría K8-01): aunque el esquema ya valida, un servicio guardado antes de esa regla no debe
+    llegar a hub-gitops con un host o un nombre que abra líneas nuevas en el YAML que Argo CD aplica."""
+    if not HOST_PATTERN.fullmatch(service.host):
+        raise EntradaInvalida("La dirección (host) del servicio no es un nombre de host válido: corríjala antes de darlo de alta.")
+    if tiene_caracteres_de_control(service.project.client.name):
+        raise EntradaInvalida("El nombre del cliente tiene saltos de línea o caracteres de control: corríjalo antes de dar de alta el sitio.")
 
 
 @dataclass(frozen=True)
@@ -34,6 +48,7 @@ def images_for(service: Service) -> list[Image]:
 
 def render_kustomization(service: Service, plan: Plan) -> str:
     """kustomization.yaml del cliente, con el mismo formato que los de los clientes sembrados."""
+    comprobar_entradas(service)
     slug = client_slug(service.namespace)
     form = service.template == "landing_form"
     images = "".join(
@@ -114,6 +129,7 @@ def render_kustomization(service: Service, plan: Plan) -> str:
 
 def render_catalog_info(service: Service, plan: Plan) -> str:
     """Entrada de Backstage del sitio (RF-22), con el mismo formato que la de los clientes sembrados. Argo CD la ignora."""
+    comprobar_entradas(service)
     slug = client_slug(service.namespace)
     cliente = service.project.client.name
     lineas = [

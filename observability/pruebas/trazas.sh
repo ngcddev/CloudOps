@@ -27,7 +27,7 @@ PUERTO_TEMPO="$(docker port "$TEMPO" 3200/tcp | head -1 | sed 's/.*://')"
 for _ in $(seq 1 60); do curl -fs "http://localhost:${PUERTO_TEMPO}/ready" >/dev/null 2>&1 && break; sleep 1; done
 curl -fs "http://localhost:${PUERTO_TEMPO}/ready" >/dev/null && ok "Tempo listo con la configuración del clúster" || { mal "Tempo no arrancó"; docker logs "$TEMPO" 2>&1 | tail -5; exit 1; }
 
-CLAVE="trazas-0123456789-0123456789"
+CLAVE="trazas-0123456789-0123456789-0123456789"
 docker run -d --name "$API" --network "$RED" -p 0:8000 \
   -e DATABASE_URL="postgresql+psycopg://hub:trazas@$DB:5432/hub" -e JWT_SECRET="$CLAVE" -e SEED_USER_PASSWORD=trazas \
   -e OTEL_EXPORTER_OTLP_ENDPOINT="http://$TEMPO:4318" "$IMAGEN" >/dev/null

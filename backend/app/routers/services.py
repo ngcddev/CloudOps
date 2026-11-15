@@ -123,6 +123,8 @@ def provision_service(
         commits = provisioning.provision(gitea, service, service.plan, user.name, user.email)
     except provisioning.AlreadyProvisioned as error:
         raise HTTPException(status_code=409, detail="El sitio ya está dado de alta en GitOps.") from error
+    except provisioning.EntradaInvalida as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     except GiteaError as error:
         raise HTTPException(status_code=502, detail=f"No se pudo escribir en Gitea: {error}") from error
     audit.record(

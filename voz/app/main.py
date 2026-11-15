@@ -17,6 +17,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 MODELOS = Path(os.environ.get("VOZ_MODELOS", "/modelos"))
 WHISPER_MODELO = os.environ.get("WHISPER_MODELO", "small")
@@ -95,6 +96,12 @@ async def stt(peticion: Request):
         raise HTTPException(status_code=400, detail="No llegó audio.")
     if len(audio) > MAX_BYTES:
         raise HTTPException(status_code=413, detail=f"El audio pesa más de {MAX_BYTES // 1000} KB.")
+    # Transcribir usa la CPU durante segundos (y la primera vez carga el modelo): en un hilo, para que /health y la sonda de readiness
+    # sigan respondiendo y el candado de «una sola transcripción» funcione de verdad (auditoría BE-01 / K8-07).
+    return await run_in_threadpool(_transcribir, audio)
+
+
+def _transcribir(audio: bytes) -> dict:
     if not _una_transcripcion.acquire(blocking=False):
         raise HTTPException(status_code=429, detail="Ya hay una transcripción en curso; intenta de nuevo en unos segundos.")
     try:

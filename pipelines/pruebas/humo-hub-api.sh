@@ -31,7 +31,7 @@ docker network create "$RED" >/dev/null
 docker run -d --name "$DB" --network "$RED" -e POSTGRES_USER=hub -e POSTGRES_PASSWORD=humo -e POSTGRES_DB=hub postgres:16-alpine >/dev/null
 for _ in $(seq 1 30); do docker exec "$DB" pg_isready -U hub -d hub >/dev/null 2>&1 && break; sleep 1; done
 docker run -d --name "$API" --network "$RED" -p 0:8000 \
-  -e DATABASE_URL="postgresql+psycopg://hub:humo@$DB:5432/hub" -e JWT_SECRET=humo-0123456789-0123456789-0123 -e SEED_USER_PASSWORD=humo \
+  -e DATABASE_URL="postgresql+psycopg://hub:humo@$DB:5432/hub" -e JWT_SECRET=humo-0123456789-0123456789-0123456789 -e SEED_USER_PASSWORD=humo \
   "$IMAGEN" >/dev/null
 PUERTO="$(docker port "$API" 8000/tcp | head -1 | sed 's/.*://')"
 sano=0
