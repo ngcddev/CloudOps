@@ -5,3 +5,4 @@
 - [x] T03 · Pantalla del asistente — **Verifica:** se graba, se corrige la transcripción, se envía y se escucha la respuesta; el mensaje explica qué hacer si el navegador no da micrófono.
 - [x] T04 · Evaluación sin micrófono y fichas — **Verifica:** la tasa de error de palabras, la latencia por etapa y la memoria de `base` y `small` quedan en MLflow y en las fichas.
 - [x] T05 · Seguridad, documentación y validación — **Verifica:** pruebas del servicio y del Hub, análisis estático y configuración sin hallazgos, bitácora y cumplimiento al día.
+- [ ] T06 · Voz en el clúster — **Verifica:** el servicio de voz corre en el namespace `hub` (sin root, de solo lectura, token), la API lo llama, `https://hub.local` da micrófono y la prueba de navegador real pasa contra el clúster.

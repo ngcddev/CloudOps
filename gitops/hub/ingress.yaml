@@ -24,3 +24,37 @@ spec:
                 name: web
                 port:
                   name: http
+---
+# https://hub.local (spec 021, T06): el navegador solo da acceso al micrófono en un contexto seguro (HTTPS o localhost), y *.local por HTTP plano no lo es; sin esto
+# el botón «Hablar» del asistente no aparece. Misma ruta que el Ingress de arriba, pero por el puerto 443 con el certificado autofirmado de Traefik (como Backstage): el navegador
+# pide aceptarlo una vez. El HTTP sigue abierto para los scripts, el runner y Alertmanager. En producción iría un certificado real (cert-manager).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hub-https
+  namespace: hub
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [hub.local]   # sin Secret: Traefik usa su certificado por defecto
+  rules:
+    - host: hub.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  name: http

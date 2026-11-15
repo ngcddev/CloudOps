@@ -8,6 +8,8 @@ from playwright.sync_api import sync_playwright
 
 BASE = os.environ["HUB_WEB"]  # un nombre *.localhost: Chromium lo trata como contexto seguro y deja usar el micrófono sin HTTPS
 IP_ANFITRION = socket.gethostbyname("host.docker.internal")
+# Contra el clúster: HUB_WEB=https://hub.local y HUB_NOMBRE=hub.local (el nombre se resuelve al anfitrión, donde Traefik escucha en 80 y 443)
+HUB_NOMBRE = os.environ.get("HUB_NOMBRE", "hub.localhost")
 SALIDA = "/out"
 fallos = 0
 
@@ -20,10 +22,11 @@ def comprobar(ok: bool, texto: str) -> None:
 
 with sync_playwright() as p:
     navegador = p.chromium.launch(args=[
-        "--no-sandbox", f"--host-resolver-rules=MAP hub.localhost {IP_ANFITRION}", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
+        "--no-sandbox", f"--host-resolver-rules=MAP {HUB_NOMBRE} {IP_ANFITRION}", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
         "--use-file-for-fake-audio-capture=/out/audio-de-practica.wav",
     ])
-    contexto = navegador.new_context(viewport={"width": 1280, "height": 900}, permissions=["microphone"])
+    # El HTTPS del clúster usa el certificado autofirmado de Traefik: se acepta (en el navegador de una persona se acepta una vez)
+    contexto = navegador.new_context(viewport={"width": 1280, "height": 900}, permissions=["microphone"], ignore_https_errors=True)
     page = contexto.new_page()
     errores = []
     page.on("pageerror", lambda e: errores.append(str(e)[:160]))
