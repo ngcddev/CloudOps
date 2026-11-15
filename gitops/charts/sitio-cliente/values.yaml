@@ -1,0 +1,19 @@
+# Valores por defecto del chart (spec 017, T04). Cada cliente tiene su archivo en valores/ que sobrescribe lo necesario:
+#   helm template ferreteria gitops/charts/sitio-cliente -f gitops/charts/sitio-cliente/valores/ferreteria.yaml
+cliente: plantilla           # nombre corto: da el namespace cliente-<cliente> y la etiqueta hub/client
+namespace: ""                # vacío = cliente-<cliente>
+plan: basico                 # código del plan (etiqueta hub/plan)
+host: plantilla.hub.local    # dirección del sitio (Ingress)
+cuota:                       # cuota del plan (seed/plans.json): tope de límites del namespace
+  cpu: 250m
+  memoria: 256Mi
+imagen:
+  repositorio: gitea.hub.local/forja-digital/plantilla
+  etiqueta: v1
+web:
+  actualizacionGradual: false   # true: RollingUpdate con maxSurge 0 (planes donde un Pod extra no cabe en la cuota)
+backend:                        # plantillas con formulario (landing_form): backend de FastAPI y /api en el Ingress
+  habilitado: false
+  imagen:
+    repositorio: gitea.hub.local/forja-digital/plantilla-api
+    etiqueta: v1

@@ -1,0 +1,9 @@
+# Chart de Helm del sitio de un cliente (spec 017, T04): empaqueta lo mismo que gitops/clients/_base más el overlay de cada cliente. Es una segunda forma de
+# producir los mismos recursos: gitops/pruebas/helm-vs-kustomize.sh comprueba que `helm template` y `kustomize build` dan los mismos objetos.
+# Argo CD sigue usando Kustomize; el chart sirve para empaquetar y versionar el sitio como un artefacto (helm package) y para otros ambientes.
+apiVersion: v2
+name: sitio-cliente
+description: Sitio web de un cliente de Forja Digital (landing, con backend opcional para las plantillas con formulario)
+type: application
+version: 0.1.0
+appVersion: "v1"

@@ -1,0 +1,71 @@
+# Sitio del cliente: Nginx sin root en el puerto 8080 con /health. La readiness probe hace de prueba de humo: una versión con /health en 500 no queda Ready.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: {{ include "sitio.namespace" . }}
+  labels:
+    app: web
+spec:
+  replicas: 1
+  {{- if .Values.web.actualizacionGradual }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  {{- else }}
+  # Recreate: se apaga la versión anterior antes de arrancar la nueva, así una versión rota sí tumba el sitio y se detecta
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: {{ .Values.imagen.repositorio }}:{{ .Values.imagen.etiqueta }}
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: {{ include "sitio.namespace" . }}
+  annotations:
+    hub/probe: "true"
+spec:
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
