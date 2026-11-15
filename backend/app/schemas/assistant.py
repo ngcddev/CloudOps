@@ -26,6 +26,8 @@ class AskOut(BaseModel):
     # Cómo se eligió ese contexto (el RAG puede caer a la recuperación léxica) y la similitud del mejor trozo
     context_mode: Literal["completo", "recuperacion", "rag"] | None = None
     retrieval_score: float | None = None
+    # Tipos de secreto que se taparon en la pregunta antes de guardarla y de enviarla al modelo (vacío = ninguno)
+    secrets_redacted: list[str] = []
 
 
 class ReindexOut(BaseModel):

@@ -21,6 +21,7 @@ from app.services import audit
 from app.services.assistant_gate import normalize
 from app.services.incident_flow import IncidentFlowError
 from app.services.messages import PLANTILLA
+from app.services import redaccion
 from app.services.sla import BOGOTA
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
@@ -87,10 +88,11 @@ def hechos_de(incident: Incident) -> Hechos:
         raise IncidentFlowError("Los borradores se generan cuando el incidente está mitigado.")
     servicio = incident.service
     cliente = servicio.project.client.name if servicio.project is not None and servicio.project.client is not None else "el cliente"
-    eventos = tuple((hhmm(e.created_at), e.type, (e.message or "")[:200]) for e in incident.events if e.created_at is not None)
+    # Spec 020: las notas del equipo pueden traer una clave pegada; se tapa antes de dársela al modelo
+    eventos = tuple((hhmm(e.created_at), e.type, redaccion.redactar((e.message or "")[:200])[0]) for e in incident.events if e.created_at is not None)
     return Hechos(
         cliente=cliente, servicio=servicio.name, prioridad=incident.priority, titulo=incident.title, origen=incident.source,
-        inicio=incident.started_at, mitigacion=incident.mitigated_at, cierre=incident.closed_at, causa=(incident.root_cause or None),
+        inicio=incident.started_at, mitigacion=incident.mitigated_at, cierre=incident.closed_at, causa=(redaccion.redactar(incident.root_cause)[0] if incident.root_cause else None),
         version_de=incident.rollback_from_version, version_a=incident.rollback_to_version, eventos=eventos,
     )
 

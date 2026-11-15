@@ -9,6 +9,7 @@ from app.models.ai_query import AiQuery
 from app.models.user import User
 from app.schemas.assistant import AskIn, AskOut, DriftOut, FeedbackIn, ReindexOut, StatsOut
 from app.services import ai_drift, assistant, knowledge
+from app.services.assistant_gate import ModeloAlterado
 
 router = APIRouter(prefix="/api/assistant", tags=["asistente"])
 
@@ -27,13 +28,18 @@ def _out(q: AiQuery) -> AskOut:
         context_sections=q.context_sections or [],
         context_mode=q.context_mode,
         retrieval_score=q.retrieval_score,
+        secrets_redacted=getattr(q, "secretos_tapados", []),
     )
 
 
 @router.post("/ask", response_model=AskOut)
 def ask(body: AskIn, user: User = Depends(require_agency), db: Session = Depends(get_db)):
     """Responde una pregunta sobre el Hub; la compuerta decide si hace falta despertar al LLM."""
-    return _out(assistant.ask(db, user, body.question.strip()))
+    try:
+        return _out(assistant.ask(db, user, body.question.strip()))
+    except ModeloAlterado:
+        # La compuerta no pasó la verificación de integridad (spec 020): no se responde con un modelo que alguien modificó a mano
+        raise HTTPException(status_code=503, detail="El modelo de la compuerta no pasó la verificación de integridad; avisa a Sistemas.") from None
 
 
 @router.post("/reindex", response_model=ReindexOut, dependencies=[Depends(require_agency)])

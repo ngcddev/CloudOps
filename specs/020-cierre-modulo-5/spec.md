@@ -15,7 +15,7 @@ documentos maliciosos en el corpus de ayuda. El módulo pesa el 15 % y alimenta 
 - [x] CA-2. Un script mide latencia, tokens por segundo y memoria de cada modelo y lo registra en MLflow (o en JSON si MLflow no responde); las cifras están en las fichas.
 - [x] CA-3. La deriva se calcula por ventanas de tiempo (decisiones corregidas, reparto de etiquetas y latencia) con un umbral que la marca, y se expone con las estadísticas del asistente.
 - [x] CA-4. `promover.py` compara el candidato con el modelo en producción y no promueve si empeora; `--rollback` devuelve el alias a la versión anterior.
-- [ ] CA-5. Los secretos se redactan antes de guardar la pregunta y de enviarla al modelo; la integridad del clasificador y de los modelos de Ollama se comprueba por suma de verificación; el corpus con instrucciones escondidas no se obedece.
+- [x] CA-5. Los secretos se redactan antes de guardar la pregunta y de enviarla al modelo; la integridad del clasificador y de los modelos de Ollama se comprueba por suma de verificación; el corpus con instrucciones escondidas no se obedece.
 
 ## Fuera de alcance
 

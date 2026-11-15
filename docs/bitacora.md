@@ -3,6 +3,29 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Cierre del módulo 5 (spec 020)
+
+**Pedido:** completar al máximo el módulo 5 (MLOps, LLMOps y serving de IA local), una brecha a la vez.
+
+| Tarea | Resultado |
+|---|---|
+| T01 · Fichas y privacidad | `docs/modelos/`: ficha de Qwen2.5 7B y 3B, nomic-embed-text y la compuerta (licencia, digest, uso, límites, riesgos), análisis de privacidad y tabla de riesgos de IA; una prueba exige ficha completa para cada modelo en uso |
+| T02 · Medición de modelos | `ai/eval/medir_modelos.py`: 7B 33,7 tokens/s y 4,5 GiB; 3B 69,8 tokens/s y 2,0 GiB; embeddings 101 textos/s y 0,3 GiB. Cada corrida queda en MLflow y las cifras en las fichas |
+| T03 · Deriva | `GET /api/assistant/drift`: ventana actual contra la anterior (decisiones corregidas, reparto de etiquetas, latencia y fallos del LLM) con umbrales y mínimos de muestra; aviso en la pantalla del asistente |
+| T04 · Promoción y rollback | `promover.py --version N` compara el candidato con producción sobre el conjunto de prueba y no promueve si empeora (código 3); `--forzar` lo salta; `--rollback` vuelve a la versión que la actual reemplazó |
+| T05 · Seguridad de la IA | Secretos tapados antes de guardar y de enviar al modelo (preguntas, notas del incidente, causa y registros); suma SHA-256 del clasificador comprobada al cargar (503 si no coincide) y `verificar_modelos.py` para los digests de Ollama; guarda del contexto contra órdenes escondidas en la ayuda |
+
+**Hallazgo:** con documentos envenenados, Qwen2.5 7B obedeció 2 de 5 órdenes escondidas (mentir sobre la aprobación y cambiar de rol), con el prompt v3 y también con una regla extra (v4, que se descartó por no mejorar). La defensa pasó de depender del modelo a una guarda determinista del contexto: con ella resiste las 5, y una prueba confirma que la ayuda real no la dispara.
+
+**Verificado:** pruebas del backend y de `ai/`, ruff, tsc; las mediciones y el script de documentos maliciosos contra el Ollama real; `verificar_modelos.py` con los tres digests iguales a sus fichas.
+
+**Pendiente y no verificado:**
+- La imagen del Hub del clúster no incluye aún la redacción de secretos, la guarda del contexto, la deriva ni el diagnóstico (módulo 4) ni la segregación de funciones (módulo 3).
+- La redacción de secretos es de patrones conocidos: un secreto con otro formato pasa. La guarda del contexto también es de patrones: una orden redactada de otra forma pasaría.
+- La comparación de `promover.py` usa el conjunto de prueba de 24 ejemplos: orientativa, no una garantía.
+- El digest de los modelos se comprueba cuando se corre el script, no en cada arranque.
+- No se probó la deriva con tráfico real (solo datos de prueba).
+
 ## 15 nov 2026 · Cierre del módulo 4 (spec 019)
 
 **Pedido:** completar al máximo el módulo 4 (IaC, observabilidad, SRE y operación sostenible), una brecha a la vez.

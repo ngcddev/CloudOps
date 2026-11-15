@@ -54,6 +54,10 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Validar la observabilidad | `bash observability/pruebas/validar.sh` · `grafana.sh` · `trazas.sh` |
 | Informe de capacidad por cliente (cuota, uso y margen) | `KUBECONFIG=... bash observability/capacidad.sh` |
 | Prueba de drift de OpenTofu (plan -detailed-exitcode) | `bash infra/pruebas/drift.sh` |
+| Medir latencia y memoria de los modelos de Ollama | `python ai/eval/medir_modelos.py --actualizar-fichas` |
+| Verificar integridad de los modelos (digests y suma de la compuerta) | `python ai/verificar_modelos.py` |
+| Promover la compuerta con comparación / volver a la versión anterior | `python ai/classifier/promover.py --version N` · `--rollback` |
+| Probar documentos maliciosos en el contexto del asistente | `python ai/eval/probar_documento_malicioso.py` |
 | Runbooks de operación (caída, rollback, respaldo, reinicio, saturación, latencia) | [`runbooks/`](runbooks/README.md) |
 | Respaldo y restauración de PostgreSQL | `bash gitops/pruebas/respaldo.sh` |
 | Reiniciar la demo | `bash demo/reiniciar.sh` (borra la base del entorno) |

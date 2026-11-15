@@ -2,6 +2,7 @@
 # antes de despertar al LLM. Corre en la CPU del Hub en milisegundos; el LLM (Ollama, PC B) solo se llama
 # cuando la pregunta es del tema o la compuerta no está segura. Inferencia en Python puro: el modelo es un
 # JSON con conteos de Naive Bayes, entrenado por `ai/classifier/train.py` (sin scikit-learn en la imagen).
+import hashlib
 import json
 import logging
 import math
@@ -19,6 +20,20 @@ ETIQUETAS = (EN_TEMA, FUERA_DE_TEMA)
 logger = logging.getLogger(__name__)
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "assets" / "clasificador.json"
+
+
+class ModeloAlterado(RuntimeError):
+    """El archivo del modelo no coincide con su suma de verificación (spec 020): no se carga."""
+
+
+def verificar_integridad(ruta: Path) -> None:
+    """Compara el SHA-256 del modelo con `clasificador.sha256`, que escribe `ai/classifier/promover.py` al exportarlo. Sin ese archivo no se comprueba nada."""
+    suma = ruta.with_suffix(".sha256")
+    if not suma.exists():
+        return
+    esperado = suma.read_text(encoding="utf-8").split()[0]
+    if hashlib.sha256(ruta.read_bytes()).hexdigest() != esperado:
+        raise ModeloAlterado(f"{ruta.name} no coincide con {suma.name}: el modelo fue modificado fuera del camino de promoción")
 
 
 def normalize(text: str) -> str:
@@ -129,6 +144,7 @@ def load_model(path: Path | None = None) -> GateModel | RemoteGate:
     if path is not None:
         return GateModel(json.loads(path.read_text(encoding="utf-8")))
     if _cached is None:
+        verificar_integridad(MODEL_PATH)
         _cached = GateModel(json.loads(MODEL_PATH.read_text(encoding="utf-8")))
     from app.config import settings  # import tardío: el módulo se usa también fuera del Hub (ai/classifier)
 
