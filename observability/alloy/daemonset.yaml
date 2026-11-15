@@ -1,13 +1,16 @@
-# Grafana Alloy (spec 008, T25): una réplica basta en un clúster de un nodo, porque lee los registros por
-# la API y no del disco del nodo. Sin root y sin carpetas del nodo montadas.
+# Grafana Alloy (spec 008, T25; DaemonSet en la spec 017, T06): un Pod por nodo, cada uno recoge solo los registros de los Pods de su nodo
+# (selector spec.nodeName), así que añadir un nodo no duplica ni deja sin recoger nada. Lee por la API y no del disco del nodo: sin root y sin carpetas del nodo montadas.
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: alloy
   labels:
     app: alloy
 spec:
-  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: alloy
@@ -27,6 +30,11 @@ spec:
       containers:
         - name: alloy
           image: grafana/alloy:v1.10.2
+          env:
+            # El nodo del Pod: la configuración filtra con él los Pods que recoge (config.alloy)
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef: { fieldPath: spec.nodeName }
           args:
             - run
             - --server.http.listen-addr=0.0.0.0:12345
