@@ -336,3 +336,13 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 
 
 `charts/sitio-cliente` empaqueta lo mismo que `clients/_base` (namespace con Pod Security restricted, cuota, red, sitio, servicio e Ingress, y el backend opcional de las plantillas con formulario) y trae un archivo de valores por cliente en `valores/`. `helm template ferreteria charts/sitio-cliente -f charts/sitio-cliente/valores/ferreteria.yaml` produce los mismos objetos que `kustomize build clients/ferreteria`: `pruebas/helm-vs-kustomize.sh` lo comprueba con `helm lint --strict` y una comparación objeto por objeto (corre en el CI y sin instalar Helm: usa la imagen `alpine/helm`). Argo CD sigue aplicando Kustomize; el chart es el artefacto empaquetable (`helm package`).
+
+## Menor privilegio: token de la API, AppProject y Alloy (spec 017)
+
+
+
+- Ningún Pod monta el token de la API de Kubernetes si no la usa (`automountServiceAccountToken: false`); solo Prometheus, Alloy y el respaldo de Argo CD tienen ServiceAccount con un rol mínimo y sin comodines. `backend/tests/test_menor_privilegio.py` lo exige para todos los manifiestos de `gitops/`.
+
+- El AppProject `clientes` (`platform/argocd/projects/`) limita a las Applications de los clientes: solo `hub-gitops`, solo namespaces `cliente-*` y solo los recursos de un sitio. `pruebas/appproject.sh` muestra el rechazo de un ClusterRole y de un despliegue en kube-system. `monitoring` queda en `default`.
+
+- Alloy corre como DaemonSet y cada Pod recoge solo los registros de su nodo.

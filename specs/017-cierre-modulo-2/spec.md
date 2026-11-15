@@ -1,6 +1,6 @@
 # 017 · Cierre del módulo 2 (Kubernetes, GitOps y Platform Engineering)
 
-> **Acciona:** Equipo de Sistemas · **Módulo:** 2 · **Depende de:** 003, 005, 011, 016 · **Estado:** En curso
+> **Acciona:** Equipo de Sistemas · **Módulo:** 2 · **Depende de:** 003, 005, 011, 016 · **Estado:** Implementada y probada en el clúster (15 nov 2026)
 
 ## Qué y por qué
 
@@ -14,7 +14,7 @@ El módulo pesa el 15 % de la nota y alimenta el 20 % del proyecto (Kubernetes, 
 - [x] CA-3. Existe un ambiente `staging` y una versión se promueve de `staging` a producción por un cambio en Git.
 - [x] CA-4. Un chart de Helm empaqueta el sitio de un cliente y su `helm template` coincide con lo que produce Kustomize.
 - [x] CA-5. Un tutor de IA responde sobre la documentación de Kubernetes y los lineamientos del curso, con la matriz de aciertos, omisiones y alucinaciones.
-- [ ] CA-6. Menores: ServiceAccounts y roles por aplicación, un `AppProject` de Argo CD con límites y Alloy como DaemonSet.
+- [x] CA-6. Menores: ServiceAccounts y roles por aplicación, un `AppProject` de Argo CD con límites y Alloy como DaemonSet.
 
 ## Fuera de alcance
 
