@@ -64,3 +64,5 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Publicar una versión en staging de un cliente | `bash gitops/staging/publicar.sh ferreteria v1.1` |
 | Promover a producción lo que está sano en staging | `bash gitops/staging/promover.sh ferreteria` |
 | El chart de Helm del sitio coincide con Kustomize | `bash gitops/pruebas/helm-vs-kustomize.sh` |
+| Preguntar al tutor del módulo 2 (Kubernetes y lineamientos) | `python ai/tutor/tutor.py "¿Para qué sirve un DaemonSet?"` |
+| Evaluar el tutor (matriz de aciertos, omisiones y alucinaciones) | `python ai/tutor/evaluar.py` |
