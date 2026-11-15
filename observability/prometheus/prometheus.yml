@@ -48,6 +48,24 @@ scrape_configs:
       - target_label: __address__
         replacement: blackbox.monitoring.svc:9115
 
+  # Uso de CPU y memoria de cada contenedor (spec 019, T03): cAdvisor, que va dentro del kubelet de cada nodo. Es lo que alimenta el
+  # tablero USE y `observability/capacidad.sh`. El certificado del kubelet es autofirmado; se lee por dentro del clúster con el token del Pod.
+  - job_name: cadvisor
+    scheme: https
+    metrics_path: /metrics/cadvisor
+    scrape_interval: 30s
+    tls_config:
+      insecure_skip_verify: true
+    authorization:
+      credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    kubernetes_sd_configs:
+      - role: node
+    # Solo lo que usa el tablero: los contenedores de los clientes y del Hub
+    metric_relabel_configs:
+      - source_labels: [namespace]
+        regex: "cliente-.*|hub|monitoring"
+        action: keep
+
   # Peticiones y errores por sitio que ve Traefik (T27); los usa la spec 010
   - job_name: traefik
     static_configs:

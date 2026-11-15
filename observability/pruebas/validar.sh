@@ -28,7 +28,9 @@ paso() {  # paso <descripción> <comando...>
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
   # Se monta todo observability/ en /obs y las reglas además en la ruta que usa prometheus.yml
   promtool() {
+    # El token falso solo existe para que promtool encuentre el archivo que prometheus.yml pide (cAdvisor, spec 019)
     docker run --rm -v "${OBS_HOST}:/obs:ro" -v "${OBS_HOST}/prometheus/reglas:/etc/prometheus/reglas:ro" \
+      -v "${OBS_HOST}/pruebas/token-falso.txt:/var/run/secrets/kubernetes.io/serviceaccount/token:ro" \
       -w /obs --entrypoint promtool "$PROMETHEUS_IMAGE" "$@"
   }
   amtool() {

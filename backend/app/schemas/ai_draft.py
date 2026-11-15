@@ -10,15 +10,20 @@ class GenerateIn(BaseModel):
     kinds: list[Literal["resumen", "mensaje_cliente"]] | None = None
 
 
+class DiagnosisIn(BaseModel):
+    # Datos que la persona quiera sumar a la evidencia (por ejemplo, registros o métricas sintéticos de práctica); cada uno se recorta a 300 caracteres
+    evidence: list[str] = Field(default_factory=list, max_length=8)
+
+
 class ApproveIn(BaseModel):
     # Texto editado por la persona; sin él se aprueba el borrador tal cual
-    text: str | None = Field(default=None, max_length=2000)
+    text: str | None = Field(default=None, max_length=4000)
 
 
 class DraftOut(BaseModel):
     id: int
     incident_id: int
-    kind: Literal["resumen", "mensaje_cliente"]
+    kind: Literal["resumen", "mensaje_cliente", "diagnostico"]
     status: Literal["borrador_ia", "aprobado", "descartado"]
     # llm: lo redactó el modelo · plantilla: texto base (la IA no respondió o su texto no pasó las verificaciones)
     source: Literal["llm", "plantilla"]

@@ -39,3 +39,5 @@ tests:
               namespace: cliente-restaurante
             exp_annotations:
               summary: "El sitio de restaurante no responde"
+              accion: "Mirar si hubo una publicación reciente: si la hubo, hacer rollback desde el incidente; si no, revisar el Pod y sus registros."
+              runbook_url: "runbooks/caida-del-sitio.md"

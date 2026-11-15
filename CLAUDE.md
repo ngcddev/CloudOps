@@ -52,6 +52,9 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Lint de Python | `ruff check .` (configuración en `ruff.toml`) |
 | Imagen de producción de la API | `bash pipelines/pruebas/humo-hub-api.sh` |
 | Validar la observabilidad | `bash observability/pruebas/validar.sh` · `grafana.sh` · `trazas.sh` |
+| Informe de capacidad por cliente (cuota, uso y margen) | `KUBECONFIG=... bash observability/capacidad.sh` |
+| Prueba de drift de OpenTofu (plan -detailed-exitcode) | `bash infra/pruebas/drift.sh` |
+| Runbooks de operación (caída, rollback, respaldo, reinicio, saturación, latencia) | [`runbooks/`](runbooks/README.md) |
 | Respaldo y restauración de PostgreSQL | `bash gitops/pruebas/respaldo.sh` |
 | Reiniciar la demo | `bash demo/reiniciar.sh` (borra la base del entorno) |
 | Reiniciar la demo del colegio en el clúster | `GITEA_USER=... GITEA_PASSWORD=... bash demo/reiniciar-cluster.sh` |

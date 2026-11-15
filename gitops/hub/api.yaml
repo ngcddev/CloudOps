@@ -73,6 +73,8 @@ spec:
             # Dashboards y métricas (spec 010): la API consulta Prometheus (jobs `sitios` y Traefik) para los
             # KPIs de disponibilidad y latencia; con la URL vacía el panel responde «sin datos».
             - { name: PROMETHEUS_URL, value: "http://prometheus.monitoring.svc:9090" }
+            # Registros de los Pods de los clientes como evidencia del diagnóstico con IA (spec 019); con la URL vacía el diagnóstico usa solo métricas
+            - { name: LOKI_URL, value: "http://loki.monitoring.svc:3100" }
             # Trazas (OpenTelemetry): la API manda spans a Tempo (observability/tempo). Sin Tempo la API sigue igual; solo se pierden las trazas.
             # Los spans llevan tiempos y estados, nunca el texto de las preguntas ni de las respuestas.
             - name: OTEL_EXPORTER_OTLP_ENDPOINT

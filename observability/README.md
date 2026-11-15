@@ -20,6 +20,8 @@ Pods cliente-* ──registros──> Alloy ──> Loki ──> Grafana (Explor
 | `traefik/` | Service `traefik-metrics` en `kube-system` para las métricas de Traefik (spec 010) |
 | `tempo/` | Recibe las trazas OTLP del Hub (puerto 4318), 24 horas en un volumen efímero; Grafana lo lee con la fuente `tempo` |
 | `grafana/dashboards/` | Tablero «Servicio de los sitios · SLI y SLO»: disponibilidad frente al SLO de cada plan, presupuesto de error, latencia p95, errores 5xx, formularios y registros |
+| `grafana/dashboards/red-use.json` | Tablero «RED y USE · sitios y Pods» (spec 019): tasa, errores 5xx y duración por sitio (Traefik) y, por Pod, uso de CPU y memoria frente al límite, CPU frenada y reinicios por OOM (cAdvisor) |
+| `capacidad.sh` | Informe de capacidad: por namespace de cliente, cuota, reservado, uso real y margen; con `--estricto` falla si alguno tiene más del 90 % reservado |
 | `pruebas/` | `validar.sh`, pruebas de la regla, `tablero_test.yml`, `grafana.sh`, `trazas.sh`, `cronometro.sh` y `publicacion-sana.sh` |
 
 ## Tiempos de detección
@@ -94,3 +96,9 @@ bash observability/pruebas/trazas.sh    # Tempo real + API de producción: llega
 Las trazas del Hub se activan con `OTEL_EXPORTER_OTLP_ENDPOINT` (ya puesta en `gitops/hub/api.yaml`). Los spans llevan tiempos, estados y contadores;
 **nunca** el texto de las preguntas, de las respuestas ni de los cuerpos de las peticiones. No hay spans de SQL: la instrumentación de SQLAlchemy de
 OpenTelemetry soporta hasta la 2.0 y el Hub usa la 2.1. `validar.sh` pasa también en Windows (se corrigieron el comodín de las reglas, la variable `TMP` y la ruta de `kubectl`).
+
+## Uso de recursos (USE) y capacidad (spec 019)
+
+Prometheus lee el cAdvisor del kubelet (job `cadvisor`, con el token del Pod y el permiso `nodes/metrics` de `prometheus/rbac.yaml`) y conserva solo los namespaces
+`cliente-*`, `hub` y `monitoring`. De ahí salen las gráficas USE del tablero `red-use` y el diagnóstico con IA del Hub. `promtool check config` pide que exista el archivo del token:
+`validar.sh` monta uno falso (`pruebas/token-falso.txt`) solo para eso. Cada alerta lleva `accion` y `runbook_url` (ruta a `runbooks/`), y `backend/tests/test_alertas_accionables.py` falla si una nueva no los trae.

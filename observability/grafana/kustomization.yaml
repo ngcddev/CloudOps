@@ -16,3 +16,4 @@ configMapGenerator:
   - name: grafana-dashboards
     files:
       - dashboards/servicio-sitios.json
+      - dashboards/red-use.json

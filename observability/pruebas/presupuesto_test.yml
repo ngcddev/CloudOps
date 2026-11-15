@@ -24,6 +24,8 @@ tests:
             exp_annotations:
               summary: "El sitio de restaurante gasta su margen de error 656 veces más rápido de lo permitido"
               description: "A este ritmo el margen del mes se agota en unos 2 días. Revise la última publicación."
+              accion: "Revisar la última publicación del cliente y, si empeoró el sitio, hacer rollback."
+              runbook_url: "runbooks/rollback.md"
 
   # Un sitio sano no avisa nunca; y la alerta no lleva `namespace`, así que el Hub no abre un incidente por ella.
   - interval: 30s
