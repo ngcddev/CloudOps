@@ -138,3 +138,11 @@ del Hub y del sitio de ejemplo, las escanea mostrando también lo que no tiene a
 `evidencias/hallazgos/`, y el CI los guarda como artefacto. Con los hallazgos reales de hoy: 94 altas (47 por imagen de Python) sin arreglo, todas con regla vigente; el resto se corrigió actualizando paquetes.
 El VEX es un documento de salida: Trivy no lo consume porque los productos se identifican por nombre de imagen y no por el digest que Trivy espera.
 
+
+## SBOM atestado y escenarios de SCA/manifiestos (spec 018)
+
+- **SBOM firmado:** `puerta.sh firmar` adjunta a cada imagen el SBOM SPDX como atestación (`cosign attest --type spdxjson`) y `verificar` la comprueba con la
+  clave del Hub (`verify-attestation --type spdxjson`) y exige que traiga componentes.
+- **Dependencias del sitio:** `puerta.sh vulnerabilidades` corre `trivy fs` sobre el repositorio del sitio (requirements.txt, package-lock.json…): una
+  vulnerabilidad ALTA o CRÍTICA con arreglo publicado frena la puerta. `trivy config` revisa también los manifiestos de Kubernetes que traiga el repositorio.
+- **Simulación:** se suman los escenarios `dependencia` (flask 0.12) y `manifiesto` (Deployment con `privileged` y `hostNetwork`); la puerta se detiene en los dos.
