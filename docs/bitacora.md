@@ -3,6 +3,32 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Módulo 6: la voz del asistente (spec 021)
+
+**Pedido:** cumplir el componente multimodal obligatorio con el menor consumo posible. Se descartó la imagen con ComfyUI (≈5 GB, PyTorch y turnos de VRAM con el 7B de Ollama) y se
+eligió **audio**: el asistente recibe voz y responde con voz, en una charla por turnos. La constitución, el cuadro de cumplimiento y la hoja de ruta quedaron al día; la infografía
+(spec 014) queda como mejora.
+
+| Tarea | Resultado |
+|---|---|
+| T01 · Servicio de voz | `voz/`: faster-whisper (voz a texto) y Piper es_MX «claude» (texto a voz) en CPU, con los modelos descargados de una revisión fija y su SHA-256 verificado; límites de 2 MB, 30 s y 700 caracteres, una transcripción a la vez, token opcional; contenedor sin root y de solo lectura. El vocabulario del Hub sesga a Whisper |
+| T02 · API del Hub | `/api/assistant/voice/status`, `/transcribe` y `/speak`, solo para la agencia; el audio no se guarda; la transcripción pasa por la redacción de secretos; sin `VOZ_URL` responde 503 y el asistente sigue por texto |
+| T03 · Pantalla | Botón «Hablar» (MediaRecorder), transcripción editable, «enviar sin revisar» opcional, estados visibles (escuchando, pensando, hablando), leer la respuesta en voz alta con «Callar» y la preferencia recordada. De paso se arregló el cuadro de la pregunta, que salía enorme por un `flex` mal puesto |
+| T04 · Evaluación | 56 preguntas sintetizadas y transcritas sin micrófono: Whisper `small` 6,6 % de error de palabras y 93,7 % de términos del Hub bien; `base` 9,1 % y 84,1 %. `small` cuesta 1,9 s y 1,2 GiB frente a 0,7 s y 433 MiB. Quedó `small` por defecto y `base` como opción. Corridas en MLflow y cifras en las fichas |
+| T05 · Seguridad y documentación | Fichas de los dos modelos y de la voz, amenaza 13 en el modelo de amenazas, bandit y Trivy sin hallazgos (también sobre la imagen), Dependabot, pruebas |
+
+**Verificado:** prueba en un Chromium real con micrófono falso (`voz/pruebas/voz-ui.sh`): se pulsa «Hablar», se transcribe «Para aprobar un cambio de versión, abre cambios y pulsa aprobar»,
+llega al cuadro, se envía, el asistente responde y el Hub pide reproducir el audio; sin errores de JavaScript. Pruebas del servicio (10) y de la API (13) con el servicio simulado.
+
+**Hallazgos:** `av` 19 rompió faster-whisper 1.2.1 (`metadata_errors`), se fijó 16.1.0; el micrófono exige HTTPS o `localhost`; la imagen del servicio pesa 2 GB (más de lo estimado, por onnxruntime
+y ctranslate2) y la memoria con `small` es de 1,2 GiB, no los 0,5 GiB previstos.
+
+**Pendiente y no verificado:**
+- Las cifras son con voz sintetizada (el mejor caso); con una persona, un micrófono de portátil y ruido el error será mayor. No se probó con una voz humana real.
+- No hay manifiesto del servicio de voz para el clúster y la imagen del Hub del clúster no incluye la voz (ni lo de las specs 018 a 020); el micrófono tampoco funciona sobre `http://hub.local`.
+- Fase 2 sin hacer: memoria de la conversación («¿y cómo lo rechazo?») y voz frase por frase mientras llega la respuesta.
+- La voz de Piper es mexicana y lee mal las palabras en inglés y las siglas.
+
 ## 15 nov 2026 · Cierre del módulo 5 (spec 020)
 
 **Pedido:** completar al máximo el módulo 5 (MLOps, LLMOps y serving de IA local), una brecha a la vez.
@@ -61,7 +87,7 @@
 | T04 · Escenarios nuevos | `dependencia` (flask 0.12) y `manifiesto` (Deployment con `privileged` y `hostNetwork`): la puerta se detiene en los dos, en «vulnerabilidades». Para esto la puerta ahora corre `trivy fs` sobre el repositorio del sitio |
 | T05 · Segregación de funciones | Quien pide un cambio no lo aprueba (403, intento en la bitácora como «denegar»); activa por defecto (`SEGREGACION_FUNCIONES`). Las demos y `promover.sh` piden con Sofía y aprueban con Camilo (`HUB_USUARIO_APROBADOR`) |
 | T06 · Solo lectura en los sitios | `readOnlyRootFilesystem` con emptyDir en `/tmp` y `/etc/nginx/conf.d` (web) o `/tmp` (backend) en la base, el consultorio, el chart y la plantilla del Hub; KSV-0014 deja de excepcionarse para los sitios y queda solo para la plataforma |
-| T07 · IA y amenazas | La plantilla de PR trae la lista de verificación del código generado con IA y `docs/modelo-de-amenazas.md` cubre activos, fronteras, 12 amenazas con su control y el riesgo que queda |
+| T07 · IA y amenazas | La plantilla de PR trae la lista de verificación del código generado con IA y `docs/modelo-de-amenazas.md` cubre activos, fronteras, 13 amenazas con su control y el riesgo que queda |
 
 **Verificado:** 770 pruebas del backend, ruff, simulador de la puerta (`limpia`, `dependencia`, `manifiesto`), `trivy config` sin hallazgos con las excepciones vigentes, Helm igual a Kustomize, nginx y el backend del consultorio arrancan en contenedores reales con `--read-only`, y el `dry-run` del servidor acepta los manifiestos.
 

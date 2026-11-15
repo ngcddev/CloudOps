@@ -3,7 +3,7 @@
 version: 2
 updates:
   - package-ecosystem: pip
-    directories: ["/backend", "/ai", "/apps/consultorio/backend", "/apps/colegio/backend", "/apps/templates/landing-form/backend"]
+    directories: ["/backend", "/ai", "/apps/consultorio/backend", "/apps/colegio/backend", "/apps/templates/landing-form/backend", "/voz"]
     schedule: { interval: weekly }
     groups:
       python: { patterns: ["*"], update-types: [minor, patch] }
@@ -13,7 +13,7 @@ updates:
     groups:
       npm: { patterns: ["*"], update-types: [minor, patch] }
   - package-ecosystem: docker
-    directories: ["/backend", "/frontend", "/apps/restaurante", "/apps/ferreteria", "/apps/consultorio", "/apps/colegio", "/ai/servidor-mlflow", "/pipelines/runner"]
+    directories: ["/backend", "/frontend", "/apps/restaurante", "/apps/ferreteria", "/apps/consultorio", "/apps/colegio", "/ai/servidor-mlflow", "/pipelines/runner", "/voz"]
     schedule: { interval: weekly }
   - package-ecosystem: github-actions
     directory: /

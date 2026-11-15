@@ -1,0 +1,59 @@
+{
+  "commit_git": "desconocido",
+  "modelo": "faster-whisper-small",
+  "preguntas": 56,
+  "wer_pct": 6.6,
+  "terminos_hub_acertados_pct": 93.7,
+  "preguntas_sin_error_pct": 73.2,
+  "stt_ms_medio": 1865,
+  "stt_ms_p95": 2181,
+  "tts_ms_medio": 110,
+  "audio_s_medio": 2.6,
+  "tiempo_real_x": 1.4,
+  "primera_peticion_ms": 2891,
+  "memoria_mib": 1188,
+  "peores": [
+    {
+      "pregunta": "¿qué base de datos usa el Hub?",
+      "transcripcion": "que va a ser de datos su salub.",
+      "errores": 6,
+      "palabras": 7,
+      "terminos": 1,
+      "terminos_bien": 0,
+      "tts_ms": 60,
+      "stt_ms": 1780,
+      "audio_s": 1.83,
+      "total_ms": 1863,
+      "modelo": "faster-whisper-small",
+      "primera": false
+    },
+    {
+      "pregunta": "¿Qué es el MTTR?",
+      "transcripcion": "gsl mttr",
+      "errores": 3,
+      "palabras": 4,
+      "terminos": 1,
+      "terminos_bien": 1,
+      "tts_ms": 94,
+      "stt_ms": 1678,
+      "audio_s": 1.47,
+      "total_ms": 1800,
+      "modelo": "faster-whisper-small",
+      "primera": false
+    },
+    {
+      "pregunta": "¿Qué filtros tiene la bitácora?",
+      "transcripcion": "Kefiitros tiene la bitacora.",
+      "errores": 2,
+      "palabras": 5,
+      "terminos": 1,
+      "terminos_bien": 1,
+      "tts_ms": 83,
+      "stt_ms": 1851,
+      "audio_s": 1.94,
+      "total_ms": 1968,
+      "modelo": "faster-whisper-small",
+      "primera": false
+    }
+  ]
+}

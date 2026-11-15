@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Análisis estático y de composición del código (spec 018, T01), todo en contenedores: no instala nada en el equipo.
-#   1. SAST        bandit sobre el código de Python (Hub, sitios de los clientes y ai/): frena con hallazgos de severidad media o alta
+#   1. SAST        bandit sobre el código de Python (Hub, sitios de los clientes, ai/ y voz/): frena con hallazgos de severidad media o alta
 #   2. SCA         trivy fs sobre las dependencias declaradas (requirements.txt y package-lock.json): frena con vulnerabilidades altas o críticas
 #   3. Imagen web  construye la imagen del frontend y la escanea con Trivy: frena con críticas que ya tienen arreglo (la imagen del Hub API se escanea aparte en el CI)
 # Las excepciones van en el código (`# nosec Bxxx` con su razón en la línea de arriba) o en .trivyignore.yaml / vex/ con razón y vencimiento; nunca en este script.
@@ -19,7 +19,7 @@ RAIZ_D="$(ruta_docker "$RAIZ")"
 sast() {
   echo "== SAST: bandit (severidad media o alta)"
   docker run --rm -v "${RAIZ_D}:/w:ro" -w /w "$BANDIT_IMAGE" sh -c \
-    "pip install -q bandit >/dev/null 2>&1 && bandit -r -ll backend/app apps/consultorio/backend/app apps/colegio/backend/app ai -x '**/tests/**,**/eval/runs/**' 2>&1 | grep -E 'Issue:|Location:|Total issues|Medium:|High:|No issues'; bandit -q -r -ll backend/app apps/consultorio/backend/app apps/colegio/backend/app ai -x '**/tests/**,**/eval/runs/**' >/dev/null 2>&1" \
+    "pip install -q bandit >/dev/null 2>&1 && bandit -r -ll backend/app apps/consultorio/backend/app apps/colegio/backend/app ai voz -x '**/tests/**,**/eval/runs/**' 2>&1 | grep -E 'Issue:|Location:|Total issues|Medium:|High:|No issues'; bandit -q -r -ll backend/app apps/consultorio/backend/app apps/colegio/backend/app ai voz -x '**/tests/**,**/eval/runs/**' >/dev/null 2>&1" \
     && ok "bandit no encontró hallazgos de severidad media ni alta" || falla "bandit encontró hallazgos de severidad media o alta"
 }
 

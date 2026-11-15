@@ -19,7 +19,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 MODELOS = Path(os.environ.get("VOZ_MODELOS", "/modelos"))
-WHISPER_MODELO = os.environ.get("WHISPER_MODELO", "base")
+WHISPER_MODELO = os.environ.get("WHISPER_MODELO", "small")
 VOCABULARIO = Path(os.environ.get("VOZ_VOCABULARIO", "/app/vocabulario.txt"))
 TOKEN = os.environ.get("VOZ_TOKEN", "")
 MAX_BYTES = int(os.environ.get("VOZ_MAX_BYTES", str(2_000_000)))

@@ -10,9 +10,11 @@
 | | Cantidad |
 |---|---|
 | Entregables mínimos (15) | 8 hechos · 4 parciales · 3 faltan (actualizado el 14 nov: MLflow y RAG, ver [bitácora](bitacora.md)) |
-| Tecnologías nombradas por el diplomado | Falta ComfyUI (obligatoria); OpenTelemetry está a medias; MLflow y el RAG ya existen (14 nov); video y 3D no se exigen |
+| Tecnologías nombradas por el diplomado | ComfyUI no se usa: la modalidad adicional es audio (faster-whisper y Piper, 15 nov); OpenTelemetry está a medias; MLflow y el RAG ya existen (14 nov); video y 3D no se exigen |
 
-**Lo que más pesa y falta:** el componente multimodal (entregable 12), el runbook (14), el registro de modelos en MLflow
+**Actualización del 15 nov:** el componente multimodal (12, audio), los runbooks (14), el registro de modelos en MLflow (10) y las fichas de modelos y privacidad (13) ya están hechos; ver la [bitácora](bitacora.md).
+
+**Lo que más pesaba y faltaba (antes del 15 nov):** el componente multimodal (entregable 12), el runbook (14), el registro de modelos en MLflow
 (10) y la ficha de modelos y privacidad (13). Son obligatorios según el documento y ninguno está construido todavía.
 
 ## Entregables mínimos del proyecto integrador
@@ -30,7 +32,7 @@
 | 9 | Dashboard de observabilidad con al menos un SLI/SLO | **Hecho** (con un pero) | El tablero del Hub (spec 010) calcula la disponibilidad del mes desde Prometheus y la compara con el SLO del plan; `observability/` con Prometheus, Alertmanager, Loki, Blackbox | Grafana está instalado pero **sin ningún tablero**: solo fuentes de datos. Un jurado que abra Grafana verá vacío |
 | 10 | Registro de experimentos/modelos (MLOps) | **Hecho** (14 nov, en el equipo de desarrollo) | `ai/classifier/train.py` y `ai/eval/run_eval.py` registran cada corrida en `runs/` con parámetros y métricas | El servidor aún corre en el equipo de desarrollo, no en el PC B; el registro del modelo `compuerta-asistente` con alias `production` y `ai/tests/` están probados |
 | 11 | Servicio de IA local con RAG o generación de código/documentación | **Hecho** (14 nov; el RAG se activa con `ASSISTANT_CONTEXT_MODE=rag`, aún sin llevar al clúster, T27) | Asistente con Ollama (`qwen2.5:7b-instruct`), ayuda del Hub como contexto, evaluación con preguntas ciegas: 100 % (16 preguntas), 13/13 «sin información» correctas | RAG propio con `nomic-embed-text` e índice en PostgreSQL (`kb_chunks`); iguala al contexto completo en el conjunto ciego. No se usa AnythingLLM (decisión D1 de la bitácora) |
-| 12 | Workflow multimodal adicional (imagen, video, audio o 2D→3D) | **Falta** | Solo `specs/014-infografia/` (spec y plan) | Todo: ComfyUI, workflow, artefacto y API/job. Es obligatorio |
+| 12 | Workflow multimodal adicional (imagen, video, audio o 2D→3D) | **Hecho** (audio, 15 nov) | `voz/` (faster-whisper y Piper en CPU), API `/api/assistant/voice/*`, pantalla del asistente, `ai/eval/evaluar_voz.py` y prueba en navegador real (`voz/pruebas/voz-ui.sh`) | Falta publicarlo en el clúster y la fase 2 (memoria de la charla) |
 | 13 | Análisis de privacidad, seguridad, licencias, riesgos de IA y límites | **Parcial** | Principios 2 y 6, datos ficticios, `constitution/principles.md`, puerta de seguridad | Falta la **ficha por modelo** (origen, licencia, tamaño, fecha, hash) y un análisis escrito de riesgos de IA y Ley 1581 |
 | 14 | Runbook de operación, respaldo, recuperación y fallas comunes | **Falta** | Solo hay scripts de demo (`gitops/pruebas/`) y el rollback del Hub | No existe ningún runbook ni procedimiento de respaldo/restauración de PostgreSQL ni del clúster |
 | 15 | Informe ejecutivo, demo técnica y sustentación | **Falta** (planificado) | Specs 013 (reportes) y 015 (demo integrada) con solo spec y plan; `gitops/pruebas/demo-caso-restaurante.sh` | Informe ejecutivo, guion y ensayo de la demo integrada |
@@ -45,7 +47,7 @@
 | Observabilidad | Parcial | Falta al menos un tablero en Grafana (el del Hub sí existe) |
 | MLOps | Hecho | MLflow con corridas, Model Registry y alias `production` (14 nov) |
 | LLMOps local | Hecho | Evaluación con preguntas de referencia y respuestas literales (`ai/eval/`) |
-| Multimodal | Falta | Spec 014 |
+| Multimodal | Hecho (audio) | Spec 021 |
 | Privacidad y licencia | Falta | Ficha por modelo |
 | Operación | Falta | Runbook |
 
@@ -66,7 +68,7 @@ cada una de estas capacidades. Las marcadas ★ son las que nombra en sus entreg
 | MLOps | MLflow ★ (Kubeflow opcional) | MLflow 3.18 (`ai/servidor-mlflow/`) con Model Registry | Hecho |
 | LLM/SLM local | GPT4All u Ollama ★ | Ollama con Qwen2.5 3B y 7B | Hecho |
 | RAG y frontend | AnythingLLM u Open WebUI | RAG propio (embeddings de Ollama + índice en PostgreSQL); sin AnythingLLM ni Open WebUI | Hecho (equivalente) |
-| Imagen generativa | Stability Matrix y ComfyUI ★ | Ninguna | **Falta** |
+| Imagen generativa | Stability Matrix y ComfyUI ★ | Ninguna: se eligió audio (faster-whisper y Piper, CPU) como modalidad adicional por consumo | Decisión del equipo; el diplomado exige una modalidad adicional, no la imagen |
 | Video generativo | Wan2.2 (en nodo compartido) | Ninguna | No exigido: basta una modalidad adicional |
 | 2D a 3D | Hunyuan3D, Blender | Ninguna | No exigido: basta una modalidad adicional |
 | Documentación | Markdown, MkDocs/TechDocs | Markdown en `docs/`, `specs/`, `constitution/` | Hecho |

@@ -16,6 +16,30 @@ CLASIFICADOR = RAIZ / "backend" / "app" / "assets" / "clasificador.json"
 DIGEST = re.compile(r"\| Nombre en Ollama \| `([^`]+)` \|[\s\S]*?\| Digest \| `([0-9a-f]{64})` \|")
 
 
+ARCHIVO = re.compile(r"\| Digest \| `([0-9a-f]{64})` \|\n\| Archivo \| `([^`]+)` \|")
+
+
+def archivos_locales_de_las_fichas() -> list[tuple[str, Path, str]]:
+    """[(nombre de la ficha, archivo del modelo, SHA-256 declarado)] de las fichas que dicen dónde está el archivo (los modelos de voz)."""
+    salida = []
+    for ficha in sorted(FICHAS.glob("*.md")):
+        m = ARCHIVO.search(ficha.read_text(encoding="utf-8"))
+        if m:
+            salida.append((ficha.stem, RAIZ / m.group(2), m.group(1)))
+    return salida
+
+
+def verificar_archivos_locales() -> tuple[list[str], list[str]]:
+    """(coinciden, problemas): el SHA-256 de cada archivo de modelo que está en el equipo contra el de su ficha; el que no se descargó se omite."""
+    coinciden, problemas = [], []
+    for nombre, ruta, esperado in archivos_locales_de_las_fichas():
+        if not ruta.exists():
+            continue
+        real = hashlib.sha256(ruta.read_bytes()).hexdigest()
+        (coinciden if real == esperado else problemas).append(nombre if real == esperado else f"{nombre}: {ruta.name} no coincide con el SHA-256 de su ficha")
+    return coinciden, problemas
+
+
 def digests_de_las_fichas() -> dict[str, str]:
     """{nombre del modelo en Ollama: digest declarado en su ficha}."""
     salida = {}
@@ -78,6 +102,13 @@ def main() -> int:
         for fallo in fallos:
             print(f"✗ {fallo}")
         problemas += fallos
+
+    locales, fallos_locales = verificar_archivos_locales()
+    for nombre in locales:
+        print(f"✓ {nombre}: el archivo del modelo coincide con el SHA-256 de su ficha")
+    for fallo in fallos_locales:
+        print(f"✗ {fallo}")
+    problemas += fallos_locales
     return 1 if problemas else 0
 
 

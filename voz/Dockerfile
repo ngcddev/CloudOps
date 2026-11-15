@@ -1,10 +1,10 @@
 # Imagen del servicio de voz (spec 021): CPU, sin root, con los modelos dentro (descargados con su suma SHA-256 verificada).
 # Construir desde la raíz:  docker build -f voz/Dockerfile --build-context vocab=./ai/classifier/data -t hub-voz:dev voz
-#   --build-arg WHISPER=small  para el modelo de 484 MB en vez del base (145 MB)
+#   --build-arg WHISPER=base  para el modelo de 145 MB (menos memoria y más rápido, pero se equivoca más con la jerga del Hub; ver docs/modelos)
 
 # ---------- Modelos ----------
 FROM python:3.12-slim AS modelos
-ARG WHISPER=base
+ARG WHISPER=small
 WORKDIR /w
 COPY descargar_modelos.py .
 RUN python descargar_modelos.py /modelos --whisper "${WHISPER}"
@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 FROM python:3.12-slim
 # Paquetes del sistema con arreglo ya publicado (mismo criterio que las demás imágenes de Python, spec 018)
 RUN apt-get update && apt-get install -y --no-install-recommends --only-upgrade zlib1g && rm -rf /var/lib/apt/lists/*
-ARG WHISPER=base
+ARG WHISPER=small
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 VOZ_MODELOS=/modelos WHISPER_MODELO=${WHISPER} VOZ_VOCABULARIO=/app/vocabulario.txt
 RUN useradd --system --uid 10001 --no-create-home voz
 COPY --from=deps /install /usr/local

@@ -54,6 +54,9 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Validar la observabilidad | `bash observability/pruebas/validar.sh` · `grafana.sh` · `trazas.sh` |
 | Informe de capacidad por cliente (cuota, uso y margen) | `KUBECONFIG=... bash observability/capacidad.sh` |
 | Prueba de drift de OpenTofu (plan -detailed-exitcode) | `bash infra/pruebas/drift.sh` |
+| Levantar el servicio de voz del asistente (faster-whisper y Piper, CPU) | `docker compose --profile voz up -d --build voz web api` |
+| Evaluar la voz sin micrófono (error de palabras, latencia, memoria) | `python ai/eval/evaluar_voz.py --url http://localhost:8100 --actualizar-fichas` |
+| Probar la voz en un navegador real (micrófono falso) | `HUB_USUARIO=... HUB_PASSWORD=... bash voz/pruebas/voz-ui.sh` |
 | Medir latencia y memoria de los modelos de Ollama | `python ai/eval/medir_modelos.py --actualizar-fichas` |
 | Verificar integridad de los modelos (digests y suma de la compuerta) | `python ai/verificar_modelos.py` |
 | Promover la compuerta con comparación / volver a la versión anterior | `python ai/classifier/promover.py --version N` · `--rollback` |

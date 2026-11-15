@@ -8,6 +8,9 @@ no trae todos los campos. Las cifras de latencia y memoria las mide `ai/eval/med
 | Qwen2.5 7B Instruct (Q4_K_M) | [qwen2.5-7b-instruct.md](qwen2.5-7b-instruct.md) | Asistente de ayuda, borradores de incidente y diagnóstico | Ollama, PC B |
 | Qwen2.5 3B Instruct (Q4_K_M) | [qwen2.5-3b-instruct.md](qwen2.5-3b-instruct.md) | Comparación (se descartó para respuestas que alguien lee) | Ollama, PC B |
 | nomic-embed-text | [nomic-embed-text.md](nomic-embed-text.md) | Embeddings del modo RAG (opcional) | Ollama, PC B |
+| faster-whisper base (voz a texto) | [faster-whisper-base.md](faster-whisper-base.md) | Pasar la voz de quien opera a texto para el asistente (spec 021) | Servicio de voz, CPU |
+| faster-whisper small (voz a texto) | [faster-whisper-small.md](faster-whisper-small.md) | Alternativa más precisa y más pesada, solo si la medición la justifica | Servicio de voz, CPU |
+| Piper es_MX «claude» (texto a voz) | [piper-es-mx-claude-high.md](piper-es-mx-claude-high.md) | Leer en voz alta las respuestas del asistente | Servicio de voz, CPU |
 | Compuerta del asistente (Naive Bayes) | [compuerta-asistente.md](compuerta-asistente.md) | Decidir si una pregunta trata del Hub antes de despertar al LLM | Dentro de la API del Hub |
 | Modelo de imagen (ComfyUI) | — | Pendiente: entra con el módulo 6 y tendrá su ficha entonces | — |
 
@@ -20,6 +23,7 @@ no trae todos los campos. Las cifras de latencia y memoria las mide `ai/eval/med
 | ¿Qué se guarda? | La pregunta, la respuesta, la decisión de la compuerta y la latencia en `ai_queries`; los borradores y su aprobación en `ai_drafts`. Los secretos que alguien pegue en una pregunta se redactan antes de guardarse y de enviarse al modelo (spec 020, T05) |
 | ¿Con qué datos se entrenó lo propio? | La compuerta, con preguntas ficticias escritas por el equipo (`ai/classifier/data/`); no hay datos de clientes |
 | ¿Cuánto tiempo se conserva? | Los registros de `ai_queries` y `ai_drafts` siguen la vida de la base del Hub (respaldo diario); no se envían a ningún tercero |
+| ¿Qué pasa con la voz? | El audio se graba en el navegador, pasa por la API del Hub al servicio de voz (CPU, dentro del laboratorio) y se descarta: no se guarda en ninguna parte. De la voz solo queda, si la persona envía la pregunta, su texto ya sin secretos. Nada va a un servicio de reconocimiento externo (el reconocimiento del navegador envía el audio a terceros y no se usa) |
 | ¿Quién ve las respuestas? | El asistente y los borradores son solo de la agencia; al portal del cliente solo llega el mensaje aprobado por una persona |
 
 ## Riesgos de IA y cómo se controlan
@@ -32,6 +36,7 @@ no trae todos los campos. Las cifras de latencia y memoria las mide `ai/eval/med
 | Modelo o archivo alterado | Digest de cada modelo de Ollama en su ficha y suma SHA-256 del `clasificador.json` comprobadas por script y prueba | El digest se comprueba al medir o promover, no en cada arranque |
 | Deriva (la gente empieza a preguntar otra cosa) | Deriva por ventanas con umbral; reentrenar con las decisiones corregidas | Sin decisiones corregidas no hay señal: depende de que la gente opine |
 | Sesgo y calidad desigual | El caso de uso es un asistente de ayuda de un producto en español, sin decisiones sobre personas | No se midió calidad por tipo de usuario |
+| La voz se transcribe mal | La transcripción se muestra y se corrige antes de enviarse (salvo que la persona active «enviar sin revisar»); el asistente solo explica, la voz no ejecuta acciones | Con ruido o jerga el error sube; la medición es con voz limpia |
 | Una persona aprueba sin leer | Todo texto de IA es un borrador; la aprobación queda en la bitácora; el cliente no ve nada sin ella | Aprobación con prisa antes de la defensa |
 | Dependencia de la IA | El flujo completo funciona con la IA apagada (textos base deterministas) | — |
 

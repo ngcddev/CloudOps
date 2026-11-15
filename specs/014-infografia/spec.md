@@ -2,11 +2,11 @@
 
 > **Acciona:** Sistemas (Frontend, Backend) · Industrial define el contenido de la infografía
 >
-> **Módulo:** 6 · **Requerimientos:** RF-21, RF-23 (opcional) · **Depende de:** 010, 013 · **Estado:** Spec y plan
+> **Módulo:** 6 · **Requerimientos:** RF-21, RF-23 (opcional) · **Depende de:** 010, 013 · **Estado:** Pospuesta: el componente multimodal obligatorio pasó a ser la voz del asistente (spec 021, decisión del 15 nov 2026 por consumo); queda como mejora
 
 ## Qué y por qué
 
-Una pieza visual por cliente que resume su mes: lo que un dueño de PyME mira en diez segundos. Es el
+Una pieza visual por cliente que resume su mes: lo que un dueño de PyME mira en diez segundos. Era el
 componente multimodal obligatorio del diplomado, generado con IA local.
 
 ## Actores

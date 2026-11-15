@@ -84,17 +84,17 @@ services:
 
 
   # Servicio de voz (spec 021): voz a texto y texto a voz en CPU, sin servicios externos. Solo arranca con el perfil «voz»:
-  #   docker compose --profile voz up -d --build voz        (la primera vez baja los modelos, unos 210 MB, con su suma SHA-256 verificada)
-  # Sin él, el asistente sigue por texto y la pantalla no muestra el micrófono. Con WHISPER=small (build arg) usa el modelo de 484 MB.
+  #   docker compose --profile voz up -d --build voz        (la primera vez baja los modelos, unos 550 MB, con su suma SHA-256 verificada; la imagen pesa unos 2 GB)
+  # Sin él, el asistente sigue por texto y la pantalla no muestra el micrófono. Con WHISPER=base usa el modelo de 145 MB: usa 433 MiB en vez de 1,2 GiB y transcribe 2,5 veces más rápido, pero acierta menos términos del Hub (84 % frente a 94 %).
   voz:
     profiles: ["voz"]
-    mem_limit: 1g
+    mem_limit: 1536m
     build:
       context: ./voz
       additional_contexts:
         vocab: ./ai/classifier/data
       args:
-        WHISPER: ${WHISPER:-base}
+        WHISPER: ${WHISPER:-small}
     read_only: true
     tmpfs:
       - /tmp

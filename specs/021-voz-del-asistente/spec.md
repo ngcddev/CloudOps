@@ -13,11 +13,11 @@ y sin acciones por voz: el asistente solo explica (principio 6).
 
 ## Criterios de aceptación
 
-- [ ] CA-1. Un servicio de voz en CPU (faster-whisper y Piper, sin servicios externos) transcribe audio y sintetiza voz, con modelos fijados por suma SHA-256 y límites de tamaño, duración y texto.
+- [x] CA-1. Un servicio de voz en CPU (faster-whisper y Piper, sin servicios externos) transcribe audio y sintetiza voz, con modelos fijados por suma SHA-256 y límites de tamaño, duración y texto.
 - [x] CA-2. La API del Hub expone transcribir y hablar solo para la agencia; no guarda audio; la transcripción pasa por la redacción de secretos; sin `VOZ_URL` la voz se desactiva y el asistente sigue por texto.
 - [x] CA-3. La pantalla del asistente permite pulsar para hablar, corregir la transcripción antes de enviar, ver el estado (escuchando, pensando, hablando) y escuchar la respuesta, con opción de silenciar.
-- [ ] CA-4. Una evaluación sin micrófono (las 40 preguntas sintetizadas y transcritas) mide la tasa de error de palabras, la latencia por etapa y la memoria, y elige entre los modelos `base` y `small`.
-- [ ] CA-5. Los dos modelos tienen su ficha y el análisis de riesgos; la documentación dice qué exige el micrófono (HTTPS o `localhost`).
+- [x] CA-4. Una evaluación sin micrófono (las 40 preguntas sintetizadas y transcritas) mide la tasa de error de palabras, la latencia por etapa y la memoria, y elige entre los modelos `base` y `small`.
+- [x] CA-5. Los dos modelos tienen su ficha y el análisis de riesgos; la documentación dice qué exige el micrófono (HTTPS o `localhost`).
 
 ## Fuera de alcance
 

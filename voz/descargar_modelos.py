@@ -1,5 +1,5 @@
 # Descarga los modelos del servicio de voz (spec 021, T01) con la suma SHA-256 fijada: un archivo que no coincide se borra y falla. Los modelos NO van en Git.
-#   · voz a texto: faster-whisper (Systran, licencia MIT) en la revisión fijada de Hugging Face; `base` (145 MB, por defecto) o `small` (484 MB)
+#   · voz a texto: faster-whisper (Systran, licencia MIT) en la revisión fijada de Hugging Face; `small` (484 MB, por defecto, el que mejor transcribe la jerga del Hub) o `base` (145 MB)
 #   · texto a voz: Piper, voz es_MX «claude» calidad alta (licencia apache-2.0, 63 MB), en la revisión fijada del repositorio de voces
 # Los archivos grandes llevan su SHA-256 (el `oid` LFS de Hugging Face); los pequeños (configuración, vocabulario) vienen de la misma revisión fija.
 # Uso:  python voz/descargar_modelos.py <carpeta> [--whisper base|small]
@@ -47,7 +47,7 @@ def bajar(url: str, destino: Path, esperado: str | None) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("carpeta", type=Path)
-    ap.add_argument("--whisper", choices=sorted(WHISPER), default="base")
+    ap.add_argument("--whisper", choices=sorted(WHISPER), default="small")
     args = ap.parse_args()
 
     repo, revision, suma = WHISPER[args.whisper]
