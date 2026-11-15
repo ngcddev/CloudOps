@@ -67,3 +67,4 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Preguntar al tutor del módulo 2 (Kubernetes y lineamientos) | `python ai/tutor/tutor.py "¿Para qué sirve un DaemonSet?"` |
 | Evaluar el tutor (matriz de aciertos, omisiones y alucinaciones) | `python ai/tutor/evaluar.py` |
 | Comprobar el AppProject de clientes y que los Pods no montan el token de la API | `bash gitops/pruebas/appproject.sh` |
+| Probar Backstage en un navegador real (plantilla y TechDocs) | `set -a; . ./.env.cluster; set +a; bash gitops/pruebas/backstage-ui.sh` |

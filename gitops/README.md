@@ -213,7 +213,7 @@ kubectl apply -k gitops/platform/backstage
 kubectl -n hub rollout status deploy/backstage --timeout=300s
 ```
 
-Backstage queda en `http://backstage.hub.local` con un catálogo mínimo: la agencia (`forja-digital`) y
+Backstage queda en `https://backstage.hub.local` (certificado autofirmado de Traefik: el navegador pide aceptarlo una vez) con un catálogo mínimo: la agencia (`forja-digital`) y
 los 3 clientes con su servicio y el enlace a la consola del Hub. Lee los `catalog-info.yaml` de
 `hub-gitops`, así que primero hay que sembrar ese repo. Usa hasta 1 GiB de memoria: si el PC A queda
 justo, se apaga sin afectar nada más y `/agencia/servicios` del Hub cumple el rol:
@@ -322,7 +322,7 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 
 - **Crear → Sitio de cliente** registra en el catálogo el `catalog-info.yaml` que el Hub escribió al dar de alta el sitio (sin editar la configuración de Backstage). La plantilla vive en `platform/backstage/templates/` y se publica con `actualizar-hub-gitops.sh gitops/platform/backstage`.
 
-- **TechDocs:** la imagen de Backstage no trae mkdocs ni Docker; `platform/backstage/publicar-docs.sh` genera el sitio con la imagen `spotify/techdocs` y lo copia al volumen `backstage-techdocs` (`builder: external`). La fuente está en `platform/backstage/docs/` y se ve en `http://backstage.hub.local/docs/default/component/plataforma-cloudops`.
+- **TechDocs:** la imagen de Backstage no trae mkdocs ni Docker; `platform/backstage/publicar-docs.sh` genera el sitio con la imagen `spotify/techdocs` y lo copia al volumen `backstage-techdocs` (`builder: external`). La fuente está en `platform/backstage/docs/` y se ve en `https://backstage.hub.local/docs/default/component/plataforma-cloudops`.
 - **El catálogo persiste:** Backstage guarda su base SQLite en el volumen `backstage-datos`; lo que se registra con la plantilla sobrevive a los reinicios (con `:memory:` se perdía). Probado reiniciando el Pod con un sitio registrado.
 
 ## Staging y promoción (spec 017)
@@ -346,3 +346,4 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 - El AppProject `clientes` (`platform/argocd/projects/`) limita a las Applications de los clientes: solo `hub-gitops`, solo namespaces `cliente-*` y solo los recursos de un sitio. `pruebas/appproject.sh` muestra el rechazo de un ClusterRole y de un despliegue en kube-system. `monitoring` queda en `default`.
 
 - Alloy corre como DaemonSet y cada Pod recoge solo los registros de su nodo.
+- **Solo por HTTPS:** por HTTP plano el navegador no ofrece `crypto.randomUUID` (solo existe en contextos seguros) y Backstage mostraba «Error in extension 'nav-content:app'» y perdía el menú lateral. `pruebas/backstage-ui.sh` abre Backstage en un Chromium real (Playwright en un contenedor), ejecuta la plantilla desde la interfaz, abre TechDocs y falla si hay errores de JavaScript.
