@@ -16,7 +16,7 @@ manifiesto con permisos excesivos) no tienen escenario. El módulo pesa el 15 % 
 - [x] CA-4. El simulador tiene los escenarios «dependencia vulnerable» y «manifiesto con permisos excesivos», y la puerta se detiene en los dos.
 - [x] CA-5. Quien solicita un cambio no puede aprobarlo (segregación de funciones), con la bitácora y la demo al día.
 - [x] CA-6. Los sitios de clientes corren con el sistema de archivos de solo lectura y la excepción KSV-0014 de los sitios se cierra.
-- [ ] CA-7. La plantilla de PR tiene la lista de verificación del código generado con IA y existe el modelo de amenazas del Hub.
+- [x] CA-7. La plantilla de PR tiene la lista de verificación del código generado con IA y existe el modelo de amenazas del Hub.
 
 ## Fuera de alcance
 

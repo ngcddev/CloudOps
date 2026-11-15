@@ -6,4 +6,4 @@
 - [x] T04 · Escenarios «dependencia vulnerable» y «manifiesto con permisos excesivos» — **Verifica:** el simulador se detiene en los dos.
 - [x] T05 · Segregación de funciones — **Verifica:** aprobar el propio cambio responde 403 y otra persona de la agencia sí puede.
 - [x] T06 · Sitios con sistema de archivos de solo lectura — **Verifica:** los sitios siguen sanos en el clúster y `trivy config` no marca KSV-0014 en ellos.
-- [ ] T07 · Código generado con IA y modelo de amenazas — **Verifica:** la plantilla de PR trae la lista y el modelo cubre los activos, amenazas y controles del Hub.
+- [x] T07 · Código generado con IA y modelo de amenazas — **Verifica:** la plantilla de PR trae la lista y el modelo cubre los activos, amenazas y controles del Hub.

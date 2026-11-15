@@ -3,6 +3,28 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Cierre del módulo 3 (spec 018)
+
+**Pedido:** completar al máximo el módulo 3 (DevSecOps y cadena de suministro), una brecha a la vez.
+
+| Tarea | Resultado |
+|---|---|
+| T01 · SAST y SCA en el CI | `analisis-estatico.sh`: bandit (media y alta), `trivy fs` sobre requirements y package-lock, y la imagen del frontend; corre como job `analisis` del CI. Se corrigieron los hallazgos reales (esquema de URL en las llamadas HTTP, paquetes de las imágenes con arreglo publicado) y Dependabot vigila pip, npm, Docker y Actions |
+| T02 · Registro de hallazgos y VEX | `hallazgos.py` cruza Trivy con `pipelines/hallazgos.yaml` (6 reglas con razón, justificación OpenVEX y revisión a 6 meses como máximo) y frena lo corregible, lo sin decisión y lo vencido; deja `hallazgos.md`, `hallazgos.json` y `vex.openvex.json` como artefacto del CI |
+| T03 · SBOM atestado | La puerta adjunta el SBOM como atestación firmada y `verificar` lo comprueba; el simulador confirma que pasa con la clave del Hub y falla con una ajena |
+| T04 · Escenarios nuevos | `dependencia` (flask 0.12) y `manifiesto` (Deployment con `privileged` y `hostNetwork`): la puerta se detiene en los dos, en «vulnerabilidades». Para esto la puerta ahora corre `trivy fs` sobre el repositorio del sitio |
+| T05 · Segregación de funciones | Quien pide un cambio no lo aprueba (403, intento en la bitácora como «denegar»); activa por defecto (`SEGREGACION_FUNCIONES`). Las demos y `promover.sh` piden con Sofía y aprueban con Camilo (`HUB_USUARIO_APROBADOR`) |
+| T06 · Solo lectura en los sitios | `readOnlyRootFilesystem` con emptyDir en `/tmp` y `/etc/nginx/conf.d` (web) o `/tmp` (backend) en la base, el consultorio, el chart y la plantilla del Hub; KSV-0014 deja de excepcionarse para los sitios y queda solo para la plataforma |
+| T07 · IA y amenazas | La plantilla de PR trae la lista de verificación del código generado con IA y `docs/modelo-de-amenazas.md` cubre activos, fronteras, 12 amenazas con su control y el riesgo que queda |
+
+**Verificado:** 770 pruebas del backend, ruff, simulador de la puerta (`limpia`, `dependencia`, `manifiesto`), `trivy config` sin hallazgos con las excepciones vigentes, Helm igual a Kustomize, nginx y el backend del consultorio arrancan en contenedores reales con `--read-only`, y el `dry-run` del servidor acepta los manifiestos.
+
+**Pendiente y no verificado:**
+- Los sitios de solo lectura **no se han desplegado en el clúster**: Argo CD los toma de `hub-gitops`, y se verán sanos cuando se publiquen por Git.
+- La imagen del Hub del clúster no incluye aún la segregación de funciones; hasta publicarla, el clúster sigue dejando aprobar el propio cambio.
+- La plataforma (Hub, Gitea, Grafana, Tempo, Backstage…) sigue con la excepción KSV-0014 hasta 2027-03-31.
+- Kyverno queda como mejora (decisión: la política de admisión actual cubre registro y etiqueta).
+
 ## 15 nov 2026 · Cierre del módulo 2 (spec 017)
 
 **Pedido:** cerrar las brechas del módulo 2 (Kubernetes, GitOps y Platform Engineering) que dejó el contraste con el temario, una por una y probadas en el clúster.
