@@ -1,5 +1,5 @@
 {
-  "fecha_utc": "2026-11-15T02:02:23.209843+00:00",
+  "fecha_utc": "2026-11-15T02:53:12.141738+00:00",
   "modelo": "qwen2.5:7b-instruct",
   "prompt": "v1",
   "k": 4,
@@ -28,7 +28,7 @@
     "alucinaciones": 0,
     "acierto_pct": 100.0,
     "recuperacion_pct": 100.0,
-    "latencia_media_s": 1.1
+    "latencia_media_s": 1.2
   },
   "resultados": [
     {
@@ -81,12 +81,12 @@
       "q": "¿Qué es el drift y quién lo corrige en GitOps?",
       "categoria": "acierto",
       "motivo": "",
-      "respuesta": "El drift es el cambio no intencionado que ocurre en el estado del clúster respecto a lo que está en Git. En GitOps, el controlador corrige el drift solo cuando está habilitado la función selfHeal, y solo para los cambios hechos a mano en el clúster.",
+      "respuesta": "El drift es el cambio no intencionado que ocurre en el estado del clúster. En GitOps, el controlador corrige el drift, pero solo los cambios hechos a mano en el clúster; con selfHeal activo, corrige solo estos cambios.",
       "fuentes": [
         "GitOps y Argo CD",
         "Rollout y rollback",
         "Módulo 2: Kubernetes, GitOps y Platform Engineering",
-        "Helm"
+        "Cómo lo hacemos en el CloudOps Client Hub"
       ],
       "mejor": 0.741,
       "recupero_la_seccion": true
@@ -231,7 +231,7 @@
       "q": "¿Cómo se hace el rollback en nuestro Hub?",
       "categoria": "acierto",
       "motivo": "",
-      "respuesta": "En nuestro Hub, el rollback se hace escribiendo un commit en el repositorio hub-gitops con la versión anterior y luego Argo CD lo despliega.",
+      "respuesta": "En nuestro Hub, el rollback se hace escribiendo un commit en el repositorio hub-gitops que vuelve a la versión estable. Luego, Argo CD despliega ese cambio.",
       "fuentes": [
         "Rollout y rollback",
         "Cómo lo hacemos en el CloudOps Client Hub",
@@ -328,7 +328,7 @@
         "Pod",
         "Kustomize"
       ],
-      "mejor": 0.681,
+      "mejor": 0.682,
       "recupero_la_seccion": null
     },
     {
@@ -385,8 +385,8 @@
       "fuentes": [
         "Clúster de aprendizaje y clúster de producción",
         "Namespaces",
-        "GitOps y Argo CD",
-        "Cómo lo hacemos en el CloudOps Client Hub"
+        "Cómo lo hacemos en el CloudOps Client Hub",
+        "GitOps y Argo CD"
       ],
       "mejor": 0.713,
       "recupero_la_seccion": null
