@@ -12,6 +12,10 @@ RUN npm run build
 
 # ---------- Etapa 2: servir con nginx (usuario no root) ----------
 FROM nginxinc/nginx-unprivileged:1.30-alpine
+# Trivy encontró en esta imagen una CVE crítica (brotli-libs) y 12 altas con arreglo ya publicado en paquetes de Alpine (curl, expat, libxslt, musl, zlib):
+# se actualizan los paquetes del sistema como root y se vuelve al usuario sin privilegios (spec 018, T01)
+USER root
+RUN apk upgrade --no-cache
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 USER 101
