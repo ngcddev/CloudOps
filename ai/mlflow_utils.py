@@ -71,7 +71,7 @@ def digest_modelo(url: str, nombre: str) -> str:
         # bandit B310: herramienta de desarrollo: la URL de Ollama la pone quien la corre
         with urllib.request.urlopen(f"{url}/api/tags", timeout=10) as respuesta:  # nosec B310
             for modelo in json.load(respuesta).get("models", []):
-                if nombre in (modelo.get("name"), modelo.get("model")):
+                if nombre.removesuffix(":latest") in (str(modelo.get("name")).removesuffix(":latest"), str(modelo.get("model")).removesuffix(":latest")):
                     return str(modelo.get("digest", "desconocido"))[:12]
     except Exception:  # noqa: BLE001
         pass
