@@ -83,3 +83,15 @@ def test_el_catalogo_guarda_lo_registrado_en_un_volumen_y_no_en_memoria():
     assert any(d["kind"] == "PersistentVolumeClaim" and d["metadata"]["name"] == "backstage-datos" for d in _yaml("deployment.yaml"))
     # SQLite en un volumen ReadWriteOnce: dos Pods a la vez se pisarían el archivo
     assert despliegue["spec"]["strategy"]["type"] == "Recreate"
+
+
+def test_backstage_se_sirve_solo_por_https():
+    """Por HTTP plano falta crypto.randomUUID y la interfaz pierde el menú lateral (lo mostró la prueba en un navegador real)."""
+    config = _config()
+    ingress = next(d for d in _yaml("ingress.yaml") if d["kind"] == "Ingress")
+
+    assert config["app"]["baseUrl"].startswith("https://") and config["backend"]["baseUrl"].startswith("https://")
+    assert config["backend"]["cors"]["origin"].startswith("https://")
+    assert ingress["metadata"]["annotations"]["traefik.ingress.kubernetes.io/router.entrypoints"] == "websecure"
+    assert ingress["spec"]["tls"][0]["hosts"] == ["backstage.hub.local"]
+

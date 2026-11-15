@@ -3,13 +3,13 @@
 # de abajo se releen de hub-gitops en cada arranque y lo registrado con la plantilla se conserva.
 app:
   title: Catálogo · Forja Digital
-  baseUrl: http://backstage.hub.local
+  baseUrl: https://backstage.hub.local
 backend:
-  baseUrl: http://backstage.hub.local
+  baseUrl: https://backstage.hub.local
   # No se redefine `listen`: la imagen ya trae `listen: ':7007'` (texto) y mezclarlo con un objeto
   # hace que Backstage se caiga al arrancar ("got string, wanted object").
   cors:
-    origin: http://backstage.hub.local
+    origin: https://backstage.hub.local
   # Por defecto Backstage manda `upgrade-insecure-requests`, que hace que el navegador pida todos los
   # archivos por https. Aquí se sirve por http (sin certificado), y la página queda en blanco con
   # ERR_CERT_AUTHORITY_INVALID. Con un certificado real se puede volver a activar.

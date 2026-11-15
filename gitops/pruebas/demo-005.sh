@@ -17,7 +17,7 @@ set -uo pipefail
 HUB="${HUB:-http://hub.local}"
 GITEA="${GITEA:-http://gitea.hub.local}"
 SITIO="${SITIO:-http://ferreteria.hub.local}"
-BACKSTAGE="${BACKSTAGE:-http://backstage.hub.local}"
+BACKSTAGE="${BACKSTAGE:-https://backstage.hub.local}"   # solo por HTTPS desde la spec 017 (certificado autofirmado: curl -k)
 HUB_USUARIO="${HUB_USUARIO:-sofia@forjadigital.test}"   # la técnica de la semilla; sus acciones salen a su nombre
 : "${HUB_PASSWORD:?Falta HUB_PASSWORD (la contraseña de los usuarios sembrados; ver el encabezado)}"
 VERSION_DESTINO="${VERSION_DESTINO:-v1.1}"
@@ -102,8 +102,8 @@ autor="$(echo "$fila" | campo last_author)"
 
 echo "== 7. Catálogo con los 3 clientes (CA-6, opcional si Backstage está apagado) =="
 # Solo cuenta como "responde" un 200: si Backstage no está, Traefik contesta 404 y curl igual sale con éxito
-if [ "$(curl -s -m 10 -o /dev/null -w '%{http_code}' "${BACKSTAGE}/api/catalog/entities?filter=kind=component")" = "200" ]; then
-  n="$(curl -s -m 10 "${BACKSTAGE}/api/catalog/entities?filter=kind=component" | grep -o '"kind":"Component"' | wc -l | tr -d ' ')"
+if [ "$(curl -sk -m 10 -o /dev/null -w '%{http_code}' "${BACKSTAGE}/api/catalog/entities?filter=kind=component")" = "200" ]; then
+  n="$(curl -sk -m 10 "${BACKSTAGE}/api/catalog/entities?filter=kind=component" | grep -o '"kind":"Component"' | wc -l | tr -d ' ')"
   [ "$n" -ge 3 ] && ok "el catálogo lista ${n} componentes" || falla "el catálogo lista ${n} componentes (se esperaban 3)"
 else
   echo "   --   Backstage no responde (apagado): /agencia/servicios cumple el rol"
