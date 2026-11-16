@@ -62,9 +62,11 @@ Hay dos lugares con manifiestos y cada cosa tiene **un solo dueño y un solo sen
 
 | Quién escribe | Qué | Cómo llega a `hub-gitops` |
 |---|---|---|
-| El equipo | `clients/_base`, el resto de cada cliente (p. ej. `backend.yaml`), `observability/`, `hub/`, `platform/backstage/` | `bash gitops/sincronizar-hub-gitops.sh` (la carpeta destino se reemplaza; solo lo que ya se mezcló en `origin/dev` u `origin/main`, con el árbol limpio) |
+| El equipo | `clients/_base`, el resto de cada cliente (p. ej. `backend.yaml`), `observability/`, `hub/`, `platform/backstage/`, `platform/mlops/`, `platform/respaldo/` | `bash gitops/sincronizar-hub-gitops.sh` (la carpeta destino se reemplaza; solo lo que ya se mezcló en `origin/dev` u `origin/main`, con el árbol limpio) |
 | El Hub (API de Gitea) | `clients/<cliente>/kustomization.yaml` (la versión: `images.newTag`) y `catalog-info.yaml`; los archivos de un cliente nuevo al dar de alta el sitio | Los escribe el Hub al aprobar, al hacer rollback y al provisionar; **la promoción nunca los pisa** |
 | Nadie (arranque único) | `platform/argocd`, `platform/gitea`, `platform/k3s`, `platform/namespaces.yaml` | `kubectl apply` una vez desde el repositorio principal; no se copian a `hub-gitops` (`--limpiar` retira las copias viejas) |
+
+**Excepción de arranque (auditoría K8-06):** Argo CD y Gitea no pueden reconciliarse por Argo CD: Argo CD no se administra a sí mismo y Gitea guarda el repositorio que Argo CD lee (si Argo CD lo reiniciara con un error en Git, perdería su propia fuente). Por eso son lo único de la plataforma que se aplica a mano, una vez. Todo lo demás (el Hub, la observabilidad, Backstage, MLflow y los respaldos) entra por Git con una Application cada uno (`platform/argocd/applications/`), con `selfHeal` y sin `prune`: un cambio manual se revierte y un borrado por error no se lleva un volumen.
 
 ```bash
 bash gitops/sincronizar-hub-gitops.sh --simular     # qué cambiaría en hub-gitops; no sube nada
@@ -362,9 +364,9 @@ clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyve
 
 ## Respaldo de la plataforma, MLflow y Backstage (spec 016)
 
-- `kubectl apply -k platform/respaldo` crea los CronJob de Gitea y Argo CD (02:30 y 02:40 UTC, últimos 5). `pruebas/respaldo-plataforma.sh` los lanza, los copia fuera del nodo y comprueba que hub-gitops se puede clonar del dump.
-- `kubectl apply -f platform/namespaces.yaml && kubectl apply -k platform/mlops` despliega MLflow en el namespace `mlops` (imagen: `bash apps/publicar-imagenes.sh mlflow`); interfaz en `mlflow.hub.local`.
-- `kubectl apply -k platform/backstage` despliega Backstage (≈ 400 MiB); el alta de un sitio añade su `catalog-info.yaml` y aparece en el catálogo.
+- `platform/respaldo` (Application `plataforma-respaldo`; antes `kubectl apply -k platform/respaldo`) crea los CronJob de Gitea y Argo CD (02:30 y 02:40 UTC, últimos 5). `pruebas/respaldo-plataforma.sh` los lanza, los copia fuera del nodo y comprueba que hub-gitops se puede clonar del dump.
+- `kubectl apply -f platform/namespaces.yaml` y la Application `plataforma-mlops` (antes `kubectl apply -k platform/mlops`) despliegan MLflow en el namespace `mlops` (imagen: `bash apps/publicar-imagenes.sh mlflow`); interfaz en `mlflow.hub.local`.
+- La Application `plataforma-backstage` (antes `kubectl apply -k platform/backstage`) despliega Backstage (≈ 400 MiB); el alta de un sitio añade su `catalog-info.yaml` y aparece en el catálogo.
 - Runner de Gitea Actions: `pipelines/README.md`. Con el runner encendido, `demo/preparar-colegio.sh` vuelve a subir las etiquetas del colegio y la puerta corre sola.
 
 ## Drift y selfHeal (spec 017)

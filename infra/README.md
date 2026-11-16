@@ -4,7 +4,7 @@ Esta carpeta contiene la configuración OpenTofu/Terraform para administrar el p
 
 ## Alcance
 
-OpenTofu/Terraform crea y administra los archivos de configuración del cliente en Gitea y la `Application` que los entrega a Argo CD. Argo CD sigue siendo responsable de reconciliar los recursos Kubernetes del cliente, como el namespace, las cuotas, los límites, la red y el sitio.
+OpenTofu/Terraform crea y administra los archivos de configuración del cliente en Gitea (su overlay en `hub-gitops`). La `Application` que los entrega a Argo CD la crea el ApplicationSet `clientes` en cuanto existe el overlay, en el AppProject `clientes`; por defecto el módulo no la crea (`crear_application = false`) para que no haya dos creadores del mismo recurso, y si se activa usa el mismo proyecto confinado, nunca `default` (auditoría IA-01). Los tres clientes anteriores (restaurante, ferretería y consultorio) conservan su Application manual y no están en el estado de OpenTofu. Argo CD sigue siendo responsable de reconciliar los recursos Kubernetes del cliente, como el namespace, las cuotas, los límites, la red y el sitio.
 
 Esta configuración no crea ni administra las máquinas, el clúster, la red del laboratorio ni los componentes compartidos de la plataforma. Tampoco administra Deployments, Services o Ingress directamente.
 

@@ -75,8 +75,26 @@ services:
       - ./seed:/seed:ro
       - ./gitops:/gitops:ro
       - ./pipelines:/pipelines:ro
-      # Raíz del repositorio de solo lectura: las pruebas de los runbooks y de las alertas (spec 019) comprueban que lo que citan existe
-      - ./:/repo:ro
+      # Carpetas del repositorio de solo lectura, una por una: las pruebas de los runbooks y de las alertas (spec 019) comprueban que lo que citan existe.
+      # NO se monta la raíz entera: ahí viven `.env` y `.env.cluster` (secretos del entorno y de la demo) y el proceso que recibe tráfico no debe poder leerlos
+      # (auditoría CT-02). Si una prueba necesita otra carpeta, se añade aquí a propósito.
+      - ./ai:/repo/ai:ro
+      - ./apps:/repo/apps:ro
+      - ./backend:/repo/backend:ro
+      - ./constitution:/repo/constitution:ro
+      - ./demo:/repo/demo:ro
+      - ./docs:/repo/docs:ro
+      - ./gitops:/repo/gitops:ro
+      - ./infra:/repo/infra:ro
+      - ./observability:/repo/observability:ro
+      - ./pipelines:/repo/pipelines:ro
+      - ./runbooks:/repo/runbooks:ro
+      - ./seed:/repo/seed:ro
+      - ./specs:/repo/specs:ro
+      - ./voz:/repo/voz:ro
+      - ./CLAUDE.md:/repo/CLAUDE.md:ro
+      - ./README.md:/repo/README.md:ro
+      - ./docker-compose.yml:/repo/docker-compose.yml:ro
     # Solo en esta máquina (127.0.0.1); la web y el proxy de Vite llegan por localhost (auditoría CT-01)
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"

@@ -95,7 +95,9 @@ prueba el sitio de dos imágenes.
 - **El runner corre como root y con el socket de Docker montado.** Es una excepción consciente a la regla de
   «contenedores sin root» (necesita lanzar contenedores hermanos con el Docker del equipo) y equivale a dar root del
   equipo a quien pueda cambiar un workflow. Por eso va en un equipo de desarrollo aparte del PC A, solo para la
-  agencia. Sus propios límites son `mem_limit` y `cpus` del compose; las herramientas que lanza no los heredan.
+  agencia. Sus propios límites son `mem_limit` y `cpus` del compose; las herramientas que lanza no los heredan. Está endurecido con
+  `cap_drop: [ALL]` y `no-new-privileges` (sin capacidades de Linux ni forma de ganar privilegios nuevos), pero el socket de Docker sigue
+  siendo root del equipo: un proxy de solo lectura del socket o Docker sin root quedan como mejora (auditoría CT-03).
 - **Credenciales en la lista de procesos.** La contraseña del registro (`--dest-creds`, `--registry-password`) y el
   token del Hub (`curl -H`) viajan como argumentos mientras corre cada herramienta: alguien con `ps` o
   `docker inspect` en el runner las lee. Mejora futura: archivos de autenticación temporales.
