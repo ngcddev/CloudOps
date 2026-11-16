@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import telemetry
 from app.config import settings
+from app.db import soltar_conexion
 from app.integrations import ollama
 from app.models.ai_query import AiQuery
 from app.models.user import User
@@ -49,6 +50,7 @@ def ask(db: Session, user: User, question: str, gate: GateModel | None = None, t
     """Procesa la pregunta y devuelve la fila registrada (hace commit)."""
     # Spec 020: una clave pegada en la pregunta no se guarda ni viaja al modelo; se tapa antes de cualquier otra cosa
     question, secretos = redactar(question)
+    user_id = user.id   # antes de soltar la conexión: ese paso caduca los objetos cargados
     gate = gate or load_model()
     umbral = settings.assistant_gate_threshold or None
     tracer = telemetry.tracer()
@@ -74,6 +76,8 @@ def ask(db: Session, user: User, question: str, gate: GateModel | None = None, t
         else:
             despierta = True
             secciones = [sec.titulo for sec in contexto]
+            # Ollama puede tardar hasta un minuto: sin una conexión del pool tomada mientras se espera (auditoría BE-02)
+            soltar_conexion(db)
             inicio = time.monotonic()
             with tracer.start_as_current_span("assistant.llm") as span:
                 texto = ollama.chat(assistant_context.mensaje_de_sistema(contexto), question, transport=transport)
@@ -83,7 +87,7 @@ def ask(db: Session, user: User, question: str, gate: GateModel | None = None, t
             respuesta = texto or RESPUESTA_IA_NO_DISPONIBLE
 
     registro = AiQuery(
-        user_id=user.id,
+        user_id=user_id,
         question=question,
         gate_label=decision.label,
         p_fuera_de_tema=decision.p_fuera_de_tema,

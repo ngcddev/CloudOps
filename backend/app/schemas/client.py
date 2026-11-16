@@ -159,7 +159,7 @@ class ServiceOut(BaseModel):
 
 class ProjectCreate(BaseModel):
     name: str = Field(max_length=200)
-    description: str | None = Field(default=None)
+    description: str | None = Field(default=None, max_length=2000)
 
     @field_validator("name")
     @classmethod

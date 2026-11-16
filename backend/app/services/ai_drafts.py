@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.db import soltar_conexion
 from app.integrations import ollama
 from app.models.ai_draft import AiDraft
 from app.models.incident import Incident
@@ -197,13 +198,17 @@ def redactar(h: Hechos, kind: str, transport=None) -> dict:
 def generar(db: Session, incident: Incident, kinds: tuple[str, ...] = KINDS, transport=None) -> list[AiDraft]:
     """Genera los borradores pedidos; los borradores anteriores sin aprobar del mismo tipo se descartan. Hace commit."""
     h = hechos_de(incident)
+    incident_id = incident.id   # antes de soltar la conexión: ese paso caduca los objetos cargados
+    # Primero se redacta todo (cada texto espera a Ollama hasta un minuto) sin una conexión tomada, y después se escribe (auditoría BE-02)
+    soltar_conexion(db)
+    redactados = {kind: redactar(h, kind, transport=transport) for kind in kinds}
     nuevos: list[AiDraft] = []
     for kind in kinds:
-        for anterior in db.scalars(select(AiDraft).where(AiDraft.incident_id == incident.id, AiDraft.kind == kind, AiDraft.status == "borrador_ia")):
+        for anterior in db.scalars(select(AiDraft).where(AiDraft.incident_id == incident_id, AiDraft.kind == kind, AiDraft.status == "borrador_ia")):
             anterior.status = "descartado"
-        r = redactar(h, kind, transport=transport)
+        r = redactados[kind]
         borrador = AiDraft(
-            incident_id=incident.id, kind=kind, status="borrador_ia", source=r["source"], model=r["model"], prompt_version=r["prompt_version"],
+            incident_id=incident_id, kind=kind, status="borrador_ia", source=r["source"], model=r["model"], prompt_version=r["prompt_version"],
             generated_text=r["texto"], checks=r["checks"], latency_ms=r["latency_ms"],
         )
         db.add(borrador)

@@ -14,6 +14,7 @@ from app import telemetry
 from app.db import SessionLocal, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
+from app.limite_cuerpo import LimiteDeCuerpo
 from app.routers import (
     ai_drafts,
     assistant,
@@ -58,6 +59,12 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
+# Tope del cuerpo de las peticiones (auditoría BE-05): lo general, el informe del pipeline y el audio de voz tienen su propio tamaño
+app.add_middleware(
+    LimiteDeCuerpo,
+    por_defecto=settings.body_limit_bytes,
+    rutas={"/api/pipeline-events": settings.pipeline_body_limit_bytes, "/api/assistant/voice/transcribe": settings.voice_body_limit_bytes},
+)
 app.include_router(auth.router)
 app.include_router(audit_logs.router)
 app.include_router(catalog.router)

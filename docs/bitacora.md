@@ -3,6 +3,23 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Pool de conexiones y topes de tamaño (spec 022, T07; auditoría BE-02 y BE-05)
+
+**Pedido:** seguir con el orden de corrección de `docs/auditoria-2026-11.md`. **BE-02:** el motor de PostgreSQL declara el pool (10 + 5, espera de 10 s en vez de 30), `statement_timeout` de 15 s y
+`idle_in_transaction_session_timeout` de 5 min, todo configurable por variables de entorno (SQLite, que usan las pruebas y los scripts de `ai/`, no los recibe). `ask` del asistente y `generar` de
+borradores devuelven la conexión al pool antes de esperar a Ollama (`soltar_conexion`), así que esperar un minuto ya no deja una conexión tomada. **BE-05:** los textos libres de tickets, horas, cambios y
+proyectos tienen `max_length`, y un middleware responde 413 cuando el cuerpo pasa de 1 MB (8 MB en el informe del pipeline, 2,1 MB en el audio de voz), antes de leerlo si el `Content-Length` ya lo dice y
+cortando la lectura si llega por trozos sin declarar su tamaño.
+
+**Decisión:** el tiempo de transacciones inactivas no es 1 minuto, como sugería la auditoría, sino 5: el diagnóstico de un incidente (Prometheus, Loki y Ollama) sostiene la transacción unos 75 s y un
+RAG con Ollama colgado podía pasar de 2 minutos; con 60 s la base habría cortado peticiones que hoy se resuelven. Queda como red de seguridad contra lo que se olvide de cerrar. Los 8 MB del pipeline
+son 13 veces el informe real (unos 600 KB).
+
+**Verificado:** 959 pruebas pasadas y 3 omitidas; contra el código anterior fallan las 6 pruebas nuevas que debían fallar; contra **PostgreSQL 16 real** el `statement_timeout` cancela una sentencia de 3 s a
+los 0,5 s, la base corta una transacción inactiva, con el pool lleno la tercera conexión falla a 1 s y `soltar_conexion` la libera. **No verificado:** carga real con muchas peticiones lentas a la vez.
+**Pendiente:** `diagnosticar`, `approve` y `provision` siguen sosteniendo la conexión durante sus llamadas a Prometheus, Loki y Gitea (acotadas por el tiempo de transacciones inactivas): sus objetos se
+usan después de la llamada, así que soltarla ahí pide reordenar el código con más cuidado.
+
 ## 15 nov 2026 · Índices de claves foráneas y restricciones únicas (spec 022, T06; auditoría BD-01 y BD-02)
 
 **Pedido:** seguir con el orden de corrección de `docs/auditoria-2026-11.md`. La migración 0015 indexa las claves foráneas de tickets, eventos, horas, cambios, despliegues, servicios, proyectos
