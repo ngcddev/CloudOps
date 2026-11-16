@@ -15,9 +15,9 @@ SOLO_MIDE=0; [ "${2:-}" = "--estado" ] && SOLO_MIDE=1
 OTRO="restaurante"; [ "$CLIENTE" = "restaurante" ] && OTRO="ferreteria"   # otro cliente: nunca el mismo
 
 kubectl -n "$NS" delete pod "$POD" --ignore-not-found --now >/dev/null 2>&1
-# El Pod cumple el perfil `restricted` del namespace: sin root, sin privilegios.
+# El Pod cumple el perfil `restricted` del namespace (sin root, sin privilegios) y pide muy poco: el plan Básico (consultorio) deja solo 250m de CPU y un Pod de prueba con el límite por defecto no cabe.
 kubectl -n "$NS" run "$POD" --image="$IMAGEN" --restart=Never \
-  --overrides='{"spec":{"securityContext":{"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}},"containers":[{"name":"'"$POD"'","image":"'"$IMAGEN"'","command":["sleep","600"],"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}}]}}' >/dev/null
+  --overrides='{"spec":{"securityContext":{"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}},"containers":[{"name":"'"$POD"'","image":"'"$IMAGEN"'","command":["sleep","600"],"resources":{"requests":{"cpu":"5m","memory":"8Mi"},"limits":{"cpu":"20m","memory":"16Mi"}},"securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}}]}}' >/dev/null
 kubectl -n "$NS" wait --for=condition=Ready "pod/$POD" --timeout=120s >/dev/null || { echo "El Pod de prueba no arrancó"; exit 2; }
 trap 'kubectl -n "$NS" delete pod "$POD" --now >/dev/null 2>&1' EXIT
 
