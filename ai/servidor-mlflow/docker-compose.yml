@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     # Límite de memoria: el PC B ya carga Ollama (convenciones, Contenedores)
     mem_limit: 768m
+    cpus: 1.0
     environment:
       MLFLOW_ALLOWED_HOSTS: ${MLFLOW_ALLOWED_HOSTS:-localhost:5000,127.0.0.1:5000,mlflow:5000,host.docker.internal:5000}
     # Solo en esta máquina (127.0.0.1): MLflow no pide autenticación y quien llegue podría registrar un modelo y mover el alias `production` de la compuerta
@@ -31,6 +32,7 @@ services:
     image: hub/mlflow:3.18.0
     restart: unless-stopped
     mem_limit: 512m
+    cpus: 0.5
     depends_on:
       mlflow:
         condition: service_healthy

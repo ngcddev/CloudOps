@@ -1,5 +1,12 @@
-# Lo que no entra a la imagen de la API.
+# Lo que no entra a la imagen de la API (auditoría CT-12). `tests/` sí entra: la etapa `dev` corre pytest con ellas.
 __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+.env
+.env.*
+!.env.example
+.git
+*.md
+docker-compose*
+Dockerfile*
