@@ -15,3 +15,4 @@ configMapGenerator:
     files:
       - reglas/sitios.yml
       - reglas/presupuesto.yml
+      - reglas/plataforma.yml

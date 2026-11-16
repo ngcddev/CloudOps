@@ -66,6 +66,31 @@ scrape_configs:
         regex: "cliente-.*|hub|monitoring"
         action: keep
 
+  # El propio Hub (spec 022, T10; auditoría OB-01): Blackbox sondea el API (/health: sin base no está sano) y la web por dentro del clúster. Va en un
+  # job aparte de `sitios` para que SitioCaido, que abre incidentes en el Hub, no se dispare por el Hub ni dependa de él. El timeout del sondeo lo
+  # fija Blackbox (4 s); `scrape_timeout` solo debe ser mayor.
+  - job_name: hub
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets:
+          - http://api.hub.svc.cluster.local:8000/health
+          - http://web.hub.svc.cluster.local/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      # El componente sale del nombre del Service: api, web
+      - source_labels: [__param_target]
+        regex: "http://([^.]+)\\..*"
+        target_label: componente
+      - target_label: __address__
+        replacement: blackbox.monitoring.svc:9115
+
   # Peticiones y errores por sitio que ve Traefik (T27); los usa la spec 010
   - job_name: traefik
     static_configs:

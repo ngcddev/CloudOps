@@ -5,6 +5,7 @@
 #   3. promtool test rules    con los casos de observability/pruebas/reglas_test.yml
 #   4. amtool check-config    sobre alertmanager.yml (si ya existe)
 #   4b. promtool test rules   con observability/pruebas/presupuesto_test.yml (alertas de presupuesto de error, spec 016)
+#   4c. promtool test rules  con observability/pruebas/plataforma_test.yml y amtool config routes test (alertas de la plataforma, spec 022)
 #   5. promtool test rules    con observability/pruebas/tablero_test.yml (cuentas del SLI y del presupuesto de error)
 #   6. promtool check rules   sobre las expresiones del tablero de Grafana (si hay Python)
 #   7. kubectl kustomize      de observability/ (que todos los manifiestos armen)
@@ -58,6 +59,7 @@ paso "las reglas de alerta son válidas" promtool check rules "${REGLAS[@]}"
 paso "SitioCaido pasa sus pruebas" promtool test rules "${RAIZ_OBS}/pruebas/reglas_test.yml"
 paso "las alertas de presupuesto de error pasan sus pruebas" promtool test rules "${RAIZ_OBS}/pruebas/presupuesto_test.yml"
 paso "el tablero calcula bien el SLI y el presupuesto de error" promtool test rules "${RAIZ_OBS}/pruebas/tablero_test.yml"
+paso "las alertas de la plataforma (Hub, monitoreo, OOM y reinicios) pasan sus pruebas" promtool test rules "${RAIZ_OBS}/pruebas/plataforma_test.yml"
 if command -v python >/dev/null 2>&1; then
   # Las expresiones del tablero salen como reglas temporales para que promtool revise su sintaxis
   python "$OBS/pruebas/expresiones_tablero.py" > "$OBS/pruebas/.tablero-reglas.yml" 2>/dev/null
@@ -66,8 +68,17 @@ if command -v python >/dev/null 2>&1; then
 else
   echo "(sin Python: no se revisaron las expresiones del tablero)"
 fi
+rutas_de_alertmanager() {
+  # Las alertas de la plataforma (spec 022, T10) van a solo-ver y no al Hub; SitioCaido sigue yendo al Hub
+  local config="${RAIZ_OBS}/alertmanager/alertmanager.yml" alerta
+  for alerta in HubCaido MonitoreoCiego Watchdog ContenedorSinMemoria ContenedorEnBucle; do
+    amtool config routes test --config.file="$config" --verify.receivers=solo-ver destino=plataforma alertname="$alerta" >/dev/null || return 1
+  done
+  amtool config routes test --config.file="$config" --verify.receivers=hub alertname=SitioCaido namespace=cliente-ferreteria >/dev/null
+}
 if [ -f "$OBS/alertmanager/alertmanager.yml" ]; then
   paso "alertmanager.yml es válido" amtool check-config "${RAIZ_OBS}/alertmanager/alertmanager.yml"
+  paso "las alertas de la plataforma van a solo-ver y SitioCaido sigue yendo al Hub" rutas_de_alertmanager
 fi
 if command -v kubectl >/dev/null 2>&1; then
   paso "observability/ arma con kustomize" bash -c "kubectl kustomize '$OBS_HOST' >/dev/null"

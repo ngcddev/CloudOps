@@ -3,6 +3,27 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Alertas de la plataforma (spec 022, T10; auditoría OB-01, OB-02 y OB-03)
+
+**Pedido:** el Hub no tenía sondeo ni alerta, `SitioCaido` no se dispara si Blackbox cae (sus series dejan de existir) y no había alertas de OOM ni reinicios. Prometheus sondea ahora el API (`/health`, que
+da 503 sin base) y la web del Hub en un job `hub` aparte de `sitios`, para que `SitioCaido` (que abre incidentes en el Hub) no se dispare por el Hub ni dependa de él. Cinco alertas nuevas en
+`reglas/plataforma.yml`: `HubCaido` (1 minuto sin responder), `MonitoreoCiego` (`up == 0` o `absent` en los sondeos), `Watchdog` (latido, siempre activa), `ContenedorSinMemoria` (un OOM nuevo) y
+`ContenedorEnBucle` (3 arranques del mismo contenedor en 15 minutos). Tres runbooks nuevos (`caida-del-hub`, `monitoreo-ciego`, `contenedor-en-bucle`) y el índice al día.
+
+**Decisiones:** (1) todas llevan `destino: plataforma` y Alertmanager las manda a `solo-ver`, **no al Hub**: abriría incidentes de sitio por algo que no es un sitio, y `HubCaido` no puede avisar a quien está
+caído. Una prueba comprueba que ninguna alerta de ese archivo se quede sin ese destino. (2) Sin `kube-state-metrics` no hay contador de reinicios: cAdvisor crea una serie nueva (con otro `id`) en cada arranque,
+y lo comprobé en el Prometheus real, así que `ContenedorEnBucle` cuenta contenedores distintos arrancados hace menos de 15 minutos en vez de usar `changes()`, que no habría visto nada. (3) Quedan fuera las
+alertas de disco/PVC y de respaldo fallido: piden `kube-state-metrics` o el scrape del kubelet, componentes que hoy no hay.
+
+**Límite que hay que decir claro:** estas alertas se ven en Alertmanager y en Prometheus, pero **no avisan a nadie**. El laboratorio no tiene un canal externo (principio 2) y `Watchdog` es una comprobación
+manual hasta que haya uno. Dato del clúster, no de esta tarea: cAdvisor ya acumula OOM reales en `monitoring` (7) y `hub` (5), y en los clientes (1 a 2 cada uno); la alerta solo dispara con uno nuevo.
+
+**Verificado:** `validar.sh` en verde (10 pasos, con `promtool test rules` de cada regla y `amtool config routes test`); 981 pruebas del backend pasadas y 4 omitidas; `ruff` sin hallazgos; las 5 expresiones
+ejecutadas contra el **Prometheus real del clúster** (válidas; sin falsas alarmas); con un **Alertmanager real** y la configuración del repositorio, `Watchdog` y `HubCaido` llegan a `solo-ver` y
+`SitioCaido` al Hub. **No verificado:** `HubCaido` con sondeos reales (el job `hub` aún no existe en ese Prometheus); que Blackbox alcance el Hub en el clúster; `ContenedorEnBucle` con un bucle real.
+**Pendiente:** promover `observability/` a hub-gitops con `sincronizar-hub-gitops.sh` (Argo CD lo aplica). Al promover, `MonitoreoCiego` puede verse un instante porque el job `hub` aún no existe; su `for: 2m`
+da margen a que Prometheus recargue.
+
 ## 15 nov 2026 · La liveness de la API no depende de la base (spec 022, T09; auditoría K8-03)
 
 **Pedido:** la liveness y la readiness de la API usaban `/health`, que ejecuta `SELECT 1`. Si PostgreSQL se reiniciaba, el kubelet mataba la API cada ~45 s (CrashLoopBackOff) mucho después de que la
