@@ -200,7 +200,7 @@ def approve_change_request(
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     # Las llamadas a Gitea tardan hasta 10 s cada una: se copia lo que hace falta y se suelta la conexión a la base mientras se espera (auditoría BE-02)
-    namespace, to_version, approver_id, approver_name, approver_email = change.service.namespace, change.to_version, approver.id, approver.name, approver.email
+    namespace, to_version, approver_name, approver_email = change.service.namespace, change.to_version, approver.name, approver.email
     soltar_conexion(db)
     try:
         sha = publish_version(gitea, namespace, to_version, change_id, approver_name, approver_email)
