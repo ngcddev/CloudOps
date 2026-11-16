@@ -3,6 +3,12 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · El namespace monitoring niega la entrada (spec 022, T17; auditoría K8-02, cierre)
+
+**Pedido:** Loki (los logs de todos los clientes), Prometheus, Alertmanager y Tempo no piden autenticación y cualquier Pod del clúster los alcanzaba. **Qué se hizo:** `default-deny-ingress` más una política que deja entrar solo a los Pods del propio namespace (Prometheus, Grafana, Alloy, Blackbox y Alertmanager hablan entre sí), a Traefik hacia Grafana (puerto 3000) y al namespace `hub` hacia Prometheus 9090, Loki 3100 y el receptor OTLP de Tempo 4318 (lo que el Hub usa de verdad; lo medí con `grep` de las URL en los manifiestos). Va en `observability/networkpolicy.yaml`, que Argo CD aplica.
+**Cómo se comprobó:** `observability/pruebas/entrada.sh` falló en 12 comprobaciones antes y pasa después. Se puso a mano primero para probar sin riesgo, y se comprobó que la pila sigue viva: ningún blanco caído, Prometheus ve a Alertmanager, Loki recibe registros de clientes, Tempo recibe trazas del Hub (hizo falta generar tráfico: `/livez` no se traza), el Hub consulta Prometheus y Grafana responde 200 por Traefik.
+**Con esto K8-02 queda cerrado** para clientes (T14), MLflow (T15), Gitea (T16) y monitoring (T17). **No verificado:** que Argo CD adopte las políticas al promover, y una alerta real llegando al Hub. **Sigue abierto:** la salida del namespace `hub`. **Volver atrás:** `kubectl delete networkpolicy default-deny-ingress permitir-propio-traefik-y-hub -n monitoring` y quitarlo del `kustomization.yaml`.
+
 ## 16 nov 2026 · Gitea solo acepta entrada de la plataforma (spec 022, T16; auditoría K8-02)
 
 **Pedido:** Gitea guarda el código, los manifiestos y las imágenes de todos los clientes y cualquier Pod del clúster llegaba a él. **Qué se hizo:** una NetworkPolicy en `gitea` que solo deja entrar a Traefik (`gitea.hub.local`: runner, personas y el kubelet), Argo CD, el namespace `hub` (el Hub escribe como `hub-bot`, Backstage lee el catálogo) y los Pods del propio namespace (el respaldo).
