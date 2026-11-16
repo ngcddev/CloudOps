@@ -142,7 +142,7 @@ def add_check(
         # En un punto de guardado: si dos reintentos del pipeline llegan a la vez, el índice único de la base deja pasar a uno (auditoría BD-02).
         # El control se crea dentro del bloque: así no hay nada a medias en la colección de la corrida cuando el punto de guardado vacía la sesión.
         with db.begin_nested():
-            check = SecurityCheck(run=run, step=step, image=image, status=status, summary=summary, report=report)
+            check = SecurityCheck(run=run, step=step, image=image, status=status, summary=summary, report=report, has_report=report is not None)
             db.add(check)
             db.flush()
     except IntegrityError:

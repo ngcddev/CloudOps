@@ -1,7 +1,7 @@
 # Resultado de un control de la puerta de seguridad, con su evidencia (tabla security_checks, spec 006).
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text, func, text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, String, Text, false, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -22,11 +22,10 @@ class SecurityCheck(Base):
     status: Mapped[str] = mapped_column(String(10), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
     # Reporte completo del control (Gitleaks, Trivy, SBOM...): la evidencia que se muestra en el Hub
-    report: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
+    # Diferido: no se trae de la base salvo que alguien lo pida (la lista de corridas no lo necesita; auditoría BD-03)
+    report: Mapped[dict | list | None] = mapped_column(JSON, nullable=True, deferred=True)
+    # Si el control guardó reporte: se calcula al registrarlo para que la lista no tenga que cargar el JSON de Trivy o del SBOM solo para saberlo
+    has_report: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     run = relationship("SecurityRun", back_populates="checks")
-
-    @property
-    def has_report(self) -> bool:
-        return self.report is not None

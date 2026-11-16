@@ -26,6 +26,7 @@ from app.services.gitops_publish import (
     kustomization_path,
     publish_version,
 )
+from app.paginacion import Pagina, pagina
 
 router = APIRouter(prefix="/api/change-requests", tags=["change-requests"], dependencies=[Depends(require_agency)])
 
@@ -53,6 +54,7 @@ def list_change_requests(
     status_filter: str | None = Query(default=None, alias="status"),
     service_id: int | None = Query(default=None),
     ticket_id: int | None = Query(default=None),
+    page: Pagina = Depends(pagina),
     db: Session = Depends(get_db),
 ):
     """Bandeja de solicitudes de cambio, de la más reciente a la más antigua."""
@@ -68,7 +70,7 @@ def list_change_requests(
         query = query.where(ChangeRequest.service_id == service_id)
     if ticket_id is not None:
         query = query.where(ChangeRequest.ticket_id == ticket_id)
-    return db.scalars(query.order_by(ChangeRequest.id.desc())).all()
+    return db.scalars(query.order_by(ChangeRequest.id.desc()).limit(page.limit).offset(page.offset)).all()
 
 
 @router.post("", response_model=ChangeRequestOut, status_code=status.HTTP_201_CREATED)

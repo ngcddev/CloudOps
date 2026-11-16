@@ -286,3 +286,34 @@ def test_reindexar_sin_ollama_responde_503(agency, monkeypatch):
     r = agency.post("/api/assistant/reindex")
 
     assert r.status_code == 503 and "Ollama" in r.json()["detail"]
+
+
+# ---------- Carreras al reindexar (auditoría BE-07, spec 022 T19) ----------
+
+
+def test_si_el_indice_ya_esta_vigente_recuperar_no_lo_reescribe(db, falso):
+    knowledge.indexar(db, transport=falso)
+    ids = sorted(c.id for c in db.scalars(select(KbChunk)))
+
+    # Con `solo_si_vencido` (lo que usa `recuperar` en medio de una pregunta) un índice vigente no se vuelve a escribir: quien esperaba el candado de otro no lo repite
+    knowledge.indexar(db, transport=falso, solo_si_vencido=True)
+
+    assert sorted(c.id for c in db.scalars(select(KbChunk))) == ids
+
+
+def test_una_carrera_de_unicos_deja_el_indice_intacto_y_cae_a_la_lexica(db, falso, monkeypatch):
+    from sqlalchemy.exc import IntegrityError
+
+    knowledge.indexar(db, transport=falso)
+    antes = [(c.id, c.text) for c in db.scalars(select(KbChunk))]
+    db.scalar(select(KbDocument)).content_hash = "viejo"   # índice vencido
+    db.commit()
+
+    def choque(*args, **kwargs):
+        raise IntegrityError("INSERT", {}, Exception("uq_kb_chunks_document_position"))
+
+    monkeypatch.setattr(knowledge, "_reemplazar_indice", choque)
+
+    assert knowledge.indexar(db, transport=falso, solo_si_vencido=True) is None
+    assert knowledge.recuperar(db, "¿cómo apruebo un cambio?", transport=falso) is None   # el asistente responde con la recuperación léxica, no con un 500
+    assert [(c.id, c.text) for c in db.scalars(select(KbChunk))] == antes

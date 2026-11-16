@@ -46,14 +46,15 @@ def dashboard_agency(
     client_kpis = []
     for client in clients:
         service = client.main_service
+        disponibilidad = kpi.disponibilidad_del_mes(db, client.id, month)   # una vez por cliente: cumple_objetivo la reutiliza (auditoría BE-03)
         client_kpis.append(
             ClientKpi(
                 client_id=client.id,
                 client_name=client.name,
                 service_name=service.name if service is not None else None,
                 service_status=service.status if service is not None else "operativo",
-                availability=kpi.disponibilidad_del_mes(db, client.id, month),
-                cumple_objetivo=kpi.cumple_objetivo(db, client.id, month),
+                availability=disponibilidad,
+                cumple_objetivo=kpi.cumple_objetivo(db, client.id, month, disponibilidad=disponibilidad),
                 latency_p95=kpi.latencia_p95_del_mes(db, client.id, month),
                 sla_compliance=kpi.cumplimiento_sla(db, client.id, month),
                 mttr=kpi.mttr_del_mes(db, client.id, month),
@@ -91,13 +92,14 @@ def dashboard_client(
     if client is None or (scope is not None and scope != client_id):
         raise HTTPException(status_code=404, detail="El cliente no existe.")
     service = client.main_service
+    disponibilidad = kpi.disponibilidad_del_mes(db, client.id, month)
     return ClientDashboardKpi(
         client_id=client.id,
         client_name=client.name,
         service_name=service.name if service is not None else None,
         service_status=service.status if service is not None else "operativo",
-        availability=kpi.disponibilidad_del_mes(db, client.id, month),
-        cumple_objetivo=kpi.cumple_objetivo(db, client.id, month),
+        availability=disponibilidad,
+        cumple_objetivo=kpi.cumple_objetivo(db, client.id, month, disponibilidad=disponibilidad),
         slo_availability=(
             float(slo) if (slo := kpi.objetivo_disponibilidad(db, client.id)) is not None else None
         ),

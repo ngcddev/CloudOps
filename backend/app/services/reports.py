@@ -62,7 +62,7 @@ def _kpi_del_cliente(db: Session, client: Client, month: str) -> dict:
     return {
         "disponibilidad": disponibilidad,
         # Sin dato de disponibilidad no se dice que cumple ni que incumple el objetivo
-        "cumple_objetivo": None if disponibilidad is None else kpi.cumple_objetivo(db, client.id, month),
+        "cumple_objetivo": None if disponibilidad is None else kpi.cumple_objetivo(db, client.id, month, disponibilidad=disponibilidad),
         "latencia_p95": kpi.latencia_p95_del_mes(db, client.id, month),
         "sla": kpi.cumplimiento_sla(db, client.id, month),
         "mttr": kpi.mttr_del_mes(db, client.id, month),
