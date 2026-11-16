@@ -218,9 +218,10 @@ def approve_change_request(
         raise HTTPException(status_code=502, detail=f"No se pudo publicar en Gitea: {error}") from error
 
     # Se vuelve a leer el cambio: mientras se esperaba a Gitea alguien pudo aprobarlo o rechazarlo. El commit ya está escrito; si otro lo resolvió primero no se pisa.
-    change = get_change_or_404(db, change_id)
-    if change.status != "pendiente":
-        raise HTTPException(status_code=409, detail=f"El cambio pasó a «{change.status}» mientras se publicaba; no se cambia nada más.")
+    # Con la fila bloqueada: dos aprobaciones que llegan juntas aquí no se pisan, la segunda espera y ve el estado nuevo (auditoría BE-09)
+    change = db.scalar(select(ChangeRequest).where(ChangeRequest.id == change_id).with_for_update())
+    if change is None or change.status != "pendiente":
+        raise HTTPException(status_code=409, detail=f"El cambio pasó a «{change.status if change is not None else 'otro estado'}» mientras se publicaba; no se cambia nada más.")
     # aprobada y en_validacion ocurren en el mismo instante: el commit ya está escrito
     transition(change, "aprobada", actor_id=approver.id)
     db.add(step_event(change, "pendiente", approver.id, "Su solicitud fue aprobada."))

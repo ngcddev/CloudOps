@@ -15,14 +15,15 @@ def run_migrations_online() -> None:
     # Las pruebas pasan su propia conexión (sqlite en memoria) por config.attributes.
     connection = context.config.attributes.get("connection")
     if connection is not None:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():
             context.run_migrations()
         return
     engine = create_engine(settings.database_url)
     # Varias réplicas arrancan a la vez (HPA, actualización continua): migran de a una; la que llega después ya no encuentra nada que hacer (auditoría K8-04)
     with esperar_turno(engine, CLAVE_ARRANQUE), engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        # compare_type: `--autogenerate` también ve los cambios de tipo (auditoría BD-06). Los valores por defecto del servidor no se comparan: PostgreSQL los reescribe y daría diferencias falsas
+        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():
             context.run_migrations()
 

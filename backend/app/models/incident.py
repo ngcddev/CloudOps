@@ -10,6 +10,7 @@ from app.db import Base
 class Incident(Base):
     __tablename__ = "incidents"
     __table_args__ = (
+        Index("ix_incidents_service_status", "service_id", "status"),   # el de la migración 0008 (auditoría BD-06)
         # Dos avisos simultáneos de la misma falla no pueden abrir dos incidentes (CA-3): el
         # fingerprint de Alertmanager es único solo entre los incidentes abiertos.
         Index(

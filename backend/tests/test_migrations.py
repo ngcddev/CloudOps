@@ -63,6 +63,13 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
             c["name"] for c in inspect(connection).get_columns("users")
         }
 
+        # 0017 (spec 022, T34): quita el índice único de lower(email); lo anterior sigue ahí
+        indices_usuarios = {fila[0] for fila in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'users'"))}
+        assert "uq_users_email_lower" in indices_usuarios
+        command.downgrade(_config(connection), "-1")
+        indices_usuarios = {fila[0] for fila in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'users'"))}
+        assert "uq_users_email_lower" not in indices_usuarios and "ix_users_client_id" in indices_usuarios
+
         # 0016 (spec 022, T19): quita has_report; lo anterior sigue ahí
         assert "has_report" in {c["name"] for c in inspect(connection).get_columns("security_checks")}
         command.downgrade(_config(connection), "-1")

@@ -2,10 +2,10 @@
 # congelados en `data` al generarlo: el reporte no cambia aunque después cambien los tickets o las métricas, y el PDF sale siempre de esos datos.
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
+from app.db import JSON_DOC, Base
 
 
 class Report(Base):
@@ -18,7 +18,7 @@ class Report(Base):
     client_id: Mapped[int | None] = mapped_column(ForeignKey("clients.id"), nullable=True, index=True)
     # YYYY-MM
     month: Mapped[str] = mapped_column(String(7), nullable=False)
-    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    data: Mapped[dict] = mapped_column(JSON_DOC, nullable=False)
     generated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

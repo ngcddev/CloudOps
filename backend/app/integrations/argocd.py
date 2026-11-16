@@ -48,7 +48,10 @@ class ArgoCDClient:
             raise ArgoCDError(f"Argo CD no tiene la aplicación «{name}».", status)
         if status >= 400:
             raise ArgoCDError(f"Argo CD respondió {status} al consultar «{name}».", status)
-        state = json.loads(raw or b"{}").get("status", {})
+        try:
+            state = json.loads(raw or b"{}").get("status", {})
+        except ValueError as error:
+            raise ArgoCDError(f"Argo CD respondió algo que no es JSON al consultar «{name}».", status) from error
         sync = state.get("sync", {})
         return AppStatus(
             sync=sync.get("status", "Unknown"),

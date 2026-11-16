@@ -1,7 +1,7 @@
 # Evento de la línea de tiempo de un incidente (tabla incident_events, spec 008).
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,7 @@ from app.db import Base
 
 class IncidentEvent(Base):
     __tablename__ = "incident_events"
+    __table_args__ = (Index("ix_incident_events_incident", "incident_id"),)   # el de la migración 0008 (auditoría BD-06)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), nullable=False)

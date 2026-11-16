@@ -74,7 +74,11 @@ class GiteaClient:
             raise GiteaError(f"No hay conexión con Gitea: {error}") from error
         if status >= 400:
             raise GiteaError(f"Gitea respondió {status} en {method} {path}.", status)
-        return json.loads(raw or b"{}")
+        try:
+            return json.loads(raw or b"{}")
+        except ValueError as error:
+            # Un proxy o una página de error intermedia: se maneja como cualquier otro fallo de Gitea (502 en español), no como un 500 (auditoría BE-12)
+            raise GiteaError(f"Gitea respondió algo que no es JSON en {method} {path}.", status) from error
 
     def head_sha(self) -> str:
         """SHA del último commit de la rama configurada (el que Argo CD toma como revisión)."""

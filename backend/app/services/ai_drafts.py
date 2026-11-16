@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.archivos import leer_con_cache
 from app.db import soltar_conexion
 from app.integrations import ollama
 from app.models.ai_draft import AiDraft
@@ -137,9 +138,12 @@ def texto_base(h: Hechos, kind: str) -> str:
 # ---------- Verificaciones ----------
 
 
+def _normalizar_terminos(texto: str) -> list[str]:
+    return [normalize(t) for t in texto.splitlines() if t.strip() and not t.lstrip().startswith("#")]
+
+
 def _terminos() -> list[str]:
-    lineas = (ASSETS / "terminos_prohibidos.txt").read_text(encoding="utf-8").splitlines()
-    return [normalize(t) for t in lineas if t.strip() and not t.lstrip().startswith("#")]
+    return leer_con_cache(ASSETS / "terminos_prohibidos.txt", _normalizar_terminos)
 
 
 def terminos_prohibidos_en(texto: str) -> list[str]:

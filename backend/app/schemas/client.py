@@ -41,6 +41,14 @@ class ClientBase(BaseModel):
     def _opcionales(cls, value: str | None) -> str | None:
         return _limpiar(value)
 
+    @field_validator("email")
+    @classmethod
+    def _correo_con_forma_de_correo(cls, value: str | None) -> str | None:
+        # Algo@algo.algo, sin espacios: no se valida que exista, solo que no sea cualquier texto (auditoría BE-15)
+        if value is not None and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value):
+            raise ValueError("El correo no tiene forma de correo (nombre@dominio.com).")
+        return value
+
 
 class ClientCreate(ClientBase):
     name: str = Field(max_length=200)

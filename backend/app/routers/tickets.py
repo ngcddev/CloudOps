@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.deps import client_scope, current_user, require_agency
-from app.models.client import Client
 from app.models.project import Project
 from app.models.service import Service
 from app.models.ticket import Ticket
@@ -112,12 +111,12 @@ def list_tickets(
 
     La agencia puede filtrar por cliente; un cliente siempre ve solo las suyas.
     """
-    query = select(Ticket).join(Ticket.service).join(Service.project).join(Project.client)
+    query = select(Ticket).join(Ticket.service).join(Service.project)
     scope = client_scope(user)
     if scope is not None:
-        query = query.where(Client.id == scope)
+        query = query.where(Project.client_id == scope)
     elif client_id is not None:
-        query = query.where(Client.id == client_id)
+        query = query.where(Project.client_id == client_id)
     if status_filter is not None:
         query = query.where(Ticket.status == status_filter)
     if priority is not None:

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from app.archivos import leer_con_cache
 from app.services.assistant_gate import normalize
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
@@ -187,4 +188,4 @@ def mensaje_de_sistema(secciones: list[Seccion]) -> str:
             limpias.append(sec)
     secciones = limpias
     contexto ="\n\n".join(f"### {sec.titulo}\n{sec.texto}" for sec in secciones)
-    return f"{PROMPT_PATH.read_text(encoding='utf-8').strip()}\n\nCONTEXTO:\n{contexto}"
+    return f"{leer_con_cache(PROMPT_PATH, str.strip)}\n\nCONTEXTO:\n{contexto}"
