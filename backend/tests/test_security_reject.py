@@ -78,18 +78,24 @@ def test_cada_control_usa_su_texto_del_glosario(seeded, ferreteria, control, tex
     assert evento.note == texto
 
 
-def test_solo_se_rechazan_las_pendientes_de_esa_version(seeded, ferreteria):
-    de_la_version = _cambio_pendiente(seeded, ferreteria, "v1.1")
-    de_otra = _cambio_pendiente(seeded, ferreteria, "v1.2")
-    ya_aprobada = _cambio_pendiente(seeded, ferreteria, "v1.1")
-    ya_aprobada.status = "en_validacion"
+@pytest.mark.parametrize(
+    ("estado", "version", "esperado"),
+    [
+        ("pendiente", "v1.1", "rechazada"),      # pendiente de la versión que falló
+        ("pendiente", "v1.2", "pendiente"),      # pendiente de otra versión
+        ("en_validacion", "v1.1", "en_validacion"),  # de la misma versión pero ya aprobada
+    ],
+)
+def test_solo_se_rechazan_las_pendientes_de_esa_version(seeded, ferreteria, estado, version, esperado):
+    # Un servicio solo puede tener un cambio abierto a la vez (índice único, spec 022 T06): cada caso se prueba por separado
+    change = _cambio_pendiente(seeded, ferreteria, version)
+    change.status = estado
     seeded.commit()
 
-    _fallar(seeded, ferreteria, "secretos")
+    _fallar(seeded, ferreteria, "secretos", "v1.1")
 
-    for change in (de_la_version, de_otra, ya_aprobada):
-        seeded.refresh(change)
-    assert (de_la_version.status, de_otra.status, ya_aprobada.status) == ("rechazada", "pendiente", "en_validacion")
+    seeded.refresh(change)
+    assert change.status == esperado
 
 
 def test_el_rechazo_automatico_queda_en_la_bitacora_a_nombre_del_sistema(seeded, ferreteria):

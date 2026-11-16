@@ -1,7 +1,7 @@
 # Evento del historial de una solicitud (tabla ticket_events, spec 004).
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,7 @@ from app.db import Base
 
 class TicketEvent(Base):
     __tablename__ = "ticket_events"
+    __table_args__ = (Index("ix_ticket_events_ticket_id", "ticket_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     ticket_id: Mapped[int] = mapped_column(ForeignKey("tickets.id"), nullable=False)

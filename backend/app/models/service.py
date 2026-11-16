@@ -1,7 +1,7 @@
 # Modelo de servicio operado para un proyecto (tabla services, spec 001).
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,7 @@ from app.db import Base
 
 class Service(Base):
     __tablename__ = "services"
+    __table_args__ = (Index("ix_services_project_id", "project_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False)

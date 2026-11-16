@@ -1,7 +1,7 @@
 # Resultado de un control de la puerta de seguridad, con su evidencia (tabla security_checks, spec 006).
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,9 @@ from app.db import Base
 
 class SecurityCheck(Base):
     __tablename__ = "security_checks"
+    # Un control por corrida, paso e imagen (el control de secretos no tiene imagen: NULL cuenta como un valor); lo que `add_check` comprueba en memoria,
+    # aquí lo garantiza la base ante un reintento del pipeline a la vez (auditoría BD-02)
+    __table_args__ = (Index("uq_security_checks_run_step_image", "run_id", "step", text("coalesce(image, '')"), unique=True),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     run_id: Mapped[int] = mapped_column(ForeignKey("security_runs.id"), nullable=False)

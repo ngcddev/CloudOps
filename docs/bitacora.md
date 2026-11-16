@@ -3,6 +3,23 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Índices de claves foráneas y restricciones únicas (spec 022, T06; auditoría BD-01 y BD-02)
+
+**Pedido:** seguir con el orden de corrección de `docs/auditoria-2026-11.md`. La migración 0015 indexa las claves foráneas de tickets, eventos, horas, cambios, despliegues, servicios, proyectos
+y usuarios, y pasa a la base dos reglas que el código solo comprobaba con un SELECT: **un solo cambio en curso por servicio** (índice único parcial) y **un solo control por corrida, paso e
+imagen** (índice único sobre `coalesce(image, '')`, porque el control de secretos no lleva imagen). Si dos peticiones chocan, la base deja pasar a una y la API responde 409 (cambios) o el
+error de la puerta (controles) en vez de crear un duplicado. Los índices también quedan declarados en los modelos. La migración se detiene con un mensaje que lista los duplicados si la base ya
+los tiene; no los corrige sola.
+
+**Decisión:** la regla «un cambio abierto por servicio» ya existía en el router; el índice solo la hace cumplir ante dos peticiones a la vez. Una prueba de `test_security_reject.py` armaba tres
+cambios abiertos del mismo servicio saltándose el router, un estado que ya no puede existir; se repartió en tres casos independientes que conservan lo que cada uno comprobaba.
+
+**Verificado:** 941 pruebas pasadas y 3 omitidas (con los avisos de SQLAlchemy tratados como error); la migración sube y baja en SQLite; contra **PostgreSQL 16 real** (contenedor desechable) los
+13 índices se crean, el parcial y el de expresión tienen la definición esperada, un segundo cambio abierto y un control de secretos repetido chocan, los cambios cerrados y los de otro servicio no
+estorban, la migración con duplicados se detiene y deja la base en la 0014, y corregidos los duplicados sube. **No verificado:** el efecto en rendimiento con datos reales (hoy las tablas son
+pequeñas y el planificador puede preferir un recorrido completo); `EXPLAIN ANALYZE` queda para cuando haya volumen. **Pendiente:** la migración corre sola al arrancar la API, así que llegará a la
+base de desarrollo y al clúster con la próxima imagen; no se probó contra los datos del clúster.
+
 ## 15 nov 2026 · Auditoría de rendimiento y buenas prácticas, y corrección de CT-01 (spec 021, T07)
 
 **Pedido:** auditar todo el proyecto con skills y corregir primero el hallazgo crítico CT-01. Informe en `docs/auditoria-2026-11.md` (3 críticos, 29 medios, 52 leves; revisión
