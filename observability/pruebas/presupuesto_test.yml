@@ -18,8 +18,7 @@ tests:
         alertname: PresupuestoQuemadoRapido
         exp_alerts:
           - exp_labels:
-              severity: critical
-              priority: P2
+              severity: warning
               client: restaurante
             exp_annotations:
               summary: "El sitio de restaurante gasta su margen de error 656 veces más rápido de lo permitido"

@@ -60,11 +60,34 @@ scrape_configs:
       credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
     kubernetes_sd_configs:
       - role: node
-    # Solo lo que usa el tablero: los contenedores de los clientes y del Hub
+    # Solo lo que usa el tablero (los contenedores de los clientes, del Hub y del monitoreo) y, del nodo entero (`id="/"`), la memoria y el disco
+    # para las alertas NodoSinMemoria y DiscoDelNodoLleno (spec 022, T25; auditoría OB-03). Las series del nodo no llevan `namespace`.
     metric_relabel_configs:
-      - source_labels: [namespace]
-        regex: "cliente-.*|hub|monitoring"
+      - source_labels: [__name__, id, namespace]
+        regex: "machine_memory_bytes;.*;|(container_memory_working_set_bytes|container_fs_usage_bytes|container_fs_limit_bytes);/;|[^;]*;[^;]*;(cliente-.*|hub|monitoring)"
         action: keep
+
+  # Espacio de los volúmenes (PVC) que ve el kubelet (spec 022, T25; auditoría OB-03). Con `local-path` el «tamaño» del PVC es el disco entero del nodo y nadie
+  # impone el límite de 2Gi, así que lo que se vigila es lo que queda libre en el disco que comparten Gitea, Postgres, Loki, Prometheus y el respaldo.
+  - job_name: kubelet
+    scheme: https
+    metrics_path: /metrics
+    scrape_interval: 60s
+    tls_config:
+      insecure_skip_verify: true
+    authorization:
+      credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    kubernetes_sd_configs:
+      - role: node
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "kubelet_volume_stats_(available|capacity|used)_bytes"
+        action: keep
+
+  # Estado de los CronJob y los Job (kube-state-metrics, solo esos dos recursos): saber si el respaldo diario del Hub terminó bien
+  - job_name: kube-state-metrics
+    static_configs:
+      - targets: ["kube-state-metrics.monitoring.svc:8080"]
 
   # El propio Hub (spec 022, T10; auditoría OB-01): Blackbox sondea el API (/health: sin base no está sano) y la web por dentro del clúster. Va en un
   # job aparte de `sitios` para que SitioCaido, que abre incidentes en el Hub, no se dispare por el Hub ni dependa de él. El timeout del sondeo lo

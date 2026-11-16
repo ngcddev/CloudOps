@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     voz_token: str = ""
     # Trazas (OpenTelemetry): URL base del receptor OTLP/HTTP de Tempo, por ejemplo http://tempo.monitoring.svc:4318. Vacío = sin trazas.
     otel_exporter_otlp_endpoint: str = ""
+    # Nivel de los registros JSON de la API (spec 022, T26): INFO muestra una línea por petición; DEBUG también los sondeos del clúster
+    log_level: str = "INFO"
     # Asistente local (spec 012): Ollama en el PC B. Vacío = el asistente responde que la IA no está disponible.
     ollama_url: str = ""
     ollama_model: str = "qwen2.5:7b-instruct"

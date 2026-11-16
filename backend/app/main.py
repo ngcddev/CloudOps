@@ -15,6 +15,7 @@ from app.db import SessionLocal, engine, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
 from app.limite_cuerpo import LimiteDeCuerpo
+from app.registros import IdDePeticion, configurar_registros
 from app.routers import (
     ai_drafts,
     assistant,
@@ -60,6 +61,9 @@ async def lifespan(_: FastAPI):
             await watcher
 
 
+# Registros JSON con id de petición y trace_id, para que Loki y Tempo se puedan seguir uno desde el otro (auditoría OB-04)
+configurar_registros(settings.log_level)
+
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
 # Tope del cuerpo de las peticiones (auditoría BE-05): lo general, el informe del pipeline y el audio de voz tienen su propio tamaño
 app.add_middleware(
@@ -67,6 +71,8 @@ app.add_middleware(
     por_defecto=settings.body_limit_bytes,
     rutas={"/api/pipeline-events": settings.pipeline_body_limit_bytes, "/api/assistant/voice/transcribe": settings.voice_body_limit_bytes},
 )
+# Va después del tope de cuerpo para quedar por fuera de él: hasta un 413 sale con su id de petición
+app.add_middleware(IdDePeticion)
 app.include_router(auth.router)
 app.include_router(audit_logs.router)
 app.include_router(catalog.router)

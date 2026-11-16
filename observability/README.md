@@ -16,7 +16,8 @@ Pods cliente-* ──registros──> Alloy ──> Loki ──> Grafana (Explor
 | `alertmanager/` | Avisa al Hub en `http://api.hub.svc:8000/api/alerts/alertmanager` con el token del Secret `hub-alertmanager` |
 | `prometheus/reglas/plataforma.yml` | Alertas de la plataforma (spec 022, T10), con `destino: plataforma`: `HubCaido` (el job `hub` sondea `/health` del API y la web del Hub), `MonitoreoCiego` (`up == 0` o `absent` en los sondeos), `Watchdog` (latido: siempre activa), `ContenedorSinMemoria` (OOM nuevo) y `ContenedorEnBucle` (3 arranques en 15 minutos). Alertmanager las manda a `solo-ver` y **no al Hub**: se ven en Alertmanager y en Prometheus, pero no avisan a nadie (no hay canal externo). Cada una apunta a su runbook en `runbooks/` |
 | `loki/` | Guarda 3 días de registros de los sitios |
-| `alloy/` | Lee por la API de Kubernetes los registros de los Pods de `cliente-*` y los manda a Loki |
+| `alloy/` | Lee por la API de Kubernetes los registros de los Pods de `cliente-*` y del Hub (sin PostgreSQL ni el respaldo) y los manda a Loki |
+| `kube-state-metrics/` | Estado de los CronJob y Job como métricas (solo esos dos recursos): alimenta la alerta del respaldo del Hub |
 | `grafana/` | `http://grafana.hub.local`, con las fuentes `prometheus` y `loki` ya configuradas |
 | `traefik/` | Service `traefik-metrics` en `kube-system` para las métricas de Traefik (spec 010) |
 | `tempo/` | Recibe las trazas OTLP del Hub (puerto 4318), 24 horas en un volumen efímero; Grafana lo lee con la fuente `tempo` |

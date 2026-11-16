@@ -1,0 +1,80 @@
+# kube-state-metrics (spec 022, T25; auditoría OB-03): convierte el estado de los CronJob y los Job en métricas. Solo esos dos recursos (el resto de lo que
+# hace kube-state-metrics ocupa memoria que el nodo no sobra): sirve para saber si el respaldo diario de PostgreSQL lleva días sin terminar bien.
+# Es un componente de plataforma que lee la API de Kubernetes; el Hub sigue sin hablar con ella.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-state-metrics
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-state-metrics-cronjobs
+rules:
+  - apiGroups: [batch]
+    resources: [cronjobs, jobs]
+    verbs: [list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-state-metrics-cronjobs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-state-metrics-cronjobs
+subjects:
+  - kind: ServiceAccount
+    name: kube-state-metrics
+    namespace: monitoring
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: kube-state-metrics}
+  template:
+    metadata:
+      labels: {app: kube-state-metrics}
+    spec:
+      serviceAccountName: kube-state-metrics
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: kube-state-metrics
+          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.15.0
+          args:
+            - --resources=cronjobs,jobs
+            - --port=8080
+            - --telemetry-port=8081
+          ports:
+            - {name: metricas, containerPort: 8080}
+          readinessProbe:
+            httpGet: {path: /readyz, port: 8081}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /livez, port: 8080}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-state-metrics
+spec:
+  selector: {app: kube-state-metrics}
+  ports:
+    - {name: metricas, port: 8080, targetPort: metricas}
