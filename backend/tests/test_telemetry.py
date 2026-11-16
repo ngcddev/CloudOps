@@ -88,10 +88,11 @@ def test_con_un_exportador_la_api_genera_spans_de_cada_ruta(client, spans):
         assert proveedor is not None
         client.get("/api/plans")
         client.get("/health")
+        client.get("/livez")
         proveedor.force_flush()
         rutas = [s.attributes.get("http.route") for s in exportador.get_finished_spans() if s.attributes.get("http.route")]
         assert "/api/plans" in rutas
-        assert "/health" not in rutas  # el clúster lo consulta cada pocos segundos: se excluye
+        assert "/health" not in rutas and "/livez" not in rutas  # el clúster los consulta cada pocos segundos: se excluyen
     finally:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 

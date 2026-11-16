@@ -1,4 +1,4 @@
-# Punto de entrada de la API del Hub: crea la app, registra routers y expone GET /health.
+# Punto de entrada de la API del Hub: crea la app, registra routers y expone GET /health (con base) y GET /livez (solo el proceso).
 import asyncio
 from contextlib import asynccontextmanager, suppress
 
@@ -130,6 +130,13 @@ async def validation_error_es(_: Request, exc: RequestValidationError) -> JSONRe
             msg = error["msg"].removeprefix("Value error, ")
         detail.append({"loc": error["loc"], "msg": msg})
     return JSONResponse(status_code=422, content={"detail": detail})
+
+
+@app.get("/livez")
+async def livez() -> dict[str, str]:
+    """Responde ok si el proceso atiende peticiones, sin tocar la base: es la sonda de vida (liveness) del clúster. Si dependiera de la base, un
+    reinicio de PostgreSQL haría que el kubelet matara la API en bucle (auditoría K8-03); «¿hay base?» lo responde /health, para la readiness."""
+    return {"status": "ok"}
 
 
 @app.get("/health")

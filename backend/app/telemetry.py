@@ -36,6 +36,6 @@ def configurar(app, exporter=None):
     proveedor = TracerProvider(resource=Resource.create({"service.name": NOMBRE, "deployment.environment": "laboratorio"}))
     proveedor.add_span_processor(BatchSpanProcessor(exporter))
     trace.set_tracer_provider(proveedor)
-    # /health lo consulta el clúster cada pocos segundos: no aporta nada y llenaría Tempo
-    FastAPIInstrumentor.instrument_app(app, tracer_provider=proveedor, excluded_urls="health")
+    # /health y /livez los consulta el clúster cada pocos segundos: no aportan nada y llenarían Tempo
+    FastAPIInstrumentor.instrument_app(app, tracer_provider=proveedor, excluded_urls="health,livez")
     return proveedor
