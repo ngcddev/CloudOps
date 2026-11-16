@@ -3,6 +3,23 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Lo de la auditoría llega al clúster: `hub-api` v1.15, `hub-web` v1.10 y `hub-voz` v1.2 (spec 022, T12)
+
+**Pedido:** hasta aquí todo lo corregido estaba mezclado en `dev` pero no en el clúster. **Orden seguido** (importa: `hub/api.yaml` usa `/livez`, que `hub-api:v1.14` no tiene, y promover antes habría dejado la API en
+reinicios): (1) comprobar en la base del clúster que la migración `0015` no tenía qué la detuviera (migración `0014`, 0 cambios abiertos repetidos, 0 controles repetidos) y sacar un respaldo; (2) publicar las tres imágenes con
+`apps/publicar-imagenes.sh` y comprobar que el nodo las baja; (3) subir las etiquetas y las sondas por PR (#190, CI en verde); (4) ensayar con `sincronizar-hub-gitops.sh --simular` y promover (`hub-gitops` pasó de `c73536c`
+a `1c63885`); (5) dejar que Argo CD lo aplicara, sin forzarlo.
+
+**Un tropiezo que casi cuesta caro:** tras fusionar el #190, el `git fetch` falló con un 503 de GitHub y mi copia local de `origin/dev` quedó sin las versiones nuevas. Promover desde ahí habría subido las sondas `/livez` con
+la etiqueta vieja. Se detectó al ver que el commit esperado no estaba, se reintentó el fetch hasta tenerlo y se comprobó que las tres etiquetas eran las nuevas antes de promover.
+
+**Verificado en el clúster:** Argo CD aplicó el cambio en ~30 s (`hub` y `monitoring` `Synced/Healthy`); `api=v1.15`, `web=v1.10` y `voz=v1.2` listos sin reinicios y el Pod viejo de la API retirado; sondas `/livez` (vida y arranque,
+30×5 s) y `/health` (listo); la base quedó en la `0015` con los dos únicos y 23 índices, y los datos intactos (5 usuarios, 3 clientes, 15 tickets); `hub.local` sirve el bundle nuevo sin errores en la consola; los cuatro sitios y las
+cuatro Applications de clientes siguen sanos; Prometheus carga el grupo `plataforma`, el job `hub` sondea el API y la web (`up=1`) y solo salta `Watchdog`, que llega a Alertmanager en ~40 s con receptor `solo-ver`.
+**No verificado:** las alertas `HubCaido`, `ContenedorSinMemoria` y `ContenedorEnBucle` con una falla real (no se provocó ninguna); dos réplicas reales del API bajo carga. **Cómo volver atrás:** promover de nuevo lo anterior a
+`hub-gitops` (el commit previo era `c73536c`) o revertir el commit `1c63885` allí; las imágenes viejas (`v1.14`, `v1.9`, `v1.1`) siguen en el registro. El respaldo de la base del clúster previo a la `0015` (26 MB, 23 tablas) está
+en la carpeta temporal de la sesión de trabajo y puede perderse: si se quiere conservar, hay que copiarlo a otro sitio.
+
 ## 16 nov 2026 · Frontend: sin datos de prueba en producción, carga por pantalla y ErrorBoundary (spec 022, T11; auditoría FE-01 a FE-04 y CT-05)
 
 **Pedido:** (FE-01) un fallo pasajero de la primera petición dejaba toda la sesión en «modo de prueba»: una técnica de agencia falsa, datos inventados y sin «Cerrar sesión». (FE-02) el mock de `api.ts` y los JSON de `seed/`
