@@ -10,11 +10,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.integrations import ollama
 from app.models.knowledge import KbChunk, KbDocument
+from app.services.bloqueos import CLAVE_REINDEXAR, candado_de_transaccion
 from app.services.assistant_context import HELP_PATH, Seccion
 
 # nomic-embed-text distingue la tarea con un prefijo: uno para lo que se indexa y otro para lo que se pregunta
@@ -106,10 +108,11 @@ def indice_vigente(db: Session) -> bool:
     return True
 
 
-def indexar(db: Session, transport=None) -> dict | None:
+def indexar(db: Session, transport=None, solo_si_vencido: bool = False) -> dict | None:
     """Vuelve a generar los embeddings de todos los documentos fuente y reemplaza el índice. `None` si Ollama no responde.
 
     No se toca nada hasta tener todos los vectores: un fallo a mitad de camino deja el índice anterior intacto.
+    Con `solo_si_vencido` (lo usa `recuperar`, en medio de una pregunta) quien espere el candado de otro reindexado no repite el reemplazo si el índice ya quedó vigente.
     """
     generados: list[tuple[str, str, list[Trozo], list[list[float]]]] = []
     for nombre, contenido in _fuentes_vigentes().items():
@@ -119,6 +122,21 @@ def indexar(db: Session, transport=None) -> dict | None:
             return None
         generados.append((nombre, contenido, trozos, vectores))
 
+    # Dos preguntas con el índice vencido llegan aquí a la vez: la segunda espera a que la primera confirme y, si el índice ya quedó vigente, no lo reescribe
+    # (sin esto chocaba con los únicos de kb_documents y kb_chunks y la pregunta respondía 500; auditoría BE-07)
+    candado_de_transaccion(db, CLAVE_REINDEXAR)
+    if solo_si_vencido and indice_vigente(db):
+        db.rollback()
+        return {"documentos": len(generados), "trozos": sum(len(g[2]) for g in generados), "modelo": settings.ollama_embed_model}
+    try:
+        _reemplazar_indice(db, generados)
+    except IntegrityError:
+        db.rollback()   # cualquier otra carrera: el índice anterior queda intacto y quien llama cae a la recuperación léxica
+        return None
+    return {"documentos": len(generados), "trozos": sum(len(g[2]) for g in generados), "modelo": settings.ollama_embed_model}
+
+
+def _reemplazar_indice(db: Session, generados: list[tuple[str, str, list[Trozo], list[list[float]]]]) -> None:
     for nombre, contenido, trozos, vectores in generados:
         db.execute(delete(KbChunk).where(KbChunk.document_id.in_(select(KbDocument.id).where(KbDocument.source == nombre))))
         doc = db.scalar(select(KbDocument).where(KbDocument.source == nombre))
@@ -137,7 +155,6 @@ def indexar(db: Session, transport=None) -> dict | None:
                 )
             )
     db.commit()
-    return {"documentos": len(generados), "trozos": sum(len(g[2]) for g in generados), "modelo": settings.ollama_embed_model}
 
 
 def recuperar(db: Session, pregunta: str, transport=None) -> Recuperacion | None:
@@ -146,7 +163,7 @@ def recuperar(db: Session, pregunta: str, transport=None) -> Recuperacion | None
     Si el índice está vencido (la ayuda cambió o se cambió el modelo) lo regenera antes de buscar. `secciones` queda
     vacío cuando el mejor trozo no alcanza `rag_min_score`: la ayuda no trata de eso y no hay que llamar al LLM.
     """
-    if not indice_vigente(db) and indexar(db, transport=transport) is None:
+    if not indice_vigente(db) and indexar(db, transport=transport, solo_si_vencido=True) is None:
         return None
     vectores = ollama.embed([PREFIJO_CONSULTA + pregunta], transport=transport)
     if vectores is None:

@@ -63,6 +63,11 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
             c["name"] for c in inspect(connection).get_columns("users")
         }
 
+        # 0016 (spec 022, T19): quita has_report; lo anterior sigue ahí
+        assert "has_report" in {c["name"] for c in inspect(connection).get_columns("security_checks")}
+        command.downgrade(_config(connection), "-1")
+        assert "has_report" not in {c["name"] for c in inspect(connection).get_columns("security_checks")}
+
         # 0015 (spec 022, T06): quita los índices de las claves foráneas y los dos únicos; las tablas siguen
         nuevos = {
             "tickets": {"ix_tickets_service_id", "ix_tickets_created_at"},

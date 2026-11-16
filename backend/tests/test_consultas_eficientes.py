@@ -89,3 +89,41 @@ def test_la_bandeja_se_puede_filtrar_por_solicitud(client, seeded):
 
     assert [c["ticket_id"] for c in filtrada] == [cambios[0].ticket_id]
     assert client.get("/api/change-requests", params={"ticket_id": 9999}).json() == []
+
+
+# --- Auditoría BE-03, BE-04 y BD-03 (spec 022, T19) ---
+
+def test_el_tablero_de_agencia_no_hace_consultas_por_ticket(client, session_factory, seeded):
+    """Las horas y los conteos del tablero salen de una suma y de un conteo en la base: más tickets no son más consultas (auditoría BE-03)."""
+    def llamar():
+        assert client.get("/api/dashboard/agency").status_code == 200
+
+    base = _contar_consultas(session_factory, llamar)
+    from app.models import Ticket, WorkLog
+    with session_factory() as db:
+        servicio = db.scalars(select(Service)).first()
+        usuario = db.scalars(select(User)).first()
+        for i in range(15):
+            ticket = Ticket(service_id=servicio.id, created_by_id=None, title=f"t{i}", description="d", impact="alto", urgency="alta", priority="P2", status="abierto")
+            db.add(ticket)
+            db.flush()
+            db.add(WorkLog(ticket_id=ticket.id, user_id=usuario.id, hours=1, note="x"))
+        db.commit()
+    con_mas = _contar_consultas(session_factory, llamar)
+    assert con_mas <= base + 2, f"{base} consultas con pocos tickets y {con_mas} con 15 tickets más"
+
+
+def test_los_listados_aceptan_limit_y_offset_y_rechazan_un_limite_enorme(client, seeded):
+    assert len(client.get("/api/tickets?limit=1").json()) <= 1
+    assert client.get("/api/tickets?limit=0").status_code == 422
+    assert client.get("/api/tickets?limit=501").status_code == 422
+    assert client.get("/api/tickets?offset=-1").status_code == 422
+    for ruta in ("/api/incidents", "/api/change-requests", "/api/reports", "/api/clients"):
+        assert client.get(f"{ruta}?limit=1").status_code == 200, ruta
+        assert client.get(f"{ruta}?limit=501").status_code == 422, ruta
+
+
+def test_la_pagina_siguiente_no_repite_filas(client, seeded):
+    primeros = client.get("/api/tickets?limit=2&offset=0").json()
+    siguientes = client.get("/api/tickets?limit=2&offset=2").json()
+    assert not {t["id"] for t in primeros} & {t["id"] for t in siguientes}

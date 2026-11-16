@@ -28,6 +28,7 @@ from app.schemas.ticket import (
     WorkLogCreate,
     WorkLogOut,
 )
+from app.paginacion import Pagina, pagina
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 CLIENT_STATUS_LABELS = {
@@ -103,6 +104,7 @@ def list_tickets(
     client_id: int | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
     priority: str | None = Query(default=None),
+    page: Pagina = Depends(pagina),
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
@@ -120,7 +122,7 @@ def list_tickets(
         query = query.where(Ticket.status == status_filter)
     if priority is not None:
         query = query.where(Ticket.priority == priority)
-    tickets = db.scalars(query.order_by(Ticket.id)).all()
+    tickets = db.scalars(query.order_by(Ticket.id).limit(page.limit).offset(page.offset)).all()
     return [_present_ticket(ticket, user, check_scope=False) for ticket in tickets]
 
 

@@ -5,7 +5,7 @@ import unicodedata
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, defer, selectinload
 
 from app.db import get_db
 from app.deps import current_user, require_agency
@@ -13,6 +13,7 @@ from app.models.report import Report
 from app.models.user import User
 from app.schemas.report import ReportIn, ReportOut, ReportSummary
 from app.services import audit, kpi, report_pdf, reports
+from app.paginacion import Pagina, pagina
 
 router = APIRouter(prefix="/api/reports", tags=["reportes"])
 
@@ -61,9 +62,10 @@ def generate(body: ReportIn, request: Request, db: Session = Depends(get_db), us
 
 
 @router.get("", response_model=list[ReportSummary])
-def list_reports(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def list_reports(page: Pagina = Depends(pagina), db: Session = Depends(get_db), user: User = Depends(current_user)):
     """La agencia ve todos; un cliente, solo sus reportes ejecutivos."""
-    consulta = select(Report).options(selectinload(Report.client), selectinload(Report.generated_by)).order_by(Report.id.desc())
+    # `data` (el JSON congelado del reporte) no se necesita para el resumen: no se trae de la base (auditoría BE-04)
+    consulta = select(Report).options(defer(Report.data), selectinload(Report.client), selectinload(Report.generated_by)).order_by(Report.id.desc()).limit(page.limit).offset(page.offset)
     if user.role != "agencia":
         consulta = consulta.where(Report.kind == "ejecutivo", Report.client_id == user.client_id)
     return [_resumen(r) for r in db.scalars(consulta).all()]

@@ -6,9 +6,11 @@ from contextlib import contextmanager
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 CLAVE_ARRANQUE = 7_022_001    # migraciones y semilla
 CLAVE_VIGILANTE = 7_022_002   # una vuelta del seguimiento de Argo CD
+CLAVE_REINDEXAR = 7_022_003   # reemplazo del índice del RAG (auditoría BE-07)
 
 
 def _usa_candados(engine: Engine) -> bool:
@@ -44,3 +46,12 @@ def turno_si_libre(engine: Engine, clave: int) -> Iterator[bool]:
         finally:
             if tomado:
                 conexion.execute(text("SELECT pg_advisory_unlock(:clave)"), {"clave": clave})
+
+
+def candado_de_transaccion(db: Session, clave: int) -> None:
+    """Toma un candado que dura lo que la transacción de la sesión (se suelta solo al confirmar o deshacer): quien llegue después espera a que ella termine.
+
+    A diferencia de `esperar_turno`, va en la misma transacción que las escrituras que protege. Con SQLite (pruebas) no hace nada.
+    """
+    if _usa_candados(db.get_bind()):
+        db.execute(text("SELECT pg_advisory_xact_lock(:clave)"), {"clave": clave})

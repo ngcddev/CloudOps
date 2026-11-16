@@ -78,26 +78,39 @@ def tickets_del_cliente(db: Session, client_id: int, month: str) -> list[Ticket]
     )
 
 
+def _contar_tickets(db: Session, client_id: int, month: str, condicion) -> int:
+    """Cuenta en la base las solicitudes del cliente creadas en el mes que cumplen la condición (sin traer los tickets)."""
+    inicio, fin = month_bounds(month)
+    return db.scalar(
+        select(func.count(Ticket.id))
+        .join(Ticket.service)
+        .join(Service.project)
+        .where(Project.client_id == client_id, Ticket.created_at >= inicio, Ticket.created_at < fin, condicion)
+    ) or 0
+
+
 def solicitudes_abiertas(db: Session, client_id: int, month: str | None = None) -> int:
     """Solicitudes del mes que siguen abiertas (no cerraron su caso)."""
-    tickets = tickets_del_cliente(db, client_id, month or mes_actual())
-    return sum(1 for ticket in tickets if ticket.status not in ESTADOS_TERMINADOS)
+    return _contar_tickets(db, client_id, month or mes_actual(), Ticket.status.not_in(ESTADOS_TERMINADOS))
 
 
 def solicitudes_cerradas(db: Session, client_id: int, month: str | None = None) -> int:
     """Solicitudes del mes que cerraron su caso (tuvieron solución registrada)."""
-    tickets = tickets_del_cliente(db, client_id, month or mes_actual())
-    return sum(1 for ticket in tickets if ticket.status in ESTADOS_TERMINADOS)
+    return _contar_tickets(db, client_id, month or mes_actual(), Ticket.status.in_(ESTADOS_TERMINADOS))
 
 
 def horas_por_cliente(db: Session, client_id: int, month: str | None = None) -> float:
     """Horas registradas (Σ `work_logs.hours`) de las solicitudes del cliente en el mes."""
-    tickets = tickets_del_cliente(db, client_id, month or mes_actual())
-    total = 0.0
-    for ticket in tickets:
-        for work_log in ticket.work_logs:
-            total += float(work_log.hours)
-    return total
+    # Una sola suma en la base, no una carga perezosa de work_logs por cada ticket (auditoría BE-03)
+    inicio, fin = month_bounds(month or mes_actual())
+    total = db.scalar(
+        select(func.sum(WorkLog.hours))
+        .join(Ticket, WorkLog.ticket_id == Ticket.id)
+        .join(Ticket.service)
+        .join(Service.project)
+        .where(Project.client_id == client_id, Ticket.created_at >= inicio, Ticket.created_at < fin)
+    )
+    return float(total or 0)
 
 
 def costo_por_cliente(db: Session, client_id: int, month: str | None = None) -> float:
@@ -178,11 +191,18 @@ def objetivo_disponibilidad(db: Session, client_id: int) -> float | None:
     )
 
 
+_SIN_CALCULAR = object()
+
+
 def cumple_objetivo(
-    db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
+    db: Session, client_id: int, month: str | None = None, transport: Transport | None = None, disponibilidad: object = _SIN_CALCULAR
 ) -> bool | None:
-    """La disponibilidad del mes cumplió el SLO del plan del cliente? `None` si no hay datos."""
-    disponibilidad = disponibilidad_del_mes(db, client_id, month, transport=transport)
+    """La disponibilidad del mes cumplió el SLO del plan del cliente? `None` si no hay datos.
+
+    Quien ya calculó la disponibilidad del mes la pasa en `disponibilidad` y se evita repetir la consulta a Prometheus (auditoría BE-03).
+    """
+    if disponibilidad is _SIN_CALCULAR:
+        disponibilidad = disponibilidad_del_mes(db, client_id, month, transport=transport)
     if disponibilidad is None:
         return None
     slo = objetivo_disponibilidad(db, client_id)

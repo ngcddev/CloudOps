@@ -3,6 +3,11 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Lote de consultas del backend: BD-03, BE-04, BE-03 y BE-07 (spec 022, T19 a T22)
+
+**BD-03:** la lista de corridas de la puerta de seguridad cargaba el JSON de Trivy y del SBOM de cada control solo para decir si había reporte. Ahora `has_report` es una columna (migración `0016`, con relleno) y `report` es una columna diferida. **BE-04:** paginación común (`limit` hasta 500, por defecto 100, y `offset`) en seis listados, y el listado de reportes ya no trae el JSON `data`. **BE-03:** horas y conteos del tablero salen de una suma y de un conteo en la base (antes una carga perezosa por ticket) y `cumple_objetivo` reutiliza la disponibilidad ya calculada. **BE-07:** el reemplazo del índice del RAG toma un candado de transacción de PostgreSQL y quien esperó no lo repite; una carrera de únicos cae a la recuperación léxica en lugar de un 500.
+**Cómo se comprobó:** 1024 pruebas del backend en SQLite; la migración subió, bajó y subió en un PostgreSQL 16 desechable; la prueba de 6 preguntas a la vez contra ese PostgreSQL **falla sin el candado y pasa con él**. **No verificado:** memoria con evidencia real grande; pantallas del frontend con más de 100 filas; `cumplimiento_sla` sigue recorriendo los tickets del mes.
+
 ## 16 nov 2026 · El namespace hub sale solo a lo que usa (spec 022, T18; auditoría K8-02, último pendiente)
 
 **Pedido:** el namespace `hub` (la API, Backstage, voz, Postgres) salía a cualquier parte: un Hub o un Backstage comprometidos podían llegar a MLflow, a Alertmanager, a los sitios de los clientes, a la API de Kubernetes y a internet. **Qué se hizo:** `default-deny-egress`, `permitir-dns-y-propio` (CoreDNS y los Pods del namespace) y una política por aplicación con solo lo que usa, sacado de `gitops/hub/api.yaml` y de `backend/app/integrations/`: la **API** a Gitea 3000, Argo CD 8080 (el puerto del Pod; el Service es 80), Prometheus 9090, Loki 3100, el receptor OTLP de Tempo 4318 y Ollama (`192.168.65.254:11434`, la dirección de `host.docker.internal`, porque Ollama corre fuera del clúster); **Backstage** solo a Gitea; **voz** y el respaldo a nada más.
