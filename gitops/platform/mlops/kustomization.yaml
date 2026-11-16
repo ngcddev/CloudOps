@@ -6,3 +6,4 @@ kind: Kustomization
 namespace: mlops
 resources:
   - mlflow.yaml
+  - networkpolicy.yaml
