@@ -93,6 +93,23 @@ Si el Hub necesita escribir en otra ruta, hay que añadirla a `PATRONES_DEL_HUB`
 Un cliente que está en el repositorio principal pero no en `hub-gitops` se omite: lo crea el Hub. En un entorno real el CI promovería a un repositorio de configuración alcanzable por el clúster
 (con PR y revisión) y el CI de la aplicación solo subiría las etiquetas de imagen; aquí lo hace el comando porque el clúster está en un portátil al que GitHub no llega.
 
+## Aislamiento de red de los clientes (spec 003 y 022)
+
+Cada namespace de cliente niega **toda entrada y toda salida** (`clients/_base/networkpolicy.yaml` y el chart `sitio-cliente`, que deben coincidir: `bash gitops/pruebas/helm-vs-kustomize.sh`).
+Entra Traefik (`kube-system`), Prometheus y Blackbox (`monitoring`) y los Pods del mismo cliente. **Sale** solo el DNS (CoreDNS) y los Pods del mismo cliente (el frontend del consultorio llama a su backend).
+Un sitio no necesita más: sus métricas las lee Prometheus y sus registros los lee Alloy por la API de Kubernetes. Sin la salida denegada, un Pod de cliente comprometido llegaba a Loki, Prometheus, Alertmanager,
+Grafana, MLflow, Gitea e internet, y todos son accesibles sin autenticación (auditoría K8-02).
+
+```bash
+bash gitops/pruebas/aislamiento-red.sh [origen] [destino]   # entre clientes: debe estar bloqueado
+bash gitops/pruebas/salida-red.sh [cliente]                 # salida de un cliente: DNS y su propio sitio sí; monitoreo, MLflow, Gitea, el Hub, otro cliente e internet no
+bash gitops/pruebas/salida-red.sh [cliente] --estado        # solo mide (no falla la salida): útil para ver cuánto alcanza un Pod antes de cambiar una política
+```
+
+`backend/tests/test_salida_de_red.py` vigila los archivos (en CI): falla si alguien abre una salida (un `ipBlock`, otro namespace u otro puerto) o si Kustomize y el chart difieren.
+**Qué falta (no cubierto):** los namespaces `monitoring`, `mlops` y `gitea` siguen aceptando entrada de cualquier Pod, y Loki, Prometheus, Alertmanager y MLflow no piden autenticación; la salida del namespace `hub` sigue abierta.
+Si un sitio nuevo necesita llamar a algo (una API externa, por ejemplo), hay que añadir esa salida a propósito en la base y en el chart, con su prueba.
+
 ## Cómo se comprueba
 
 ```bash
