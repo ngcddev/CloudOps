@@ -3,6 +3,21 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · Varias réplicas de la API sin duplicar trabajo (spec 022, T08; auditoría K8-04)
+
+**Pedido:** el HPA de la API permite 2 réplicas, pero el vigilante de Argo CD (confirmar cambios, rollbacks y alinear con Git) y las migraciones del arranque corrían en cada una: con la carga que
+sube el HPA se duplicaba el trabajo y dos migraciones competían sobre la misma base. En vez de bajar el HPA a 1 réplica (perdería el autoescalado del módulo 2), se usan **candados de PostgreSQL**
+(`app/services/bloqueos.py`): el vigilante hace su vuelta solo si consigue el turno y las demás réplicas la saltan; Alembic y la semilla del arranque esperan su turno de a una. Son candados de sesión
+sobre una conexión aparte en AUTOCOMMIT (no abren transacción, así que el tiempo límite de transacciones inactivas no los suelta) y la base los libera si la réplica muere; con SQLite no hacen nada.
+Además `exec uvicorn` en el `CMD`: uvicorn queda como proceso principal y recibe SIGTERM. El máximo del HPA sigue en 2 (el nodo es pequeño); se actualizó su comentario.
+
+**Un error mío que atrapó la prueba de humo:** en la primera versión `main.py` usaba `esperar_turno` y `CLAVE_ARRANQUE` sin importarlos. Las 965 pruebas pasaban porque ninguna ejecutaba el `lifespan`
+completo, pero la imagen de producción no arrancaba. Se corrigió y se agregó una prueba que arranca la API de verdad (y falla sin el import).
+
+**Verificado:** 966 pruebas pasadas y 3 omitidas; la prueba de humo de la imagen de producción en verde; contra **PostgreSQL 16 real** y con procesos distintos los candados se comportan como se espera
+(turno ocupado y liberado, espera del segundo, liberación si el titular muere, dos `alembic upgrade head` simultáneos, dos arranques simultáneos con una sola semilla); `docker stop` tarda 1,1 s con uvicorn
+como PID 1. **No verificado:** el HPA subiendo a 2 réplicas reales en el clúster; el tiempo de apagado anterior al cambio. **Pendiente:** publicar una imagen nueva de `hub-api` para que llegue al clúster.
+
 ## 15 nov 2026 · Pool de conexiones y topes de tamaño (spec 022, T07; auditoría BE-02 y BE-05)
 
 **Pedido:** seguir con el orden de corrección de `docs/auditoria-2026-11.md`. **BE-02:** el motor de PostgreSQL declara el pool (10 + 5, espera de 10 s en vez de 30), `statement_timeout` de 15 s y

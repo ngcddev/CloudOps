@@ -37,8 +37,8 @@ COPY tests ./tests
 COPY --from=seed . ./seed
 USER 10001
 EXPOSE 8000
-# Primero se aplican las migraciones y después arranca la API.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Primero se aplican las migraciones y después arranca la API; con `exec`, uvicorn es el proceso principal y recibe SIGTERM al apagar el Pod (sin esperar 30 s).
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
 
 # ---------- Producción (etapa final: la que se construye por defecto) ----------
 FROM base AS prod
@@ -49,4 +49,4 @@ COPY app ./app
 COPY --from=seed . ./seed
 USER 10001
 EXPOSE 8000
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]

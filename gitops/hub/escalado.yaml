@@ -1,6 +1,7 @@
 # Escalado y disponibilidad del Hub (spec 016): HPA por CPU para la API y la web, y un PodDisruptionBudget para cada una.
-# metrics-server viene con k3s. Máximo 2 réplicas: el nodo es pequeño y la API lleva tareas en segundo plano (vigilancia de Argo CD,
-# alertas) que con más réplicas se repetirían. PostgreSQL no se escala: es un solo StatefulSet con su respaldo.
+# metrics-server viene con k3s. Máximo 2 réplicas porque el nodo es pequeño. La tarea en segundo plano de la API (el vigilante de Argo CD) y
+# el arranque (migraciones y semilla) toman un candado de PostgreSQL (app/services/bloqueos.py): con 2 réplicas lo hace una sola a la vez.
+# PostgreSQL no se escala: es un solo StatefulSet con su respaldo.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
