@@ -198,3 +198,26 @@ def test_el_generador_no_acepta_un_host_ni_un_nombre_peligrosos(seeded):
     with pytest.raises(provisioning.EntradaInvalida):
         provisioning.render_kustomization(service, service.plan)
     seeded.rollback()
+
+
+def test_dar_de_alta_no_sostiene_una_conexion_mientras_espera_a_gitea(client, seeded, gitea, sesiones_de_peticion):
+    """Auditoría BE-02: las llamadas a Gitea (hasta 10 s cada una) no deben sostener una transacción abierta."""
+    from app.main import app
+
+    servicio = _crear_sitio(client)
+    sesiones_de_peticion.clear()
+    durante = []
+
+    class Espia(GiteaClient):
+        def _request(self, *args, **kwargs):
+            durante.append(sesiones_de_peticion[-1].in_transaction())
+            return super()._request(*args, **kwargs)
+
+    app.dependency_overrides[get_gitea] = lambda: Espia(gitea.url, gitea.repo, gitea.token)
+
+    respuesta = client.post(f"/api/services/{servicio['id']}/provision")
+
+    assert respuesta.status_code == 201, respuesta.text
+    assert len(durante) >= 3 and not any(durante), f"hubo transacción abierta durante {durante.count(True)} de {len(durante)} llamadas a Gitea"
+    assert len(respuesta.json()["commits"]) == 3 and respuesta.json()["namespace"] == "cliente-colegio"
+

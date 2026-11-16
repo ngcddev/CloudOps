@@ -3,6 +3,11 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Lo que faltaba de BE-02: diagnosticar, aprobar y dar de alta sin sostener la conexión (spec 022, T33)
+
+El asistente y los borradores ya soltaban la conexión a la base mientras esperaban a Ollama (T07); faltaban el diagnóstico de incidentes (seis consultas a Prometheus, una a Loki y Ollama), la aprobación de un cambio y el alta de un sitio (varias llamadas a Gitea de hasta 10 s). Ahora los tres copian lo que necesitan, sueltan la conexión y escriben al final; al aprobar se vuelve a leer el cambio y, si otra persona lo resolvió mientras tanto, responde 409 sin pisarlo.
+**Cómo se comprobó:** cuatro pruebas nuevas que miran la sesión de la petición desde el transporte falso; la de dar de alta falló antes del arreglo. **Un tropiezo útil:** mi primer arreglo del alta soltaba solo el servicio y la prueba seguía viendo una transacción abierta: al deshacer la transacción la sesión caduca todos los objetos que conserva y leerlos de nuevo volvía a tomar la conexión. Ahora se separan todos (`expunge_all`). **No verificado:** con 15 llamadas simultáneas (no medí el pool).
+
 ## 16 nov 2026 · Lote de plataforma y contenedores: CT-02, IA-01, K8-06, CT-04 y CT-03 (spec 022, T28 a T32)
 
 **CT-02:** la API de desarrollo montaba toda la raíz del repo (con `.env` y `.env.cluster`); ahora monta carpeta por carpeta. **IA-01:** el módulo de OpenTofu creaba la Application en `default` y competía con el ApplicationSet; ahora usa `clientes` y solo la crea si se pide. **K8-06:** MLflow, Backstage y los respaldos tienen su Application (`selfHeal`, sin `prune`); Gitea y Argo CD quedan como excepción de arranque documentada. **CT-04:** MLflow y la compuerta se publican solo en `127.0.0.1`. **CT-03:** el runner pierde las capacidades de Linux y no puede ganar privilegios nuevos; sigue siendo root con el socket de Docker, pero endurecido.

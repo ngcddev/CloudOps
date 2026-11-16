@@ -155,3 +155,29 @@ def test_un_incidente_inexistente_es_404(client, ia):
 
 def test_el_cliente_no_puede_pedir_diagnosticos(as_client, incidente):
     assert as_client.post(f"/api/incidents/{incidente.id}/ai-diagnosis", json={}).status_code == 403
+
+
+def test_diagnosticar_no_sostiene_una_conexion_mientras_espera_a_la_ia(client, incidente, ia, sesiones_de_peticion, monkeypatch):
+    """Auditoría BE-02: Prometheus, Loki y Ollama tardan segundos; mientras esperan, la petición no debe tener una transacción abierta."""
+    durante = []
+    original = json.loads  # el transporte de `ia` ya guarda lo recibido; aquí solo se mira la sesión
+
+    def transporte(url, body, timeout):
+        durante.append(sesiones_de_peticion[-1].in_transaction())
+        return 200, json.dumps({"message": {"content": BUENO}}).encode()
+
+    monkeypatch.setattr("app.integrations.ollama.urllib_transport", transporte)
+    assert original
+
+    respuesta = diagnosticar(client, incidente, APORTADA)
+
+    assert respuesta.status_code == 201 and respuesta.json()["source"] == "llm"
+    assert durante == [False]   # mientras esperaba a Ollama no había transacción (ni conexión) tomada
+
+
+def test_diagnosticar_descarta_el_borrador_anterior_aunque_suelte_la_conexion(client, incidente, ia, db):
+    primero = diagnosticar(client, incidente, APORTADA).json()["id"]
+    segundo = diagnosticar(client, incidente, APORTADA).json()["id"]
+
+    estados = {d.id: d.status for d in db.scalars(select(AiDraft).where(AiDraft.incident_id == incidente.id))}
+    assert estados[primero] == "descartado" and estados[segundo] == "borrador_ia"

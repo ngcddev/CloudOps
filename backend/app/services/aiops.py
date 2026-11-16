@@ -7,12 +7,14 @@
 import re
 import time
 from dataclasses import dataclass
+from types import SimpleNamespace
 from datetime import timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.db import soltar_conexion
 from app.integrations import loki, ollama, prometheus
 from app.models.ai_draft import AiDraft
 from app.models.incident import Incident
@@ -149,13 +151,23 @@ def redactar(incident: Incident, evidencia: list[Evidencia], transport=None) -> 
 
 
 def diagnosticar(db: Session, incident: Incident, aportada: list[str] | None = None, transport_prometheus=None, transport_loki=None, transport=None) -> AiDraft:
-    """Crea el borrador de diagnóstico (el anterior sin aprobar se descarta). Funciona con el incidente abierto. Hace commit."""
-    evidencia = reunir_evidencia(incident, aportada, transport_prometheus, transport_loki)
-    for anterior in db.scalars(select(AiDraft).where(AiDraft.incident_id == incident.id, AiDraft.kind == "diagnostico", AiDraft.status == "borrador_ia")):
+    """Crea el borrador de diagnóstico (el anterior sin aprobar se descarta). Funciona con el incidente abierto. Hace commit.
+
+    Las consultas a Prometheus y Loki y la llamada a Ollama tardan segundos: antes de hacerlas se copia lo que se necesita del incidente y se suelta la conexión
+    a la base, para que esperar no sostenga una del pool (auditoría BE-02).
+    """
+    foto = SimpleNamespace(
+        id=incident.id, priority=incident.priority, title=incident.title, source=incident.source, started_at=incident.started_at,
+        rollback_from_version=incident.rollback_from_version, rollback_to_version=incident.rollback_to_version,
+        service=SimpleNamespace(name=incident.service.name, namespace=incident.service.namespace),
+    )
+    soltar_conexion(db)
+    evidencia = reunir_evidencia(foto, aportada, transport_prometheus, transport_loki)
+    r = redactar(foto, evidencia, transport=transport)
+    for anterior in db.scalars(select(AiDraft).where(AiDraft.incident_id == foto.id, AiDraft.kind == "diagnostico", AiDraft.status == "borrador_ia")):
         anterior.status = "descartado"
-    r = redactar(incident, evidencia, transport=transport)
     borrador = AiDraft(
-        incident_id=incident.id, kind="diagnostico", status="borrador_ia", source=r["source"], model=r["model"], prompt_version=r["prompt_version"],
+        incident_id=foto.id, kind="diagnostico", status="borrador_ia", source=r["source"], model=r["model"], prompt_version=r["prompt_version"],
         generated_text=r["texto"], checks=r["checks"], latency_ms=r["latency_ms"],
     )
     db.add(borrador)

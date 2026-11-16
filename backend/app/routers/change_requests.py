@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
-from app.db import get_db
+from app.db import get_db, soltar_conexion
 from app.deps import require_agency
 from app.models.change_request import ChangeRequest
 from app.models.ticket import Ticket
@@ -199,19 +199,15 @@ def approve_change_request(
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
+    # Las llamadas a Gitea tardan hasta 10 s cada una: se copia lo que hace falta y se suelta la conexión a la base mientras se espera (auditoría BE-02)
+    namespace, to_version, approver_id, approver_name, approver_email = change.service.namespace, change.to_version, approver.id, approver.name, approver.email
+    soltar_conexion(db)
     try:
-        sha = publish_version(
-            gitea,
-            change.service.namespace,
-            change.to_version,
-            change.id,
-            approver.name,
-            approver.email,
-        )
+        sha = publish_version(gitea, namespace, to_version, change_id, approver_name, approver_email)
     except NothingToPublish as error:
         # Puede ser una aprobación anterior que escribió en Gitea y no alcanzó a guardarse: se adopta
         try:
-            sha = find_existing_publication(gitea, change.service.namespace, change.to_version, change.id)
+            sha = find_existing_publication(gitea, namespace, to_version, change_id)
         except GiteaError as gitea_error:
             raise HTTPException(
                 status_code=502, detail=f"No se pudo publicar en Gitea: {gitea_error}"
@@ -221,6 +217,10 @@ def approve_change_request(
     except GiteaError as error:
         raise HTTPException(status_code=502, detail=f"No se pudo publicar en Gitea: {error}") from error
 
+    # Se vuelve a leer el cambio: mientras se esperaba a Gitea alguien pudo aprobarlo o rechazarlo. El commit ya está escrito; si otro lo resolvió primero no se pisa.
+    change = get_change_or_404(db, change_id)
+    if change.status != "pendiente":
+        raise HTTPException(status_code=409, detail=f"El cambio pasó a «{change.status}» mientras se publicaba; no se cambia nada más.")
     # aprobada y en_validacion ocurren en el mismo instante: el commit ya está escrito
     transition(change, "aprobada", actor_id=approver.id)
     db.add(step_event(change, "pendiente", approver.id, "Su solicitud fue aprobada."))

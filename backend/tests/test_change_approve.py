@@ -342,3 +342,40 @@ def test_con_la_puerta_en_ok_se_publica_como_antes(client, seeded, gitea, pass_g
 
     assert response.status_code == 200
     assert len(gitea.commits) == 1
+
+
+def test_aprobar_no_sostiene_una_conexion_mientras_espera_a_gitea(client, cambio, gitea, sesiones_de_peticion):
+    """Auditoría BE-02: cada llamada a Gitea puede tardar hasta 10 s; mientras espera, la petición no debe tener una transacción abierta."""
+    durante = []
+
+    class Espia(GiteaClient):
+        def _request(self, *args, **kwargs):
+            durante.append(sesiones_de_peticion[-1].in_transaction())
+            return super()._request(*args, **kwargs)
+
+    app.dependency_overrides[get_gitea] = lambda: Espia(gitea.url, gitea.repo, gitea.token)
+
+    respuesta = client.post(f"/api/change-requests/{cambio['id']}/approve")
+
+    assert respuesta.status_code == 200 and respuesta.json()["status"] == "en_validacion"
+    assert durante and not any(durante), f"hubo transacción abierta durante {durante.count(True)} de {len(durante)} llamadas a Gitea"
+
+
+def test_si_alguien_resuelve_el_cambio_mientras_se_publica_no_se_pisa(client, cambio, gitea, sesiones_de_peticion, session_factory):
+    """Al soltar la conexión otra persona puede rechazar el cambio mientras Gitea responde: la aprobación lo detecta y responde 409 en vez de pisarlo."""
+    from app.models import ChangeRequest
+
+    class Espia(GiteaClient):
+        def update_file(self, *args, **kwargs):
+            with session_factory() as otra:   # otra persona rechaza el cambio justo antes de que se guarde la aprobación
+                otra.get(ChangeRequest, cambio["id"]).status = "rechazada"
+                otra.commit()
+            return super().update_file(*args, **kwargs)
+
+    app.dependency_overrides[get_gitea] = lambda: Espia(gitea.url, gitea.repo, gitea.token)
+
+    respuesta = client.post(f"/api/change-requests/{cambio['id']}/approve")
+
+    assert respuesta.status_code == 409 and "rechazada" in respuesta.json()["detail"]
+    with session_factory() as db:
+        assert db.get(ChangeRequest, cambio["id"]).status == "rechazada"
