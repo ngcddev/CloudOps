@@ -3,6 +3,20 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 15 nov 2026 · La liveness de la API no depende de la base (spec 022, T09; auditoría K8-03)
+
+**Pedido:** la liveness y la readiness de la API usaban `/health`, que ejecuta `SELECT 1`. Si PostgreSQL se reiniciaba, el kubelet mataba la API cada ~45 s (CrashLoopBackOff) mucho después de que la
+base volviera; es el mismo tipo de bucle que ya vimos al reiniciar el nodo. Ahora hay **`GET /livez`**, que dice solo si el proceso atiende (corre en el bucle de eventos, sin pedir sesión de base), y
+el manifiesto la usa en la **liveness** y en una **`startupProbe`** de hasta 150 s (alembic y la semilla pueden tardar tras una actualización o un reinicio del nodo; sustituye a la espera fija de
+40 s). `/health` queda en la **readiness**: sin base la API sale del Service, pero no se reinicia. Ninguna de las dos rutas genera trazas, y `/livez` se agregó a las rutas públicas de la prueba que
+exige sesión en todas las demás.
+
+**Verificado:** 970 pruebas pasadas y 4 omitidas; `ruff` 0.14.0 sin hallazgos; con **PostgreSQL 16 real** y la imagen de producción, con la base caída `/livez` responde 200 en 3 ms y `/health` da 503,
+el contenedor no se reinicia (0 reinicios, mismo `StartedAt`) y al volver la base `/health` recupera en ~1 s sin tocar la API. **Observación:** con la base caída `/health` tarda ~7,9 s en dar el 503
+(intenta conectar); el kubelet lo registrará como timeout (`timeoutSeconds: 3`) y el efecto es el mismo, pero un `connect_timeout` en el motor lo acortaría; no se cambió aquí. **No verificado:** el
+kubelet real en el clúster. **Pendiente y con orden:** publicar primero una imagen de `hub-api` que tenga `/livez` y **después** promover `gitops/hub` a hub-gitops con `sincronizar-hub-gitops.sh`
+(Argo CD lo aplica solo); al revés, la imagen vieja no responde `/livez` y la startupProbe la reiniciaría en bucle.
+
 ## 15 nov 2026 · Varias réplicas de la API sin duplicar trabajo (spec 022, T08; auditoría K8-04)
 
 **Pedido:** el HPA de la API permite 2 réplicas, pero el vigilante de Argo CD (confirmar cambios, rollbacks y alinear con Git) y las migraciones del arranque corrían en cada una: con la carga que

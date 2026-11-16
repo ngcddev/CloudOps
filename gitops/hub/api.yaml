@@ -96,14 +96,19 @@ spec:
           resources:
             requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 256Mi }
+          # Arranque (alembic y la semilla): hasta 150 s (30 × 5) antes de que empiecen la readiness y la liveness; sustituye a la espera fija de 40 s
+          startupProbe:
+            httpGet: { path: /livez, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+            timeoutSeconds: 3
           readinessProbe:
-            httpGet: { path: /health, port: http }   # ok solo si la base contesta
+            httpGet: { path: /health, port: http }   # ok solo si la base contesta: sin base la API sale del Service, pero no se reinicia
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3   # el valor por defecto (1 s) marcaba la API como caída ante cualquier pausa corta (auditoría BE-01)
           livenessProbe:
-            httpGet: { path: /health, port: http }
-            initialDelaySeconds: 40
+            httpGet: { path: /livez, port: http }   # solo dice si el proceso responde; con /health un reinicio de PostgreSQL mataba la API en bucle (auditoría K8-03)
             periodSeconds: 15
             timeoutSeconds: 3
 ---

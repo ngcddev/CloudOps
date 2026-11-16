@@ -5,8 +5,8 @@ import pytest
 
 from app.main import app
 
-# Únicas rutas que responden sin sesión: la salud del servicio y el inicio de sesión
-PUBLICAS = {("GET", "/health"), ("POST", "/api/auth/login")}
+# Únicas rutas que responden sin sesión: la salud del servicio (con base y solo el proceso, que consulta el kubelet) y el inicio de sesión
+PUBLICAS = {("GET", "/health"), ("GET", "/livez"), ("POST", "/api/auth/login")}
 
 
 def _rutas():
