@@ -1,7 +1,8 @@
 # Conexión a PostgreSQL: engine, sesión, Base de los modelos y get_db() para los endpoints.
 from collections.abc import Iterator
 
-from sqlalchemy import create_engine
+from sqlalchemy import JSON, create_engine
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
@@ -30,6 +31,11 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False)
 
 class Base(DeclarativeBase):
     pass
+
+
+# Columnas de documentos: `jsonb` en PostgreSQL (se puede indexar y consultar por contenido, y no se vuelve a analizar el texto en cada lectura) y `JSON` en SQLite,
+# que usan las pruebas (auditoría BD-04). La migración 0017 las convierte en la base real.
+JSON_DOC = JSON().with_variant(JSONB(), "postgresql")
 
 
 def get_db() -> Iterator[Session]:

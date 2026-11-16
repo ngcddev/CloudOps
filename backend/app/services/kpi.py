@@ -7,6 +7,7 @@ from pathlib import Path
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.archivos import leer_con_cache
 from app.integrations import prometheus
 from app.integrations.prometheus import Transport
 from app.models.client import Client
@@ -33,7 +34,7 @@ KPI_DEFAULTS = {
 def kpi_params() -> dict:
     """Lee los parámetros de KPI de `seed/kpi_params.json`; si no existe usa los de trabajo."""
     try:
-        data = json.loads((SEED_DIR / "kpi_params.json").read_text(encoding="utf-8"))
+        data = leer_con_cache(SEED_DIR / "kpi_params.json", json.loads)
         return {**KPI_DEFAULTS, **data}
     except (OSError, ValueError):
         return dict(KPI_DEFAULTS)
@@ -71,8 +72,7 @@ def tickets_del_cliente(db: Session, client_id: int, month: str) -> list[Ticket]
             select(Ticket)
             .join(Ticket.service)
             .join(Service.project)
-            .join(Project.client)
-            .where(Client.id == client_id, Ticket.created_at >= inicio, Ticket.created_at < fin)
+            .where(Project.client_id == client_id, Ticket.created_at >= inicio, Ticket.created_at < fin)
             .order_by(Ticket.created_at, Ticket.id)
         ).all()
     )

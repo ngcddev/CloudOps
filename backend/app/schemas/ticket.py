@@ -50,6 +50,11 @@ class WorkLogCreate(BaseModel):
     def _horas_positivas(cls, value: Decimal) -> Decimal:
         if value <= 0:
             raise ValueError("Las horas deben ser mayores que cero.")
+        # Un registro de horas es de un día como máximo y con hasta dos decimales: una cifra enorme llegaba a PostgreSQL y daba un 500 (auditoría BE-15)
+        if value > 24:
+            raise ValueError("Un registro de horas no puede pasar de 24.")
+        if value.as_tuple().exponent < -2:
+            raise ValueError("Las horas llevan como máximo dos decimales.")
         return value
 
 

@@ -1,7 +1,7 @@
 # Modelo de usuario de la agencia o de un cliente (tabla users, specs 004 y 007).
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,11 +9,11 @@ from app.db import Base
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = (Index("ix_users_client_id", "client_id"),)
+    __table_args__ = (Index("ix_users_client_id", "client_id"), Index("uq_users_email_lower", text("lower(email)"), unique=True))
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    email: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    email: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)   # y el índice único sobre lower(email) de la migración 0017 (auditoría BD-07)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     client_id: Mapped[int | None] = mapped_column(ForeignKey("clients.id"), nullable=True)
     # Contraseña con hash bcrypt (spec 007); nunca se guarda en claro

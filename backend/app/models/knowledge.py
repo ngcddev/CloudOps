@@ -4,10 +4,10 @@
 # Solo contiene documentos del proyecto (la ayuda del Hub), nunca datos de clientes (principio 2).
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
+from app.db import JSON_DOC, Base
 
 
 class KbDocument(Base):
@@ -38,6 +38,6 @@ class KbChunk(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     # Vector de la sección (768 números con nomic-embed-text)
-    embedding: Mapped[list] = mapped_column(JSON, nullable=False)
+    embedding: Mapped[list] = mapped_column(JSON_DOC, nullable=False)
 
     document: Mapped[KbDocument] = relationship(back_populates="chunks")

@@ -3,14 +3,15 @@
 # y qué dijo la persona sobre la decisión (`feedback_label`, material para reentrenar la compuerta).
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db import Base
+from app.db import JSON_DOC, Base
 
 
 class AiQuery(Base):
     __tablename__ = "ai_queries"
+    __table_args__ = (Index("ix_ai_queries_created_at", "created_at"),)   # el de la migración 0010 (auditoría BD-06)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
@@ -27,7 +28,7 @@ class AiQuery(Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     # Secciones de la ayuda que sirvieron de contexto (trazabilidad de la respuesta); vacío = sin información
-    context_sections: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    context_sections: Mapped[list | None] = mapped_column(JSON_DOC, nullable=True)
     # Cómo se armó el contexto: completo | recuperacion | rag (el RAG puede caer a recuperación léxica) y, con RAG,
     # la similitud coseno del mejor trozo
     context_mode: Mapped[str | None] = mapped_column(String(20), nullable=True)

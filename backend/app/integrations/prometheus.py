@@ -14,6 +14,19 @@ PROMETHEUS_TIMEOUT_SECONDS = 2.0
 # Caché en memoria de la última respuesta por consulta y mes.
 PROMETHEUS_CACHE_SECONDS = 60
 _cache: dict[str, tuple[float, object]] = {}
+# Tope de entradas (auditoría BE-11): cada consulta de otro mes o de otro incidente crea una clave y las vencidas nunca se borraban
+MAX_ENTRADAS_CACHE = 256
+
+
+def _guardar(key: str, vencimiento: float, valor: object) -> None:
+    """Guarda en la caché; al pasar del tope purga primero lo vencido y, si aún sobra, lo más viejo."""
+    if len(_cache) >= MAX_ENTRADAS_CACHE:
+        ahora = time.monotonic()
+        for clave in [k for k, (vence, _) in _cache.items() if vence <= ahora]:
+            del _cache[clave]
+        while len(_cache) >= MAX_ENTRADAS_CACHE:
+            del _cache[min(_cache, key=lambda k: _cache[k][0])]
+    _cache[key] = (vencimiento, valor)
 
 # transport(url, timeout) -> (código HTTP, cuerpo)
 Transport = Callable[[str, float], tuple[int, bytes]]
@@ -62,7 +75,7 @@ def query(promql: str, at: str, transport: Transport | None = None) -> float | N
     except Exception:
         valor = None
 
-    _cache[key] = (ahora + PROMETHEUS_CACHE_SECONDS, valor)
+    _guardar(key, ahora + PROMETHEUS_CACHE_SECONDS, valor)
     return valor
 
 
@@ -109,5 +122,5 @@ def query_range(
     except Exception:
         puntos = None
 
-    _cache[key] = (ahora + PROMETHEUS_CACHE_SECONDS, puntos)
+    _guardar(key, ahora + PROMETHEUS_CACHE_SECONDS, puntos)
     return puntos

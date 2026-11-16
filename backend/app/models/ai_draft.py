@@ -3,10 +3,10 @@
 # (principio 6). Cada borrador guarda con qué modelo y prompt se hizo y qué verificaciones automáticas se le aplicaron.
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
+from app.db import JSON_DOC, Base
 
 
 class AiDraft(Base):
@@ -26,7 +26,7 @@ class AiDraft(Base):
     # Lo que realmente se aprobó (el borrador editado por la persona); nulo mientras no se apruebe
     final_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Resultado de las verificaciones: términos prohibidos, horas que no coinciden, motivo de usar la plantilla
-    checks: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    checks: Mapped[dict | None] = mapped_column(JSON_DOC, nullable=True)
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     approved_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
