@@ -73,6 +73,23 @@ bash gitops/pruebas/sincronia.sh                    # ¿están en sincronía? sa
 bash gitops/pruebas/sincronizar-prueba.sh           # prueba del sincronizador con repositorios locales (sin Gitea)
 ```
 
+### Esa tabla la hace cumplir Gitea (spec 022, T13)
+
+Sin una regla, `hub-bot` (el token del Hub) podía escribir en todo `hub-gitops`: un `ClusterRoleBinding` en `observability/` lo aplicaría Argo CD con el proyecto `default`. Una regla de protección de la rama `main`
+lo cierra: solo `forja-admin` empuja libremente; a los demás Gitea les deja cambiar únicamente `clients/*/kustomization.yaml`, `clients/*/catalog-info.yaml` y `clients/*/backend.yaml`, que es lo único que escribe el Hub.
+Nadie (tampoco el administrador) puede reescribir la historia de `main` con `git push --force`. Se prueba con un repositorio y un usuario desechables, sin tocar `hub-gitops`; el script es idempotente:
+
+```bash
+set -a; . ./.env.cluster; set +a; export GITEA_USER="$GITEA_ADMIN_USER" GITEA_PASSWORD="$GITEA_ADMIN_PASSWORD"
+python gitops/pruebas/proteccion_hub_gitops.py       # prueba la regla (API de contenidos y git push, bot y administrador)
+python gitops/proteccion_hub_gitops.py --aplicar     # crea o corrige la regla en hub-gitops
+python gitops/proteccion_hub_gitops.py --comprobar   # sale con 1 si falta o es distinta
+```
+
+Si el Hub necesita escribir en otra ruta, hay que añadirla a `PATRONES_DEL_HUB` y volver a aplicar; `backend/tests/test_proteccion_hub_gitops.py` falla si el Hub escribe algo que la regla le bloquearía.
+**Límite conocido:** `clients/*/kustomization.yaml` también coincide con `clients/_base/kustomization.yaml`, así que un `hub-bot` comprometido todavía podría cambiarlo (y los archivos de cada cliente); lo acota el proyecto
+`clientes` de Argo CD (solo namespaces `cliente-*` y los tipos de recurso de un sitio), no esta regla.
+
 Un cliente que está en el repositorio principal pero no en `hub-gitops` se omite: lo crea el Hub. En un entorno real el CI promovería a un repositorio de configuración alcanzable por el clúster
 (con PR y revisión) y el CI de la aplicación solo subiría las etiquetas de imagen; aquí lo hace el comando porque el clúster está en un portátil al que GitHub no llega.
 
