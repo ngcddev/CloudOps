@@ -1,5 +1,5 @@
-// Configuración de Grafana Alloy (spec 008, T25): lee por la API de Kubernetes los registros de los Pods
-// de los clientes (namespaces cliente-*) de su nodo y los manda a Loki con las etiquetas namespace, pod y container.
+// Configuración de Grafana Alloy (spec 008, T25 y spec 022, T26): lee por la API de Kubernetes los registros de los Pods
+// de los clientes (namespaces cliente-*) y del Hub (namespace hub, sin PostgreSQL ni el respaldo) de su nodo y los manda a Loki con las etiquetas namespace, pod y container.
 // Reemplaza a Promtail, que está en fin de vida. No necesita montar carpetas del nodo.
 
 discovery.kubernetes "pods" {
@@ -14,11 +14,18 @@ discovery.kubernetes "pods" {
 discovery.relabel "clientes" {
   targets = discovery.kubernetes.pods.targets
 
-  // Solo los sitios de los clientes: la plataforma no se recoge (ahorra memoria y disco)
+  // Los sitios de los clientes y el Hub (API, web, voz y Backstage); el resto de la plataforma no se recoge (ahorra memoria y disco). Un 500 del Hub
+  // se sigue en Loki con su id de petición y su trace_id (auditoría OB-04). Loki guarda 72 h.
   rule {
     source_labels = ["__meta_kubernetes_namespace"]
-    regex         = "cliente-.+"
+    regex         = "cliente-.+|hub"
     action        = "keep"
+  }
+  // PostgreSQL y el respaldo registran consultas y nombres de archivos con datos de las personas: no se recogen
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_app"]
+    regex         = "postgres|hub-db-backup"
+    action        = "drop"
   }
   rule {
     source_labels = ["__meta_kubernetes_namespace"]

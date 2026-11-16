@@ -18,6 +18,15 @@ datasources:
     access: proxy
     url: http://loki.monitoring.svc:3100
     editable: false
+    jsonData:
+      # De un registro a su traza: los registros del Hub llevan "trace_id" (spec 022, T26; auditoría OB-04)
+      derivedFields:
+        - name: trace_id
+          matcherType: regex
+          matcherRegex: '"trace_id":\s*"(\w+)"'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+          urlDisplayLabel: Ver la traza
   # Trazas del Hub (OpenTelemetry → Tempo): Explore → Tempo → buscar por service.name = hub-api
   - name: Tempo
     uid: tempo
@@ -25,3 +34,11 @@ datasources:
     access: proxy
     url: http://tempo.monitoring.svc:3200
     editable: false
+    jsonData:
+      # De una traza a sus registros (spec 022, T26; auditoría OB-04): los del Hub que llevan su trace_id
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+        customQuery: true
+        query: '{namespace="hub"} |= "$${__trace.traceId}"'

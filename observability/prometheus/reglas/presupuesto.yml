@@ -38,9 +38,10 @@ groups:
       - alert: PresupuestoQuemadoRapido
         expr: sitio:quemado:ratio_1h > 14.4 and sitio:quemado:ratio_5m > 14.4
         for: 2m
+        # `warning`, no `critical`: estas alertas van a `solo-ver` y no llegan a nadie (no hay canal externo), y una etiqueta crítica que no avisa engaña
+        # (auditoría OB-05). Se ven en la pestaña Alerts de Prometheus, en Alertmanager y en Grafana (Alerting → Alert rules).
         labels:
-          severity: critical
-          priority: P2
+          severity: warning
         annotations:
           summary: "El sitio de {{ $labels.client }} gasta su margen de error {{ $value | printf \"%.0f\" }} veces más rápido de lo permitido"
           description: "A este ritmo el margen del mes se agota en unos 2 días. Revise la última publicación."
@@ -51,7 +52,6 @@ groups:
         for: 15m
         labels:
           severity: warning
-          priority: P3
         annotations:
           summary: "El sitio de {{ $labels.client }} gasta su margen de error {{ $value | printf \"%.0f\" }} veces más rápido de lo permitido"
           description: "A este ritmo el margen del mes se agota en unos 10 días: conviene revisarlo con calma."

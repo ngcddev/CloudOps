@@ -65,3 +65,39 @@ groups:
           summary: "El contenedor {{ $labels.container }} del Pod {{ $labels.pod }} ({{ $labels.namespace }}) lleva {{ $value }} arranques en 15 minutos"
           accion: "Ver por qué muere: los registros del contenedor anterior y los eventos del Pod."
           runbook_url: "runbooks/contenedor-en-bucle.md"
+
+      # La memoria en uso de todo el nodo pasa de 90 % durante 10 minutos: el nodo es único y compartido, sin memoria el kernel empieza a matar procesos.
+      - alert: NodoSinMemoria
+        expr: container_memory_working_set_bytes{id="/"} / on (instance) machine_memory_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "El nodo {{ $labels.instance }} usa {{ $value | humanizePercentage }} de su memoria"
+          accion: "Ver en el tablero USE qué contenedor crece y, si no hay fuga, bajar réplicas o límites por Git."
+          runbook_url: "runbooks/saturacion.md"
+
+      # Queda menos del 15 % libre en el disco donde viven los volúmenes (Gitea, Postgres, Loki, Prometheus, respaldos): con `local-path` todos comparten el mismo disco.
+      - alert: DiscoDelNodoLleno
+        expr: max by (instance) (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "Al disco del nodo {{ $labels.instance }} le queda {{ $value | humanizePercentage }} libre"
+          accion: "Ver qué volumen crece (Loki, Prometheus, Gitea o los respaldos del Hub) y liberar espacio o reducir su retención por Git."
+          runbook_url: "runbooks/saturacion.md"
+
+      # El respaldo diario del Hub (CronJob hub-db-backup, a las 03:00) lleva más de 36 horas sin terminar bien, o no hay ninguna ejecución exitosa registrada.
+      - alert: RespaldoDelHubSinExito
+        expr: time() - kube_cronjob_status_last_successful_time{namespace="hub", cronjob="hub-db-backup"} > 36 * 3600 or absent(kube_cronjob_status_last_successful_time{namespace="hub", cronjob="hub-db-backup"})
+        for: 15m
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "El respaldo diario de la base del Hub no termina bien desde hace más de 36 horas"
+          accion: "Ver los registros del último Job de hub-db-backup y el espacio del volumen de respaldos; hacer un respaldo a mano mientras se corrige."
+          runbook_url: "runbooks/respaldo-y-restauracion.md"

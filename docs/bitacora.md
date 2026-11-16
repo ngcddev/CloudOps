@@ -3,6 +3,11 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Lote de observabilidad: OB-03, OB-04 y OB-05 (spec 022, T25 a T27)
+
+**OB-03:** alertas de memoria del nodo, disco libre y respaldo del Hub sin éxito. Para el respaldo se añadió `kube-state-metrics` limitado a `cronjobs` y `jobs` (9 Mi en uso). Con `local-path` el «tamaño» de los PVC es el disco entero del nodo, así que se vigila lo libre. **OB-04:** la API escribe registros JSON con `request_id` y `trace_id` (antes los `logger.info` no salían), Alloy recoge el namespace `hub` sin PostgreSQL ni el respaldo, y Grafana enlaza Loki con Tempo en los dos sentidos. **OB-05:** `PresupuestoQuemadoRapido` deja de llamarse `critical`, porque va a un receptor que no avisa a nadie.
+**Cómo se comprobó:** `promtool` (7 casos nuevos), 1043 pruebas del backend, `validar.sh` en verde, `kube-state-metrics` real en el clúster exponiendo el CronJob del Hub, y la regex de cAdvisor probada con las 4 693 series reales del kubelet. **No verificado en el clúster:** que Prometheus tome los jobs nuevos y que los registros del Hub lleguen a Loki con los enlaces de Grafana: eso exige promover `observability/` y publicar `hub-api` con el código nuevo.
+
 ## 16 nov 2026 · Lote del frontend: FE-05 y FE-06 (spec 022, T23 y T24)
 
 **FE-05:** «Incidentes» pedía la lista de clientes y luego el detalle de cada uno (1 + N en cascada) solo para llenar el formulario de «Nuevo incidente». Ahora la pantalla usa la lista para el filtro y el detalle se pide en paralelo, una vez, al abrir el formulario. **FE-06:** la bandeja de cambios pedía la puerta de seguridad de todos los cambios cada 5 s mientras uno esperaba; ahora guarda las de los cambios terminados (publicado, rechazado, fallido), solo repite las demás y no consulta con la pestaña oculta.

@@ -13,4 +13,5 @@ resources:
   - alloy
   - grafana
   - traefik
+  - kube-state-metrics
   - networkpolicy.yaml
