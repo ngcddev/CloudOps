@@ -3,6 +3,13 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Gitea solo acepta entrada de la plataforma (spec 022, T16; auditoría K8-02)
+
+**Pedido:** Gitea guarda el código, los manifiestos y las imágenes de todos los clientes y cualquier Pod del clúster llegaba a él. **Qué se hizo:** una NetworkPolicy en `gitea` que solo deja entrar a Traefik (`gitea.hub.local`: runner, personas y el kubelet), Argo CD, el namespace `hub` (el Hub escribe como `hub-bot`, Backstage lee el catálogo) y los Pods del propio namespace (el respaldo).
+**Cómo se comprobó:** `gitops/pruebas/entrada-gitea.sh` falló antes (desde `default`, `mlops` y `monitoring` se llegaba) y pasa después; con la política puesta, Argo CD sigue sano tras un refresco duro, el nodo baja una imagen del registro, el Hub llega a Gitea y la interfaz responde 200.
+**Error mío:** la primera versión no llevaba `namespace: gitea` y `kubectl apply -k` la creó en `default`, donde no protegía nada. La prueba lo delató (seguía llegando todo); la retiré de `default` y la corregí. Ahora una prueba de CI exige el namespace.
+**No verificado:** el runner empujando una imagen, y `hub-bot` creando un cliente de punta a punta. **Sigue abierto:** `monitoring`. **Volver atrás:** `kubectl delete networkpolicy solo-plataforma-y-propio -n gitea` y quitarla del `kustomization.yaml`.
+
 ## 16 nov 2026 · MLflow solo acepta entrada de Traefik (spec 022, T15; auditoría K8-02, segunda mitad)
 
 **Pedido:** MLflow no pide autenticación y cualquier Pod del clúster llegaba a `http://mlflow.mlops.svc:5000` (podía leer o borrar modelos y experimentos). **Qué se hizo:** una NetworkPolicy en `mlops` que solo deja entrar a Traefik (la interfaz `mlflow.hub.local`) y a los Pods del mismo namespace.
