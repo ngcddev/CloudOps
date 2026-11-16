@@ -47,7 +47,7 @@ def test_el_escalado_apunta_a_deployments_que_existen_y_con_requests_de_cpu():
         destino = deployments[hpa["spec"]["scaleTargetRef"]["name"]]
         contenedores = destino["spec"]["template"]["spec"]["containers"]
         assert all("cpu" in c["resources"]["requests"] for c in contenedores)
-        assert hpa["spec"]["maxReplicas"] <= 2, "la API lleva tareas en segundo plano que se repetirían con más réplicas"
+        assert hpa["spec"]["maxReplicas"] <= 2, "el nodo es pequeño: más de 2 réplicas pide revisar la memoria (el vigilante ya toma un candado, K8-04)"
 
     for pdb in (r for r in escalado if r["kind"] == "PodDisruptionBudget"):
         etiquetas = pdb["spec"]["selector"]["matchLabels"]

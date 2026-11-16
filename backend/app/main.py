@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.config import settings, validar_jwt_secret
 from app import telemetry
-from app.db import SessionLocal, get_db
+from app.db import SessionLocal, engine, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
 from app.limite_cuerpo import LimiteDeCuerpo
@@ -33,6 +33,7 @@ from app.routers import (
     tickets,
 )
 from app.seed import seed_if_empty, seed_passwords
+from app.services.bloqueos import CLAVE_ARRANQUE, esperar_turno
 from app.services.deploy_watch import watch_forever
 
 
@@ -42,7 +43,8 @@ async def lifespan(_: FastAPI):
     validar_jwt_secret(settings.jwt_secret)
     # Las tablas las crea Alembic (alembic upgrade head) al arrancar el contenedor;
     # aquí solo se cargan los datos semilla si la base está vacía.
-    with SessionLocal() as db:
+    # Con varias réplicas arrancando a la vez sobre una base vacía, la semilla la carga una y las demás esperan su turno (auditoría K8-04)
+    with esperar_turno(engine, CLAVE_ARRANQUE), SessionLocal() as db:
         seed_if_empty(db)
         seed_passwords(db)
     # Seguimiento de las publicaciones (spec 005): solo si hay conexión configurada con Argo CD
