@@ -3,6 +3,24 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Salida de red denegada en los namespaces de clientes (spec 022, T14; auditoría K8-02)
+
+**Pedido:** los namespaces de clientes solo restringían la **entrada**. Medido en el clúster, un Pod de cliente alcanzaba Loki, Prometheus, Alertmanager, Grafana, MLflow, Gitea e internet, y todos son accesibles sin autenticación: un Pod comprometido
+(el backend del consultorio es código del cliente) podía leer los logs de otros clientes o mandar alertas falsas al Hub a través de Alertmanager. **Qué se hizo:** `default-deny-egress` y `permitir-dns-y-propio` en la base de cada cliente
+(Kustomize y chart de Helm, que deben coincidir): sale solo el DNS (CoreDNS) y los Pods del mismo cliente. Un sitio no necesita más: Prometheus lee sus métricas (entrada) y Alloy sus registros por la API de Kubernetes. Se promovió con
+`sincronizar-hub-gitops.sh` (`hub-gitops` de `1c63885` a `7a4b011`), que además fue la primera promoción real bajo la regla de Gitea de T13: el administrador empujó sin problema.
+
+**Cómo se llegó:** primero se midió lo que alcanza hoy un Pod (`gitops/pruebas/salida-red.sh --estado`), después un canario real en `cliente-ferreteria-staging` con las políticas puestas a mano y retiradas al terminar (sitio 200 por el Ingress, Prometheus lo
+sigue sondeando, Pod listo), y solo entonces se promovió a los cuatro clientes. Una prueba de CI (`test_salida_de_red.py`) vigila los archivos y se comprobó que falla si se abre una salida a `0.0.0.0/0`.
+
+**Dos errores míos en la prueba, que casi dan un resultado falso:** (1) Git Bash en Windows convierte `/dev/null` en `nul` al pasarlo a `kubectl`: mi primera medición decía que **todo** estaba bloqueado, incluso el sitio propio. Lo vi porque lo que sí debía funcionar
+«fallaba», y no creí el resultado. (2) El Pod de prueba pedía más CPU de la que deja la cuota del plan Básico del consultorio (250m, ya usa 200m) y no arrancaba; ahora pide 20m. Además, al correrla desde `restaurante` el «otro cliente» era él mismo.
+
+**Verificado en el clúster tras promover:** Argo CD aplicó las políticas a los cuatro clientes en ~33 s (todos `Synced/Healthy`); `salida-red.sh` en verde en los cuatro (DNS y sitio propio sí; monitoreo, MLflow, Gitea, el Hub, otro cliente e internet no); los
+cuatro sitios dan 200 por el Ingress; el frontend del consultorio alcanza su backend (`GET /api/contact` → 405 del backend); Prometheus sigue en `probe_success = 1` y lee las métricas del consultorio; solo salta `Watchdog`; ningún reinicio.
+**No verificado:** un envío real del formulario del consultorio (`POST /api/contact` escribe en su base de demostración). **Límites que siguen:** `monitoring`, `mlops` y `gitea` aceptan entrada de cualquier Pod y sus servicios no piden autenticación; la salida del
+namespace `hub` sigue abierta. **Cómo volver atrás:** quitar las dos políticas de `clients/_base` y del chart y promover de nuevo (el commit previo de `hub-gitops` era `1c63885`).
+
 ## 16 nov 2026 · `hub-bot` solo escribe lo suyo en hub-gitops (spec 022, T13; auditoría K8-05)
 
 **Pedido:** `hub-bot` tenía un token con escritura sobre todo `hub-gitops`. Con él se podía escribir un `ClusterRoleBinding` a `cluster-admin` en `observability/` y Argo CD lo aplicaría con el proyecto `default`. Un proyecto de Argo CD nuevo
