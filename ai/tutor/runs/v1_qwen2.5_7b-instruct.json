@@ -1,13 +1,13 @@
 {
-  "fecha_utc": "2026-11-15T02:53:12.141738+00:00",
+  "fecha_utc": "2026-11-15T18:59:52.447396+00:00",
   "modelo": "qwen2.5:7b-instruct",
   "prompt": "v1",
   "k": 4,
   "umbral": 0.6,
   "matriz": {
     "respondible": {
-      "acierto": 18,
-      "omision": 0,
+      "acierto": 17,
+      "omision": 1,
       "alucinacion": 0
     },
     "sin_info": {
@@ -23,12 +23,12 @@
   },
   "metricas": {
     "preguntas": 30,
-    "aciertos": 30,
-    "omisiones": 0,
+    "aciertos": 29,
+    "omisiones": 1,
     "alucinaciones": 0,
-    "acierto_pct": 100.0,
+    "acierto_pct": 96.7,
     "recuperacion_pct": 100.0,
-    "latencia_media_s": 1.2
+    "latencia_media_s": 1.1
   },
   "resultados": [
     {
@@ -79,9 +79,9 @@
     {
       "tipo": "respondible",
       "q": "¿Qué es el drift y quién lo corrige en GitOps?",
-      "categoria": "acierto",
-      "motivo": "",
-      "respuesta": "El drift es el cambio no intencionado que ocurre en el estado del clúster. En GitOps, el controlador corrige el drift, pero solo los cambios hechos a mano en el clúster; con selfHeal activo, corrige solo estos cambios.",
+      "categoria": "omision",
+      "motivo": "falta: a mano, selfheal",
+      "respuesta": "El drift es el cambio no intencionado que ocurre en el estado del clúster Kubernetes. En GitOps, este drift se corrige con el controlador, que marca la aplicación como OutOfSync si hay drift y lo corrige aplicando la configuración desde Git.",
       "fuentes": [
         "GitOps y Argo CD",
         "Rollout y rollback",

@@ -1,0 +1,26 @@
+# Application de Argo CD de los CronJob de respaldo de Gitea y de Argo CD (cada manifiesto fija su namespace) (spec 022, T30; auditoría K8-06): reconcilia platform/respaldo de hub-gitops.
+# Hasta ahora se aplicaba a mano con `kubectl apply -k gitops/platform/respaldo`; con esta Application entra por Git como todo lo demás (principio 3) y un cambio a mano se revierte.
+# Sin prune: adopta lo que ya corre (volúmenes y datos incluidos) y un borrado por error en Git no debe llevarse un volumen ni un Secret. Los Secrets no están en Git.
+# Gitea, Argo CD, k3s y los namespaces siguen siendo arranque único a mano (gitops/README.md): Argo CD no puede reconciliarse a sí mismo ni a Gitea, que guarda lo que él lee.
+# Antes de aplicarla, promover el contenido:  bash gitops/sincronizar-hub-gitops.sh
+# Se aplica una vez:                           kubectl apply -f gitops/platform/argocd/applications/plataforma-respaldo.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: plataforma-respaldo
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+spec:
+  project: default
+  source:
+    repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+    targetRevision: main
+    path: platform/respaldo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true   # un cambio manual en el clúster se revierte a lo que dice Git

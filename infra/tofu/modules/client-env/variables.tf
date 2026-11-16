@@ -33,3 +33,9 @@ variable "image_name" {
   type        = string
   default     = "plantilla"
 }
+
+variable "crear_application" {
+  description = "Crear también la Application de Argo CD. Por defecto no: la crea el ApplicationSet `clientes` a partir del overlay (auditoría IA-01)."
+  type        = bool
+  default     = false
+}

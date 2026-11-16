@@ -25,6 +25,8 @@ escribir "$S/clients/consultorio/backend.yaml" "backend viejo"
 escribir "$S/observability/prom.yml" "prometheus viejo"
 escribir "$S/hub/api.yaml" "api vieja"
 escribir "$S/platform/backstage/group.yaml" "grupo viejo"
+escribir "$S/platform/mlops/mlflow.yaml" "mlflow viejo"
+escribir "$S/platform/respaldo/gitea.yaml" "respaldo viejo"
 escribir "$S/platform/argocd/x.yaml" "copia sin uso"
 (cd "$S" && git_ add -A && git_ commit -q -m semilla && git_ push -q origin HEAD:main)
 git_ clone -q "$T/hub-gitops.git" "$T/hub-lectura" 2>/dev/null
@@ -42,6 +44,8 @@ escribir "$M/gitops/clients/nuevo/kustomization.yaml" "cliente que el Hub aún n
 escribir "$M/observability/prom.yml" "prometheus NUEVO"
 escribir "$M/gitops/hub/api.yaml" "api NUEVA"
 escribir "$M/gitops/platform/backstage/group.yaml" "grupo NUEVO"
+escribir "$M/gitops/platform/mlops/mlflow.yaml" "mlflow NUEVO"
+escribir "$M/gitops/platform/respaldo/gitea.yaml" "respaldo NUEVO"
 escribir "$M/gitops/platform/argocd/x.yaml" "esto no se copia"
 (cd "$M" && git_ add -A && git_ commit -q -m principal && git_ remote add origin "$T/origin.git" && git_ push -q origin HEAD:dev && git_ fetch -q origin)
 export REMOTO="$T/hub-gitops.git" RAIZ="$M"
@@ -68,6 +72,7 @@ en_hub clients/ferreteria/kustomization.yaml | grep -q "v1.1.*lo escribió el Hu
 en_hub clients/consultorio/kustomization.yaml | grep -q "newTag: v1$" && ok "la versión de otro cliente tampoco se tocó" || falla "tocó otra versión"
 [ ! -e "$T/hub-lectura/clients/nuevo" ] && ok "un cliente que el Hub no creó se omite" || falla "creó un cliente que no existe en hub-gitops"
 [ "$(en_hub observability/prom.yml)" = "prometheus NUEVO" ] && [ "$(en_hub hub/api.yaml)" = "api NUEVA" ] && [ "$(en_hub platform/backstage/group.yaml)" = "grupo NUEVO" ] && ok "observability, hub y backstage se promovieron" || falla "faltan observability, hub o backstage"
+[ "$(en_hub platform/mlops/mlflow.yaml)" = "mlflow NUEVO" ] && [ "$(en_hub platform/respaldo/gitea.yaml)" = "respaldo NUEVO" ] && ok "mlops y respaldo se promovieron (K8-06)" || falla "faltan mlops o respaldo"
 [ "$(en_hub platform/argocd/x.yaml)" = "copia sin uso" ] && ok "sin --limpiar no se retira la copia de platform/argocd" || falla "retiró platform/argocd sin pedirlo"
 git_ -C "$T/hub-lectura" log -1 --format=%s | grep -q "sincronizar desde el repositorio principal ($(git_ -C "$M" rev-parse --short HEAD)" && ok "el commit dice de qué commit salió" || falla "el commit no dice el origen"
 

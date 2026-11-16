@@ -29,7 +29,7 @@ RAIZ="${RAIZ:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 RAMAS_MEZCLADAS="${RAMAS_MEZCLADAS:-origin/dev origin/main}"
 
 # origen (en el repositorio principal) : destino (en hub-gitops)
-COMPLETOS=("gitops/clients/_base:clients/_base" "observability:observability" "gitops/hub:hub" "gitops/platform/backstage:platform/backstage")
+COMPLETOS=("gitops/clients/_base:clients/_base" "observability:observability" "gitops/hub:hub" "gitops/platform/backstage:platform/backstage" "gitops/platform/mlops:platform/mlops" "gitops/platform/respaldo:platform/respaldo")
 # Lo que escribe el Hub dentro de cada carpeta de cliente
 DEL_HUB=("kustomization.yaml" "catalog-info.yaml")
 OBSOLETOS=("platform/argocd" "platform/gitea" "platform/k3s" "platform/namespaces.yaml")
