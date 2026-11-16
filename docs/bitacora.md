@@ -3,6 +3,23 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Frontend: sin datos de prueba en producción, carga por pantalla y ErrorBoundary (spec 022, T11; auditoría FE-01 a FE-04 y CT-05)
+
+**Pedido:** (FE-01) un fallo pasajero de la primera petición dejaba toda la sesión en «modo de prueba»: una técnica de agencia falsa, datos inventados y sin «Cerrar sesión». (FE-02) el mock de `api.ts` y los JSON de `seed/`
+viajaban a todo el mundo. (FE-03) las 17 pantallas iban en un solo archivo. (FE-04) un error de render dejaba la pantalla en blanco. (CT-05) nginx no comprimía. **Qué se hizo:** `MOCK_PERMITIDO` en `api.ts`
+(`import.meta.env.DEV || VITE_MOCK === "1"`) vale `false` al compilar para producción: las 47 ramas de prueba llevan `MOCK_PERMITIDO &&` delante y los dos bloques de datos se marcan sin efectos, de modo que el compilador los
+quita junto con los JSON de seed. Con `npm run dev` o `VITE_MOCK=1 npm run build` (una demo sin API) siguen existiendo. Cada pantalla se carga con `React.lazy`; un `OutletSeguro` en los dos layouts da el «Cargando…» y un
+`ErrorBoundary` por pantalla (se descarta al navegar) y otro global en `main.tsx`. nginx comprime texto (`gzip`). Cuando falla la red del navegador, `request()` da un mensaje claro en español.
+
+**Decisión:** no se reescribió `api.ts` (1949 líneas, sin pruebas de frontend) para separar el mock en otro archivo: una constante que vale `false` al compilar logra lo mismo con 47 reemplazos mecánicos y un riesgo mucho menor.
+Como no hay ejecutor de pruebas de frontend, la prueba del `ErrorBoundary` se hace en jsdom con un script de Docker (`frontend/pruebas/error-boundary.sh`) y jsdom no entra a `package.json`.
+
+**Verificado:** el JS inicial baja de 297 KB a 188 KB; en producción ya no aparecen los textos del mock (con `VITE_MOCK=1` el bundle vuelve a 297 KB con todo); con la imagen construida el JS principal baja de 188 KB a 61 KB
+con gzip, sin tocar la caché de `/assets/` ni comprimir las fuentes; la prueba en jsdom (10 comprobaciones); en un navegador real la entrada y la consola cargan sin errores y solo descargan el archivo de la pantalla visitada; con la
+API apagada la interfaz muestra el login y «La API respondió con un error (502)», sin sesión falsa. **No verificado:** el aviso del `ErrorBoundary` con un fallo real en el navegador; todas las pantallas del portal del cliente;
+el mensaje «No se pudo conectar con el Hub». **Aviso:** `docker compose up -d --build web` también recreó la API de desarrollo (su imagen estaba desactualizada respecto a `dev`); quedó sana. **Pendiente:** publicar una imagen
+nueva de `hub-web` para que llegue al clúster. **Sin cambio (ya era así):** si la API devuelve un error al validar una sesión guardada, la sesión se descarta y se vuelve al login.
+
 ## 16 nov 2026 · Alertas de la plataforma (spec 022, T10; auditoría OB-01, OB-02 y OB-03)
 
 **Pedido:** el Hub no tenía sondeo ni alerta, `SitioCaido` no se dispara si Blackbox cae (sus series dejan de existir) y no había alertas de OOM ni reinicios. Prometheus sondea ahora el API (`/health`, que

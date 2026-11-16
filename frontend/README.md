@@ -32,4 +32,14 @@ frontend/
 ## Trabajar antes de que exista la API
 
 La forma de los datos está en [`seed/`](../seed/README.md). Mientras el backend no responda, `api.ts`
-puede devolver esos JSON como datos de prueba; al conectar la API real solo cambia `api.ts`.
+puede devolver esos JSON como datos de prueba, pero **solo en desarrollo** (`npm run dev`) o si se compila con
+`VITE_MOCK=1` (una demo sin API): `VITE_MOCK=1 npm run build`. En producción esos datos no existen: el compilador
+los quita del bundle (`MOCK_PERMITIDO` en `api.ts`) y un fallo de la API se ve como un error en pantalla, no como una
+sesión de agencia falsa.
+
+## Carga por pantalla y errores
+
+Cada pantalla se carga en su propio archivo cuando se visita (`React.lazy` en `App.tsx`), con «Cargando…» mientras llega.
+Un error al mostrar una pantalla no la deja en blanco: `ErrorBoundary` muestra un aviso con «Reintentar» y el marco
+(menú y sesión) sigue en pantalla. Se prueba en un DOM real con `bash frontend/pruebas/error-boundary.sh` (Docker).
+nginx comprime JS, CSS y JSON (`gzip`).

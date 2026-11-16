@@ -1,8 +1,9 @@
 // Marco de la consola de agencia: menú lateral de navegación y área de contenido.
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import Logo from "./Logo";
 import MockDataNotice from "./MockDataNotice";
+import OutletSeguro from "./OutletSeguro";
 import SessionBar from "./SessionBar";
 
 // Secciones de la consola. Las que aún no existen se muestran deshabilitadas con la spec que las trae.
@@ -49,7 +50,7 @@ export default function AgencyLayout() {
       </aside>
       <main className="content">
         <MockDataNotice />
-        <Outlet />
+        <OutletSeguro />
       </main>
     </div>
   );

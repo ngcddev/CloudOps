@@ -1,29 +1,33 @@
 // Componente raíz: define las rutas de la aplicación.
+// Cada pantalla se carga en su propio archivo cuando se visita (auditoría FE-03): quien entra al portal del cliente no descarga la consola de agencia.
+// Los marcos (layouts) y la entrada (Login) van con la aplicación porque se ven siempre; el «Cargando…» y el ErrorBoundary están en OutletSeguro.
+import { lazy } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import AgencyLayout from "./components/AgencyLayout";
 import HomeRedirect from "./components/HomeRedirect";
 import PortalLayout from "./components/PortalLayout";
 import RequireRole from "./components/RequireRole";
-import ClientDetail from "./pages/agencia/ClientDetail";
-import ClientForm from "./pages/agencia/ClientForm";
-import Assistant from "./pages/agencia/Assistant";
-import Reports from "./pages/agencia/Reports";
-import AuditLogList from "./pages/agencia/AuditLogList";
-import ChangeList from "./pages/agencia/ChangeList";
-import ClientList from "./pages/agencia/ClientList";
-import ClientMetrics from "./pages/agencia/ClientMetrics";
-import Dashboard from "./pages/agencia/Dashboard";
-import IncidentDetail from "./pages/agencia/IncidentDetail";
-import IncidentList from "./pages/agencia/IncidentList";
-import ServiceList from "./pages/agencia/ServiceList";
-import TicketDetail from "./pages/agencia/TicketDetail";
-import TicketList from "./pages/agencia/TicketList";
-import PortalReports from "./pages/portal/Reports";
-import PortalTicketList from "./pages/portal/TicketList";
-import PortalHome from "./pages/portal/Home";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+
+const ClientDetail = lazy(() => import("./pages/agencia/ClientDetail"));
+const ClientForm = lazy(() => import("./pages/agencia/ClientForm"));
+const Assistant = lazy(() => import("./pages/agencia/Assistant"));
+const Reports = lazy(() => import("./pages/agencia/Reports"));
+const AuditLogList = lazy(() => import("./pages/agencia/AuditLogList"));
+const ChangeList = lazy(() => import("./pages/agencia/ChangeList"));
+const ClientList = lazy(() => import("./pages/agencia/ClientList"));
+const ClientMetrics = lazy(() => import("./pages/agencia/ClientMetrics"));
+const Dashboard = lazy(() => import("./pages/agencia/Dashboard"));
+const IncidentDetail = lazy(() => import("./pages/agencia/IncidentDetail"));
+const IncidentList = lazy(() => import("./pages/agencia/IncidentList"));
+const ServiceList = lazy(() => import("./pages/agencia/ServiceList"));
+const TicketDetail = lazy(() => import("./pages/agencia/TicketDetail"));
+const TicketList = lazy(() => import("./pages/agencia/TicketList"));
+const PortalReports = lazy(() => import("./pages/portal/Reports"));
+const PortalTicketList = lazy(() => import("./pages/portal/TicketList"));
+const PortalHome = lazy(() => import("./pages/portal/Home"));
 
 export default function App() {
   return (
