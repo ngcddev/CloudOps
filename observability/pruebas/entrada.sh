@@ -11,7 +11,9 @@ RES='"resources":{"requests":{"cpu":"5m","memory":"8Mi"},"limits":{"cpu":"20m","
 desde() {  # desde <namespace> <url>: OK si un Pod alcanza la URL (o, si empieza por "tcp:", el puerto host:puerto), NO si no
   local cmd="wget -q -T 3 -O - $2 >/dev/null 2>&1"
   case "$2" in tcp:*) cmd="nc -z -w 3 $(echo "${2#tcp:}" | tr ':' ' ')" ;; esac
-  kubectl run "ent-$RANDOM" --rm -i --restart=Never -n "$1" --image=busybox:1.36 --quiet \
+  # Un Pod de prueba en `hub` lleva la etiqueta app=api para heredar la política de salida de la API (spec 022, T18): sin ella el namespace deniega toda salida
+  local etiquetas=(); [ "$1" = "hub" ] && etiquetas=(--labels app=api)
+  kubectl run "ent-$RANDOM" --rm -i --restart=Never -n "$1" --image=busybox:1.36 --quiet "${etiquetas[@]}" \
     --overrides="{\"spec\":{\"containers\":[{\"name\":\"t\",\"image\":\"busybox:1.36\",\"command\":[\"sh\",\"-c\",\"$cmd && echo OK || echo NO\"],$SEG,$RES}]}}" 2>/dev/null | tr -d '\r' | grep -E '^(OK|NO)$' | head -1
 }
 espera() {  # espera <namespace> <url> <OK|NO> <descripción>
