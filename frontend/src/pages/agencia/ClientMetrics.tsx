@@ -94,7 +94,7 @@ export default function ClientMetrics() {
           ✕ No se pudieron cargar las métricas: {error}
         </p>
       )}
-      {!series && !error && <p>Cargando métricas…</p>}
+      {!series && !error && <p role="status">Cargando métricas…</p>}
 
       {series && (
         <>

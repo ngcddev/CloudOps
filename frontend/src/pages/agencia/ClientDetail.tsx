@@ -113,7 +113,7 @@ export default function ClientDetail() {
           ✕ No se pudo cargar el cliente: {error}
         </p>
       )}
-      {!client && !error && <p>Cargando cliente…</p>}
+      {!client && !error && <p role="status">Cargando cliente…</p>}
 
       {client && (
         <>
@@ -151,7 +151,7 @@ export default function ClientDetail() {
             <p className="muted">
               Tiempos máximos desde que se abre el caso. P2–P4 corren solo en el horario de atención del plan.
             </p>
-            <table className="table">
+            <table className="table" aria-label="Servicios del cliente">
               <thead>
                 <tr>
                   <th>Prioridad</th>

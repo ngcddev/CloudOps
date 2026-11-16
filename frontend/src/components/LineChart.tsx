@@ -102,7 +102,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
                 x2={WIDTH - MARGIN.right}
                 y1={MARGIN.top + innerHeight * parte}
                 y2={MARGIN.top + innerHeight * parte}
-                stroke="#bbb"
+                stroke="var(--edge-strong)"
                 strokeWidth="1"
               />
               <text className="chart-label" x={MARGIN.left - 8} y={MARGIN.top + innerHeight * parte + 4} textAnchor="end">
@@ -132,7 +132,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
             y={MARGIN.top}
             width={Math.max(x(gap.to) - x(gap.from), 1)}
             height={innerHeight}
-            opacity="0.35"
+            opacity="0.6"
           />
         ))}
 
@@ -149,7 +149,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
               cx={x(Date.parse(segment[0].timestamp))}
               cy={y(segment[0].value)}
               r="2"
-              fill="#000"
+              fill="var(--ink)"
             />
           ),
         )}

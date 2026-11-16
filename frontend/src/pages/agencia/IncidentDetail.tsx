@@ -12,6 +12,7 @@ import {
   type IncidentDetail as IncidentDetailData,
   type IncidentEventType,
 } from "../../api";
+import { useSondeo } from "../../hooks/useSondeo";
 import AiDraftsPanel from "../../components/AiDraftsPanel";
 import DiagnosisPanel from "../../components/DiagnosisPanel";
 import RecoveryPanel from "../../components/RecoveryPanel";
@@ -58,9 +59,8 @@ export default function IncidentDetail() {
   const rollbackRunning = rollbackStatus === "enviado" || rollbackStatus === "sincronizando";
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, rollbackRunning ? ROLLBACK_REFRESH_MS : REFRESH_MS);
-    return () => window.clearInterval(timer);
-  }, [load, rollbackRunning]);
+  }, [load]);
+  useSondeo(load, rollbackRunning ? ROLLBACK_REFRESH_MS : REFRESH_MS);
 
   // Corre una acción y pinta el detalle que devuelve la API, sin recargar la página
   async function run(action: () => Promise<IncidentDetailData>, after?: () => void) {
@@ -96,7 +96,7 @@ export default function IncidentDetail() {
       </>
     );
   }
-  if (!incident) return <p>Cargando incidente…</p>;
+  if (!incident) return <p role="status">Cargando incidente…</p>;
 
   const open = incident.status === "abierto";
   const closed = incident.status === "cerrado";

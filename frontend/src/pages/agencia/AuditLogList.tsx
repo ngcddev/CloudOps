@@ -171,10 +171,10 @@ export default function AuditLogList() {
       </section>
 
       <section className="card">
-        {logs === null && !error && <p className="muted">Cargando…</p>}
+        {logs === null && !error && <p className="muted" role="status">Cargando…</p>}
         {logs !== null && logs.length === 0 && <p>No hay acciones registradas con esos filtros.</p>}
         {logs !== null && logs.length > 0 && (
-          <table className="table">
+          <table className="table" aria-label="Bitácora de acciones">
             <thead>
               <tr>
                 <th>Fecha (hora de Colombia)</th>

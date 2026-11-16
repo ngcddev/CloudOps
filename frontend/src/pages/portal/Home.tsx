@@ -22,16 +22,11 @@ import {
   textosCliente,
 } from "../../texts/cliente";
 
+// Un solo formateador para todos los elementos (antes se creaba uno por elemento filtrado; auditoría FE-10)
+const MES_EN_BOGOTA = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" });
+
 function enElMes(iso: string, month: string): boolean {
-  return (
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Bogota",
-      year: "numeric",
-      month: "2-digit",
-    })
-      .format(new Date(iso))
-      .slice(0, 7) === month
-  );
+  return MES_EN_BOGOTA.format(new Date(iso)).slice(0, 7) === month;
 }
 
 const ESTADO_ICONO = { operativo: "✓", degradado: "!", caido: "✕" } as const;
@@ -84,7 +79,7 @@ export default function PortalHome() {
           ✕ No se pudo cargar su información: {error}
         </p>
       )}
-      {!dashboard && !error && <p>Cargando su información…</p>}
+      {!dashboard && !error && <p role="status">Cargando su información…</p>}
 
       {dashboard && (
         <>

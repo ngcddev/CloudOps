@@ -75,7 +75,7 @@ export default function AgencyDashboardPage() {
           ✕ No se pudo cargar el tablero: {error}
         </p>
       )}
-      {!data && !error && <p>Cargando tablero…</p>}
+      {!data && !error && <p role="status">Cargando tablero…</p>}
 
       {data && (
         <>
@@ -113,7 +113,7 @@ export default function AgencyDashboardPage() {
               <p>Todavía no hay clientes registrados.</p>
             ) : (
               <div className="table-scroll">
-                <table className="table">
+                <table className="table" aria-label="Indicadores por cliente">
                   <thead>
                     <tr>
                       <th>Cliente</th>
@@ -125,7 +125,7 @@ export default function AgencyDashboardPage() {
                       <th>Solicitudes</th>
                       <th>Horas</th>
                       <th>Costo</th>
-                      <th />
+                      <th><span className="sr-only">Detalle</span></th>
                     </tr>
                   </thead>
                   <tbody>

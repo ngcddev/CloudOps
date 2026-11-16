@@ -154,7 +154,7 @@ export default function TicketDetail() {
         </p>
       )}
 
-      {!ticket && !error && <p>Cargando solicitud…</p>}
+      {!ticket && !error && <p role="status">Cargando solicitud…</p>}
 
       {ticket && (
         <>

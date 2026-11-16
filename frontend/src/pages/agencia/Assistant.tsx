@@ -36,8 +36,10 @@ export default function Assistant() {
 
   const loadStats = useCallback(async () => {
     try {
-      setStats(await getAssistantStats());
-      setDrift(await getAssistantDrift());
+      // Independientes: en paralelo, no una detrás de otra (auditoría FE-07)
+      const [estadisticas, deriva] = await Promise.all([getAssistantStats(), getAssistantDrift()]);
+      setStats(estadisticas);
+      setDrift(deriva);
     } catch (statsError) {
       setError((statsError as Error).message);
     }
@@ -119,7 +121,7 @@ export default function Assistant() {
       const answer = await askAssistant(text);
       setTurns((current) => [{ question: text, answer, feedback: null }, ...current]);
       setQuestion("");
-      await loadStats();
+      void loadStats();   // las estadísticas no retrasan la respuesta hablada (auditoría FE-07)
       if (vozDisponible && leerRespuestas) void leerEnVoz(answer.answer);
     } catch (askError) {
       setError((askError as Error).message);
@@ -261,7 +263,7 @@ export default function Assistant() {
           <h3>Qué tanto trabaja la IA</h3>
           <span className="muted">Se calcula con todas las preguntas de la agencia</span>
         </div>
-        {stats === null && !error && <p className="muted">Cargando…</p>}
+        {stats === null && !error && <p className="muted" role="status">Cargando…</p>}
         {drift !== null && drift.avisos.length > 0 && (
           <div role="note" aria-label="Deriva del asistente">
             <h3>Deriva en los últimos {drift.ventana_dias} días</h3>
