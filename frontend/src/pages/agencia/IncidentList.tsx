@@ -8,6 +8,7 @@ import {
   listClients,
   listIncidents,
   type ClientDetail,
+  type ClientSummary,
   type Incident,
   type IncidentStatus,
   type TicketPriority,
@@ -109,7 +110,9 @@ function NewIncidentForm({ clients, onCancel }: { clients: ClientDetail[]; onCan
 }
 
 export default function IncidentList() {
-  const [clients, setClients] = useState<ClientDetail[]>([]);
+  // La lista basta para el filtro por cliente; el detalle (proyectos y servicios) solo hace falta al abrir «Nuevo incidente» (auditoría FE-05)
+  const [clients, setClients] = useState<ClientSummary[]>([]);
+  const [clientDetails, setClientDetails] = useState<ClientDetail[] | null>(null);
   const [incidents, setIncidents] = useState<Incident[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<IncidentStatus | "">("");
@@ -119,10 +122,17 @@ export default function IncidentList() {
 
   useEffect(() => {
     listClients()
-      .then((list) => Promise.all(list.map((client) => getClient(client.id))))
       .then(setClients)
       .catch((loadError: Error) => setError(loadError.message));
   }, []);
+
+  // Una sola vez, en paralelo y solo cuando alguien abre el formulario
+  useEffect(() => {
+    if (!creating || clientDetails !== null) return;
+    Promise.all(clients.map((client) => getClient(client.id)))
+      .then(setClientDetails)
+      .catch((loadError: Error) => setError(loadError.message));
+  }, [creating, clients, clientDetails]);
 
   const load = useCallback(() => {
     listIncidents({
@@ -154,7 +164,12 @@ export default function IncidentList() {
         )}
       </div>
 
-      {creating && <NewIncidentForm clients={clients} onCancel={() => setCreating(false)} />}
+      {creating &&
+        (clientDetails === null ? (
+          <p role="status">Cargando servicios…</p>
+        ) : (
+          <NewIncidentForm clients={clientDetails} onCancel={() => setCreating(false)} />
+        ))}
 
       {error && (
         <p className="error" role="alert">
