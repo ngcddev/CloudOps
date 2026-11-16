@@ -1,0 +1,35 @@
+# Entrada del namespace monitoring (spec 022, T17; auditoría K8-02): Loki, Prometheus, Alertmanager y Tempo no piden autenticación y Loki tiene los
+# logs de todos los clientes. Antes cualquier Pod del clúster los alcanzaba. Ahora: nadie entra salvo (1) los Pods del propio namespace (Prometheus,
+# Grafana, Alloy, Blackbox y Alertmanager hablan entre sí), (2) Traefik hacia Grafana (grafana.hub.local) y (3) el namespace hub hacia las consultas
+# y trazas que el Hub usa: Prometheus 9090, Loki 3100 y el receptor OTLP de Tempo 4318. La salida no se restringe (Prometheus raspa todo el clúster).
+# Si algo nuevo necesita llegar aquí, se añade a propósito en esta política y en observability/pruebas/entrada.sh.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: monitoring
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: permitir-propio-traefik-y-hub
+  namespace: monitoring
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 3000}]
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: hub}}
+      ports:
+        - {protocol: TCP, port: 9090}
+        - {protocol: TCP, port: 3100}
+        - {protocol: TCP, port: 4318}

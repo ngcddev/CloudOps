@@ -13,3 +13,4 @@ resources:
   - alloy
   - grafana
   - traefik
+  - networkpolicy.yaml
