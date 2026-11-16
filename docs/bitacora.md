@@ -3,6 +3,13 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · MLflow solo acepta entrada de Traefik (spec 022, T15; auditoría K8-02, segunda mitad)
+
+**Pedido:** MLflow no pide autenticación y cualquier Pod del clúster llegaba a `http://mlflow.mlops.svc:5000` (podía leer o borrar modelos y experimentos). **Qué se hizo:** una NetworkPolicy en `mlops` que solo deja entrar a Traefik (la interfaz `mlflow.hub.local`) y a los Pods del mismo namespace.
+**Cómo se comprobó:** `gitops/pruebas/entrada-mlops.sh` falló antes (desde `hub` y `default` se llegaba) y pasa después; por Traefik responde 200 y el Pod sigue listo. Se aplicó con `kubectl apply -k gitops/platform/mlops` (MLflow aún no está bajo Argo CD, ver K8-06).
+**No hecho:** `monitoring` y `gitea` siguen abiertos; tienen muchos clientes legítimos (Grafana, Alloy, Prometheus, el Hub, Argo CD, el runner) y hay que medir quién habla con quién antes de cerrar, para no dejar el monitoreo ciego. MLflow sigue sin autenticación para quien entre por la interfaz web.
+**Cómo volver atrás:** `kubectl delete networkpolicy solo-traefik-y-propio -n mlops` y quitarla del `kustomization.yaml`.
+
 ## 16 nov 2026 · Salida de red denegada en los namespaces de clientes (spec 022, T14; auditoría K8-02)
 
 **Pedido:** los namespaces de clientes solo restringían la **entrada**. Medido en el clúster, un Pod de cliente alcanzaba Loki, Prometheus, Alertmanager, Grafana, MLflow, Gitea e internet, y todos son accesibles sin autenticación: un Pod comprometido
