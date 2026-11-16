@@ -3,6 +3,25 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · `hub-bot` solo escribe lo suyo en hub-gitops (spec 022, T13; auditoría K8-05)
+
+**Pedido:** `hub-bot` tenía un token con escritura sobre todo `hub-gitops`. Con él se podía escribir un `ClusterRoleBinding` a `cluster-admin` en `observability/` y Argo CD lo aplicaría con el proyecto `default`. Un proyecto de Argo CD nuevo
+no lo cierra: `monitoring` necesita `ClusterRole` y `ClusterRoleBinding` para Prometheus y Alloy, y uno malicioso es del mismo tipo que uno legítimo. **Qué se hizo:** una regla de protección de la rama `main` de Gitea (`gitops/proteccion_hub_gitops.py`):
+solo `forja-admin` empuja libremente; a los demás les deja cambiar únicamente `clients/*/kustomization.yaml`, `catalog-info.yaml` y `backend.yaml`, que es lo único que escribe el Hub.
+
+**Cómo se llegó:** se probó en un repositorio y un usuario desechables de Gitea 1.22.6 (el bot, colaborador con escritura como `hub-bot`) antes de tocar `hub-gitops`. Sin regla, el bot escribió en `observability/` (el riesgo era real). La primera variante
+(`protected_file_patterns`: proteger `observability/`, `hub/`, `platform/` y `clients/_base`) bloqueaba al bot pero también al administrador, y habría roto `sincronizar-hub-gitops.sh`. La segunda (lista de quien empuja libremente más
+`unprotected_file_patterns` con lo que escribe el Hub) cumple: se usa la lista de lo permitido y no la de lo prohibido, así que lo que se agregue mañana nace protegido.
+
+**Dos cosas que se midieron en vez de suponerse:** (1) Gitea 1.22 no devuelve un campo `enable_force_push`; mi primera comprobación de «forzar apagado» no verificaba nada. Se quitó y se midió con un `git push --force` real: con la regla puesta se rechaza
+para el bot y para el administrador. (2) El patrón `clients/*/kustomization.yaml` también coincide con `clients/_base/kustomization.yaml`: queda como límite conocido en la prueba y en el README.
+
+**Verificado:** la prueba contra Gitea con repositorio y usuario desechables (25 comprobaciones en verde: API de contenidos y `git push`, bot y administrador, `--force`); una prueba de backend ata las rutas que el Hub escribe de verdad (alta, versión, rollback) a los patrones;
+995 pruebas de backend pasadas y 4 omitidas; `ruff` sin hallazgos. La regla se aplicó en `forja-digital/hub-gitops`: antes «sin regla», después «regla correcta», repetir `--aplicar` no cambia nada, y `hub-bot` sigue con permiso de escritura.
+**No verificado:** una escritura real del `hub-bot` del clúster bajo la regla (no se usó su token; se probó con un usuario equivalente) ni una promoción real con `sincronizar-hub-gitops.sh` (se probó el mismo camino, `git push` del administrador, en el repositorio
+desechable). Si el Hub falla con un 403 al escribir, es esta regla: `python gitops/proteccion_hub_gitops.py --comprobar` la muestra y la prueba de backend dice qué ruta falta. **Cómo quitarla:** borrar la regla de `main` en la configuración de `hub-gitops`
+en Gitea (Ajustes → Ramas). **Límite que sigue:** un `hub-bot` comprometido todavía puede cambiar los archivos de cada cliente y `clients/_base/kustomization.yaml`; lo acota el proyecto `clientes` de Argo CD.
+
 ## 16 nov 2026 · Lo de la auditoría llega al clúster: `hub-api` v1.15, `hub-web` v1.10 y `hub-voz` v1.2 (spec 022, T12)
 
 **Pedido:** hasta aquí todo lo corregido estaba mezclado en `dev` pero no en el clúster. **Orden seguido** (importa: `hub/api.yaml` usa `/livez`, que `hub-api:v1.14` no tiene, y promover antes habría dejado la API en
