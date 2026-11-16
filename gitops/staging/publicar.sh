@@ -3,6 +3,7 @@
 # hub-gitops con un commit y espera a que Argo CD la despliegue. No pasa por el Hub ni por la puerta: staging es donde se prueba antes de pedir el cambio.
 # Uso:  GITEA_USER=... GITEA_PASSWORD=... KUBECONFIG=... bash gitops/staging/publicar.sh <cliente> <versión>     (por ejemplo: ferreteria v1.1)
 set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/../lib-curl.sh"   # cred_curl: la contraseña no va como argumento de curl (auditoría IA-05)
 CLIENTE="${1:?Uso: publicar.sh <cliente> <versión>}"
 VERSION="${2:?Uso: publicar.sh <cliente> <versión>}"
 : "${GITEA_USER:?Falta GITEA_USER}"
@@ -12,7 +13,7 @@ REPO="${REPO:-forja-digital/hub-gitops}"
 RUTA="clients/${CLIENTE}-staging/kustomization.yaml"
 NS="cliente-${CLIENTE}-staging"
 case "$VERSION" in *[!A-Za-z0-9._-]*|"") echo "Versión inválida: $VERSION" >&2; exit 2 ;; esac
-api() { curl -fsS -m 30 -u "${GITEA_USER}:${GITEA_PASSWORD}" -H 'Content-Type: application/json' "$@"; }
+api() { cred_curl "${GITEA_USER}" "${GITEA_PASSWORD}" | curl -fsS -m 30 -K - -H 'Content-Type: application/json' "$@"; }
 
 archivo="$(api "${GITEA_URL}/api/v1/repos/${REPO}/contents/${RUTA}?ref=main")" || { echo "No existe ${RUTA} en ${REPO}: el cliente no tiene staging." >&2; exit 1; }
 sha="$(echo "$archivo" | sed -n 's/.*"sha": *"\([^"]*\)".*/\1/p' | head -1)"

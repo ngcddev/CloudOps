@@ -675,7 +675,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{namespace=~\"cliente-.*\"} |~ \"(?i)error|\\\\b5[0-9]{2}\\\\b\""
+          "expr": "{namespace=~\"cliente-.*\"} |~ \"(?i)\\\\berror\\\\b|HTTP/[0-9.]+\\\" 5[0-9]{2}\""
         }
       ],
       "options": {

@@ -8,6 +8,7 @@
 # Uso:  GITEA_USER=... GITEA_PASSWORD=... HUB_PASSWORD=... KUBECONFIG=... bash gitops/staging/promover.sh <cliente>
 #       (HUB_USUARIO=sofia@forjadigital.test por defecto; HUB=http://hub.local; GITEA_URL=http://gitea.hub.local)
 set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/../lib-curl.sh"   # cred_curl: la contraseña no va como argumento de curl (auditoría IA-05)
 CLIENTE="${1:?Uso: promover.sh <cliente>}"
 : "${GITEA_USER:?Falta GITEA_USER}"
 : "${GITEA_PASSWORD:?Falta GITEA_PASSWORD}"
@@ -21,7 +22,7 @@ NS_PROD="cliente-${CLIENTE}"
 
 paso() { echo "→ $1"; }
 fallo() { echo "✗ $1" >&2; exit 1; }
-api() { curl -fsS -m 30 -u "${GITEA_USER}:${GITEA_PASSWORD}" "$@"; }
+api() { cred_curl "${GITEA_USER}" "${GITEA_PASSWORD}" | curl -fsS -m 30 -K - "$@"; }
 etiqueta_de() { # ruta en hub-gitops → newTag
   api "${GITEA_URL}/api/v1/repos/${REPO}/contents/$1?ref=main" | sed -n 's/.*"content": *"\([^"]*\)".*/\1/p' | head -1 | base64 -d | sed -n 's/^ *newTag: *\(.*\)$/\1/p' | tr -d '"\r'
 }

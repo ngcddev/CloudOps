@@ -185,3 +185,6 @@ infra/pruebas/.drift/
 # Modelos de voz descargados en local (spec 021)
 voz/modelos/
 capturas-voz/
+
+# Archivo temporal de credenciales de pipelines/configurar-gitea.sh (se borra al salir)
+.cred-curl-*

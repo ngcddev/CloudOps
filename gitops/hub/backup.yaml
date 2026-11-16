@@ -37,6 +37,7 @@ spec:
             app: hub-db-backup
         spec:
           automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+          serviceAccountName: hub-db-backup
           restartPolicy: Never
           securityContext:
             runAsNonRoot: true
@@ -64,6 +65,7 @@ spec:
                     secretKeyRef: { name: hub-db, key: POSTGRES_DB }
               securityContext:
                 allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true   # escribe en el volumen de respaldos y en /tmp (auditoría K8-08)
                 capabilities:
                   drop: [ALL]
               resources:
@@ -72,7 +74,9 @@ spec:
               volumeMounts:
                 - { name: scripts, mountPath: /scripts, readOnly: true }
                 - { name: respaldos, mountPath: /respaldos }
+                - { name: tmp, mountPath: /tmp }
           volumes:
+            - { name: tmp, emptyDir: { sizeLimit: 64Mi } }
             - name: scripts
               configMap:
                 name: hub-respaldo

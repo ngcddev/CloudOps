@@ -5,6 +5,8 @@
 # Uso: sh restaurar.sh <archivo.dump> [base_destino]        (por defecto hub_restaurada)
 #      REEMPLAZAR=1 sh restaurar.sh <archivo.dump> hub_restaurada   (borra la base de destino si ya existe)
 set -eu
+# pipefail: una falla dentro de una tubería (`ls | tail | while`) no pasa en silencio (auditoría IA-07); busybox ash y bash lo traen, otros sh POSIX no
+(set -o pipefail) 2>/dev/null && set -o pipefail
 
 ARCHIVO="${1:?Uso: restaurar.sh <archivo.dump> [base_destino]}"
 BASE="${2:-hub_restaurada}"

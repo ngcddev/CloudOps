@@ -6,7 +6,8 @@
 set -euo pipefail
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENTIDAD="${ENTIDAD:-default/component/plataforma-cloudops}"
-IMAGEN="${TECHDOCS_IMAGE:-spotify/techdocs:latest}"
+# Fijada por digest (era `latest`; auditoría IA-02): la imagen del 3 nov 2026. Para actualizarla: docker pull spotify/techdocs && docker inspect --format '{{index .RepoDigests 0}}' spotify/techdocs
+IMAGEN="${TECHDOCS_IMAGE:-spotify/techdocs@sha256:ea86a849ba14694b635a31348eb7529515ae51a38d2d3edac6eb6eaffb7d1a94}"
 export MSYS_NO_PATHCONV=1
 conv() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else echo "$1"; fi; }
 ruta_docker() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }

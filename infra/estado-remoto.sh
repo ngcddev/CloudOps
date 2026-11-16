@@ -12,8 +12,10 @@ set -euo pipefail
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$AQUI/.estado-remoto.env"
 RED="${NETWORK:-k3d-hub}"
-S3_IMAGE="${S3_IMAGE:-chrislusf/seaweedfs:latest}"
-AWS_CLI_IMAGE="${AWS_CLI_IMAGE:-amazon/aws-cli:latest}"
+# Fijadas por digest (eran `latest`; auditoría IA-02): una actualización silenciosa de la herramienta que guarda el estado de OpenTofu cambiaría su comportamiento sin revisión.
+# SeaweedFS 4.53 y AWS CLI 2.40.3 (nov 2026). Para actualizarlas: docker pull <imagen> && docker inspect --format '{{index .RepoDigests 0}}' <imagen>
+S3_IMAGE="${S3_IMAGE:-chrislusf/seaweedfs@sha256:ccad23e18639c8b98cee17e7100b95830a06077b56d8e5b006d6dcf8ec5e94a0}"
+AWS_CLI_IMAGE="${AWS_CLI_IMAGE:-amazon/aws-cli@sha256:33a16c53ea442e918b58df67301ad76a8fb57082c39f7e78753b898c3f3e87c2}"
 TOFU_IMAGE="ghcr.io/opentofu/opentofu:1.13.2"
 export MSYS_NO_PATHCONV=1
 paso() { echo "→ $1"; }

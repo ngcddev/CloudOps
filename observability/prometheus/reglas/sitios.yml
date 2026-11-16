@@ -9,6 +9,8 @@ groups:
       - alert: SitioCaido
         expr: probe_success{job="sitios"} == 0
         for: 30s
+        # La alerta sigue 2 min después de que el sitio vuelve: un sitio que parpadea no abre y cierra incidentes uno tras otro (auditoría OB-09)
+        keep_firing_for: 2m
         labels:
           severity: critical
           priority: P1

@@ -1,0 +1,12 @@
+# Límites por defecto en el namespace hub (spec 022, T37; auditoría K8-13): un Pod que llegue sin límites (un Job a mano, una aplicación nueva) no queda sin tope de CPU
+# y memoria. Todos los Pods actuales los declaran, así que esto no les cambia nada. Es el mismo mecanismo que ya tienen los namespaces de los clientes.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: defecto
+  namespace: hub
+spec:
+  limits:
+    - type: Container
+      default: { cpu: 250m, memory: 256Mi }
+      defaultRequest: { cpu: 50m, memory: 64Mi }

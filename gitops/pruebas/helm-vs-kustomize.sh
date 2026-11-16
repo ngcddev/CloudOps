@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Comprueba que el chart de Helm y Kustomize producen los mismos objetos (spec 017, T04): para cada cliente corre `helm template` (imagen alpine/helm, sin instalar nada)
 # y `kustomize build` (kubectl kustomize) y compara, objeto por objeto, lo que cada uno renderiza. Así el chart no se desvía de lo que Argo CD aplica de verdad.
-# Uso:  bash gitops/pruebas/helm-vs-kustomize.sh        (HELM_IMAGE=alpine/helm:latest por defecto; clientes: ferreteria y consultorio)
+# Uso:  bash gitops/pruebas/helm-vs-kustomize.sh        (HELM_IMAGE=alpine/helm fijada por digest por defecto; clientes: ferreteria y consultorio)
 set -uo pipefail
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-HELM_IMAGE="${HELM_IMAGE:-alpine/helm:latest}"
+# Helm 4.3.2 por digest (era `latest`; auditoría IA-02)
+HELM_IMAGE="${HELM_IMAGE:-alpine/helm@sha256:a3b9d617c0c30a6c488cebb429c4ba83995a26dc2184599af5fd408a361b2e67}"
 CLIENTES="${CLIENTES:-ferreteria consultorio}"
 export MSYS_NO_PATHCONV=1
 ruta_docker() { (cd "$1" && (pwd -W 2>/dev/null || pwd)); }

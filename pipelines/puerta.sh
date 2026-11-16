@@ -20,6 +20,8 @@ AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 paso="${1:?Uso: puerta.sh inicio|secretos|construir|vulnerabilidades|sbom|firmar|verificar|fin}"
 
 : "${SITE:?Falta SITE}"
+# Una caché de Trivy por sitio: los pasos de cualquier repositorio compartían una sola y uno podía envenenar la de los demás (auditoría IA-08)
+CACHE_TRIVY="puerta-trivy-cache-${SITE}"
 : "${VERSION:?Falta VERSION}"
 REGISTRY="${REGISTRY:-gitea.hub.local}"
 ORG="${ORG:-forja-digital}"
@@ -133,7 +135,7 @@ case "$paso" in
   vulnerabilidades)
     for imagen in $(imagenes); do
       reporte="${OUT}/trivy-${imagen}.json"
-      if docker_run -v "${HOST_PWD}/${OUT}:/out" -v puerta-trivy-cache:/root/.cache "$TRIVY_IMAGE" image \
+      if docker_run -v "${HOST_PWD}/${OUT}:/out" -v "${CACHE_TRIVY}:/root/.cache" "$TRIVY_IMAGE" image \
           --input "/out/${imagen}.tar" --severity CRITICAL --ignore-unfixed --exit-code 1 --quiet \
           ${TRIVY_SKIP_DB_UPDATE:+--skip-db-update} --format json --output "/out/trivy-${imagen}.json"; then
         reportar paso vulnerabilidades ok "Sin vulnerabilidades críticas con arreglo disponible" "$imagen" "$reporte"
@@ -147,7 +149,7 @@ case "$paso" in
     # Configuración (spec 016): los Dockerfile del sitio con `trivy config`; un hallazgo ALTO o CRÍTICO (root, puertos, secretos en ENV) frena la puerta.
     # Se anota en la primera imagen: el Hub tiene un control de vulnerabilidades por imagen, no uno aparte para la configuración.
     reporte_config="${OUT}/trivy-config.json"
-    if docker_run -v "${HOST_PWD}:/repo:ro" -v "${HOST_PWD}/${OUT}:/out" -v puerta-trivy-cache:/root/.cache "$TRIVY_IMAGE" config         --severity HIGH,CRITICAL --exit-code 1 --quiet ${TRIVY_SKIP_DB_UPDATE:+--skip-check-update}         --format json --output /out/trivy-config.json /repo; then
+    if docker_run -v "${HOST_PWD}:/repo:ro" -v "${HOST_PWD}/${OUT}:/out" -v "${CACHE_TRIVY}:/root/.cache" "$TRIVY_IMAGE" config         --severity HIGH,CRITICAL --exit-code 1 --quiet ${TRIVY_SKIP_DB_UPDATE:+--skip-check-update}         --format json --output /out/trivy-config.json /repo; then
       echo "Configuración de los Dockerfile sin hallazgos altos ni críticos."
     else
       [ -s "$reporte_config" ] || fallo vulnerabilidades "Trivy no pudo revisar la configuración de los Dockerfile" "$(imagenes | cut -d' ' -f1)"
@@ -156,7 +158,7 @@ case "$paso" in
     fi
     # Dependencias declaradas por el sitio (spec 018, SCA): requirements.txt, package-lock.json…; un hallazgo ALTO o CRÍTICO con arreglo publicado frena la puerta.
     reporte_deps="${OUT}/trivy-dependencias.json"
-    if docker_run -v "${HOST_PWD}:/repo:ro" -v "${HOST_PWD}/${OUT}:/out" -v puerta-trivy-cache:/root/.cache "$TRIVY_IMAGE" fs --scanners vuln \
+    if docker_run -v "${HOST_PWD}:/repo:ro" -v "${HOST_PWD}/${OUT}:/out" -v "${CACHE_TRIVY}:/root/.cache" "$TRIVY_IMAGE" fs --scanners vuln \
         --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --quiet ${TRIVY_SKIP_DB_UPDATE:+--skip-db-update} --skip-dirs /repo/.puerta --skip-dirs '**/node_modules' \
         --format json --output /out/trivy-dependencias.json /repo; then
       echo "Dependencias del sitio sin vulnerabilidades altas ni críticas con arreglo."
@@ -176,7 +178,7 @@ case "$paso" in
         # Licencias (spec 016): Trivy clasifica las del inventario. Una prohibida (AGPL, SSPL…) frena la puerta; las restringidas
         # (GPL de la imagen base) se informan: usar un componente así no obliga a publicar el sitio, pero hay que saberlo.
         licencias="${OUT}/licencias-${imagen}.json"
-        if ! docker_run -v "${HOST_PWD}/${OUT}:/out" -v puerta-trivy-cache:/root/.cache "$TRIVY_IMAGE" sbom --scanners license             --severity CRITICAL --exit-code 1 --quiet ${TRIVY_SKIP_DB_UPDATE:+--skip-db-update} --format json             --output "/out/licencias-${imagen}.json" "/out/sbom-${imagen}.spdx.json"; then
+        if ! docker_run -v "${HOST_PWD}/${OUT}:/out" -v "${CACHE_TRIVY}:/root/.cache" "$TRIVY_IMAGE" sbom --scanners license             --severity CRITICAL --exit-code 1 --quiet ${TRIVY_SKIP_DB_UPDATE:+--skip-db-update} --format json             --output "/out/licencias-${imagen}.json" "/out/sbom-${imagen}.spdx.json"; then
           detalle="$(jq_run -r '[.Results[]?.Licenses[]? | select(.Severity == "CRITICAL") | "\(.Name) (\(.PkgName))"] | .[:5] | join(", ")' < "$licencias" 2>/dev/null || true)"
           fallo sbom "Licencia prohibida en el inventario: ${detalle:-no se pudo revisar}" "$imagen" "$licencias"
         fi

@@ -34,14 +34,15 @@ spec:
     scaleDown:
       stabilizationWindowSeconds: 120
 ---
-# Una réplica nunca se retira voluntariamente (drenar un nodo, actualizar) si es la única disponible.
+# Con `minAvailable: 1` y una sola réplica (HPA con mínimo 1) `kubectl drain` quedaba bloqueado para siempre y la actualización de k3s con él (auditoría K8-12).
+# `maxUnavailable: 1` deja drenar el nodo único; con dos réplicas sigue sin retirar las dos a la vez.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: api
   namespace: hub
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels: { app: api }
 ---
@@ -51,6 +52,6 @@ metadata:
   name: web
   namespace: hub
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels: { app: web }
