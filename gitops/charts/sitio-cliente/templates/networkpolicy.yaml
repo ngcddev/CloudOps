@@ -1,4 +1,4 @@
-# Aislamiento de red: deniega toda entrada y deja pasar a Traefik, a Prometheus/Blackbox y a los Pods del mismo cliente.
+# Aislamiento de red: deniega toda entrada y deja pasar a Traefik, a Prometheus/Blackbox y a los Pods del mismo cliente; y toda salida salvo el DNS y los Pods del mismo cliente (spec 022, T14).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -25,3 +25,34 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: monitoring
         - podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: {{ include "sitio.namespace" . }}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: permitir-dns-y-propio
+  namespace: {{ include "sitio.namespace" . }}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns          # CoreDNS: resolver nombres
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - to:
+        - podSelector: {}                # los Pods del mismo cliente (el frontend llama a su backend)
