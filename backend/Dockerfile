@@ -37,6 +37,8 @@ COPY tests ./tests
 COPY --from=seed . ./seed
 USER 10001
 EXPOSE 8000
+# Salud del proceso (no de la base): lo que `docker ps` muestra; Kubernetes usa sus propias sondas (auditoría CT-09)
+HEALTHCHECK --interval=15s --timeout=3s --start-period=40s --retries=3 CMD ["python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/livez', timeout=2)"]
 # Primero se aplican las migraciones y después arranca la API; con `exec`, uvicorn es el proceso principal y recibe SIGTERM al apagar el Pod (sin esperar 30 s).
 CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
 
@@ -49,4 +51,6 @@ COPY app ./app
 COPY --from=seed . ./seed
 USER 10001
 EXPOSE 8000
+# Salud del proceso (no de la base): lo que `docker ps` muestra; Kubernetes usa sus propias sondas (auditoría CT-09)
+HEALTHCHECK --interval=15s --timeout=3s --start-period=40s --retries=3 CMD ["python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/livez', timeout=2)"]
 CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
