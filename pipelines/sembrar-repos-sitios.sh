@@ -12,6 +12,7 @@
 # Variables opcionales: GITEA_URL (http://gitea.hub.local), ORG (forja-digital).
 # Las versiones de la semilla apuntan todas al mismo commit: la imagen se construye con APP_VERSION=<etiqueta>.
 set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/../gitops/lib-curl.sh"   # cred_curl: la contraseña no va como argumento de curl (auditoría IA-05)
 
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RAIZ="$(cd "$AQUI/.." && pwd)"
@@ -40,7 +41,7 @@ etiquetas_de() {
 }
 
 API="${GITEA_URL%/}/api/v1"
-curl_api() { curl -sS -m 30 -u "${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" -H 'Content-Type: application/json' "$@"; }
+curl_api() { cred_curl "${GITEA_ADMIN_USER}" "${GITEA_ADMIN_PASSWORD}" | curl -sS -m 30 -K - -H 'Content-Type: application/json' "$@"; }
 autorizacion="Authorization: Basic $(printf '%s:%s' "$GITEA_ADMIN_USER" "$GITEA_ADMIN_PASSWORD" | base64 | tr -d '\n')"
 # Las credenciales viajan en la cabecera, no en la dirección del repositorio
 git_gitea() { git -c "http.extraheader=${autorizacion}" -c user.name="Forja Digital" -c user.email="hub@forjadigital.test" "$@"; }

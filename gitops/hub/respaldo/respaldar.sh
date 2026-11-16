@@ -4,6 +4,8 @@
 # La conexión sale de las variables estándar de PostgreSQL (PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE); nunca van en el repo.
 # Uso: PGDATABASE=hub RESPALDO_DIR=/respaldos RESPALDO_CONSERVAR=7 sh respaldar.sh
 set -eu
+# pipefail: una falla dentro de una tubería (`ls | tail | while`) no pasa en silencio (auditoría IA-07); busybox ash y bash lo traen, otros sh POSIX no
+(set -o pipefail) 2>/dev/null && set -o pipefail
 
 DESTINO="${RESPALDO_DIR:-/respaldos}"
 CONSERVAR="${RESPALDO_CONSERVAR:-7}"

@@ -18,12 +18,15 @@ spec:
         app: web
     spec:
       automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+      serviceAccountName: web
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
         runAsGroup: 101
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - { name: tmp, emptyDir: { sizeLimit: 32Mi } }
       containers:
         - name: web
           image: gitea.hub.local/forja-digital/hub-web:v1.11
@@ -32,8 +35,11 @@ spec:
               containerPort: 8080
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true   # nginx sin root escribe su pid y sus temporales en /tmp (auditoría K8-08)
             capabilities:
               drop: [ALL]
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
           resources:
             requests: { cpu: 50m, memory: 32Mi }
             limits: { cpu: 100m, memory: 64Mi }

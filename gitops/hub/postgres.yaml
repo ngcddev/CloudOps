@@ -19,6 +19,8 @@ spec:
         app: postgres
     spec:
       automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+      serviceAccountName: postgres
+      priorityClassName: hub-critico
       securityContext:
         runAsNonRoot: true
         runAsUser: 70        # usuario `postgres` de la imagen alpine
@@ -26,6 +28,9 @@ spec:
         fsGroup: 70
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - { name: run, emptyDir: { sizeLimit: 8Mi } }
+        - { name: tmp, emptyDir: { sizeLimit: 64Mi } }
       containers:
         - name: postgres
           image: postgres:16-alpine
@@ -40,6 +45,7 @@ spec:
                 name: hub-db     # POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true   # escribe en los datos, el socket y /tmp (auditoría K8-08)
             capabilities:
               drop: [ALL]
           resources:
@@ -57,6 +63,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            - { name: run, mountPath: /var/run/postgresql }
+            - { name: tmp, mountPath: /tmp }
   volumeClaimTemplates:
     - metadata:
         name: data

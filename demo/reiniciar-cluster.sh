@@ -8,6 +8,7 @@
 # Uso:  GITEA_USER=forja-admin GITEA_PASSWORD='...' [KUBECONFIG=...] bash demo/reiniciar-cluster.sh
 #   (con las variables de .env.cluster:  set -a; . ./.env.cluster; set +a; GITEA_USER=$GITEA_ADMIN_USER GITEA_PASSWORD=$GITEA_ADMIN_PASSWORD ...)
 set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/../gitops/lib-curl.sh"   # cred_curl: la contraseña no va como argumento de curl (auditoría IA-05)
 
 : "${GITEA_USER:?Falta GITEA_USER}"
 : "${GITEA_PASSWORD:?Falta GITEA_PASSWORD}"
@@ -19,7 +20,7 @@ NS="cliente-${SITIO}"
 
 paso() { echo "→ $1"; }
 fallo() { echo "✗ $1" >&2; exit 1; }
-gitea() { curl -s -m 20 -u "${GITEA_USER}:${GITEA_PASSWORD}" -H "Host: ${GITEA_HOST}" -H 'Content-Type: application/json' "$@"; }
+gitea() { cred_curl "${GITEA_USER}" "${GITEA_PASSWORD}" | curl -s -m 20 -K - -H "Host: ${GITEA_HOST}" -H 'Content-Type: application/json' "$@"; }
 
 paso "Quitando clients/${SITIO} de hub-gitops"
 archivos="$(gitea "${GITEA_URL}/api/v1/repos/${REPO}/contents/clients/${SITIO}?ref=main" | grep -o '"path": *"[^"]*"' | sed 's/.*: *"//; s/"$//')"

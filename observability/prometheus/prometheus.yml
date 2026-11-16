@@ -118,6 +118,11 @@ scrape_configs:
   - job_name: traefik
     static_configs:
       - targets: ["traefik-metrics.kube-system.svc:9100"]
+    # Solo las dos familias que usan los tableros y la spec 010 (peticiones y duración por servicio): el resto del endpoint no se guarda (auditoría OB-07)
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "traefik_service_requests_total|traefik_service_request_duration_seconds_(bucket|sum|count)"
+        action: keep
 
   # Métricas propias de las apps de los clientes (spec 008, T32): se descubren por la anotación hub/metrics de
   # su Service y se leen en /metrics del puerto del Service. Un cliente nuevo con métricas queda recogido sin
