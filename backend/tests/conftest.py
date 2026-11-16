@@ -166,3 +166,18 @@ def pass_gate(db):
         return run
 
     return make
+
+
+@pytest.fixture
+def sesiones_de_peticion(session_factory):
+    """Guarda la sesión de cada petición HTTP para que una prueba vea, desde un transporte falso, si en ese momento había una transacción abierta (auditoría BE-02).
+    Pedirla DESPUÉS de `client`/`as_agency`: vuelve a poner la dependencia `get_db` de la app."""
+    sesiones = []
+
+    def override_get_db():
+        with session_factory() as session:
+            sesiones.append(session)
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    return sesiones
