@@ -17,6 +17,11 @@ route:
     - receiver: solo-ver
       matchers:
         - alertname =~ "PresupuestoQuemado.*"
+    # Alertas de la plataforma (spec 022, T10; reglas/plataforma.yml): el Hub, el propio monitoreo y los contenedores. No son de un sitio, el Hub
+    # abriría un incidente por cada una, y HubCaido no puede avisar a quien está caído. Se ven en Alertmanager y en Prometheus.
+    - receiver: solo-ver
+      matchers:
+        - destino = "plataforma"
 
 receivers:
   - name: solo-ver

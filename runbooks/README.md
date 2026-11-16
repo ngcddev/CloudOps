@@ -9,7 +9,10 @@ Las alertas apuntan aquí con su `runbook_url` (ver `observability/prometheus/re
 | Una publicación salió mal | [rollback.md](rollback.md) | `PresupuestoQuemadoRapido` |
 | Perder o dañar la base del Hub | [respaldo-y-restauracion.md](respaldo-y-restauracion.md) | — |
 | El clúster no arranca tras apagar el equipo | [reinicio-del-cluster.md](reinicio-del-cluster.md) | — |
-| La API o un sitio van al límite de CPU o memoria | [saturacion.md](saturacion.md) | — |
+| La API o un sitio van al límite de CPU o memoria | [saturacion.md](saturacion.md) | `ContenedorSinMemoria` |
+| El API o la web del Hub no responden | [caida-del-hub.md](caida-del-hub.md) | `HubCaido` |
+| El monitoreo dejó de sondear o no hay latido | [monitoreo-ciego.md](monitoreo-ciego.md) | `MonitoreoCiego` y `Watchdog` |
+| Un contenedor se reinicia en bucle | [contenedor-en-bucle.md](contenedor-en-bucle.md) | `ContenedorEnBucle` |
 | El sitio responde pero lento | [latencia.md](latencia.md) | `PresupuestoQuemadoLento` |
 
 Convención: los comandos suponen `KUBECONFIG=C:/Users/<usuario>/.kube/k3d-hub.yaml` y Git Bash. Nada se arregla a mano en el clúster: los cambios entran por Git (Argo CD los revierte).

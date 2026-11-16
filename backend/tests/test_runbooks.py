@@ -6,7 +6,11 @@ import pytest
 
 REPO = Path("/repo")
 RUNBOOKS = REPO / "runbooks"
-CASOS = {"caida-del-sitio", "rollback", "respaldo-y-restauracion", "reinicio-del-cluster", "saturacion", "latencia"}
+CASOS = {
+    "caida-del-sitio", "rollback", "respaldo-y-restauracion", "reinicio-del-cluster", "saturacion", "latencia",
+    # Alertas de la plataforma (spec 022, T10)
+    "caida-del-hub", "monitoreo-ciego", "contenedor-en-bucle",
+}
 SECCIONES = ("**Síntoma:**", "## Diagnóstico", "## Acción", "## Verificación", "## Cuándo escalar")
 # Rutas que cita un runbook en código: carpeta/archivo con extensión conocida
 RUTA = re.compile(r"`((?:gitops|observability|pipelines|demo|seed|infra|ai|backend|runbooks)/[\w./-]+\.(?:sh|md|yaml|yml|json|py))`")

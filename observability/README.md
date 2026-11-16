@@ -14,6 +14,7 @@ Pods cliente-* ──registros──> Alloy ──> Loki ──> Grafana (Explor
 | `blackbox/` | Sondea `/health` de cada sitio (módulo `http_2xx`, 4 s de timeout) |
 | `prometheus/` | Descubre los sitios por la anotación `hub/probe` de su Service, los sondea cada 5 s y evalúa `SitioCaido`. El job `apps` recoge `/metrics` de los Services con la anotación `hub/metrics` (hoy, `consultorio-api`: `contact_forms_received_total` y `contact_forms_failed_total`, con OpenTelemetry; spec 008, T32) |
 | `alertmanager/` | Avisa al Hub en `http://api.hub.svc:8000/api/alerts/alertmanager` con el token del Secret `hub-alertmanager` |
+| `prometheus/reglas/plataforma.yml` | Alertas de la plataforma (spec 022, T10), con `destino: plataforma`: `HubCaido` (el job `hub` sondea `/health` del API y la web del Hub), `MonitoreoCiego` (`up == 0` o `absent` en los sondeos), `Watchdog` (latido: siempre activa), `ContenedorSinMemoria` (OOM nuevo) y `ContenedorEnBucle` (3 arranques en 15 minutos). Alertmanager las manda a `solo-ver` y **no al Hub**: se ven en Alertmanager y en Prometheus, pero no avisan a nadie (no hay canal externo). Cada una apunta a su runbook en `runbooks/` |
 | `loki/` | Guarda 3 días de registros de los sitios |
 | `alloy/` | Lee por la API de Kubernetes los registros de los Pods de `cliente-*` y los manda a Loki |
 | `grafana/` | `http://grafana.hub.local`, con las fuentes `prometheus` y `loki` ya configuradas |
