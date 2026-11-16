@@ -8,9 +8,10 @@ import { formatDateTime } from "../../format";
 const KIND_LABELS: Record<ReportKind, string> = { operativo: "Operativo (toda la agencia)", ejecutivo: "Ejecutivo (un cliente)" };
 
 // Mes actual en formato AAAA-MM, el que entiende <input type="month">
+// En America/Bogota, no en la zona del navegador: cerca del cambio de mes el navegador de otra zona dejaba escoger un mes que en Colombia aún no empieza (auditoría FE-15)
+const MES_BOGOTA = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" });
 function currentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return MES_BOGOTA.format(new Date()).slice(0, 7);
 }
 
 export default function Reports() {
@@ -108,7 +109,7 @@ export default function Reports() {
         {reports.length === 0 ? (
           <p className="muted">Todavía no hay reportes generados.</p>
         ) : (
-          <table className="table">
+          <table className="table" aria-label="Reportes generados">
             <thead>
               <tr>
                 <th>Reporte</th>

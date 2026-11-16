@@ -141,7 +141,7 @@ export default function PortalTicketList() {
         <h2>Mis solicitudes</h2>
         {tickets.length === 0 && <p>No tienes solicitudes en este momento.</p>}
         {tickets.length > 0 && (
-          <table className="table">
+          <table className="table" aria-label="Mis solicitudes">
             <thead>
               <tr>
                 <th>Solicitud</th>

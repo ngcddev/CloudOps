@@ -130,7 +130,7 @@ export default function ChangeList() {
         </p>
       )}
 
-      {!changes && !error && <p>Cargando cambios…</p>}
+      {!changes && !error && <p role="status">Cargando cambios…</p>}
 
       {changes && changes.length === 0 && (
         <p>
@@ -140,7 +140,7 @@ export default function ChangeList() {
       )}
 
       {changes && changes.length > 0 && (
-        <table className="table">
+        <table className="table" aria-label="Solicitudes de cambio">
           <thead>
             <tr>
               <th>Cliente</th>

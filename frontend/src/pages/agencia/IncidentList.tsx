@@ -1,5 +1,5 @@
 // Lista de incidentes de la consola de agencia: filtros, reloj del SLA y alta de un incidente manual (spec 008).
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -14,6 +14,7 @@ import {
   type TicketPriority,
 } from "../../api";
 import SlaClock from "../../components/SlaClock";
+import { useSondeo } from "../../hooks/useSondeo";
 
 // Cada cuánto se vuelve a pedir la lista: un incidente abierto por el monitoreo aparece sin recargar
 const REFRESH_MS = 10_000;
@@ -134,24 +135,29 @@ export default function IncidentList() {
       .catch((loadError: Error) => setError(loadError.message));
   }, [creating, clients, clientDetails]);
 
+  // Una respuesta vieja (de un filtro anterior) no pisa a la nueva (auditoría FE-09)
+  const ultimaLectura = useRef(0);
   const load = useCallback(() => {
+    const lectura = ++ultimaLectura.current;
     listIncidents({
       status: statusFilter || undefined,
       client_id: clientFilter || undefined,
       priority: priorityFilter || undefined,
     })
       .then((data) => {
+        if (lectura !== ultimaLectura.current) return;
         setIncidents(data);
         setError(null);
       })
-      .catch((loadError: Error) => setError(loadError.message));
+      .catch((loadError: Error) => {
+        if (lectura === ultimaLectura.current) setError(loadError.message);
+      });
   }, [clientFilter, priorityFilter, statusFilter]);
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, REFRESH_MS);
-    return () => window.clearInterval(timer);
   }, [load]);
+  useSondeo(load, REFRESH_MS);
 
   return (
     <>
@@ -212,10 +218,10 @@ export default function IncidentList() {
         </div>
       </div>
 
-      {incidents === null && !error && <p>Cargando incidentes…</p>}
+      {incidents === null && !error && <p role="status">Cargando incidentes…</p>}
       {incidents !== null && incidents.length === 0 && <p>No hay incidentes con esos filtros.</p>}
       {incidents !== null && incidents.length > 0 && (
-        <table className="table">
+        <table className="table" aria-label="Incidentes">
           <thead>
             <tr>
               <th>Prioridad</th>

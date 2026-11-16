@@ -7,7 +7,7 @@ export default function RequireRole({ role }: { role: "agencia" | "cliente" }) {
   const { user, loading, mock } = useAuth();
   const location = useLocation();
 
-  if (loading) return <p className="muted">Cargando…</p>;
+  if (loading) return <p className="muted" role="status">Cargando…</p>;
   // Con datos de prueba no hay sesión que pedir
   if (mock) return <Outlet />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;

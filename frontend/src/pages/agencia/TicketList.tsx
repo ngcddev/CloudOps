@@ -129,7 +129,7 @@ export default function TicketList() {
           {visibleTickets.length === 0 ? (
             <p>No hay solicitudes con esos filtros.</p>
           ) : (
-            <table className="table">
+            <table className="table" aria-label="Solicitudes">
               <thead>
                 <tr>
                   <th>Cliente</th>

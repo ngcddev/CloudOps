@@ -127,7 +127,7 @@ export default function VoiceInput({ onTranscript, onStart, disabled = false }: 
   }
 
   return (
-    <div className="voice-input" aria-label="Entrada por voz">
+    <div className="voice-input" role="group" aria-label="Entrada por voz">
       {fase === "grabando" ? (
         <button type="button" className="button button-primary" onClick={detener}>
           ● Escuchando… {segundos} s · Detener

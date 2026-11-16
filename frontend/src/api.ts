@@ -1936,9 +1936,18 @@ export interface Transcription {
 }
 
 // Sin la API (modo de muestra) no hay voz: el micrófono no se ofrece
+// La pantalla del asistente y el micrófono lo pedían a la vez: la respuesta se comparte unos segundos (auditoría FE-08)
+let estadoDeVoz: { hasta: number; promesa: Promise<VoiceStatus> } | null = null;
 export async function getVoiceStatus(): Promise<VoiceStatus> {
   if (MOCK_PERMITIDO && (await detectMode()) === "mock") return { habilitada: false, disponible: false };
-  return request<VoiceStatus>("/assistant/voice/status");
+  if (estadoDeVoz && estadoDeVoz.hasta > Date.now()) return estadoDeVoz.promesa;
+  const promesa = request<VoiceStatus>("/assistant/voice/status");
+  estadoDeVoz = { hasta: Date.now() + 10_000, promesa };
+  // Un fallo no se queda guardado: el siguiente intento vuelve a preguntar
+  promesa.catch(() => {
+    if (estadoDeVoz?.promesa === promesa) estadoDeVoz = null;
+  });
+  return promesa;
 }
 
 // El audio va en el cuerpo tal cual (webm, ogg o wav); la API no lo guarda
