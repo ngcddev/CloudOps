@@ -83,5 +83,5 @@ DOCKERFILE = Path("/repo/backend/Dockerfile")   # el Dockerfile no entra a la im
 
 @pytest.mark.skipif(not DOCKERFILE.exists(), reason="el repositorio no está montado en /repo")
 def test_el_contenedor_recibe_sigterm_en_uvicorn():
-    comandos = [l for l in DOCKERFILE.read_text(encoding="utf-8").splitlines() if l.startswith("CMD")]
+    comandos = [linea for linea in DOCKERFILE.read_text(encoding="utf-8").splitlines() if linea.startswith("CMD")]
     assert len(comandos) == 2 and all("&& exec uvicorn" in c for c in comandos)
