@@ -1,88 +1,135 @@
-# Guion de la demo final (30 nov) — borrador para ensayar
+# Guion de la demo final (30 nov) — presenta una sola persona
 
-> Spec [015](../specs/015-demo-integrada/spec.md). **15 minutos** para el recorrido principal y una **ronda de preguntas con comandos listos**.
+> Spec [015](../specs/015-demo-integrada/spec.md). **15 minutos** de recorrido y una ronda de preguntas con comandos listos.
 > Regla de oro: si no se ve en pantalla, no cuenta. No se agrega nada nuevo: se muestra lo que ya funciona.
-> Los tiempos son estimados; se fijan en el ensayo (CA-3: tres ensayos completos en la red del salón).
-> **Cambio frente a la spec 015:** el punto 10 («infografía») pasa a **voz del asistente** (módulo 6, decisión del 15 nov). Hay que actualizar la matriz de trazabilidad.
+> Los tiempos son estimados hasta el primer ensayo cronometrado (CA-3).
+> **Cambio frente a la spec 015:** el punto 10 («infografía») pasa a **voz del asistente** (módulo 6, decisión del 15 nov).
+> **Voz comprobada** el 16 nov: en un navegador real contra el clúster y con la política de seguridad estricta puesta, el micrófono (falso) llegó a transcripción, respuesta escrita y audio reproducido, sin errores de JavaScript. Falta probarla con una voz humana.
 
-## Reparto (5 personas)
+## Cómo se organiza una sola persona
 
-| Rol | Muestra | Puntos |
-|---|---|---|
-| **A · Producto/Backend** | Hub, clientes, asistente y borradores | 1, 7 (borradores), 8 |
-| **B · Cloud/Plataforma** | k3s, Argo CD, Backstage, IaC, rollback | 2, 6, 9 |
-| **C · DevSecOps** | La puerta de seguridad | 3 |
-| **D · SRE/Frontend** | Falla, incidente, Grafana, trazas, voz | 4, 5, 10 |
-| **E · Industrial** | Contexto, SLA, KPI, reportes, cierre | 0, 5 (SLA), 7 (reportes), 11 |
-
-## Cobertura: qué módulo del diplomado se ve y cuándo
-
-| Módulo | Se demuestra en | Minuto |
-|---|---|---|
-| 1 · Contenedores | Pila de contenedores y sitios del cliente; imágenes sin root | 1:00 |
-| 2 · Kubernetes, GitOps, Backstage | Alta de cliente → Argo CD crea el namespace; deriva corregida; catálogo de Backstage | 1:00 y 11:30 |
-| 3 · DevSecOps | Puerta de seguridad: secretos, Trivy, SBOM, firma; una versión sin firma no pasa | 3:00 |
-| 4 · IaC, observabilidad, SRE | Alerta → incidente P1, tableros RED/USE, registro ↔ traza, MTTR; OpenTofu | 5:30 y 11:30 |
-| 5 · MLOps y LLMOps | Asistente con compuerta y RAG; MLflow con alias `production`; borradores aprobados por una persona | 8:30 |
-| 6 · IA multimodal | Preguntar hablando y escuchar la respuesta | 10:00 |
-| 7 · Integrador | Todo en un solo flujo, con un clúster reiniciable | 0:00–15:00 |
+- **Tres ventanas ya iniciadas** (todas en `hub.local`):
+  1. **Sofía** (agencia): la ventana principal.
+  2. **Camilo** (agencia), perfil o ventana aparte: solo para aprobar un cambio (el sistema no deja que quien lo pidió lo apruebe; mostrarlo es parte de la demo, y con una segunda ventana no necesitas a otra persona).
+  3. **Marta** (cliente de La Sazón), ventana de incógnito: el portal.
+- **Segunda pantalla o mitad de pantalla:** terminal con `kubectl` (`KUBECONFIG` ya puesto) y, al lado, Grafana y Argo CD.
+- **Tiempo muerto = trabajo hecho en segundo plano.** Lo lento (alta del sitio, publicación, detección de la falla) se lanza y se habla de otra cosa mientras ocurre; los minutos del guion ya cuentan con eso.
+- **Un cronómetro visible** (el del celular). Puntos de control abajo: si vas más de un minuto tarde, usa el recorte.
+- Frases entre comillas = lo que se dice. Lo demás es lo que se hace.
 
 ## Antes de empezar (T-30 min)
 
-1. Encender en orden: Docker Desktop → `k3d-hub-serverlb` → `k3d-hub-server-0` → `estado-remoto` → `runner-runner-1` (3 s entre cada uno; ver `runbooks/reinicio-del-cluster.md`) y confirmar que el nodo quedó en `172.30.0.3`. Ollama abierto con `qwen2.5:7b-instruct` y `nomic-embed-text`.
-2. **Reiniciar a un estado conocido:** `bash demo/reiniciar-cluster.sh` (borra la base del Hub y el sitio del colegio) y `bash demo/preparar-colegio.sh` (deja en `ok` la puerta de seguridad de las versiones v1 y v2 del colegio).
-3. Comprobar: `kubectl get app -n argocd` (todas `Synced/Healthy`), las 3 URL de sitios (200), `http://hub.local/health`, Grafana con los dos tableros, el micrófono del navegador con permiso para `hub.local`.
-4. Archivo `hosts` con **todos** los nombres: `127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local grafana.hub.local mlflow.hub.local backstage.hub.local ferreteria-staging.hub.local`. (MLflow y Backstage no abrían por faltar sus nombres.)
-5. Contraseña de los usuarios de demostración: `kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d`.
-6. Pestañas ya abiertas: Hub (agencia, Sofía), Hub en otra ventana de incógnito (portal, cliente de La Sazón), Argo CD, Grafana, Backstage (`https://`), terminal con `kubectl`.
-7. Video de respaldo del recorrido completo grabado y abierto en otra pantalla (CA-4).
+1. Encender en orden: Docker Desktop → `k3d-hub-serverlb` → `k3d-hub-server-0` → `estado-remoto` → `runner-runner-1` (3 s entre cada uno; `runbooks/reinicio-del-cluster.md`) y confirmar el nodo en `172.30.0.3`. Ollama abierto con `qwen2.5:7b-instruct` y `nomic-embed-text`.
+2. **Reiniciar a un estado conocido:** `bash demo/reiniciar-cluster.sh` y `bash demo/preparar-colegio.sh`.
+3. Comprobar: `kubectl get app -n argocd` (todas `Synced/Healthy`); los tres sitios dan 200; `http://hub.local/health`; Grafana con los dos tableros.
+4. Archivo `hosts` con todos los nombres: `127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local grafana.hub.local mlflow.hub.local backstage.hub.local ferreteria-staging.hub.local`.
+5. Contraseña de los usuarios: `kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d`.
+6. **Calentar la IA** (T-5 min): una pregunta al asistente, para que el modelo no esté frío.
+7. **Micrófono:** permitir el micrófono para `hub.local` y probar una pregunta hablada (la primera vez con una voz real).
+8. Pestañas abiertas y ordenadas: Hub (Sofía) en *Clientes*; Hub (Camilo) en *Cambios*; Hub (Marta) en el portal; Argo CD; Grafana (tablero RED y USE); MLflow; Backstage (`https://`).
+9. Plan B listo: el video del recorrido completo, el PDF del reporte ya generado y un borrador de incidente semilla aprobado.
 
-## Recorrido principal (15:00)
+## Recorrido (15:00)
 
-| Min | Punto | Quién | Qué se hace | Qué debe verse | Plan B |
-|---|---|---|---|---|---|
-| 0:00–1:00 | **0 · Apertura** | E, B | Una diapositiva: agencia con varios clientes; el Hub como centro de operación; qué cuesta una caída. Abrir el catálogo de Backstage 15 s | Catálogo con los clientes, el Hub y la plantilla de alta | Captura de Backstage |
-| 1:00–2:30 | **1 y 2 · Clientes y plataforma** | A, B | En el Hub: clientes y planes (3 sembrados). **Registrar el colegio** y darlo de alta en GitOps. En la terminal: `kubectl get ns,pods,quota -n cliente-colegio`; Argo CD lo muestra `Synced` | Namespace nuevo con `restricted`, cuota del plan y Pod sin root, creado sin tocar el clúster a mano | Colegio ya dado de alta; mostrar el commit en Gitea |
-| 2:30–4:30 | **3 · Puerta de seguridad** | C | En «Cambios» del colegio: v1 con los 6 controles en `ok`; descargar la evidencia (SBOM). Después una **versión preparada a propósito con un secreto** (ver T03 de la spec 015): la puerta la rechaza y el Hub no deja aprobarla, con el motivo | Gitleaks, Trivy, Syft y Cosign con su resultado; rechazo con motivo en lenguaje de negocio | Corrida grabada del pipeline |
-| 4:30–6:30 | **4 y 5 · Falla e incidente** | D, E | Aprobar (otra persona de la agencia, por la segregación de funciones) la v2 rota de La Sazón. El sitio da 500; en ≤ 45 s se abre el P1 con su reloj de SLA. Mostrar el incidente, tomarlo, abrir Grafana (RED y USE) y el registro con su traza | P1 abierto solo por la alerta, SLA corriendo; panel de errores; registro con enlace a la traza | Video del minuto de detección; `gitops/pruebas/demo-caso-restaurante.sh` |
-| 6:30–8:00 | **6 y 7 · Rollback** | B, E | «Rollback» desde el incidente (el Hub escribe el `revert` en Git, Argo CD reconcilia). El sitio vuelve; el incidente pasa a mitigado con su MTTR medido | Commit `revert`, sitio 200, MTTR, historial de versiones y bitácora | Ya mitigado: mostrar MTTR y línea de tiempo |
-| 8:00–9:30 | **8 · IA con verificación humana** | A | Pedir hipótesis a la IA; generar los borradores del incidente (resumen técnico y mensaje al cliente); **editar y aprobar**; abrir el portal del cliente y ver llegar el mensaje. Pregunta del tema al asistente y una ajena (la compuerta la descarta sin despertar al modelo). Mostrar `mlflow.hub.local` con `compuerta-asistente@production` | Borrador marcado «de la IA», aprobación que llega al portal; respuesta con la fuente de la ayuda; registro del modelo | Borrador semilla ya aprobado |
-| 9:30–11:00 | **10 · Voz (módulo 6)** | D | En el asistente: pulsar el micrófono, preguntar hablando, ver y corregir lo entendido, escuchar la respuesta | Transcripción editable y audio de la respuesta | Audio pregrabado; preguntar por texto |
-| 11:00–12:30 | **8 · Reportes y KPI** | E | Portal del cliente: estado del mes. En agencia: reporte operativo y ejecutivo de La Sazón con el incidente del día explicado; descargar el PDF | Disponibilidad frente al SLO del plan, costo, MTTR, PDF | PDF ya generado |
-| 12:30–14:00 | **IaC y operación** | B | `tofu` crea un cliente nuevo (overlay + Application) y Argo CD lo sincroniza; mostrar la prueba de deriva; abrir `runbooks/` y el respaldo de PostgreSQL | Cliente creado desde código, deriva detectada, runbook y respaldo | Salida grabada de `infra/pruebas/crear-cliente.sh` |
-| 14:00–15:00 | **Cierre** | E | Mapa de la rúbrica del diplomado en una diapositiva; qué es de verdad y qué son límites honestos (nodo único, firma verificada en el pipeline, audio y no imagen) | — | — |
+### 0:00–0:45 · Apertura
+- **Hacer:** abre Backstage (catálogo) 10 s y vuelve al Hub.
+- **Decir:** «Una agencia web atiende varias PyMEs y hoy no sabe, con medidas, si sus sitios están arriba ni cuánto tarda en recuperarlos. CloudOps Client Hub es el centro de operación: clientes, planes con acuerdos de servicio, cambios, incidentes, rollback, reportes e IA local, sobre una plataforma de Kubernetes con GitOps y seguridad en la entrega.»
+- **Ver:** catálogo con los clientes, el Hub y la plantilla de alta.
+- **Si falla:** captura de Backstage.
+
+### 0:45–2:15 · Puntos 1 y 2 · Clientes y plataforma (módulos 1 y 2)
+- **Hacer:** en Sofía, *Clientes* (3 clientes y sus planes). Pulsa **Registrar cliente**: ya tienes los datos del colegio listos para pegar (cliente, proyecto y servicio con host y namespace). Guarda y pulsa **dar de alta el sitio en GitOps**.
+- **Decir:** «El Hub nunca toca Kubernetes. Escribe la configuración del sitio en Git; Argo CD la ve y crea el namespace con su cuota, sus límites y la política de seguridad `restricted`.»
+- **Mientras Argo CD trabaja (≈ 30 s):** pasa al siguiente punto y vuelve al minuto 4.
+- **Si falla:** colegio ya dado de alta; muestra el commit en Gitea.
+
+### 2:15–4:00 · Punto 3 · Puerta de seguridad (módulo 3)
+- **Hacer:** *Cambios* → la v1 del colegio con sus 6 controles en `ok`; descarga la evidencia (SBOM). Abre después la **versión con un secreto puesto a propósito** (tarea T03 de la spec 015): rechazada, sin poder aprobarse, con el motivo.
+- **Decir:** «Cada versión pasa por Gitleaks, pruebas y construcción, Trivy, el inventario de componentes con Syft y la firma con Cosign, que se verifica antes de aprobar. Quien aprueba no ve un semáforo: ve qué control falló y por qué.»
+- **Ver:** controles con su resultado y evidencia; rechazo con motivo en lenguaje de negocio.
+- **Si falla:** corrida grabada del pipeline.
+
+### 4:00–4:30 · Vuelta al colegio (filler útil)
+- **Hacer:** terminal: `kubectl get ns,pods,quota -n cliente-colegio`.
+- **Ver:** namespace nuevo, Pod sin root, cuota del plan. «Nadie tocó el clúster a mano.»
+
+### 4:30–6:30 · Puntos 4, 5 y 6 · La falla (módulo 4)
+- **Hacer:** en la ventana de Camilo, **aprobar** la v2 rota de La Sazón (es el cambio que pidió Sofía: «una persona distinta aprueba»). Vuelve a Sofía, abre *Incidentes* y deja el tablero a la vista. A los ≤ 45 s aparece el **P1** con su reloj de SLA. Pulsa **Tomar incidente**. Abre Grafana (RED y USE) y el registro con **Ver la traza**.
+- **Decir:** «Prometheus sondea cada 5 segundos; a los 30 de caída Alertmanager avisa al Hub y se abre el incidente solo, con prioridad P1 y un reloj contra el SLA del plan del cliente.»
+- **Ver:** P1 abierto por la alerta, reloj corriendo, errores en el panel, registro enlazado con su traza.
+- **Si falla:** video del minuto de detección o `bash gitops/pruebas/demo-caso-restaurante.sh`.
+
+### 6:30–8:00 · Puntos 6 y 7 · Rollback
+- **Hacer:** en el incidente, **Rollback** → **Confirmar rollback**. Espera a que pase a mitigado.
+- **Decir:** «El rollback es un `revert` en Git; Argo CD lo reconcilia. El tiempo de recuperación no se estima: se mide.»
+- **Ver:** commit `revert`, sitio en 200, MTTR, línea de tiempo y bitácora.
+- **Si falla:** incidente ya mitigado: muestra MTTR y línea de tiempo.
+
+### 8:00–9:30 · Punto 9 · IA con verificación humana (módulo 5)
+- **Hacer:** **Pedir hipótesis a la IA** → **Generar borradores** → edita una frase y **Aprobar** el mensaje al cliente. En la ventana de Marta, recarga: llega el mensaje. En *Asistente*, una pregunta del tema y una ajena («¿quién ganó el mundial de 1998?»). Abre `mlflow.hub.local` (`compuerta-asistente@production`).
+- **Decir:** «La IA propone, una persona aprueba. Corre en esta máquina con Ollama, no sale ningún dato. Una compuerta entrenada y registrada en MLflow decide si la pregunta es del Hub antes de despertar al modelo; el contexto sale de la ayuda del Hub con búsqueda por embeddings.»
+- **Ver:** borrador marcado «de la IA», aprobación que llega al portal, la ajena descartada por la compuerta, el modelo registrado.
+- **Si falla:** borrador semilla aprobado.
+
+### 9:30–11:00 · Punto 10 · Voz (módulo 6)
+- **Hacer:** en *Asistente*, pulsa **Hablar**, pregunta «¿cómo apruebo un cambio?», pulsa **Detener**, mira el texto, corrige una palabra y envía; escucha la respuesta.
+- **Decir:** «El módulo 6 es multimodal: la voz va a texto con faster-whisper y vuelve a voz con Piper, en CPU, sin competir con el modelo por la GPU.»
+- **Ver:** transcripción editable y respuesta hablada.
+- **Si falla:** audio pregrabado; pregunta escrita.
+
+### 11:00–12:30 · Punto 8 · Portal, reportes y KPI
+- **Hacer:** ventana de Marta: el estado del mes y el incidente explicado en su lenguaje. En Sofía, *Reportes*: **Generar** operativo y ejecutivo; descarga el PDF ejecutivo.
+- **Decir:** «El cliente no ve términos técnicos: ve disponibilidad frente a lo acordado, qué pasó y qué hicimos. La agencia ve costo, horas y tiempos de respuesta.»
+- **Si falla:** PDF ya generado.
+
+### 12:30–14:00 · IaC y operación (módulos 2 y 4)
+- **Hacer:** `infra/client-new.sh` (o el módulo `client-env` con `tofu`) crea un cliente desde código; Argo CD lo sincroniza. Después `bash gitops/pruebas/drift.sh` (un cambio a mano se corrige solo) y abre `runbooks/`.
+- **Decir:** «Todo lo anterior se reconstruye desde código: OpenTofu crea el cliente, Git es la verdad, y si alguien cambia algo a mano Argo CD lo devuelve. Hay runbooks y un respaldo probado de la base.»
+- **Si falla:** salida grabada de `infra/pruebas/crear-cliente.sh`.
+
+### 14:00–15:00 · Cierre
+- **Decir:** «Lo que vieron cubre los siete módulos: contenedores, Kubernetes y GitOps, cadena de suministro, observabilidad e IaC, MLOps con IA local y voz. Límites honestos: un solo nodo, la firma se verifica en el pipeline y no dentro del clúster, y la modalidad adicional es audio, no imagen.»
+
+## Puntos de control y recortes
+
+| Si al llegar al minuto… | vas en… | Recorte |
+|---|---|---|
+| 4:30 | el P1 aún no aparece | Habla del reloj mientras esperas; si pasa de 6:00, usa el video de la detección |
+| 8:00 | el rollback no terminó | Muestra el commit `revert` y sigue; el MTTR se ve después |
+| 11:00 | más de 1 min tarde | Salta la voz en vivo (pon el audio pregrabado) |
+| 12:30 | más de 1 min tarde | Omite IaC y el drift; muestra `runbooks/` 20 s y cierra |
 
 ## Ronda de preguntas: comandos listos
 
 | Si preguntan por… | Mostrar |
 |---|---|
-| Aislamiento de red | `bash gitops/pruebas/salida-red.sh restaurante` y `bash gitops/pruebas/salida-hub.sh` |
+| Aislamiento de red | `bash gitops/pruebas/salida-red.sh restaurante`, `bash gitops/pruebas/salida-hub.sh` |
 | Pod Security y admisión | `bash gitops/pruebas/pod-security.sh`, `bash gitops/pruebas/admision.sh` |
 | Deriva y selfHeal | `bash gitops/pruebas/drift.sh` |
-| ¿Quién escribe en el repositorio de configuración? | `bash gitops/pruebas/sincronia.sh` y la regla de Gitea (`python gitops/proteccion_hub_gitops.py --comprobar`) |
+| ¿Quién escribe en la configuración? | `bash gitops/pruebas/sincronia.sh`; `python gitops/proteccion_hub_gitops.py --comprobar` |
 | Respaldo y restauración | `bash gitops/pruebas/respaldo.sh` |
 | Cuota y capacidad por cliente | `KUBECONFIG=... bash observability/capacidad.sh` |
 | Evaluación de la IA | `python ai/eval/run_eval.py --archivo ai/eval/preguntas_ayuda_ciegas.jsonl`; `python ai/eval/probar_documento_malicioso.py` |
-| Latencia y memoria del modelo | `python ai/eval/medir_modelos.py` y `docs/modelos/` (fichas) |
+| Latencia y memoria del modelo | `python ai/eval/medir_modelos.py`; fichas en `docs/modelos/` |
 | Integridad de los modelos | `python ai/verificar_modelos.py` |
-| Tutor de Kubernetes (módulo 2) | `python ai/tutor/tutor.py "¿Para qué sirve un DaemonSet?"` |
-| Trazas y registros | Grafana → Explore → Loki, enlace «Ver la traza» (el registro de la API lleva `trace_id`) |
-| Pruebas | `docker compose exec api pytest` (más de mil) y el CI de GitHub |
+| Tutor de Kubernetes | `python ai/tutor/tutor.py "¿Para qué sirve un DaemonSet?"` |
+| Voz | `HUB_WEB=https://hub.local HUB_NOMBRE=hub.local ... bash voz/pruebas/voz-ui.sh` |
+| Pruebas | `docker compose exec api pytest` y el CI de GitHub |
 
-## Riesgos y respuesta
+## Riesgos
 
 | Riesgo | Respuesta |
 |---|---|
-| El nodo k3d reinicia en bucle tras encender (IP) | Orden de arranque y comprobar `172.30.0.3` en T-30 (`runbooks/reinicio-del-cluster.md`) |
-| La IA tarda (modelo frío) | Hacer una pregunta de calentamiento en T-5; `keep_alive` corto |
-| Memoria justa con Backstage encendido | Encenderlo solo para el minuto 0 y 11:30 si hace falta; límites ya puestos |
-| La red del salón | Todo es local en un PC (IA incluida): no depende de la red. Probar el navegador y el micrófono en ese equipo |
-| Pasarse de tiempo | Cortar explicación, nunca pasos; ensayos cronometrados |
-| El micrófono real bajo la política de seguridad del navegador | **Probar antes del 30 nov** (no se ha probado con una persona real) |
+| El nodo k3d reinicia en bucle tras encender (IP) | Orden de arranque y comprobar `172.30.0.3` en T-30 |
+| La IA tarda con el modelo frío | Pregunta de calentamiento en T-5 |
+| Memoria justa con Backstage | Abrirlo solo en el minuto 0 si hace falta |
+| La red del salón | Todo corre en tu PC, IA incluida: no depende de la red. Probar navegador y micrófono en ese equipo |
+| Pasarse de tiempo | Cronómetro visible, puntos de control y recortes |
+| Hablar con otra voz u otro micrófono | Probar la voz real antes; plan B con audio pregrabado |
 
 ## Ensayos
 
-1. **Ensayo 1** (sin público): recorrer los 11 minutos y medio de puntos en orden, anotar tiempos reales y lo que falla.
-2. **Ensayo 2:** con reinicio previo (`demo/reiniciar-cluster.sh`) y cambio de relevos entre personas.
+1. **Ensayo 1** (solo): cronometrar cada bloque y anotar lo que falla.
+2. **Ensayo 2:** con reinicio previo (`demo/reiniciar-cluster.sh`), sin parar.
 3. **Ensayo 3:** en el equipo y la red del salón, grabando el video de respaldo.
-4. Después de cada ensayo, anotar tiempos y fallos en `docs/context.md` (spec 015, «Cómo se verifica»).
+4. Anotar tiempos y fallos en `docs/context.md`.

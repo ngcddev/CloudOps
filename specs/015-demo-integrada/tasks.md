@@ -9,7 +9,7 @@
 - [ ] T02 · Un solo script `demo/reiniciar-todo.sh` que encienda en orden (Docker, serverlb, server-0, estado-remoto, runner), confirme la IP del nodo, reinicie datos y deje ✓/✗ por punto — **Verifica:** correrlo dos veces seguidas deja el mismo estado y termina en menos de 5 min (CA-1).
 - [ ] T03 · Preparar una versión del colegio con un secreto a propósito para que Gitleaks la rechace, y su corrida grabada — **Verifica:** en el Hub aparece «rechazado por seguridad» con el motivo y no se puede aprobar.
 - [ ] T04 · Agregar al archivo `hosts` del equipo de la demo `mlflow.hub.local`, `backstage.hub.local` y `ferreteria-staging.hub.local` — **Verifica:** `curl -sI http://mlflow.hub.local` responde 200 sin `--resolve`.
-- [ ] T05 · Probar la voz con una persona real y el micrófono bajo la política de seguridad del navegador (`media-src blob:`, `Permissions-Policy`) — **Verifica:** se pregunta hablando, se corrige lo entendido y se escucha la respuesta en el navegador de la demo.
+- [ ] T05 · Probar la voz con una persona real y su micrófono en el navegador de la demo — **Verifica:** se pregunta hablando, se corrige lo entendido y se escucha la respuesta. (El 16 nov ya pasó la prueba automática en un navegador real contra el clúster con la política de seguridad estricta y un micrófono falso; falta la voz humana.)
 
 ## Verificar lo que quedó sin ver
 

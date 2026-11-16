@@ -27,7 +27,7 @@
 | 9 | Dashboard con SLI/SLO | **Hecho** | Tablero del Hub (disponibilidad del mes frente al SLO del plan, con presupuesto de error) y dos tableros de Grafana (servicio de sitios; RED y USE) | — |
 | 10 | Registro de experimentos / modelos | **Hecho** | MLflow en el clúster con el modelo `compuerta-asistente` y el alias `production`; corridas, evaluación y comprobación de integridad del modelo (`verificar_modelos.py`) | MLflow del clúster sin autenticación (red local; entrada cerrada por NetworkPolicy) |
 | 11 | Servicio de IA local con RAG | **Hecho** | Ollama (Qwen2.5 7B) + RAG propio con `nomic-embed-text` e índice en PostgreSQL, activo en el clúster (`ASSISTANT_CONTEXT_MODE=rag`); compuerta Naive Bayes; evaluación con preguntas ciegas; pruebas de inyección de instrucciones y documentos maliciosos; en vivo respondió con la IA real | No se usa AnythingLLM ni Open WebUI (equivalente propio, decisión D1) |
-| 12 | Workflow multimodal adicional | **Hecho** (audio) | Servicio de voz en el clúster (faster-whisper `small` + Piper, CPU): dictar, corregir lo entendido y escuchar la respuesta; evaluación de error de palabras; prueba en navegador real | Imagen, video y 3D no existen. No se probó el micrófono real bajo la nueva política de seguridad del navegador |
+| 12 | Workflow multimodal adicional | **Hecho** (audio) | Servicio de voz en el clúster (faster-whisper `small` + Piper, CPU): dictar, corregir lo entendido y escuchar la respuesta; evaluación de error de palabras; prueba en navegador real | Imagen, video y 3D no existen. Probada el 16 nov en un navegador real contra el clúster con la política de seguridad estricta (micrófono falso: transcripción, respuesta y audio reproducido, sin errores de JavaScript); falta probarla con una voz humana |
 
 Los entregables 1, 2, 13, 14 y 15 son documentales y quedan fuera de este informe (el 14, los runbooks, existe con 9 procedimientos probados).
 
@@ -49,7 +49,7 @@ Los entregables 1, 2, 13, 14 y 15 son documentales y quedan fuera de este inform
 |---|---|---|---|---|
 | 1 | Módulo 6 sin imagen, video ni 3D | Alto (15 % del diplomado) | Alto (GPU) o cero si el profesor acepta audio | **Tuya y del profesor**: preguntarlo ya |
 | 2 | Ensayar y cronometrar la demo 3 veces; plan B por punto | Alto (20 %) | Medio | Ver el guion |
-| 3 | Probar en vivo lo que quedó sin ver: micrófono real, `crear-cliente.sh`, `tofu plan`, alertas disparando | Medio | Bajo | Una sesión de verificación |
+| 3 | Probar en vivo lo que quedó sin ver: voz humana con micrófono real, `crear-cliente.sh`, `tofu plan`, alertas disparando | Medio | Bajo | Una sesión de verificación |
 | 4 | 15 hallazgos leves de la auditoría sin hacer (ver T34 a T37) | Bajo | Medio | Se puede dejar |
 | 5 | Verificación de la firma dentro del clúster | Bajo (mejora declarada) | Alto | Dejar como mejora |
 | 6 | Alertas de plataforma sin canal que avise | Bajo | Medio | Dejar documentado |

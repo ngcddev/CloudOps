@@ -4,6 +4,8 @@ import os
 import socket
 import sys
 
+import time
+
 from playwright.sync_api import sync_playwright
 
 BASE = os.environ["HUB_WEB"]  # un nombre *.localhost: Chromium lo trata como contexto seguro y deja usar el micrófono sin HTTPS
@@ -12,6 +14,17 @@ IP_ANFITRION = socket.gethostbyname("host.docker.internal")
 HUB_NOMBRE = os.environ.get("HUB_NOMBRE", "hub.localhost")
 SALIDA = "/out"
 fallos = 0
+
+
+def esperar(page, expresion: str, timeout: int = 60000) -> None:
+    """Espera a que la expresión sea verdadera sin `wait_for_function`: este evalúa texto como JavaScript dentro de la página y la Content-Security-Policy de la consola
+    (sin `unsafe-eval`) lo bloquea. `page.evaluate` va por el protocolo del navegador y no se ve afectado: así la prueba corre con la política real puesta."""
+    limite = time.monotonic() + timeout / 1000
+    while time.monotonic() < limite:
+        if page.evaluate(expresion):
+            return
+        time.sleep(0.5)
+    raise TimeoutError(f"No se cumplió en {timeout // 1000} s: {expresion}")
 
 
 def comprobar(ok: bool, texto: str) -> None:
@@ -61,7 +74,7 @@ with sync_playwright() as p:
     detener.click()
 
     cuadro = page.get_by_label("Tu pregunta")
-    page.wait_for_function("document.querySelector('.assistant-form input').value.length > 5", timeout=60000)
+    esperar(page, "document.querySelector('.assistant-form input').value.length > 5")
     texto = cuadro.input_value()
     print(f"   transcripción: {texto!r}")
     comprobar("cambio" in texto.lower() and "aprobar" in texto.lower().replace("probar", "aprobar"), "la transcripción llega al cuadro de la pregunta y se puede corregir")
@@ -73,7 +86,7 @@ with sync_playwright() as p:
     respuesta = page.locator(".assistant-answer").first.inner_text()
     print(f"   respuesta: {respuesta[:140]!r}")
     comprobar(len(respuesta) > 10, "el asistente responde por escrito")
-    page.wait_for_function("window.__reproducciones > 0", timeout=60000)
+    esperar(page, "window.__reproducciones > 0")
     comprobar(page.evaluate("window.__reproducciones") > 0, "la respuesta se lee en voz alta (el Hub pidió reproducir el audio)")
     page.screenshot(path=f"{SALIDA}/4-respuesta.png")
 
