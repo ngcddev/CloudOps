@@ -3,6 +3,12 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Los medios de la auditoría llegan al clúster: `hub-api` v1.16 y `hub-web` v1.11 (spec 022, T19 a T33)
+
+Fusionados los 5 PR apilados (199 a 203) y publicadas las dos imágenes del Hub; `hub-gitops` pasó a `254fb99`. **En vivo:** el API corre v1.16 con la migración `0016` aplicada (`has_report` existe), responde con `X-Request-ID`, sus registros salen en JSON con `request_id` y `trace_id` y la ruta sin la cadena de consulta, y Loki ya los tiene (los de PostgreSQL no). Prometheus recoge 8 jobs sin ninguno caído y cargó las alertas nuevas; solo `Watchdog` está activa. Argo CD adoptó `kube-state-metrics` (que estaba puesto a mano) y las tres Applications nuevas (`plataforma-mlops`, `plataforma-backstage`, `plataforma-respaldo`) quedaron `Synced/Healthy` sin tocar ningún Pod. Alloy usa 127 Mi de sus 256 con los registros del Hub.
+**Una cosa que se rompió y arreglé:** las pruebas `entrada-gitea.sh` y `observability/pruebas/entrada.sh` (de T16 y T17) lanzan un Pod en el namespace `hub` sin etiqueta, y desde T18 `hub` niega toda salida: fallaban sin que la política estuviera mal. Ahora esos Pods llevan `app=api` y heredan la política de la API.
+**No verificado:** las alertas nuevas disparando de verdad, el diagnóstico con la IA real, que Grafana abra la traza desde un registro (los datasources se aprovisionan; el enlace no lo probé en la interfaz), el pool con carga, y `crear-cliente.sh`.
+
 ## 16 nov 2026 · Lo que faltaba de BE-02: diagnosticar, aprobar y dar de alta sin sostener la conexión (spec 022, T33)
 
 El asistente y los borradores ya soltaban la conexión a la base mientras esperaban a Ollama (T07); faltaban el diagnóstico de incidentes (seis consultas a Prometheus, una a Loki y Ollama), la aprobación de un cambio y el alta de un sitio (varias llamadas a Gitea de hasta 10 s). Ahora los tres copian lo que necesitan, sueltan la conexión y escriben al final; al aprobar se vuelve a leer el cambio y, si otra persona lo resolvió mientras tanto, responde 409 sin pisarlo.
