@@ -3,6 +3,11 @@
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los
 > documentos finales del diplomado. Lo no verificado se dice como tal. Entrada más reciente arriba.
 
+## 16 nov 2026 · Lote del frontend: FE-05 y FE-06 (spec 022, T23 y T24)
+
+**FE-05:** «Incidentes» pedía la lista de clientes y luego el detalle de cada uno (1 + N en cascada) solo para llenar el formulario de «Nuevo incidente». Ahora la pantalla usa la lista para el filtro y el detalle se pide en paralelo, una vez, al abrir el formulario. **FE-06:** la bandeja de cambios pedía la puerta de seguridad de todos los cambios cada 5 s mientras uno esperaba; ahora guarda las de los cambios terminados (publicado, rechazado, fallido), solo repite las demás y no consulta con la pestaña oculta.
+**Cómo se comprobó:** en el navegador integrado contra la API de desarrollo (peticiones contadas); para FE-06, como la base no tiene cambios, se sustituyó `fetch` con tres cambios simulados y se vio que las vueltas posteriores piden solo la puerta del cambio en curso. **No verificado:** la pausa con la pestaña oculta en vivo; no hay pruebas automáticas del frontend para estas dos pantallas (el proyecto solo tiene la del límite de errores).
+
 ## 16 nov 2026 · Lote de consultas del backend: BD-03, BE-04, BE-03 y BE-07 (spec 022, T19 a T22)
 
 **BD-03:** la lista de corridas de la puerta de seguridad cargaba el JSON de Trivy y del SBOM de cada control solo para decir si había reporte. Ahora `has_report` es una columna (migración `0016`, con relleno) y `report` es una columna diferida. **BE-04:** paginación común (`limit` hasta 500, por defecto 100, y `offset`) en seis listados, y el listado de reportes ya no trae el JSON `data`. **BE-03:** horas y conteos del tablero salen de una suma y de un conteo en la base (antes una carga perezosa por ticket) y `cumple_objetivo` reutiliza la disponibilidad ya calculada. **BE-07:** el reemplazo del índice del RAG toma un candado de transacción de PostgreSQL y quien esperó no lo repite; una carrera de únicos cae a la recuperación léxica en lugar de un 500.
