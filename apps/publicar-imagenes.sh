@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Construye y publica en el registro de Gitea las imágenes de los sitios de clientes (spec 003, T06):
 # restaurante, ferreteria, consultorio-web y consultorio-api, cada una en v1 (sana) y v2 (rota, 500).
-# El colegio de la demo (spec 016: colegio-web y colegio-api) se pide por nombre. También las del Hub (T17): hub-api (v1.15), hub-web (v1.10) y hub-voz (v1.2, servicio de voz de la spec 021) (cada cambio del Hub lleva una etiqueta nueva: el nodo guarda en caché las ya bajadas). Se piden por nombre; no se publican por defecto.
+# El colegio de la demo (spec 016: colegio-web y colegio-api) se pide por nombre. También las del Hub (T17): hub-api (v1.16), hub-web (v1.11) y hub-voz (v1.2, servicio de voz de la spec 021) (cada cambio del Hub lleva una etiqueta nueva: el nodo guarda en caché las ya bajadas). Se piden por nombre; no se publican por defecto.
 # Uso:  REGISTRY_USER=forja-admin REGISTRY_PASSWORD='...' bash apps/publicar-imagenes.sh [app[:versión] ...]
 # Con `app:versión` (por ejemplo ferreteria:v1.1) se publica solo esa versión de la app (spec 005, T05).
 # Sin argumentos publica las cuatro de los sitios. La contraseña va en el entorno: nunca en el repo.
@@ -22,7 +22,7 @@ NETWORK="${NETWORK:-k3d-hub}"
 declare -A CONTEXT=( [restaurante]=restaurante [ferreteria]=ferreteria [consultorio-web]=consultorio [consultorio-api]=consultorio [colegio-web]=colegio [colegio-api]=colegio [mlflow]=../ai/servidor-mlflow [hub-api]=../backend [hub-web]=../frontend [hub-voz]=../voz )
 declare -A DOCKERFILE=( [restaurante]=Dockerfile [ferreteria]=Dockerfile [consultorio-web]=Dockerfile.frontend [consultorio-api]=Dockerfile.backend [colegio-web]=Dockerfile.frontend [colegio-api]=Dockerfile.backend [mlflow]=Dockerfile [hub-api]=Dockerfile [hub-web]=Dockerfile [hub-voz]=Dockerfile )
 # Versiones por app y opciones extra de build (el Hub necesita seed/ como contexto adicional)
-declare -A VERSIONS=( [mlflow]=3.18.0 [hub-api]=v1.15 [hub-web]=v1.10 [hub-voz]=v1.2 )
+declare -A VERSIONS=( [mlflow]=3.18.0 [hub-api]=v1.16 [hub-web]=v1.11 [hub-voz]=v1.2 )
 declare -A EXTRA=( [hub-api]="--build-context seed=../seed" [hub-web]="--build-context seed=../seed" [hub-voz]="--build-context vocab=../ai/classifier/data" )
 
 APPS=("$@")
