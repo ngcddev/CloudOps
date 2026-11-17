@@ -1,0 +1,18 @@
+sequenceDiagram
+  participant S as Sitio (v2 rota)
+  participant B as Blackbox/Prometheus
+  participant AM as Alertmanager
+  participant H as Hub
+  actor T as Técnico
+  participant HG as hub-gitops
+  participant A as Argo CD
+  S-->>B: probe_success = 0
+  B->>AM: SitioCaido (for 30 s)
+  AM->>H: webhook
+  H->>H: incidente P1 + plan de rollback (48–49 s desde el corte)
+  T->>H: rollback
+  H->>HG: git revert
+  A->>HG: sincroniza v1
+  B->>AM: el sondeo vuelve a 1
+  AM->>H: resuelta
+  H->>H: incidente mitigado, MTTR calculado
