@@ -25,6 +25,10 @@ campo() { grep -o "\"$1\": *\"\{0,1\}[^\",}]*" | head -1 | sed "s/^\"$1\": *\"\{
 TOKEN="$(curl -s -m 10 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login" \
   -d "{\"email\":\"${HUB_USUARIO}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
 [ -n "$TOKEN" ] || { echo "No se pudo entrar al Hub como ${HUB_USUARIO} (¿HUB_PASSWORD correcta?)"; exit 1; }
+# Segregación de funciones (spec 018): quien pide un cambio no lo aprueba; lo aprueba otra cuenta de la agencia (corregido el 16 nov 2026: este script seguía con una sola cuenta)
+HUB_USUARIO_APROBADOR="${HUB_USUARIO_APROBADOR:-camilo@forjadigital.test}"
+TOKEN_APROBADOR="$(curl -s -m 10 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login"   -d "{\"email\":\"${HUB_USUARIO_APROBADOR}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
+[ -n "$TOKEN_APROBADOR" ] || { echo "No se pudo entrar al Hub como ${HUB_USUARIO_APROBADOR}"; exit 1; }
 hub_get() { curl -s -m 10 -H "Authorization: Bearer ${TOKEN}" "$1"; }
 post()    { curl -s -m 20 -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' -X POST "$1" -d "$2"; }
 fila()    { hub_get "${HUB}/api/services/status" | tr '{' '\n' | grep "\"${NS}\""; }
@@ -40,7 +44,7 @@ echo "== Publicar ${VERSION} en ${NS} por el Hub =="
 ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Publicaci\\u00f3n sana ${VERSION}\",\"description\":\"Prueba CA-9 (spec 008, T31).\",\"kind\":\"cambio\"}")"
 cambio="$(post "${HUB}/api/change-requests" "{\"ticket_id\":$(echo "$ticket" | campo id),\"to_version\":\"${VERSION}\"}")"
 CAMBIO_ID="$(echo "$cambio" | campo id)"
-aprobado="$(post "${HUB}/api/change-requests/${CAMBIO_ID:-0}/approve" "{}")"
+aprobado="$(TOKEN="$TOKEN_APROBADOR" post "${HUB}/api/change-requests/${CAMBIO_ID:-0}/approve" "{}")"
 [ "$(echo "$aprobado" | campo status)" = "en_validacion" ] && ok "cambio #${CAMBIO_ID} aprobado" || { falla "no se aprobó: ${aprobado}${cambio}"; exit 1; }
 
 echo "== Vigilar ${VIGILAR} s: el sitio puede reiniciarse, pero no debe abrirse ningún incidente =="
