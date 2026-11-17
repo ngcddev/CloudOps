@@ -1,0 +1,20 @@
+# paso:     A01-ruff (A)
+# qué:      Lint de Python (ruff 0.14.0, ruff.toml)
+# comando:  docker run --rm -v C:/Users/ngavi/OneDrive/Desktop/CW/CW-CloudOps:/w -w /w python:3.12-slim sh -c pip install -q ruff==0.14.0 2>&1 | tail -1 && ruff check .
+# inicio:   2026-11-16T22:03:41Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+[notice] To update, run: pip install --upgrade pip
+B023 Function definition does not bind loop variable `numeros`
+  --> entrega/preprocesar.py:74:66
+   |
+72 |             if m.group(1) not in numeros:
+73 |                 problemas.append(f"referencia sin leyenda: {{{letra}:{m.group(1)}}}")
+74 |         texto = re.sub(rf"\{{{letra}:([\w-]+)\}}", lambda m: str(numeros.get(m.group(1), "?")), texto)
+   |                                                                  ^^^^^^^
+75 |     return ajustar_columnas(texto), problemas
+   |
+
+Found 1 error.
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 8s

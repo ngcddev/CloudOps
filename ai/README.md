@@ -1,6 +1,6 @@
 # ai/ · MLOps y LLMOps del asistente (spec 012)
 
-El Hub tiene un asistente de ayuda con IA local (Ollama, PC B). Para no despertar al LLM con cada mensaje, un
+El Hub tiene un asistente de ayuda con IA local (Ollama en el equipo anfitrión). Para no despertar al LLM con cada mensaje, un
 clasificador pequeño, **la compuerta**, decide primero si la pregunta trata del Hub. Aquí viven los datos, el
 entrenamiento y la evaluación; el Hub solo carga el modelo ya exportado. Diseño completo en el
 [plan 012](../specs/012-asistente-ia/plan.md).
@@ -28,7 +28,7 @@ pip install -r ai/requirements.txt
 python ai/classifier/train.py --version v1 --promover   # registra la corrida y el modelo y le pone el alias production
 python ai/importar_corridas.py                          # sube al servidor el historial de ai/eval/runs/
 python ai/classifier/promover.py [--version N]          # exporta el alias production al Hub
-cd ai && pytest                                         # 9 pruebas del registro, la promoción y la evaluación
+cd ai && pytest                                         # pruebas del registro en MLflow, la promoción, el tutor y la medición
 ```
 
 | Qué | Dónde queda en MLflow |

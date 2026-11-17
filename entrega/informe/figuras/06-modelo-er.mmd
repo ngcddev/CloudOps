@@ -1,0 +1,21 @@
+erDiagram
+  agencies ||--o{ clients : tiene
+  clients ||--o{ projects : tiene
+  clients ||--o{ users : "usuarios del portal"
+  clients ||--o{ reports : recibe
+  projects ||--o{ services : contiene
+  plans ||--o{ services : rige
+  services ||--o{ tickets : recibe
+  services ||--o{ change_requests : cambia
+  services ||--o{ deployments : registra
+  services ||--o{ incidents : sufre
+  services ||--o{ security_runs : verifica
+  security_runs ||--o{ security_checks : incluye
+  tickets ||--o{ ticket_events : historial
+  tickets ||--o{ work_logs : horas
+  tickets ||--o| change_requests : origina
+  incidents ||--o{ incident_events : historial
+  incidents ||--o{ ai_drafts : borradores
+  users ||--o{ audit_logs : "actúa en"
+  users ||--o{ ai_queries : pregunta
+  kb_documents ||--o{ kb_chunks : trozos

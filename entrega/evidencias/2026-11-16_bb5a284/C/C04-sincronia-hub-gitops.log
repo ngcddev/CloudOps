@@ -1,0 +1,103 @@
+# paso:     C04-sincronia-hub-gitops (C)
+# qué:      hub-gitops coincide con el repositorio principal
+# comando:  bash gitops/pruebas/sincronia.sh
+# inicio:   2026-11-16T22:47:46Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+warning: in the working copy of 'clients/_base/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/_base/ingress.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/_base/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/_base/limitrange.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/_base/namespace.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/_base/networkpolicy.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/_base/resourcequota.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/_base/service.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/consultorio/backend.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/api.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/backup.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/configurar-ia.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/crear-secretos.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/crear-tokens.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/escalado.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/ingress.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/limitrange.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/networkpolicy.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/postgres.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/respaldo/respaldar.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/respaldo/restaurar.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/serviceaccounts.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/voz.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/web.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/alertmanager/alertmanager.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/alertmanager/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/alertmanager/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/alloy/config.alloy', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/alloy/daemonset.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/alloy/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/alloy/rbac.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/blackbox/blackbox.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/blackbox/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/blackbox/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/capacidad.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/grafana/dashboards-provider.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/grafana/dashboards/red-use.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/grafana/dashboards/servicio-sitios.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/grafana/datasources.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/grafana/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/grafana/ingress.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/grafana/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/kube-state-metrics/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/kube-state-metrics/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/loki/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/loki/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/loki/loki.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/networkpolicy.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/prometheus.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/pvc.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/rbac.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/reglas/plataforma.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/reglas/presupuesto.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prometheus/reglas/sitios.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/cronometro.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/entrada.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/expresiones_tablero.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/grafana.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/plataforma_test.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/presupuesto_test.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/publicacion-sana.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/reglas_test.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/tablero_test.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/token-falso.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/trazas.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/pruebas/validar.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/tempo/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/tempo/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/tempo/tempo.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/traefik/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/traefik/service.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/app-config.hub.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/docs/catalog-info.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/docs/docs/flujo-de-cambios.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/docs/docs/index.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/docs/docs/operar.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/docs/mkdocs.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/group.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/ingress.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/publicar-docs.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/templates/sitio-de-cliente.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/mlops/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/mlops/mlflow.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/mlops/networkpolicy.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/respaldo/argocd.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/respaldo/gitea.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/respaldo/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+hub-gitops está en sincronía con el repositorio principal (bb5a284). No hay nada que subir.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 4s

@@ -1,6 +1,6 @@
 # Cómo trabajamos: Spec-Driven Development (SDD)
 
-> El proyecto se construye con una [constitución](../constitution/README.md) y 16 especificaciones
+> El proyecto se construye con una [constitución](../constitution/README.md) y 24 especificaciones (000 a 023)
 > derivadas de los [requerimientos](requerimientos.md). Ninguna línea de código se escribe sin
 > una spec que la pida.
 
@@ -25,7 +25,7 @@ cloudops/
 ├── constitution/                 # misión, principios, roadmap, stack, convenciones, nombres
 ├── docs/                         # requerimientos, glosario, esta guía
 └── specs/
-    ├── README.md                 # mapa de las 16 specs y sus dependencias
+    ├── README.md                 # mapa de las 24 specs, su estado y sus tareas
     ├── _plantilla/               # copiar esta carpeta para abrir una spec nueva
     ├── 000-modelo-de-servicio/
     │   ├── spec.md
@@ -64,7 +64,7 @@ plataforma esperan su módulo (principio 9).
 1. Tomar la siguiente tarea libre de `tasks.md` y poner tu nombre al lado.
 2. Crear la rama `feat/<spec>-t<NN>-<slug>` (ej. `feat/001-t06-crud-clientes`).
 3. Commits con Conventional Commits: `feat(001): crear endpoint de clientes`.
-4. Abrir PR a `main` con la plantilla; marcar la casilla de la tarea en `tasks.md` en el mismo PR.
+4. Abrir PR a `dev` (la rama de integración) con la plantilla; marcar la casilla de la tarea en `tasks.md` en el mismo PR.
 5. Otra persona revisa contra la spec y la constitución y hace merge.
 
 ## Revisión contra la constitución
@@ -86,4 +86,4 @@ Si un plan rompe un principio, se corrige el plan, no el principio.
 | Spec nueva | [`specs/_plantilla/`](../specs/_plantilla/spec.md) | Siempre |
 | Hub (backend + frontend) | Esqueleto propio definido en el [plan de la spec 001](../specs/001-clientes-y-planes/plan.md). La plantilla oficial `full-stack-fastapi-template` sirve solo como referencia de estructura: usa SQLModel y Chakra UI, que no encajan con la constitución | Módulo 1 |
 | Sitio de cliente | Repos plantilla en Gitea (`cliente-landing`, `cliente-landing-form`) marcados como *Template repository* | Módulo 2 (specs 002 → 003) |
-| Cliente nuevo de punta a punta | *Software Template* de Backstage que crea el repo desde la plantilla, el namespace y los manifiestos con nombre, dominio y plan | Módulos 2–4 (specs 005 y 011) |
+| Cliente nuevo de punta a punta | *Software Template* «Sitio de cliente» de Backstage (registra el sitio en el catálogo; el alta del sitio la hace el Hub por GitOps) | Módulos 2–4 (specs 005 y 011) |

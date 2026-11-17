@@ -1,0 +1,24 @@
+# paso:     A16-smoke-landing (A)
+# qué:      Smoke de la plantilla landing-form
+# comando:  bash apps/templates/landing-form/smoke-test.sh
+# inicio:   2026-11-16T22:25:11Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Construyendo imágenes
+== Levantando contenedores
+== Contenedores sin root
+✓ backend corre con UID 10001
+✓ frontend corre con UID 101
+== Versión v1 (sana)
+✓ backend /health
+✓ frontend /health
+✓ frontend / sirve la página
+✓ formulario a través del proxy /api
+== Versión v2 (rota a propósito)
+✓ backend /health responde 500
+✓ frontend /health responde 500
+✓ frontend / responde 500
+
+✓ Prueba de humo superada
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 22s

@@ -1,0 +1,11 @@
+# paso:     C23b-cerrar-incidentes (C)
+# qué:      Cerrar los incidentes mitigados que dejó el cronómetro (la huella es única entre incidentes abiertos)
+# comando:  bash entrega/evidencias/cerrar-incidentes.sh
+# inicio:   2026-11-17T01:31:52Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+#3 (mitigado) -> cerrado
+#2 (mitigado) -> cerrado
+#1 (mitigado) -> cerrado
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 1s

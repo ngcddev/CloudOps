@@ -1,0 +1,5 @@
+C22-demo-005	C	FALLO	1	3	2026-11-16T23:29:29Z	Aprobación de un cambio hasta el sitio publicado (spec 005)	bash gitops/pruebas/demo-005.sh
+C27-publicacion-sana	C	FALLO	1	2	2026-11-16T23:29:36Z	Una publicación sana no abre incidente	bash observability/pruebas/publicacion-sana.sh
+C26-cronometro	C	FALLO	1	923	2026-11-16T23:29:42Z	El incidente P1 se abre en 60 s o menos (3 corridas)	bash observability/pruebas/cronometro.sh
+C24-demo-010	C	FALLO	1	1274	2026-11-16T23:45:06Z	Dashboards con Prometheus, incluida la caída de Prometheus (spec 010)	bash gitops/pruebas/demo-010.sh
+C30-crear-cliente	C	FALLO	1	5	2026-11-17T00:06:21Z	Crear, verificar y eliminar un cliente con OpenTofu	bash infra/pruebas/crear-cliente.sh

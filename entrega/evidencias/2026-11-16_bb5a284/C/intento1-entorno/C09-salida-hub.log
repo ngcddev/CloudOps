@@ -1,0 +1,30 @@
+# paso:     C09-salida-hub (C)
+# qué:      Salida de red del Hub (controles)
+# comando:  bash gitops/pruebas/salida-hub.sh
+# inicio:   2026-11-16T22:48:23Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+  ✗ api: llega a su base de datos (resultado: '')
+  ✗ api: llega al servicio de voz (resultado: '')
+  ✗ api: llega a Gitea (resultado: '')
+  ✗ api: llega a Argo CD (resultado: '')
+  ✗ api: llega a Prometheus (resultado: '')
+  ✗ api: llega a Loki (resultado: '')
+  ✗ api: llega al receptor OTLP de Tempo (resultado: '')
+  ✗ api: llega a Ollama en el host (resultado: '')
+  ✗ api: no llega a MLflow (resultado: '')
+  ✗ api: no llega a Alertmanager (resultado: '')
+  ✗ api: no llega a Grafana (resultado: '')
+  ✗ api: no llega a la API de Kubernetes (resultado: '')
+  ✗ api: no llega al sitio de un cliente (resultado: '')
+  ✗ api: no llega a internet (resultado: '')
+  ✗ backstage: llega a Gitea (resultado: '')
+  ✗ backstage: llega a Postgres del Hub (mismo namespace) (resultado: '')
+  ✗ backstage: no llega a Prometheus (resultado: '')
+  ✗ backstage: no llega a internet (resultado: '')
+  ✗ voz: no llega a Gitea (resultado: '')
+  ✗ voz: no llega a Ollama (resultado: '')
+  ✗ voz: no llega a internet (resultado: '')
+salida-hub: 21 fallo(s)
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 6s

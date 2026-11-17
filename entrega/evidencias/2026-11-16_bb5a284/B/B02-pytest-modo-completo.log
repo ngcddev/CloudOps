@@ -1,0 +1,32 @@
+# paso:     B02-pytest-modo-completo (B)
+# qué:      pytest completo forzando ASSISTANT_CONTEXT_MODE=completo (como lo corre el CI)
+# comando:  env MSYS_NO_PATHCONV=1 bash -c docker compose exec -T -e ASSISTANT_CONTEXT_MODE=completo api pytest -q -rs --junitxml=/tmp/junit.xml; rc=$?; docker compose cp api:/tmp/junit.xml entrega/evidencias/2026-11-16_bb5a284/B/junit-modo-completo.xml; exit $rc
+# inicio:   2026-11-16T22:41:47Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+........................................................................ [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 18%]
+........................................................................ [ 25%]
+........................................................................ [ 31%]
+.................x......................................s............... [ 37%]
+........................................................................ [ 44%]
+................s....................................................... [ 50%]
+................s....................................................... [ 56%]
+........................................................................ [ 63%]
+........................................................................ [ 69%]
+........................................................................ [ 75%]
+.............................................ss.........s............... [ 82%]
+........................................................................ [ 88%]
+........................................................................ [ 94%]
+...........................................................              [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_gitops_integration.py:88: Define GITEA_TEST_URL, GITEA_TEST_TOKEN y GITEA_TEST_REPO para probar contra un Gitea real
+SKIPPED [1] tests/test_knowledge_concurrente.py:20: TEST_POSTGRES_URL no está definida (hace falta un PostgreSQL desechable)
+SKIPPED [1] tests/test_menores_backend.py:176: TEST_POSTGRES_URL no está definida (hace falta un PostgreSQL desechable)
+SKIPPED [3] tests/test_rutas_protegidas.py:22: ruta pública a propósito
+1132 passed, 6 skipped, 1 xfailed in 87.65s (0:01:27)
+ cw-cloudops-api-1 Copying cw-cloudops-api-1:/tmp/junit.xml to entrega/evidencias/2026-11-16_bb5a284/B/junit-modo-completo.xml
+ cw-cloudops-api-1 Copied cw-cloudops-api-1:/tmp/junit.xml to entrega/evidencias/2026-11-16_bb5a284/B/junit-modo-completo.xml
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 96s

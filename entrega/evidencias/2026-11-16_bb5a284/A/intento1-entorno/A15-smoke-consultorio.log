@@ -1,0 +1,11 @@
+# paso:     A15-smoke-consultorio (A)
+# qué:      Smoke del sitio del consultorio
+# comando:  bash apps/consultorio/smoke-test.sh
+# inicio:   2026-11-16T22:11:52Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Construyendo imágenes
+== Levantando contenedores
+✕ http://127.0.0.1:57610/health no respondió a tiempo
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 49s

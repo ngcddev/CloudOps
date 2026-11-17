@@ -17,7 +17,7 @@ Hub: aprobar solo con corrida ok · si falla, las solicitudes pendientes de esa 
 | `secretos` | Gitleaks | Hay un secreto en los commits nuevos de la versión (antes de construir nada) |
 | `construccion` | `docker build` | La imagen no se construye |
 | `vulnerabilidades` | Trivy (`CRITICAL`, `--ignore-unfixed`) | Hay una CVE crítica con arreglo disponible |
-| `sbom` | Syft (SPDX JSON) | — (evidencia) |
+| `sbom` | Syft (SPDX JSON) y escaneo de licencias | Hay una licencia `CRITICAL` en el inventario (`puerta.sh`) |
 | `firma` | Skopeo (sube) + Cosign (firma el digest) | No se puede subir o firmar |
 | `verificacion` | Cosign verify con `cosign.pub` | La firma es inválida o falta |
 
@@ -115,8 +115,8 @@ prueba el sitio de dos imágenes.
   (`image_digests`); fijar ese digest en `hub-gitops` es una mejora futura.
 - El registro de Gitea del laboratorio va por HTTP: `REGISTRY_INSEGURO=1` (por defecto) desactiva TLS en Skopeo y
   usa `--allow-http-registry` en Cosign. Con certificado, ponerlo en `0`.
-- Eventos con reportes muy grandes (SBOM de varios MB) viajan en el cuerpo de la petición; la API no los limita
-  hoy.
+- Eventos con reportes muy grandes (SBOM de varios MB) viajan en el cuerpo de la petición; la API los limita con
+  `backend/app/limite_cuerpo.py` (tope configurable en `backend/app/config.py`).
 
 ## Pruebas del sitio y procedencia SLSA
 

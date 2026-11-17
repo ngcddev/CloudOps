@@ -9,7 +9,7 @@
 | Parámetros y cuantización | 7,6 B, Q4_K_M |
 | Tamaño en disco | 4,7 GB |
 | Uso | Asistente de ayuda del Hub, borradores del incidente (resumen y mensaje) y diagnóstico con IA |
-| Dónde corre | Ollama en el PC B; la API lo llama por `OLLAMA_URL` |
+| Dónde corre | Ollama en el equipo anfitrión (laptop con GPU); la API lo llama por `OLLAMA_URL` |
 | Datos que recibe | Preguntas del equipo, la ayuda del Hub y los hechos de un incidente; nada de clientes sale del laboratorio |
 
 ## Medición

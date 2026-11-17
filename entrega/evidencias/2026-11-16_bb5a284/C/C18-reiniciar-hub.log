@@ -1,0 +1,16 @@
+# paso:     C18-reiniciar-hub (C)
+# qué:      Reiniciar la demo del clúster: base del Hub limpia (las repeticiones previas dejaron cambios en curso)
+# comando:  bash demo/reiniciar-cluster.sh
+# inicio:   2026-11-17T00:07:17Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+→ Quitando clients/colegio de hub-gitops
+   (no había nada: el sitio ya estaba fuera de GitOps)
+→ Recreando la base del Hub vacía
+→ Levantando la API (migra y siembra)
+→ Comprobando
+   ✓ 5 usuarios sembrados
+   ✓ cliente-colegio ya no existe
+Demo del clúster reiniciada: datos semilla y sin colegio.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 23s

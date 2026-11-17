@@ -1,0 +1,16 @@
+# paso:     C08-salida-red (C)
+# qué:      Salida de red cerrada de un cliente
+# comando:  bash gitops/pruebas/salida-red.sh
+# inicio:   2026-11-16T22:48:21Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+E1116 17:48:22.436345   11948 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"http://localhost:8080/api?timeout=32s\": dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it."
+Unable to connect to the server: dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+E1116 17:48:22.688135   30940 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"http://localhost:8080/api?timeout=32s\": dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it."
+E1116 17:48:22.765909   30940 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"http://localhost:8080/api?timeout=32s\": dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it."
+E1116 17:48:22.768014   30940 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"http://localhost:8080/api?timeout=32s\": dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it."
+E1116 17:48:22.769603   30940 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"http://localhost:8080/api?timeout=32s\": dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it."
+Unable to connect to the server: dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+El Pod de prueba no arrancó
+# ---------------------------------------------------------------
+# código de salida: 2 · estado: FALLO · duración: 1s

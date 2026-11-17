@@ -5,9 +5,9 @@ no trae todos los campos. Las cifras de latencia y memoria las mide `ai/eval/med
 
 | Modelo | Ficha | Para qué se usa | Dónde corre |
 |---|---|---|---|
-| Qwen2.5 7B Instruct (Q4_K_M) | [qwen2.5-7b-instruct.md](qwen2.5-7b-instruct.md) | Asistente de ayuda, borradores de incidente y diagnóstico | Ollama, PC B |
-| Qwen2.5 3B Instruct (Q4_K_M) | [qwen2.5-3b-instruct.md](qwen2.5-3b-instruct.md) | Comparación (se descartó para respuestas que alguien lee) | Ollama, PC B |
-| nomic-embed-text | [nomic-embed-text.md](nomic-embed-text.md) | Embeddings del modo RAG (opcional) | Ollama, PC B |
+| Qwen2.5 7B Instruct (Q4_K_M) | [qwen2.5-7b-instruct.md](qwen2.5-7b-instruct.md) | Asistente de ayuda, borradores de incidente y diagnóstico | Ollama (equipo anfitrión) |
+| Qwen2.5 3B Instruct (Q4_K_M) | [qwen2.5-3b-instruct.md](qwen2.5-3b-instruct.md) | Comparación (se descartó para respuestas que alguien lee) | Ollama (equipo anfitrión) |
+| nomic-embed-text | [nomic-embed-text.md](nomic-embed-text.md) | Embeddings del modo RAG (opcional) | Ollama (equipo anfitrión) |
 | faster-whisper base (voz a texto) | [faster-whisper-base.md](faster-whisper-base.md) | Pasar la voz de quien opera a texto para el asistente (spec 021) | Servicio de voz, CPU |
 | faster-whisper small (voz a texto) | [faster-whisper-small.md](faster-whisper-small.md) | Alternativa más precisa y más pesada, solo si la medición la justifica | Servicio de voz, CPU |
 | Piper es_MX «claude» (texto a voz) | [piper-es-mx-claude-high.md](piper-es-mx-claude-high.md) | Leer en voz alta las respuestas del asistente | Servicio de voz, CPU |

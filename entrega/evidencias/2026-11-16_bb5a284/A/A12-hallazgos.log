@@ -1,0 +1,23 @@
+# paso:     A12-hallazgos (A)
+# qué:      Trivy cruzado con hallazgos.yaml y generación del VEX
+# comando:  bash pipelines/pruebas/hallazgos.sh
+# inicio:   2026-11-16T22:23:06Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+→ Construyendo las imágenes
+→ Escaneando con Trivy (altas y críticas, también sin arreglo)
+→ Cruzando con pipelines/hallazgos.yaml
+| Regla | Severidad | CVE | Paquetes | Imágenes | Explotabilidad | Tratamiento | Revisar en |
+|---|---|---:|---|---|---|---|---|
+| acl-symlink | HIGH | 1 | libacl1 | colegio-api_hallazgos, hub-api_hallazgos | Local: el recorrido de enlaces simbólicos ocurre al usar las utilidades de lista | aceptar | 2027-02-15 |
+| ncurses-terminal | HIGH | 1 | libncursesw6, libtinfo6, ncurses-base, ncurses-bin | colegio-api_hallazgos, hub-api_hallazgos | Local: requiere un terminal interactivo que procese una base de datos terminfo m | aceptar | 2027-02-15 |
+| perl-base | HIGH | 1 | perl-base | colegio-api_hallazgos, hub-api_hallazgos | Requiere ejecutar un script de Perl con entrada del atacante. | aceptar | 2027-02-15 |
+| sqlite-demostracion | HIGH | 3 | libsqlite3-0 | colegio-api_hallazgos, hub-api_hallazgos | Remota y por entrada del visitante SOLO si llega SQL armado con ese texto; los s | mitigar | 2027-02-15 |
+| systemd-udev | HIGH | 1 | libsystemd0, libudev1 | colegio-api_hallazgos, hub-api_hallazgos | Requiere un systemd o udev en ejecución que atienda al atacante. | aceptar | 2027-02-15 |
+| util-linux-mount | HIGH | 4 | bsdutils, libblkid1, liblastlog2-2, libmount1, libsmartcols1, libuuid1, login, mount, util-linux | colegio-api_hallazgos, hub-api_hallazgos | Local: exige poder ejecutar mount, nsenter o login dentro del contenedor, es dec | aceptar | 2027-02-15 |
+
+94 hallazgos altos o críticos: {'aceptar': 88, 'mitigar': 6}
+
+Registro de hallazgos al día: todo lo corregible está corregido y lo demás tiene decisión vigente. Resultado en evidencias/hallazgos/.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 45s

@@ -1,0 +1,55 @@
+# paso:     C25-caso-restaurante (C)
+# qué:      P1 del restaurante: incidente, rollback y MTTR
+# comando:  bash gitops/pruebas/demo-caso-restaurante.sh
+# inicio:   2026-11-16T23:06:19Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Corrida 1 de 3 ==
+   OK   cambio #14 a v2 aprobado (commit 1108064)
+   OK   incidente P1 #5 abierto por el monitoreo
+   OK   el plan dice v2 → v1 y el botón está activo
+   OK   rollback pedido: commit 6eedf18 en hub-gitops
+   OK   un segundo rollback se rechaza (409)
+   OK   incidente «mitigado» a los 170 s del rollback · MTTR: 3.4 min
+   OK   el sitio responde 200
+   OK   el servicio volvió a «operativo»
+   OK   el avance llegó a «recuperado»
+   OK   la línea de tiempo tiene el rollback enviado y confirmado
+   OK   el historial de versiones tiene la restauración
+   OK   la bitácora registra quién pidió el rollback
+   OK   mensaje para el cliente:
+        Detectamos una falla temporal en su sitio a las 18:07. Activamos la recuperación y a las 18:10 el servicio volvió a funcionar. Tiempo total: 3 minutos.
+== Corrida 2 de 3 ==
+   OK   cambio #15 a v2 aprobado (commit 9b1eaa6)
+   OK   incidente P1 #6 abierto por el monitoreo
+   OK   el plan dice v2 → v1 y el botón está activo
+   OK   rollback pedido: commit 665cc8a en hub-gitops
+   OK   un segundo rollback se rechaza (409)
+   OK   incidente «mitigado» a los 170 s del rollback · MTTR: 3.4 min
+   OK   el sitio responde 200
+   OK   el servicio volvió a «operativo»
+   OK   el avance llegó a «recuperado»
+   OK   la línea de tiempo tiene el rollback enviado y confirmado
+   OK   el historial de versiones tiene la restauración
+   OK   la bitácora registra quién pidió el rollback
+   OK   mensaje para el cliente:
+        Detectamos una falla temporal en su sitio a las 18:11. Activamos la recuperación y a las 18:14 el servicio volvió a funcionar. Tiempo total: 3 minutos.
+== Corrida 3 de 3 ==
+   OK   cambio #16 a v2 aprobado (commit 96a0bb9)
+   OK   incidente P1 #7 abierto por el monitoreo
+   OK   el plan dice v2 → v1 y el botón está activo
+   OK   rollback pedido: commit 15c5f2f en hub-gitops
+   OK   un segundo rollback se rechaza (409)
+   OK   incidente «mitigado» a los 169 s del rollback · MTTR: 3.4 min
+   OK   el sitio responde 200
+   OK   el servicio volvió a «operativo»
+   OK   el avance llegó a «recuperado»
+   OK   la línea de tiempo tiene el rollback enviado y confirmado
+   OK   el historial de versiones tiene la restauración
+   OK   la bitácora registra quién pidió el rollback
+   OK   mensaje para el cliente:
+        Detectamos una falla temporal en su sitio a las 18:15. Activamos la recuperación y a las 18:18 el servicio volvió a funcionar. Tiempo total: 3 minutos.
+
+Las 3 corridas cumplen (CA-2 a CA-5 y CA-7).
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 736s

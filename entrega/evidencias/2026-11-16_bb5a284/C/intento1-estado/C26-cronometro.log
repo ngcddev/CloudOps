@@ -1,0 +1,12 @@
+# paso:     C26-cronometro (C)
+# qué:      El incidente P1 se abre en 60 s o menos
+# comando:  bash observability/pruebas/cronometro.sh
+# inicio:   2026-11-16T23:18:36Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Corrida 1 de 3 ==
+   FALLA no se aprobó: {"detail":"Quien pidió el cambio no puede aprobarlo: debe aprobarlo otra persona de la agencia."}
+
+1 comprobación(es) fallaron.
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 2s

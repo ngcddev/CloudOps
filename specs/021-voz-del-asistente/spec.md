@@ -1,6 +1,6 @@
 # 021 · Voz del asistente (componente multimodal, módulo 6)
 
-> **Acciona:** Equipo de Sistemas · **Módulo:** 6 · **Depende de:** 012, 019, 020 · **Estado:** En curso
+> **Acciona:** Equipo de Sistemas · **Módulo:** 6 · **Depende de:** 012, 019, 020 · **Estado:** Terminada (todas sus tareas cerradas; voz verificada en navegador real el 17 nov 2026)
 
 ## Qué y por qué
 

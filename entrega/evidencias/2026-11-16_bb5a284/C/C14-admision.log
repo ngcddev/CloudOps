@@ -1,0 +1,15 @@
+# paso:     C14-admision (C)
+# qué:      Política de admisión de imágenes (en cliente-restaurante)
+# comando:  env SITIO=restaurante bash gitops/pruebas/admision.sh
+# inicio:   2026-11-16T22:59:14Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+   OK   una imagen de Docker Hub se rechaza
+   OK   «latest» se rechaza
+   OK   una imagen sin etiqueta se rechaza
+   OK   una imagen del registro propio con etiqueta se admite
+   OK   fuera de un namespace de cliente no interviene
+
+Admisión: la política se comporta como se espera.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 2s

@@ -1,0 +1,41 @@
+# paso:     C26-cronometro (C)
+# qué:      El incidente P1 se abre en 60 s o menos (3 corridas)
+# comando:  bash observability/pruebas/cronometro.sh
+# inicio:   2026-11-17T00:32:40Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+== Corrida 1 de 3 ==
+   ...La Sazón tiene un cambio en curso; esperando a que termine (máx. 900 s)
+   OK   cambio #3 a v2 aprobado (commit 9239939)
+   OK   incidente P1 #1 abierto por el monitoreo
+   OK   de la caída al incidente: 48 s (≤ 60 s) · desde la aprobación: 104 s
+   OK   el servicio aparece «caido»
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   OK   git revert del cambio empujado: bf69097
+   OK   el incidente pasó solo a «mitigado» en 168 s
+   OK   el servicio volvió a «operativo»
+== Corrida 2 de 3 ==
+   OK   cambio #4 a v2 aprobado (commit 8a2fe02)
+   OK   incidente P1 #2 abierto por el monitoreo
+   OK   de la caída al incidente: 48 s (≤ 60 s) · desde la aprobación: 66 s
+   OK   el servicio aparece «caido»
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   OK   git revert del cambio empujado: 9cd8a02
+   OK   el incidente pasó solo a «mitigado» en 169 s
+   OK   el servicio volvió a «operativo»
+== Corrida 3 de 3 ==
+   OK   cambio #5 a v2 aprobado (commit a74acbc)
+   OK   incidente P1 #3 abierto por el monitoreo
+   OK   de la caída al incidente: 49 s (≤ 60 s) · desde la aprobación: 66 s
+   OK   el servicio aparece «caido»
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   OK   git revert del cambio empujado: 2a44a89
+   OK   el incidente pasó solo a «mitigado» en 166 s
+   OK   el servicio volvió a «operativo»
+
+Las 3 corridas cumplen (CA-2, CA-5, CA-6).
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 773s

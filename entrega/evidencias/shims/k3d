@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Sustituto mínimo de `k3d` para correr infra/tofu.sh en este equipo, donde el binario k3d no está instalado: solo entiende `k3d kubeconfig get hub` y devuelve el kubeconfig del
+# mismo clúster (el que ya usa kubectl). tofu.sh cambia después el endpoint por el de la red de Docker. No crea ni modifica clústeres.
+if [ "$1 $2 $3" = "kubeconfig get hub" ]; then cat "$KUBECONFIG"; exit 0; fi
+echo "shim k3d: solo soporta 'kubeconfig get hub'" >&2; exit 1

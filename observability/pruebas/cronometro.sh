@@ -37,6 +37,10 @@ campo() { grep -o "\"$1\": *\"\{0,1\}[^\",}]*" | head -1 | sed "s/^\"$1\": *\"\{
 TOKEN="$(curl -s -m 10 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login" \
   -d "{\"email\":\"${HUB_USUARIO}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
 [ -n "$TOKEN" ] || { echo "No se pudo entrar al Hub como ${HUB_USUARIO} (¿HUB_PASSWORD correcta?)"; exit 1; }
+# Segregación de funciones (spec 018): quien pide un cambio no lo aprueba; lo aprueba otra cuenta de la agencia (corregido el 16 nov 2026: este script seguía con una sola cuenta)
+HUB_USUARIO_APROBADOR="${HUB_USUARIO_APROBADOR:-camilo@forjadigital.test}"
+TOKEN_APROBADOR="$(curl -s -m 10 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login"   -d "{\"email\":\"${HUB_USUARIO_APROBADOR}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
+[ -n "$TOKEN_APROBADOR" ] || { echo "No se pudo entrar al Hub como ${HUB_USUARIO_APROBADOR}"; exit 1; }
 hub_get() { curl -s -m 10 -H "Authorization: Bearer ${TOKEN}" "$1"; }
 post()    { curl -s -m 20 -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' -X POST "$1" -d "$2"; }
 # Fila de La Sazón en el estado de los servicios
@@ -66,7 +70,7 @@ for corrida in $(seq 1 "$CORRIDAS"); do
   cambio="$(post "${HUB}/api/change-requests" "{\"ticket_id\":${TICKET_ID:-0},\"to_version\":\"${VERSION_ROTA}\"}")"
   CAMBIO_ID="$(echo "$cambio" | campo id)"
   [ -n "$CAMBIO_ID" ] || { falla "no se pudo registrar el cambio: ${cambio}"; break; }
-  aprobado="$(post "${HUB}/api/change-requests/${CAMBIO_ID}/approve" "{}")"
+  aprobado="$(TOKEN="$TOKEN_APROBADOR" post "${HUB}/api/change-requests/${CAMBIO_ID}/approve" "{}")"
   SHA="$(echo "$aprobado" | campo gitops_commit_sha)"
   [ -n "$SHA" ] && ok "cambio #${CAMBIO_ID} a ${VERSION_ROTA} aprobado (commit ${SHA:0:7})" || { falla "no se aprobó: ${aprobado}"; break; }
 

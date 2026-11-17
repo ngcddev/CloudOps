@@ -15,7 +15,7 @@
 
 - [ ] T06 · Correr `infra/pruebas/crear-cliente.sh` y `tofu plan -detailed-exitcode` contra el clúster con un token de Gitea — **Verifica:** el cliente temporal se crea, Argo CD lo sincroniza y se limpia; el plan sale con 0.
 - [ ] T07 · Provocar una caída real y ver las alertas nuevas (`HubCaido`, memoria, disco, respaldo) en Prometheus — **Verifica:** `HubCaido` pasa a `firing` a 1 min de apagar la API y se resuelve al volver.
-- [ ] T08 · Decidir con el profesor si el audio cubre el módulo 6 o si hace falta una imagen — **Verifica:** respuesta por escrito en `docs/bitacora.md`.
+- [ ] T08 · Decidir con el profesor si el audio cubre el módulo 6 o si hace falta una imagen — **Verifica:** respuesta por escrito en `docs/historico/bitacora.md`.
 
 ## Plan B
 
@@ -24,7 +24,7 @@
 
 ## Ensayar
 
-- [ ] T11 · Ensayo 1 cronometrado sin público — **Verifica:** tiempos reales por punto anotados en `docs/context.md`; el recorrido principal dura menos de 15 min.
+- [ ] T11 · Ensayo 1 cronometrado sin público — **Verifica:** tiempos reales por punto anotados en `docs/historico/context.md`; el recorrido principal dura menos de 15 min.
 - [ ] T12 · Ensayo 2 con reinicio previo y relevo entre personas — **Verifica:** sin pasos improvisados.
 - [ ] T13 · Ensayo 3 en el equipo y la red del salón (CA-3), grabando el video — **Verifica:** el video de T09 sale de este ensayo.
 - [ ] T14 · Demo: los puntos del guion en orden — **Verifica:** [spec.md](spec.md#criterios-de-aceptación).

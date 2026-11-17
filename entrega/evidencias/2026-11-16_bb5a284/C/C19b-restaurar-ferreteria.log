@@ -1,0 +1,14 @@
+# paso:     C19b-restaurar-ferreteria (C)
+# qué:      Volver ferreteria a v1 tras demo-005
+# comando:  bash entrega/evidencias/restaurar-v1.sh ferreteria
+# inicio:   2026-11-17T01:08:14Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+versión en hub-gitops: v1.1
+warning: in the working copy of 'clients/ferreteria/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+empujado: 9dd41df
+el sitio de ferreteria reporta v1
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 46s

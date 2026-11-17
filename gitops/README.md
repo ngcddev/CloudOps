@@ -109,7 +109,7 @@ bash gitops/pruebas/salida-red.sh [cliente] --estado        # solo mide (no fall
 ```
 
 `backend/tests/test_salida_de_red.py` vigila los archivos (en CI): falla si alguien abre una salida (un `ipBlock`, otro namespace u otro puerto) o si Kustomize y el chart difieren.
-**Qué falta (no cubierto):** los namespaces `monitoring`, `mlops` y `gitea` siguen aceptando entrada de cualquier Pod, y Loki, Prometheus, Alertmanager y MLflow no piden autenticación; la salida del namespace `hub` sigue abierta.
+**Estado verificado (16 nov 2026, `entrega/evidencias/`):** `hub` y los clientes niegan por defecto la entrada y la salida; `monitoring`, `gitea` y `mlops` restringen la entrada (NetworkPolicies en `observability/networkpolicy.yaml`, `platform/gitea/networkpolicy.yaml` y `platform/mlops/networkpolicy.yaml`) pero no la salida. Loki, Prometheus, Alertmanager y MLflow no piden autenticación: su protección es la red.
 Si un sitio nuevo necesita llamar a algo (una API externa, por ejemplo), hay que añadir esa salida a propósito en la base y en el chart, con su prueba.
 
 ## Cómo se comprueba
@@ -204,7 +204,7 @@ el del namespace: el Hub la consulta por ese nombre. Argo CD llega a Gitea por e
 (`gitea.gitea.svc:3000`), no por `gitea.hub.local`, que los Pods no resuelven.
 
 Si el sitio ya se había aplicado a mano con `kubectl apply -k` (spec 003), Argo CD lo adopta sin
-recrearlo porque los manifiestos son los mismos. OpenTofu administra el overlay y la Application;
+recrearlo porque los manifiestos son los mismos. OpenTofu administra el overlay (la Application la crea el ApplicationSet `clientes`; `crear_application` es `false` por defecto en el módulo);
 Argo CD sigue administrando los recursos Kubernetes de cada sitio.
 
 ## Tokens del Hub (Gitea y Argo CD)
@@ -318,11 +318,11 @@ kubectl -n argocd rollout restart statefulset/argocd-application-controller depl
 | Respaldo diario de PostgreSQL (03:00 UTC, últimos 7, verificado con `pg_restore --list`) | `hub/backup.yaml`, `hub/respaldo/respaldar.sh` | `bash gitops/pruebas/respaldo.sh`: respalda, rota, restaura en `hub_restaurada` y compara las filas de las 21 tablas |
 | Restaurar un respaldo en una base nueva | `hub/respaldo/restaurar.sh` (se niega a pisar una base y rechaza nombres con SQL) | el mismo script de prueba |
 | Pod Security `restricted` y NetworkPolicy en el namespace `hub` | `platform/namespaces.yaml`, `hub/networkpolicy.yaml` | `kubectl kustomize gitops/hub \| python gitops/pruebas/psa_restringido.py` (verifica sin clúster las reglas del perfil) |
-| Conectar el Hub con Ollama del PC B y elegir el modo del asistente | `hub/configurar-ia.sh <url> [completo\|recuperacion\|rag]` crea el ConfigMap `hub-ia` | `--solo-mostrar` imprime el ConfigMap sin clúster |
+| Conectar el Hub con Ollama (equipo anfitrión) y elegir el modo del asistente | `hub/configurar-ia.sh <url> [completo\|recuperacion\|rag]` crea el ConfigMap `hub-ia` | `--solo-mostrar` imprime el ConfigMap sin clúster |
 | Trazas hacia Tempo | `OTEL_EXPORTER_OTLP_ENDPOINT` en `hub/api.yaml` | `observability/pruebas/trazas.sh` |
 
 Limitaciones: el volumen de respaldos está en el mismo nodo que la base (copiarlos fuera es un paso manual); la NetworkPolicy del Hub, el CronJob y las
-variables nuevas **no se probaron en un clúster** (solo se renderizaron con `kubectl kustomize` y se validaron con `kubeconform` y el verificador de Pod Security).
+variables nuevas se probaron en el clúster k3d (pruebas de `gitops/pruebas/`; registros en `entrega/evidencias/`).
 Para restaurar la base viva: detener la API (`kubectl -n hub scale deploy/api --replicas=0`), restaurar con `REEMPLAZAR=1` y volver a escalar.
 
 ## Levantar el clúster sin instalar k3d (Windows con Docker Desktop)

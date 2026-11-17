@@ -1,0 +1,10 @@
+# paso:     A01-ruff (A)
+# qué:      Lint de Python (ruff 0.14.0, ruff.toml; entrega/ queda fuera: es el borrador sin versionar)
+# comando:  env MSYS_NO_PATHCONV=1 docker run --rm -v C:/Users/ngavi/OneDrive/Desktop/CW/CW-CloudOps:/w -w /w python:3.12-slim sh -c pip install -q ruff==0.14.0 2>&1 | tail -1 && ruff check . --exclude entrega
+# inicio:   2026-11-16T22:15:43Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+[notice] To update, run: pip install --upgrade pip
+All checks passed!
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 18s

@@ -1,0 +1,68 @@
+# paso:     A09-sincronizador (A)
+# qué:      Lógica del sincronizador hub-gitops (repositorios falsos)
+# comando:  bash gitops/pruebas/sincronizar-prueba.sh
+# inicio:   2026-11-16T22:19:40Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+warning: in the working copy of 'clients/_base/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/consultorio/backend.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/consultorio/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/ferreteria/catalog-info.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/ferreteria/extra.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'clients/ferreteria/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'hub/api.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prom.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/argocd/x.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/backstage/group.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/mlops/mlflow.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'platform/respaldo/gitea.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/clients/_base/deployment.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/clients/consultorio/backend.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/clients/consultorio/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/clients/ferreteria/catalog-info.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/clients/ferreteria/extra.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/clients/ferreteria/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/clients/nuevo/kustomization.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/hub/api.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/platform/argocd/x.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/platform/backstage/group.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/platform/mlops/mlflow.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'gitops/platform/respaldo/gitea.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'observability/prom.yml', LF will be replaced by CRLF the next time Git touches it
+== --simular: muestra los cambios y no sube nada
+   OK   --simular no subió nada (código 0)
+   OK   muestra los archivos que cambiarían
+== --comprobar antes de sincronizar: hay diferencias (código 1)
+   OK   detecta que hub-gitops no está en sincronía
+== sincronizar de verdad
+   OK   terminó bien
+   OK   la base del equipo se promovió
+   OK   el backend del cliente (del equipo) se promovió
+   OK   los demás archivos del cliente se promovieron
+   OK   NO pisó la versión que escribió el Hub (kustomization.yaml)
+   OK   NO pisó el catalogo que escribe el Hub
+   OK   la versión de otro cliente tampoco se tocó
+   OK   un cliente que el Hub no creó se omite
+   OK   observability, hub y backstage se promovieron
+   OK   mlops y respaldo se promovieron (K8-06)
+   OK   sin --limpiar no se retira la copia de platform/argocd
+   OK   el commit dice de qué commit salió
+== --comprobar después: en sincronía (código 0)
+   OK   en sincronía
+== un cambio a mano en hub-gitops en un archivo del equipo se detecta
+warning: in the working copy of 'observability/prom.yml', LF will be replaced by CRLF the next time Git touches it
+   OK   detecta el cambio a mano
+   OK   sincronizar lo corrige
+== --limpiar retira las copias sin uso
+   OK   platform/argocd retirado
+   OK   platform/backstage se conserva
+== precondiciones
+   OK   rechaza un árbol con cambios sin guardar (código 3)
+   OK   --comprobar sí funciona con el árbol sucio
+warning: in the working copy of 'observability/prom.yml', LF will be replaced by CRLF the next time Git touches it
+   OK   rechaza un commit que no está en origin/dev ni origin/main (código 3)
+   OK   --forzar lo permite y lo avisa
+
+Sincronizador de hub-gitops: todo OK
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 51s

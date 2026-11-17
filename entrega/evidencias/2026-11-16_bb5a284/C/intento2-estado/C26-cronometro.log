@@ -1,0 +1,13 @@
+# paso:     C26-cronometro (C)
+# qué:      El incidente P1 se abre en 60 s o menos (3 corridas)
+# comando:  bash observability/pruebas/cronometro.sh
+# inicio:   2026-11-16T23:29:42Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+== Corrida 1 de 3 ==
+   ...La Sazón tiene un cambio en curso; esperando a que termine (máx. 900 s)
+   FALLA no se pudo registrar el cambio: {"detail":"Ya hay un cambio en curso para este sitio."}
+
+1 comprobación(es) fallaron.
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 923s

@@ -1,0 +1,21 @@
+# paso:     D02-eval-completo-ayuda (D)
+# qué:      Evaluación del asistente (qwen2.5:7b-instruct, contexto completo, conjunto ayuda)
+# comando:  en_contenedor eval-completo-ayuda python ai/eval/run_eval.py --modelo qwen2.5:7b-instruct --url http://host.docker.internal:11434 --contexto completo --archivo ai/eval/preguntas_ayuda.jsonl
+# inicio:   2026-11-17T02:31:31Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+{
+  "preguntas": 40,
+  "recuperacion_pct": 100.0,
+  "sin_info_correctas": 9,
+  "sin_info_total": 9,
+  "acierto_pct": 95.0,
+  "latencia_media_s": 1.6
+}
+ ✕ [respuesta] ¿Qué hace el botón Registrar cambio?  → falta: pendiente
+      «El botón Registrar cambio permite a la agencia escribir la Versión destino de un cambio y confirmar el registro. Este botón queda en la pantalla de detalle de una solicitud una vez que se ha seleccionado qué servicio se »
+ ✕ [respuesta] ¿Dónde veo los reportes?  → dijo que no sabía, pero la ayuda sí lo tiene
+      «No tengo esa información en mi ayuda del Hub.»
+Corrida guardada en ai/eval/runs/v3_qwen2.5_7b-instruct_completo_preguntas_ayuda.json; registro: solo JSON
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 70s

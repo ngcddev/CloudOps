@@ -1,0 +1,13 @@
+# paso:     F03-reinicio-hub (F)
+# qué:      Runbook: reinicio de un servicio del Hub en el clúster (rollout restart del web) y tiempo hasta estar sano
+# comando:  bash -c t=$(date +%s); kubectl -n hub rollout restart deploy/web >/dev/null && kubectl -n hub rollout status deploy/web --timeout=180s && echo "web reiniciado y sano en $(( $(date +%s) - t )) s"; curl -sk -m 10 -o /dev/null -w 'hub.local/health: %{http_code}\n' https://hub.local/health
+# inicio:   2026-11-17T03:27:35Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "web" rollout to finish: 1 old replicas are pending termination...
+deployment "web" successfully rolled out
+web reiniciado y sano en 3 s
+hub.local/health: 200
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 3s

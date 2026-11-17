@@ -1,0 +1,33 @@
+# paso:     C23-demo-006 (C)
+# qué:      Puerta de seguridad en el runner de Gitea (spec 006)
+# comando:  env GITEA_ADMIN_USER=forja-admin GITEA_ADMIN_PASSWORD=ExamplePassword bash gitops/pruebas/demo-006.sh
+# inicio:   2026-11-16T23:00:48Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+   OK   servicio de El Tornillo: #2
+== 1. Una versión con una contraseña (CA-1, CA-5) ==
+   OK   cambio #12 hacia v9.180050a en pendiente
+warning: in the working copy of 'src/config.js', LF will be replaced by CRLF the next time Git touches it
+   OK   versión v9.180050a subida a Gitea
+   OK   la puerta falló en «secretos»
+   OK   la solicitud quedó «rechazada»
+   OK   aprobarla ya no es posible (409)
+   OK   el cliente lee el texto del glosario
+   OK   el cliente no ve jerga técnica
+== 2. Una versión limpia pasa los controles y se publica (CA-2, CA-3, CA-4) ==
+   OK   cambio #13 hacia v9.180050b en pendiente
+warning: in the working copy of 'src/index.html', LF will be replaced by CRLF the next time Git touches it
+   OK   versión v9.180050b subida a Gitea
+   OK   mientras corren los controles, aprobar responde 409 (CA-6)
+   OK   la puerta terminó en «ok»
+   OK   seis controles registrados (secretos, construcción, vulnerabilidades, SBOM, firma, verificación)
+   OK   aprobado: commit 59b0790 en hub-gitops
+   OK   el commit existe en Gitea y dice «versión v9.180050b»
+== 3. La evidencia queda guardada (CA-4) ==
+   OK   el SBOM (SPDX) se descarga desde el Hub
+== 4. Pod root rechazado por la plataforma (CA-7) ==
+   OK   el Pod con root fue rechazado
+
+Demo de la spec 006: todo OK
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 69s

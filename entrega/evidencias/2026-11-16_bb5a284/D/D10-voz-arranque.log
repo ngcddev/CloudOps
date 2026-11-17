@@ -1,0 +1,12 @@
+# paso:     D10-voz-arranque (D)
+# qué:      Levantar el servicio de voz (faster-whisper y Piper, CPU)
+# comando:  docker compose --profile voz up -d --wait voz
+# inicio:   2026-11-17T03:09:32Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+ Container cw-cloudops-voz-1 Starting 
+ Container cw-cloudops-voz-1 Started 
+ Container cw-cloudops-voz-1 Waiting 
+ Container cw-cloudops-voz-1 Healthy 
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 7s

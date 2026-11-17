@@ -1,0 +1,9 @@
+# paso:     D02-eval-rag-ayuda_ciegas (D)
+# qué:      Evaluación del asistente (qwen2.5:7b-instruct, contexto rag, conjunto ayuda_ciegas)
+# comando:  en_contenedor eval-rag-ayuda_ciegas python ai/eval/run_eval.py --modelo qwen2.5:7b-instruct --url http://host.docker.internal:11434 --contexto rag --archivo ai/eval/preguntas_ayuda_ciegas.jsonl
+# inicio:   2026-11-17T02:34:38Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+ERROR: Ollama no calculó el embedding de la pregunta.
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 77s

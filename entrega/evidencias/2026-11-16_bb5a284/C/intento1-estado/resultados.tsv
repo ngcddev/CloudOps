@@ -1,0 +1,6 @@
+C21-ciclo-gitops	C	FALLO	1	1	2026-11-16T23:00:41Z	Cambio de versión por Gitea y revert	bash gitops/pruebas/ciclo-gitops.sh
+C22-demo-005	C	FALLO	1	4	2026-11-16T23:00:43Z	Aprobación de un cambio hasta el sitio publicado (spec 005)	bash gitops/pruebas/demo-005.sh
+C24-demo-010	C	FALLO	1	260	2026-11-16T23:01:58Z	Dashboards con Prometheus (spec 010)	bash gitops/pruebas/demo-010.sh
+C26-cronometro	C	FALLO	1	2	2026-11-16T23:18:36Z	El incidente P1 se abre en 60 s o menos	bash observability/pruebas/cronometro.sh
+C27-publicacion-sana	C	FALLO	1	2	2026-11-16T23:18:39Z	Una publicación sana no abre incidente	bash observability/pruebas/publicacion-sana.sh
+C30-crear-cliente	C	FALLO	1	1	2026-11-16T23:24:32Z	Crear, verificar y eliminar un cliente con OpenTofu	bash infra/pruebas/crear-cliente.sh

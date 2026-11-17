@@ -188,3 +188,12 @@ capturas-voz/
 
 # Archivo temporal de credenciales de pipelines/configurar-gitea.sh (se borra al salir)
 .cred-curl-*
+
+# Salida generada del informe de entrega (spec 023)
+Entrega_Final_CloudForge/
+entrega/.base.docx
+entrega/.combinado.md
+
+# El paquete de evidencias de la entrega final sí se versiona (spec 023): anula las reglas genéricas evidencias/ y capturas-*/
+!entrega/evidencias/
+!entrega/evidencias/**

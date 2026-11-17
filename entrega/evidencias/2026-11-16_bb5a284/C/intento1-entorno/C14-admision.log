@@ -1,0 +1,9 @@
+# paso:     C14-admision (C)
+# qué:      Política de admisión de imágenes (SITIO=colegio)
+# comando:  env SITIO=colegio bash gitops/pruebas/admision.sh
+# inicio:   2026-11-16T22:49:09Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+No existe cliente-colegio
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 1s

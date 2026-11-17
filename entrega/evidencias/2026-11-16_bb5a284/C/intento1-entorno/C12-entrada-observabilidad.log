@@ -1,0 +1,27 @@
+# paso:     C12-entrada-observabilidad (C)
+# qué:      Entrada de red a la observabilidad
+# comando:  bash observability/pruebas/entrada.sh
+# inicio:   2026-11-16T22:48:35Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+  ✗ desde default no llega a Loki (resultado: '')
+  ✗ desde default no llega a Prometheus (resultado: '')
+  ✗ desde mlops no llega a Loki (resultado: '')
+  ✗ desde mlops no llega a Prometheus (resultado: '')
+  ✗ desde gitea no llega a Loki (resultado: '')
+  ✗ desde gitea no llega a Prometheus (resultado: '')
+  ✗ desde argocd no llega a Loki (resultado: '')
+  ✗ desde argocd no llega a Prometheus (resultado: '')
+  ✗ desde default no llega a Alertmanager (resultado: '')
+  ✗ desde default no llega a Grafana (resultado: '')
+  ✗ desde hub sí llega a Prometheus (resultado: '')
+  ✗ desde hub sí llega a Loki (resultado: '')
+  ✗ desde hub sí llega al receptor OTLP de Tempo (resultado: '')
+  ✗ desde hub no llega a Alertmanager (no lo usa) (resultado: '')
+  ✓ por Traefik (grafana.hub.local) responde 200
+  ✓ ningún blanco de Prometheus caído
+  ✗ Prometheus no ve a Alertmanager
+  ✗ Grafana no responde sana
+entrada (monitoring): 16 fallo(s)
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 5s

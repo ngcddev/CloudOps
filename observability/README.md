@@ -72,10 +72,10 @@ incidentes, manuales o automáticos, no dependen de ellos.
 | Prometheus | 256Mi / 512Mi | pendiente (T29) |
 | Alertmanager | 32Mi / 64Mi | pendiente (T29) |
 | Loki | 128Mi / 256Mi | pendiente (T29) |
-| Grafana Alloy | 64Mi / 128Mi | pendiente (T29) |
-| Grafana | 128Mi / 256Mi | pendiente (T29) |
+| Grafana Alloy | 128Mi / 256Mi | pendiente (T29) |
+| Grafana | 128Mi / 384Mi | pendiente (T29) |
 | Tempo | 96Mi / 256Mi | pendiente (el nodo ya estaba justo: si falta RAM, `replicas: 0` en Tempo antes que en Prometheus) |
-| **Total** | **≈ 640Mi / 1280Mi** | pendiente (T29) |
+| **Total** | **la suma de las filas; la fuente es cada manifiesto** | pendiente (T29) |
 
 ## Versiones
 

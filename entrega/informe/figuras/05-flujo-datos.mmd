@@ -1,0 +1,13 @@
+flowchart LR
+  c([Cliente]) -- solicitud de cambio --> hub[Hub API]
+  t([Técnico 2]) -- aprueba --> hub
+  hub -- ¿versión con puerta OK? --> sec[(security_runs)]
+  hub -- commit newTag --> git[(Gitea · hub-gitops)]
+  git --> argo[Argo CD] --> sitio[Sitio del cliente]
+  bb[Blackbox] -- probe_success --> prom[Prometheus] --> am[Alertmanager]
+  sitio -.sondeo.-> bb
+  am -- webhook --> hub
+  hub -- incidente P1 + plan de rollback --> db[(PostgreSQL)]
+  hub -- git revert --> git
+  q([Pregunta]) --> red[redacción de secretos] --> gate[compuerta] --> rag[RAG: kb_chunks] --> oll[Ollama] --> hub
+  hub -- spans sin texto --> tempo[Tempo]

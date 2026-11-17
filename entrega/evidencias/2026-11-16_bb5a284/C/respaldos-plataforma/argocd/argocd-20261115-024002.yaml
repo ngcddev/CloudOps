@@ -1,0 +1,1893 @@
+apiVersion: v1
+items:
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"app.kubernetes.io/part-of":"cloudops-hub","hub/client":"consultorio"},"name":"cliente-consultorio","namespace":"argocd"},"spec":{"destination":{"namespace":"cliente-consultorio","server":"https://kubernetes.default.svc"},"project":"clientes","source":{"path":"clients/consultorio","repoURL":"http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git","targetRevision":"main"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}
+    creationTimestamp: "2026-11-14T17:19:18Z"
+    generation: 732
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+      hub/client: consultorio
+    name: cliente-consultorio
+    namespace: argocd
+    resourceVersion: "20125"
+    uid: 5cde8de8-3ad6-4fe6-b96f-ec662419444c
+  spec:
+    destination:
+      namespace: cliente-consultorio
+      server: https://kubernetes.default.svc
+    project: clientes
+    source:
+      path: clients/consultorio
+      repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-11-14T17:19:21Z"
+      deployedAt: "2026-11-14T17:19:25Z"
+      id: 0
+      initiatedBy:
+        automated: true
+      revision: 2b8c5a4037c9d87653fd8273182b232c3ccd52e8
+      source:
+        path: clients/consultorio
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T02:08:05Z"
+      deployedAt: "2026-11-15T02:08:11Z"
+      id: 1
+      initiatedBy:
+        automated: true
+      revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+      source:
+        path: clients/consultorio
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-11-15T02:08:11Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+      phase: Succeeded
+      startedAt: "2026-11-15T02:08:05Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: Namespace
+          message: namespace/cliente-consultorio unchanged
+          name: cliente-consultorio
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: NetworkPolicy
+          message: networkpolicy.networking.k8s.io/permitir-traefik-monitoreo-y-propio
+            unchanged
+          name: permitir-traefik-monitoreo-y-propio
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: NetworkPolicy
+          message: networkpolicy.networking.k8s.io/default-deny-ingress unchanged
+          name: default-deny-ingress
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ResourceQuota
+          message: resourcequota/plan unchanged
+          name: plan
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: LimitRange
+          message: limitrange/defecto unchanged
+          name: defecto
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/web unchanged
+          name: web
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/backend unchanged
+          name: backend
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/backend configured
+          name: backend
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/web configured
+          name: web
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: Ingress
+          message: ingress.networking.k8s.io/web unchanged
+          name: web
+          namespace: cliente-consultorio
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+        source:
+          path: clients/consultorio
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+    reconciledAt: "2026-11-15T02:39:34Z"
+    resources:
+    - kind: LimitRange
+      name: defecto
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - kind: Namespace
+      name: cliente-consultorio
+      status: Synced
+      version: v1
+    - kind: ResourceQuota
+      name: plan
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: backend
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: web
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: backend
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: web
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      health:
+        status: Healthy
+      kind: Ingress
+      name: web
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: default-deny-ingress
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: permitir-traefik-monitoreo-y-propio
+      namespace: cliente-consultorio
+      status: Synced
+      version: v1
+    sourceType: Kustomize
+    summary:
+      externalURLs:
+      - http://consultorio.hub.local/
+      - http://consultorio.hub.local/api
+    sync:
+      comparedTo:
+        destination:
+          namespace: cliente-consultorio
+          server: https://kubernetes.default.svc
+        source:
+          path: clients/consultorio
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+      revision: 3c7bedfe83a82c0082a5a1feb1b213e9265895bc
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"app.kubernetes.io/part-of":"cloudops-hub","hub/client":"ferreteria"},"name":"cliente-ferreteria","namespace":"argocd"},"spec":{"destination":{"namespace":"cliente-ferreteria","server":"https://kubernetes.default.svc"},"project":"clientes","source":{"path":"clients/ferreteria","repoURL":"http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git","targetRevision":"main"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}
+    creationTimestamp: "2026-11-14T17:19:18Z"
+    generation: 747
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+      hub/client: ferreteria
+    name: cliente-ferreteria
+    namespace: argocd
+    resourceVersion: "20123"
+    uid: 95ac94c6-6ba1-41f9-b30c-e9ce987f522b
+  spec:
+    destination:
+      namespace: cliente-ferreteria
+      server: https://kubernetes.default.svc
+    project: clientes
+    source:
+      path: clients/ferreteria
+      repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-11-14T17:19:21Z"
+      deployedAt: "2026-11-14T17:19:25Z"
+      id: 0
+      initiatedBy:
+        automated: true
+      revision: 2b8c5a4037c9d87653fd8273182b232c3ccd52e8
+      source:
+        path: clients/ferreteria
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T21:57:17Z"
+      deployedAt: "2026-11-14T21:57:20Z"
+      id: 1
+      initiatedBy:
+        automated: true
+      revision: 34ec2ae9390122e1be9ed7b8ebf6d9fcb3813b85
+      source:
+        path: clients/ferreteria
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T21:59:16Z"
+      deployedAt: "2026-11-14T21:59:20Z"
+      id: 2
+      initiatedBy:
+        automated: true
+      revision: 2dfa9bb6402ccee3cdf0c7d9a7ab61f5a991b416
+      source:
+        path: clients/ferreteria
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T02:08:05Z"
+      deployedAt: "2026-11-15T02:08:10Z"
+      id: 3
+      initiatedBy:
+        automated: true
+      revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+      source:
+        path: clients/ferreteria
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-11-15T02:08:10Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+      phase: Succeeded
+      startedAt: "2026-11-15T02:08:05Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: Namespace
+          message: namespace/cliente-ferreteria unchanged
+          name: cliente-ferreteria
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: NetworkPolicy
+          message: networkpolicy.networking.k8s.io/default-deny-ingress unchanged
+          name: default-deny-ingress
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: NetworkPolicy
+          message: networkpolicy.networking.k8s.io/permitir-traefik-monitoreo-y-propio
+            unchanged
+          name: permitir-traefik-monitoreo-y-propio
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ResourceQuota
+          message: resourcequota/plan unchanged
+          name: plan
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: LimitRange
+          message: limitrange/defecto unchanged
+          name: defecto
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/web unchanged
+          name: web
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/web configured
+          name: web
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: Ingress
+          message: ingress.networking.k8s.io/web unchanged
+          name: web
+          namespace: cliente-ferreteria
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+        source:
+          path: clients/ferreteria
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+    reconciledAt: "2026-11-15T02:39:34Z"
+    resources:
+    - kind: LimitRange
+      name: defecto
+      namespace: cliente-ferreteria
+      status: Synced
+      version: v1
+    - kind: Namespace
+      name: cliente-ferreteria
+      status: Synced
+      version: v1
+    - kind: ResourceQuota
+      name: plan
+      namespace: cliente-ferreteria
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: web
+      namespace: cliente-ferreteria
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: web
+      namespace: cliente-ferreteria
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      health:
+        status: Healthy
+      kind: Ingress
+      name: web
+      namespace: cliente-ferreteria
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: default-deny-ingress
+      namespace: cliente-ferreteria
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: permitir-traefik-monitoreo-y-propio
+      namespace: cliente-ferreteria
+      status: Synced
+      version: v1
+    sourceType: Kustomize
+    summary:
+      externalURLs:
+      - http://ferreteria.hub.local/
+    sync:
+      comparedTo:
+        destination:
+          namespace: cliente-ferreteria
+          server: https://kubernetes.default.svc
+        source:
+          path: clients/ferreteria
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+      revision: 3c7bedfe83a82c0082a5a1feb1b213e9265895bc
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    creationTimestamp: "2026-11-14T21:49:06Z"
+    finalizers:
+    - resources-finalizer.argocd.argoproj.io
+    generation: 222
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+      hub/client: ferreteria-staging
+    name: cliente-ferreteria-staging
+    namespace: argocd
+    ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ApplicationSet
+      name: clientes
+      uid: 597afeab-d410-4abb-8ff8-d386e27afa8e
+    resourceVersion: "20124"
+    uid: 27a76978-7391-4b28-ad1d-9aec6726f618
+  spec:
+    destination:
+      namespace: cliente-ferreteria-staging
+      server: https://kubernetes.default.svc
+    project: clientes
+    source:
+      path: clients/ferreteria-staging
+      repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-11-14T21:49:06Z"
+      deployedAt: "2026-11-14T21:49:08Z"
+      id: 0
+      initiatedBy:
+        automated: true
+      revision: a5660896cad7e905c665d46ab63ce42c7c9241f5
+      source:
+        path: clients/ferreteria-staging
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T21:49:47Z"
+      deployedAt: "2026-11-14T21:49:49Z"
+      id: 1
+      initiatedBy:
+        automated: true
+      revision: 2a3fa1f6cd9cef9aec478df655c58636c3f1c779
+      source:
+        path: clients/ferreteria-staging
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T21:52:46Z"
+      deployedAt: "2026-11-14T21:52:48Z"
+      id: 2
+      initiatedBy:
+        automated: true
+      revision: 8b9073db7b23acca9049783deaad065074e69247
+      source:
+        path: clients/ferreteria-staging
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T21:58:16Z"
+      deployedAt: "2026-11-14T21:58:19Z"
+      id: 3
+      initiatedBy:
+        automated: true
+      revision: 922be2f0f554ffae9193d2c52918f3fbb7e69244
+      source:
+        path: clients/ferreteria-staging
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T02:08:05Z"
+      deployedAt: "2026-11-15T02:08:11Z"
+      id: 4
+      initiatedBy:
+        automated: true
+      revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+      source:
+        path: clients/ferreteria-staging
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-11-15T02:08:11Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+      phase: Succeeded
+      startedAt: "2026-11-15T02:08:05Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: Namespace
+          message: namespace/cliente-ferreteria-staging unchanged
+          name: cliente-ferreteria-staging
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: NetworkPolicy
+          message: networkpolicy.networking.k8s.io/default-deny-ingress unchanged
+          name: default-deny-ingress
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: NetworkPolicy
+          message: networkpolicy.networking.k8s.io/permitir-traefik-monitoreo-y-propio
+            unchanged
+          name: permitir-traefik-monitoreo-y-propio
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ResourceQuota
+          message: resourcequota/plan unchanged
+          name: plan
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: LimitRange
+          message: limitrange/defecto unchanged
+          name: defecto
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/web unchanged
+          name: web
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/web configured
+          name: web
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: Ingress
+          message: ingress.networking.k8s.io/web unchanged
+          name: web
+          namespace: cliente-ferreteria-staging
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+        source:
+          path: clients/ferreteria-staging
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+    reconciledAt: "2026-11-15T02:39:34Z"
+    resources:
+    - kind: LimitRange
+      name: defecto
+      namespace: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    - kind: Namespace
+      name: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    - kind: ResourceQuota
+      name: plan
+      namespace: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: web
+      namespace: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: web
+      namespace: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      health:
+        status: Healthy
+      kind: Ingress
+      name: web
+      namespace: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: default-deny-ingress
+      namespace: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: permitir-traefik-monitoreo-y-propio
+      namespace: cliente-ferreteria-staging
+      status: Synced
+      version: v1
+    sourceType: Kustomize
+    summary:
+      externalURLs:
+      - http://ferreteria-staging.hub.local/
+    sync:
+      comparedTo:
+        destination:
+          namespace: cliente-ferreteria-staging
+          server: https://kubernetes.default.svc
+        source:
+          path: clients/ferreteria-staging
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+      revision: 3c7bedfe83a82c0082a5a1feb1b213e9265895bc
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    creationTimestamp: "2026-11-15T02:36:19Z"
+    deletionGracePeriodSeconds: 0
+    deletionTimestamp: "2026-11-15T02:37:34Z"
+    finalizers:
+    - resources-finalizer.argocd.argoproj.io
+    generation: 18
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+      hub/client: prueba-ui
+    name: cliente-prueba-ui
+    namespace: argocd
+    ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ApplicationSet
+      name: clientes
+      uid: 597afeab-d410-4abb-8ff8-d386e27afa8e
+    resourceVersion: "20122"
+    uid: 75c94416-ada5-4e18-a33c-6fa7cf5de553
+  operation:
+    initiatedBy:
+      automated: true
+    retry:
+      limit: 5
+    sync:
+      prune: true
+      revision: aa7a8810825c4631f355cf7a685bdadf12e3e187
+  spec:
+    destination:
+      namespace: cliente-prueba-ui
+      server: https://kubernetes.default.svc
+    project: clientes
+    source:
+      path: clients/prueba-ui
+      repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    operationState:
+      finishedAt: "2026-11-15T02:38:49Z"
+      message: 'one or more synchronization tasks are not valid. Retrying attempt
+        #5 at 2:40AM.'
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          prune: true
+          revision: aa7a8810825c4631f355cf7a685bdadf12e3e187
+      phase: Running
+      retryCount: 5
+      startedAt: "2026-11-15T02:36:19Z"
+      syncResult:
+        resources:
+        - group: backstage.io
+          kind: Component
+          message: The Kubernetes API could not find backstage.io/Component for requested
+            resource cliente-prueba-ui/prueba-ui. Make sure the "Component" CRD is
+            installed on the destination cluster.
+          name: prueba-ui
+          namespace: cliente-prueba-ui
+          status: SyncFailed
+          syncPhase: Sync
+          version: v1alpha1
+        revision: aa7a8810825c4631f355cf7a685bdadf12e3e187
+        source:
+          path: clients/prueba-ui
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+    reconciledAt: "2026-11-15T02:39:35Z"
+    resources:
+    - group: backstage.io
+      health:
+        status: Missing
+      kind: Component
+      name: prueba-ui
+      namespace: cliente-prueba-ui
+      status: Unknown
+      version: v1alpha1
+    sourceType: Directory
+    summary: {}
+    sync:
+      comparedTo:
+        destination:
+          namespace: cliente-prueba-ui
+          server: https://kubernetes.default.svc
+        source:
+          path: clients/prueba-ui
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+      revision: 3c7bedfe83a82c0082a5a1feb1b213e9265895bc
+      status: OutOfSync
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"app.kubernetes.io/part-of":"cloudops-hub","hub/client":"restaurante"},"name":"cliente-restaurante","namespace":"argocd"},"spec":{"destination":{"namespace":"cliente-restaurante","server":"https://kubernetes.default.svc"},"project":"clientes","source":{"path":"clients/restaurante","repoURL":"http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git","targetRevision":"main"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}
+    creationTimestamp: "2026-11-14T17:19:18Z"
+    generation: 788
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+      hub/client: restaurante
+    name: cliente-restaurante
+    namespace: argocd
+    resourceVersion: "20120"
+    uid: e4c04fd9-610d-477e-870c-ce5fcefd4fcc
+  spec:
+    destination:
+      namespace: cliente-restaurante
+      server: https://kubernetes.default.svc
+    project: clientes
+    source:
+      path: clients/restaurante
+      repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-11-14T17:19:21Z"
+      deployedAt: "2026-11-14T17:19:25Z"
+      id: 0
+      initiatedBy:
+        automated: true
+      revision: 2b8c5a4037c9d87653fd8273182b232c3ccd52e8
+      source:
+        path: clients/restaurante
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T17:48:18Z"
+      deployedAt: "2026-11-14T17:48:19Z"
+      id: 1
+      initiatedBy:
+        automated: true
+      revision: d1dfcf090d1d340ef8b6c3608e0a5d0a2d86e278
+      source:
+        path: clients/restaurante
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T17:49:42Z"
+      deployedAt: "2026-11-14T17:49:43Z"
+      id: 2
+      initiatedBy:
+        automated: true
+      revision: d61b1f75fa72bb393588048da35d879964dfb1dd
+      source:
+        path: clients/restaurante
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T21:32:40Z"
+      deployedAt: "2026-11-14T21:32:43Z"
+      id: 3
+      initiatedBy:
+        automated: true
+      revision: 9dc8017d4c1a86ebd48fbb6a25f1a6f4ef9c0228
+      source:
+        path: clients/restaurante
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T01:37:40Z"
+      deployedAt: "2026-11-15T01:37:42Z"
+      id: 4
+      initiatedBy:
+        automated: true
+      revision: 3ef749a1efc84546668987ef6e24a10eba95f2ad
+      source:
+        path: clients/restaurante
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T02:08:05Z"
+      deployedAt: "2026-11-15T02:08:11Z"
+      id: 5
+      initiatedBy:
+        automated: true
+      revision: cb34bc55371e31eca6b6239ab763b687ab8712d0
+      source:
+        path: clients/restaurante
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T02:19:30Z"
+      deployedAt: "2026-11-15T02:19:31Z"
+      id: 6
+      initiatedBy:
+        automated: true
+      revision: a9a4ab0679666e869a5430ce5ea7f3701357453c
+      source:
+        path: clients/restaurante
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-11-15T02:19:37Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          autoHealAttemptsCount: 3
+          prune: true
+          resources:
+          - group: networking.k8s.io
+            kind: Ingress
+            name: web
+          revision: a9a4ab0679666e869a5430ce5ea7f3701357453c
+      phase: Succeeded
+      startedAt: "2026-11-15T02:19:37Z"
+      syncResult:
+        resources:
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: Ingress
+          message: ingress.networking.k8s.io/web created
+          name: web
+          namespace: cliente-restaurante
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: a9a4ab0679666e869a5430ce5ea7f3701357453c
+        source:
+          path: clients/restaurante
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+    reconciledAt: "2026-11-15T02:39:34Z"
+    resources:
+    - kind: LimitRange
+      name: defecto
+      namespace: cliente-restaurante
+      status: Synced
+      version: v1
+    - kind: Namespace
+      name: cliente-restaurante
+      status: Synced
+      version: v1
+    - kind: ResourceQuota
+      name: plan
+      namespace: cliente-restaurante
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: web
+      namespace: cliente-restaurante
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: web
+      namespace: cliente-restaurante
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      health:
+        status: Healthy
+      kind: Ingress
+      name: web
+      namespace: cliente-restaurante
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: default-deny-ingress
+      namespace: cliente-restaurante
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+      name: permitir-traefik-monitoreo-y-propio
+      namespace: cliente-restaurante
+      status: Synced
+      version: v1
+    sourceType: Kustomize
+    summary:
+      externalURLs:
+      - http://restaurante.hub.local/
+    sync:
+      comparedTo:
+        destination:
+          namespace: cliente-restaurante
+          server: https://kubernetes.default.svc
+        source:
+          path: clients/restaurante
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+      revision: 3c7bedfe83a82c0082a5a1feb1b213e9265895bc
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"annotations":{},"labels":{"app.kubernetes.io/part-of":"cloudops-hub"},"name":"monitoring","namespace":"argocd"},"spec":{"destination":{"namespace":"monitoring","server":"https://kubernetes.default.svc"},"project":"default","source":{"path":"observability","repoURL":"http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git","targetRevision":"main"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}
+    creationTimestamp: "2026-11-14T17:19:24Z"
+    generation: 798
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+    name: monitoring
+    namespace: argocd
+    resourceVersion: "20126"
+    uid: 302cfa6d-81d2-4601-b615-80f5523057cc
+  spec:
+    destination:
+      namespace: monitoring
+      server: https://kubernetes.default.svc
+    project: default
+    source:
+      path: observability
+      repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+      targetRevision: main
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  status:
+    controllerNamespace: argocd
+    health:
+      status: Healthy
+    history:
+    - deployStartedAt: "2026-11-14T17:19:26Z"
+      deployedAt: "2026-11-14T17:19:34Z"
+      id: 0
+      initiatedBy:
+        automated: true
+      revision: 2b8c5a4037c9d87653fd8273182b232c3ccd52e8
+      source:
+        path: observability
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T17:58:02Z"
+      deployedAt: "2026-11-14T17:58:07Z"
+      id: 1
+      initiatedBy:
+        automated: true
+      revision: 519caf486cf3a77c85eec85d5905cbe5f4d28288
+      source:
+        path: observability
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-14T19:01:47Z"
+      deployedAt: "2026-11-14T19:01:52Z"
+      id: 2
+      initiatedBy:
+        automated: true
+      revision: 42f82bdd805eee3b6907fcedb802f5780ced15c0
+      source:
+        path: observability
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T02:05:07Z"
+      deployedAt: "2026-11-15T02:05:14Z"
+      id: 3
+      initiatedBy:
+        automated: true
+      revision: 78ef7b4228be4af3cc5613f902ee2719131cb2d8
+      source:
+        path: observability
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    - deployStartedAt: "2026-11-15T02:14:36Z"
+      deployedAt: "2026-11-15T02:14:42Z"
+      id: 4
+      initiatedBy:
+        automated: true
+      revision: a9a4ab0679666e869a5430ce5ea7f3701357453c
+      source:
+        path: observability
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+    operationState:
+      finishedAt: "2026-11-15T02:14:42Z"
+      message: successfully synced (all tasks run)
+      operation:
+        initiatedBy:
+          automated: true
+        retry:
+          limit: 5
+        sync:
+          autoHealAttemptsCount: 2
+          prune: true
+          revision: a9a4ab0679666e869a5430ce5ea7f3701357453c
+      phase: Succeeded
+      startedAt: "2026-11-15T02:14:36Z"
+      syncResult:
+        resources:
+        - group: ""
+          hookPhase: Running
+          kind: ServiceAccount
+          message: serviceaccount/alloy unchanged
+          name: alloy
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ServiceAccount
+          message: serviceaccount/prometheus unchanged
+          name: prometheus
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/grafana-dashboards-provider-8f987d559b unchanged
+          name: grafana-dashboards-provider-8f987d559b
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/loki-config-k6h8dg6t55 unchanged
+          name: loki-config-k6h8dg6t55
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/prometheus-config-ht7h287h86 unchanged
+          name: prometheus-config-ht7h287h86
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/prometheus-reglas-tm8ggtdchd unchanged
+          name: prometheus-reglas-tm8ggtdchd
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/grafana-dashboards-9tc9m4gm42 unchanged
+          name: grafana-dashboards-9tc9m4gm42
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/grafana-datasources-7727485g4m unchanged
+          name: grafana-datasources-7727485g4m
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/tempo-config-g86mkgt6t7 unchanged
+          name: tempo-config-g86mkgt6t7
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/blackbox-config-2mgcmdhkd9 unchanged
+          name: blackbox-config-2mgcmdhkd9
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/alloy-config-9gdmb4hm9c unchanged
+          name: alloy-config-9gdmb4hm9c
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: ConfigMap
+          message: configmap/alertmanager-config-7k4g5m76fg unchanged
+          name: alertmanager-config-7k4g5m76fg
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: PersistentVolumeClaim
+          message: persistentvolumeclaim/loki-data unchanged
+          name: loki-data
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: PersistentVolumeClaim
+          message: persistentvolumeclaim/prometheus-data unchanged
+          name: prometheus-data
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: PersistentVolumeClaim
+          message: persistentvolumeclaim/grafana-data unchanged
+          name: grafana-data
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/alloy-leer-registros reconciled.
+            clusterrole.rbac.authorization.k8s.io/alloy-leer-registros unchanged
+          name: alloy-leer-registros
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRole
+          message: clusterrole.rbac.authorization.k8s.io/prometheus-descubrir-servicios
+            reconciled. clusterrole.rbac.authorization.k8s.io/prometheus-descubrir-servicios
+            unchanged
+          name: prometheus-descubrir-servicios
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/alloy-leer-registros
+            reconciled. clusterrolebinding.rbac.authorization.k8s.io/alloy-leer-registros
+            unchanged
+          name: alloy-leer-registros
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: rbac.authorization.k8s.io
+          hookPhase: Running
+          kind: ClusterRoleBinding
+          message: clusterrolebinding.rbac.authorization.k8s.io/prometheus-descubrir-servicios
+            reconciled. clusterrolebinding.rbac.authorization.k8s.io/prometheus-descubrir-servicios
+            unchanged
+          name: prometheus-descubrir-servicios
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/loki unchanged
+          name: loki
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/alertmanager unchanged
+          name: alertmanager
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/blackbox unchanged
+          name: blackbox
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/grafana unchanged
+          name: grafana
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/prometheus unchanged
+          name: prometheus
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/traefik-metrics unchanged
+          name: traefik-metrics
+          namespace: kube-system
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/tempo unchanged
+          name: tempo
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: DaemonSet
+          message: daemonset.apps/alloy configured
+          name: alloy
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/blackbox configured
+          name: blackbox
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/prometheus unchanged
+          name: prometheus
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/alertmanager configured
+          name: alertmanager
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/grafana configured
+          name: grafana
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/tempo configured
+          name: tempo
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/loki configured
+          name: loki
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: networking.k8s.io
+          hookPhase: Running
+          kind: Ingress
+          message: ingress.networking.k8s.io/grafana unchanged
+          name: grafana
+          namespace: monitoring
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        revision: a9a4ab0679666e869a5430ce5ea7f3701357453c
+        source:
+          path: observability
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+    reconciledAt: "2026-11-15T02:39:34Z"
+    resources:
+    - kind: ConfigMap
+      name: alertmanager-config-7k4g5m76fg
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: alloy-config-9gdmb4hm9c
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: blackbox-config-2mgcmdhkd9
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: grafana-dashboards-9tc9m4gm42
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: grafana-dashboards-provider-8f987d559b
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: grafana-datasources-7727485g4m
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: loki-config-k6h8dg6t55
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: prometheus-config-ht7h287h86
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: prometheus-reglas-tm8ggtdchd
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ConfigMap
+      name: tempo-config-g86mkgt6t7
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: PersistentVolumeClaim
+      name: grafana-data
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: PersistentVolumeClaim
+      name: loki-data
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: PersistentVolumeClaim
+      name: prometheus-data
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: traefik-metrics
+      namespace: kube-system
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: alertmanager
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: blackbox
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: loki
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: prometheus
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - health:
+        status: Healthy
+      kind: Service
+      name: tempo
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: alloy
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - kind: ServiceAccount
+      name: prometheus
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: DaemonSet
+      name: alloy
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: alertmanager
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: blackbox
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: loki
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: prometheus
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: tempo
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: networking.k8s.io
+      health:
+        status: Healthy
+      kind: Ingress
+      name: grafana
+      namespace: monitoring
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: alloy-leer-registros
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: prometheus-descubrir-servicios
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: alloy-leer-registros
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: prometheus-descubrir-servicios
+      status: Synced
+      version: v1
+    sourceType: Kustomize
+    summary:
+      externalURLs:
+      - http://grafana.hub.local/
+      images:
+      - grafana/alloy:v1.10.2
+      - grafana/grafana:12.1.1
+      - grafana/loki:3.5.3
+      - grafana/tempo:2.8.2
+      - prom/alertmanager:v0.28.1
+      - prom/blackbox-exporter:v0.27.0
+      - prom/prometheus:v3.5.0
+    sync:
+      comparedTo:
+        destination:
+          namespace: monitoring
+          server: https://kubernetes.default.svc
+        source:
+          path: observability
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+      revision: 3c7bedfe83a82c0082a5a1feb1b213e9265895bc
+      status: Synced
+- apiVersion: argoproj.io/v1alpha1
+  kind: ApplicationSet
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"ApplicationSet","metadata":{"annotations":{},"labels":{"app.kubernetes.io/part-of":"cloudops-hub"},"name":"clientes","namespace":"argocd"},"spec":{"generators":[{"git":{"directories":[{"path":"clients/*"},{"exclude":true,"path":"clients/_base"},{"exclude":true,"path":"clients/restaurante"},{"exclude":true,"path":"clients/ferreteria"},{"exclude":true,"path":"clients/consultorio"}],"repoURL":"http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git","requeueAfterSeconds":20,"revision":"main"}}],"goTemplate":true,"goTemplateOptions":["missingkey=error"],"template":{"metadata":{"labels":{"app.kubernetes.io/part-of":"cloudops-hub","hub/client":"{{ .path.basename }}"},"name":"cliente-{{ .path.basename }}"},"spec":{"destination":{"namespace":"cliente-{{ .path.basename }}","server":"https://kubernetes.default.svc"},"project":"clientes","source":{"path":"{{ .path.path }}","repoURL":"http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git","targetRevision":"main"},"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}}}
+    creationTimestamp: "2026-11-14T18:41:41Z"
+    generation: 3
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+    name: clientes
+    namespace: argocd
+    resourceVersion: "19980"
+    uid: 597afeab-d410-4abb-8ff8-d386e27afa8e
+  spec:
+    generators:
+    - git:
+        directories:
+        - path: clients/*
+        - exclude: true
+          path: clients/_base
+        - exclude: true
+          path: clients/restaurante
+        - exclude: true
+          path: clients/ferreteria
+        - exclude: true
+          path: clients/consultorio
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        requeueAfterSeconds: 20
+        revision: main
+    goTemplate: true
+    goTemplateOptions:
+    - missingkey=error
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: cloudops-hub
+          hub/client: '{{ .path.basename }}'
+        name: cliente-{{ .path.basename }}
+      spec:
+        destination:
+          namespace: cliente-{{ .path.basename }}
+          server: https://kubernetes.default.svc
+        project: clientes
+        source:
+          path: '{{ .path.path }}'
+          repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+          targetRevision: main
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+  status:
+    conditions:
+    - lastTransitionTime: "2026-11-15T02:14:26Z"
+      message: Successfully generated parameters for all Applications
+      reason: ApplicationSetUpToDate
+      status: "False"
+      type: ErrorOccurred
+    - lastTransitionTime: "2026-11-15T02:14:26Z"
+      message: Successfully generated parameters for all Applications
+      reason: ParametersGenerated
+      status: "True"
+      type: ParametersGenerated
+    - lastTransitionTime: "2026-11-15T02:14:26Z"
+      message: ApplicationSet up to date
+      reason: ApplicationSetUpToDate
+      status: "True"
+      type: ResourcesUpToDate
+    resources:
+    - group: argoproj.io
+      health:
+        status: Healthy
+      kind: Application
+      name: cliente-ferreteria-staging
+      namespace: argocd
+      status: Synced
+      version: v1alpha1
+    - group: argoproj.io
+      health:
+        status: Healthy
+      kind: Application
+      name: cliente-prueba-ui
+      namespace: argocd
+      status: OutOfSync
+      version: v1alpha1
+- apiVersion: argoproj.io/v1alpha1
+  kind: AppProject
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"argoproj.io/v1alpha1","kind":"AppProject","metadata":{"annotations":{},"labels":{"app.kubernetes.io/part-of":"cloudops-hub"},"name":"clientes","namespace":"argocd"},"spec":{"clusterResourceWhitelist":[{"group":"","kind":"Namespace"}],"description":"Sitios de los clientes de Forja Digital","destinations":[{"namespace":"cliente-*","server":"https://kubernetes.default.svc"}],"namespaceResourceWhitelist":[{"group":"apps","kind":"Deployment"},{"group":"","kind":"Service"},{"group":"networking.k8s.io","kind":"Ingress"},{"group":"networking.k8s.io","kind":"NetworkPolicy"},{"group":"","kind":"ResourceQuota"},{"group":"","kind":"LimitRange"},{"group":"","kind":"ConfigMap"}],"orphanedResources":{"warn":true},"sourceRepos":["http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git"]}}
+    creationTimestamp: "2026-11-15T02:07:20Z"
+    generation: 1
+    labels:
+      app.kubernetes.io/part-of: cloudops-hub
+    name: clientes
+    namespace: argocd
+    resourceVersion: "17278"
+    uid: 335d82c7-e5a7-4623-83f9-cb5c6f92de59
+  spec:
+    clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    description: Sitios de los clientes de Forja Digital
+    destinations:
+    - namespace: cliente-*
+      server: https://kubernetes.default.svc
+    namespaceResourceWhitelist:
+    - group: apps
+      kind: Deployment
+    - group: ""
+      kind: Service
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: ""
+      kind: ConfigMap
+    orphanedResources:
+      warn: true
+    sourceRepos:
+    - http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+- apiVersion: argoproj.io/v1alpha1
+  kind: AppProject
+  metadata:
+    creationTimestamp: "2026-11-14T17:16:17Z"
+    generation: 1
+    name: default
+    namespace: argocd
+    resourceVersion: "1022"
+    uid: 6f5b592e-b13b-49d3-bcaf-8a431ed726d3
+  spec:
+    clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+    destinations:
+    - namespace: '*'
+      server: '*'
+    sourceRepos:
+    - '*'
+  status: {}
+kind: List
+metadata:
+  resourceVersion: ""
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    accounts.hub-readonly: apiKey
+    timeout.reconciliation: 30s
+    timeout.reconciliation.jitter: 0s
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"timeout.reconciliation":"30s","timeout.reconciliation.jitter":"0s"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"argocd-cm","app.kubernetes.io/part-of":"argocd"},"name":"argocd-cm","namespace":"argocd"}}
+    creationTimestamp: "2026-11-14T17:15:59Z"
+    labels:
+      app.kubernetes.io/name: argocd-cm
+      app.kubernetes.io/part-of: argocd
+    name: argocd-cm
+    namespace: argocd
+    resourceVersion: "1105"
+    uid: 22329767-10f8-491d-9d27-aaa0ab063327
+- apiVersion: v1
+  data:
+    server.insecure: "true"
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"server.insecure":"true"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"argocd-cmd-params-cm","app.kubernetes.io/part-of":"argocd"},"name":"argocd-cmd-params-cm","namespace":"argocd"}}
+    creationTimestamp: "2026-11-14T17:15:59Z"
+    labels:
+      app.kubernetes.io/name: argocd-cmd-params-cm
+      app.kubernetes.io/part-of: argocd
+    name: argocd-cmd-params-cm
+    namespace: argocd
+    resourceVersion: "841"
+    uid: b17ba803-537d-4237-98a7-bdb34f78fd2d
+- apiVersion: v1
+  data:
+    policy.csv: g, hub-readonly, role:readonly
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"argocd-rbac-cm","app.kubernetes.io/part-of":"argocd"},"name":"argocd-rbac-cm","namespace":"argocd"}}
+    creationTimestamp: "2026-11-14T17:16:00Z"
+    labels:
+      app.kubernetes.io/name: argocd-rbac-cm
+      app.kubernetes.io/part-of: argocd
+    name: argocd-rbac-cm
+    namespace: argocd
+    resourceVersion: "1106"
+    uid: bb7a5012-8807-41f4-92fe-fbb6f0392bb3
+kind: List
+metadata:
+  resourceVersion: ""

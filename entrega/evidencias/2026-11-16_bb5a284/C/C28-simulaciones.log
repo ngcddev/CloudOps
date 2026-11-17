@@ -1,0 +1,27 @@
+# paso:     C28-simulaciones (C)
+# qué:      Caída de réplica, latencia y saturación
+# comando:  env SITIO=restaurante bash gitops/pruebas/simulaciones.sh todas
+# inicio:   2026-11-16T23:18:42Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Réplica caída: se borra el Pod de cliente-restaurante
+   OK   el sondeo ve el sitio sano a los 8 s del borrado
+   OK   la caída duró 8 s, menos de los 30 s de SitioCaido: no es un incidente
+   OK   no hay alerta SitioCaido de restaurante
+== Latencia: +150 ms en la red de los Pods durante 45 s
+   sondeo antes: 0.00303161 s
+   sondeo durante (máximo): 1.80622935 s
+   OK   Prometheus vio la lentitud: el sondeo pasó de 0.00303161 s a 1.80622935 s
+   OK   con la latencia retirada el sondeo volvió a 0.003382434 s
+== Saturación: carga contra la API del Hub
+   api: 1 réplica(s), CPU 4%
+   api: 1 réplica(s), CPU 4%
+   api: 1 réplica(s), CPU 303%
+   api: 2 réplica(s), CPU 502%
+   OK   el HPA subió la API a 2 réplicas
+   (la bajada a 1 réplica espera la ventana de estabilización de 2 minutos)
+   OK   terminada la carga, el HPA volvió a 1 réplica
+
+Simulaciones: todo como se esperaba.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 328s

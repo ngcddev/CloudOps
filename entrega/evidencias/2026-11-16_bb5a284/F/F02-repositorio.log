@@ -1,0 +1,31 @@
+# paso:     F02-repositorio (F)
+# qué:      Ramas, PR, issues, etiquetas, última corrida del CI y archivos de contribución del repositorio
+# comando:  bash -c echo '--- remoto'; git remote -v | head -1; echo '--- ramas remotas'; git branch -r | wc -l; echo '--- últimas corridas del CI en dev'; gh run list --branch dev --limit 5; echo '--- PR (conteo)'; gh pr list --state all --limit 500 --json number | python -c 'import sys,json; print(len(json.load(sys.stdin)))'; echo '--- issues abiertos y cerrados'; gh issue list --state all --limit 500 --json number | python -c 'import sys,json; print(len(json.load(sys.stdin)))'; echo '--- etiquetas'; git tag | wc -l; echo '--- archivos de contribución'; ls LICENSE NOTICE CONTRIBUTING.md CODE_OF_CONDUCT.md 2>&1; echo '--- protección de ramas'; gh api repos/ngcddev/CloudOps/branches/dev/protection 2>&1 | head -3
+# inicio:   2026-11-17T03:27:29Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+--- remoto
+origin	https://github.com/ngcddev/CloudOps.git (fetch)
+--- ramas remotas
+188
+--- últimas corridas del CI en dev
+completed	success	Merge pull request #211 from ngcddev/feat/022-publicar-hub-v1-17	ci	dev	push	43836601609	3m5s	2026-11-16T09:05:13Z
+completed	success	Merge pull request #210 from ngcddev/fix/022-menores-k8s	ci	dev	push	43835840717	3m30s	2026-11-16T09:00:01Z
+completed	cancelled	Merge pull request #209 from ngcddev/fix/022-menores-plataforma	ci	dev	push	43835813880	28s	2026-11-16T08:59:50Z
+completed	cancelled	Merge pull request #208 from ngcddev/fix/022-menores-frontend	ci	dev	push	43835789046	12s	2026-11-16T08:59:39Z
+completed	cancelled	Merge pull request #207 from ngcddev/fix/022-menores	ci	dev	push	43835744945	37s	2026-11-16T08:59:19Z
+--- PR (conteo)
+213
+--- issues abiertos y cerrados
+0
+--- etiquetas
+0
+--- archivos de contribución
+ls: cannot access 'LICENSE': No such file or directory
+ls: cannot access 'NOTICE': No such file or directory
+ls: cannot access 'CONTRIBUTING.md': No such file or directory
+ls: cannot access 'CODE_OF_CONDUCT.md': No such file or directory
+--- protección de ramas
+{"message":"Branch not protected","documentation_url":"https://docs.github.com/rest/branches/branch-protection#get-branch-protection","status":"404"}gh: Branch not protected (HTTP 404)
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 5s

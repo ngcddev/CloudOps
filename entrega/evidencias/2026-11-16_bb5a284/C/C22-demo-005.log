@@ -1,0 +1,36 @@
+# paso:     C22-demo-005 (C)
+# qué:      Aprobación de un cambio hasta el sitio publicado (spec 005)
+# comando:  bash gitops/pruebas/demo-005.sh
+# inicio:   2026-11-17T01:07:25Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+== 0. Punto de partida ==
+   OK   servicio de El Tornillo: #2
+   OK   el sitio reporta v1
+== 1. El Tornillo pide publicar la nueva portada ==
+   OK   solicitud #12 de tipo cambio
+   OK   cambio #6 en pendiente
+== 2. El técnico aprueba (CA-1, CA-2) ==
+   OK   aprobado: en_validacion, commit 37f4810
+== 3. El commit en Gitea cambia solo el tag (CA-2) ==
+   OK   mensaje: chore(ferreteria): versión v1.1 (cambio #6)
+   OK   solo cambió clients/ferreteria/kustomization.yaml
+== 4. Argo CD sincroniza y el sitio muestra v1.1 (CA-3, máximo 180 s) ==
+   OK   /health reporta v1.1 a los 34 s
+   OK   el sitio responde con su pie de versión
+== 5. La solicitud pasa a desplegada, con hora y usuario en cada paso (CA-1) ==
+   OK   cambio #6: desplegada
+   OK   historial con 4 pasos del cambio
+== 6. La consola muestra la versión, el estado y el técnico (CA-4) ==
+   OK   versión activa v1.1
+   OK   sincronización: Synced
+   OK   salud: Healthy
+   OK   último cambio por Camilo Torres
+== 7. Catálogo con los 3 clientes (CA-6, opcional si Backstage está apagado) ==
+   OK   el catálogo lista 5 componentes
+
+Falta comprobar a mano (CA-5): revertir el commit en Gitea y ver que el sitio vuelve a v1
+(bash gitops/pruebas/ciclo-gitops.sh lo hace con medición de tiempos).
+DEMO OK
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 48s

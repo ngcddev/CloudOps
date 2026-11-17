@@ -1,0 +1,54 @@
+# paso:     A02-frontend (A)
+# qué:      Frontend: npm ci, tsc --noEmit y build (Node 22)
+# comando:  docker run --rm -v C:/Users/ngavi/OneDrive/Desktop/CW/CW-CloudOps/frontend:/src:ro node:22 sh -c cp -r /src /tmp/f && cd /tmp/f && rm -rf node_modules && npm ci --no-audit --no-fund && npx tsc --noEmit && npm run build
+# inicio:   2026-11-16T22:03:50Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+Unable to find image 'node:22' locally
+22: Pulling from library/node
+450e9cb70a64: Pulling fs layer
+9bab93d346cd: Pulling fs layer
+69245854ad58: Pulling fs layer
+338554e9113f: Pulling fs layer
+d6c30932f8d3: Pulling fs layer
+2abb2fbacec9: Pulling fs layer
+7cd13466dc1b: Pulling fs layer
+172a422ce4a3: Pulling fs layer
+ca58bfb5cfd7: Download complete
+f679bfbbca07: Download complete
+338554e9113f: Download complete
+450e9cb70a64: Download complete
+69245854ad58: Download complete
+172a422ce4a3: Download complete
+d6c30932f8d3: Download complete
+2abb2fbacec9: Download complete
+69245854ad58: Pull complete
+7cd13466dc1b: Download complete
+338554e9113f: Pull complete
+9bab93d346cd: Download complete
+d6c30932f8d3: Pull complete
+2abb2fbacec9: Pull complete
+9bab93d346cd: Pull complete
+7cd13466dc1b: Pull complete
+450e9cb70a64: Pull complete
+172a422ce4a3: Pull complete
+Digest: sha256:e13726ca604184d7a91fcacab1fc09eefd642dc28e79ac34e85540dd93b78cfb
+Status: Downloaded newer image for node:22
+
+added 79 packages in 4s
+npm notice
+npm notice New major version of npm available! 10.9.9 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+src/api.ts(5,25): error TS2307: Cannot find module '@seed/clients.json' or its corresponding type declarations.
+src/api.ts(6,23): error TS2307: Cannot find module '@seed/plans.json' or its corresponding type declarations.
+src/api.ts(7,29): error TS2307: Cannot find module '@seed/sla_policies.json' or its corresponding type declarations.
+src/api.ts(283,40): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/api.ts(283,43): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/api.ts(284,57): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/api.ts(284,60): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/api.ts(296,33): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/api.ts(300,35): error TS7006: Parameter 's' implicitly has an 'any' type.
+# ---------------------------------------------------------------
+# código de salida: 2 · estado: FALLO · duración: 83s
