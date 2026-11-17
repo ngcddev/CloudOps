@@ -73,7 +73,7 @@ def combinar() -> tuple[str, list[str]]:
         for m in re.finditer(rf"\{{{letra}:([\w-]+)\}}", texto):
             if m.group(1) not in numeros:
                 problemas.append(f"referencia sin leyenda: {{{letra}:{m.group(1)}}}")
-        texto = re.sub(rf"\{{{letra}:([\w-]+)\}}", lambda m: str(numeros.get(m.group(1), "?")), texto)
+        texto = re.sub(rf"\{{{letra}:([\w-]+)\}}", lambda m, numeros=numeros: str(numeros.get(m.group(1), "?")), texto)
     return ajustar_columnas(texto), problemas
 
 
