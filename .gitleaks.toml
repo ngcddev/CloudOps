@@ -27,4 +27,11 @@ regexes = [
   '''eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.dBjftJeZ4CVPmB92K27uhbUJU1p1r''',
   # Valor falso de las pruebas de redacción de secretos (backend/tests/test_seguridad_ia.py): no es una clave real
   '''secret_key = abcd1234efgh5678''',
+  # Secretos inventados de la prueba de secretos en prompts con el modelo real (ai/eval/probar_secretos_en_prompt.py, spec 020 T07): la prueba los pega
+  # en preguntas y comprueba que se tapan antes de llegar al modelo; ninguno es real
+  '''ghp_Zx81qLmN0pQrStUvWxYz1234567890abcd''',
+  '''AKIAZ3MQ7XK2VWR9TDLP''',
+  '''Sup3rSecreta!2026''',
+  '''tok-9f8e7d6c5b4a39281706f5e4d3c2b1a0''',
+  '''Bearer abcdef0123456789abcdef0123456789''',
 ]
