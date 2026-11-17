@@ -25,7 +25,7 @@
 | [012](012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas (Backend) · Industrial revisa que los mensajes al cliente no tengan jerga | 5 | RF-18, RF-19, RF-25, RNF-09 | 008 | En curso | 22 / 30 |
 | [013](013-reportes/spec.md) | Reportes operativo y ejecutivo | Industrial (contenido y formato) y Sistemas (Backend, Frontend) | 5 (puede adelantarse con datos del Hub) | RF-20 | 010 | En curso | 6 / 8 |
 | [014](014-infografia/spec.md) | Infografía mensual | Sistemas (Frontend, Backend) · Industrial define el contenido de la infografía | 6 | RF-21, RF-23 | 010, 013 | Pospuesta | sin tasks.md |
-| [015](015-demo-integrada/spec.md) | Demo integrada | Todo el equipo (Sistemas e Industrial) | 7 | RNF-11 | todas | Spec y plan | sin tasks.md |
+| [015](015-demo-integrada/spec.md) | Demo integrada | Todo el equipo (Sistemas e Industrial) | 7 | RNF-11 | todas | Tareas listas | 0 / 14 |
 | [016](016-alta-de-sitio-y-demo-colegio/spec.md) | Alta de sitio por GitOps y demo del colegio | Equipo de Sistemas | — | — | 001, 003, 005, 008, 009, 015 | Implementada y probada en el clúster (14 nov 2026) | 13 / 15 |
 | [017](017-cierre-modulo-2/spec.md) | Cierre del módulo 2 (Kubernetes, GitOps y Platform Engineering) | Equipo de Sistemas | 2 | — | 003, 005, 011, 016 | Implementada y probada en el clúster (15 nov 2026) | 6 / 6 |
 | [018](018-cierre-modulo-3/spec.md) | Cierre del módulo 3 (DevSecOps y seguridad de la cadena de suministro) | Equipo de Sistemas | 3 | — | 006, 007, 016, 017 | Terminada (todas sus tareas cerradas; verificado en la corrida de evidencias del 16–17 nov 2026) | 7 / 7 |

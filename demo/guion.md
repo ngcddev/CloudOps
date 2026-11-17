@@ -132,4 +132,4 @@
 1. **Ensayo 1** (solo): cronometrar cada bloque y anotar lo que falla.
 2. **Ensayo 2:** con reinicio previo (`demo/reiniciar-cluster.sh`), sin parar.
 3. **Ensayo 3:** en el equipo y la red del salón, grabando el video de respaldo.
-4. Anotar tiempos y fallos en `docs/context.md`.
+4. Anotar tiempos y fallos en `docs/historico/context.md`.

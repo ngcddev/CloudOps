@@ -1,7 +1,7 @@
 # Cumplimiento técnico (sin documentos) frente al diplomado CloudForge AI 5.0
 
 > Se compara lo que **funciona y se puede ejecutar** con lo que pide el [documento del diplomado](diplomado-cloudforge-ai-5.0.md): los 15 entregables del módulo 7 (solo la parte técnica) y los módulos 1 a 6.
-> Revisado el **16 nov 2026**, con el clúster y el Hub encendidos y recién desplegados (`hub-api` v1.17, `hub-web` v1.12). Sustituye en lo técnico a [cumplimiento-diplomado.md](cumplimiento-diplomado.md) (13 nov), que quedó vieja: MLflow, el RAG, la voz, los runbooks, Grafana, las trazas y la sincronía GitOps ya existen.
+> Revisado el **16 nov 2026**, con el clúster y el Hub encendidos y recién desplegados (`hub-api` v1.17, `hub-web` v1.12). Sustituye en lo técnico a [cumplimiento-diplomado.md](historico/cumplimiento-diplomado.md) (13 nov), que quedó vieja: MLflow, el RAG, la voz, los runbooks, Grafana, las trazas y la sincronía GitOps ya existen.
 > Estados: **Hecho** · **Parcial** (existe pero no cubre todo lo que pide) · **Falta**. Lo que no se comprobó en vivo hoy lo dice la columna «Evidencia».
 > No es una calificación: la rúbrica la aplica el jurado.
 
