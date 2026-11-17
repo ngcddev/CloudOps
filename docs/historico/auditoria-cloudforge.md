@@ -1,3 +1,5 @@
+> **Documento histórico** (auditoría del 14 nov 2026 (versiones y conteos de esa fecha)). Se conserva como registro y **no describe el estado actual**. Las cifras vigentes están en el paquete de evidencias de la entrega final (`entrega/evidencias/`).
+
 # Auditoría técnica del proyecto integrador CloudForge AI (notas de trabajo)
 
 > Auditoría solo de lectura del repositorio (14 nov 2026, rama `main`, 723 commits). No se modificó código.

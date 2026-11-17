@@ -1,3 +1,5 @@
+> **Documento histórico** (auditoría técnica del 15 nov 2026; varios hallazgos ya se corrigieron). Se conserva como registro y **no describe el estado actual**. Las cifras vigentes están en el paquete de evidencias de la entrega final (`entrega/evidencias/`).
+
 <!-- Auditoría estática de rendimiento y buenas prácticas del CloudOps Client Hub (15 nov 2026). Solo informa: no corrige nada. -->
 # Auditoría de rendimiento y buenas prácticas (15 nov 2026)
 

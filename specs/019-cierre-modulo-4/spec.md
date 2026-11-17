@@ -1,6 +1,6 @@
 # 019 · Cierre del módulo 4 (IaC, observabilidad, SRE y operación sostenible)
 
-> **Acciona:** Equipo de Sistemas · **Módulo:** 4 · **Depende de:** 008, 010, 011, 016 · **Estado:** En curso
+> **Acciona:** Equipo de Sistemas · **Módulo:** 4 · **Depende de:** 008, 010, 011, 016 · **Estado:** Terminada (todas sus tareas cerradas; verificado en la corrida de evidencias del 16–17 nov 2026)
 
 ## Qué y por qué
 

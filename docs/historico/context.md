@@ -1,3 +1,5 @@
+> **Documento histórico** (contexto e insumos de entrevistas; las entrevistas son datos semilla, no entrevistas reales). Se conserva como registro y **no describe el estado actual**. Las cifras vigentes están en el paquete de evidencias de la entrega final (`entrega/evidencias/`).
+
 # Contexto de entrevista para la especifícación 000 · Modelo de servicio
 
 ## Objetivo

@@ -8,7 +8,7 @@
 | Pieza | Herramienta |
 |---|---|
 | LLM | Ollama con Qwen2.5 7B-Instruct o Llama 3.1 8B (Q4, ≈ 5 GB VRAM); respaldo Qwen2.5 3B. Decisión antes del 3 nov |
-| RAG | **Propio en el Hub** (decisión del 14 nov, ver `docs/bitacora.md`): `nomic-embed-text` servido por Ollama + índice en PostgreSQL (`kb_documents`, `kb_chunks`). Fuentes: la ayuda del Hub; glosario y runbooks se suman en `FUENTES` (T28) |
+| RAG | **Propio en el Hub** (decisión del 14 nov, ver `docs/historico/bitacora.md`): `nomic-embed-text` servido por Ollama + índice en PostgreSQL (`kb_documents`, `kb_chunks`). Fuentes: la ayuda del Hub; glosario y runbooks se suman en `FUENTES` (T28) |
 | Evaluación y registro | MLflow (Docker Compose, `ai/servidor-mlflow/`): experimentos, Model Registry (`compuerta-asistente`, alias `production`) y evaluaciones por prompt, modelo y modo de contexto |
 
 Ollama con `keep_alive` corto para liberar VRAM a ComfyUI (spec 014).

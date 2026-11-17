@@ -1,6 +1,6 @@
 # 018 · Cierre del módulo 3 (DevSecOps y seguridad de la cadena de suministro)
 
-> **Acciona:** Equipo de Sistemas · **Módulo:** 3 · **Depende de:** 006, 007, 016, 017 · **Estado:** En curso
+> **Acciona:** Equipo de Sistemas · **Módulo:** 3 · **Depende de:** 006, 007, 016, 017 · **Estado:** Terminada (todas sus tareas cerradas; verificado en la corrida de evidencias del 16–17 nov 2026)
 
 ## Qué y por qué
 

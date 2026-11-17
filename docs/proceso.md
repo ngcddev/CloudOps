@@ -206,7 +206,7 @@ flowchart TD
     A[Solicitud recibida por el portal o canal oficial] --> B[Crear ticket con estado abierto]
     B --> C[Clasificar prioridad P1–P4]
     C --> D{La información es suficiente?}
-    D -->|No| E[Estado en_espera y solicitar información]
+    D -->|No| E[Pedir la información al cliente; el ticket pasa a en_progreso y luego a en_espera]
     E --> F[Cliente responde]
     F --> C
     D -->|Sí| G[Asignar responsable según el plan]
@@ -226,11 +226,13 @@ flowchart TD
 
 ### Estados canónicos de un ticket
 
+Las transiciones de esta tabla son las que acepta el Hub (`backend/app/services/ticket_flow.py`).
+
 | Estado | Significado | Transición posible |
 |---|---|---|
-| `abierto` | El caso fue creado y requiere revisión. | `en_progreso`, `en_espera` |
+| `abierto` | El caso fue creado y requiere revisión. | `en_progreso` |
 | `en_progreso` | Un técnico está realizando la tarea. | `en_espera`, `resuelto` |
-| `en_espera` | Falta información, acceso, confirmación o una dependencia externa. | `en_progreso`, `cerrado` |
+| `en_espera` | Falta información, acceso, confirmación o una dependencia externa. | `en_progreso` |
 | `resuelto` | La tarea fue ejecutada y el resultado se encuentra registrado. | `cerrado` |
 | `cerrado` | El cliente confirmó la solución o la solicitud fue cerrada por la administradora. | No tiene transición posterior. |
 
@@ -281,6 +283,8 @@ flowchart TD
 
 ### Escalamiento
 
+> **Diseño de proceso, no implementado en el Hub:** los avisos al 50, 80 y 100 % del SLA no existen en el código (el Hub muestra el reloj del SLA y marca el incumplimiento). Se conserva como propuesta de mejora.
+
 Estas reglas aplican a cada objetivo de SLA que esté pendiente —respuesta y solución— en los
 tickets e incidentes cubiertos por la política correspondiente. Cada objetivo se evalúa por separado:
 por ejemplo, cumplir la respuesta no detiene el reloj de solución. El porcentaje se calcula sobre el
@@ -326,12 +330,10 @@ flowchart TD
     B --> C{El cambio tiene alcance y justificación?}
     C -->|No| D[Estado rechazada]
     C -->|Sí| E[Estado aprobada]
-    E --> F[Validación técnica, seguridad y pruebas]
-    F --> G{El cambio supera la validación?}
-    G -->|Sí| H[Estado en_validacion]
-    G -->|No| I[Estado rechazada]
-    H --> J[Desplegar cambio]
-    J --> K[Estado desplegada]
+    E --> H[Estado en_validacion: commit en hub-gitops y Argo CD sincroniza]
+    H --> G{El despliegue queda sano a tiempo?}
+    G -->|Sí| K[Estado desplegada]
+    G -->|No| I[Estado fallida]
 ```
 
 ### Transiciones de una solicitud de cambio
@@ -340,7 +342,8 @@ flowchart TD
 - `pendiente` → `rechazada`: falta información, alcance o autorización.
 - `aprobada` → `en_validacion`: se inicia la revisión técnica, de seguridad y de pruebas.
 - `en_validacion` → `desplegada`: el cambio cumple las validaciones y se publica.
-- `en_validacion` → `rechazada`: el cambio no cumple las pruebas, seguridad o criterios definidos.
+- `en_validacion` → `fallida`: el despliegue no queda sano dentro del tiempo de validación (`backend/app/services/change_flow.py`).
+- Quien pidió el cambio no puede aprobarlo: lo aprueba otra persona de la agencia (segregación de funciones).
 
 ## 9. Diferencias principales entre AS-IS y TO-BE
 
@@ -358,9 +361,9 @@ flowchart TD
 
 El TO-BE permite que un caso recorra una ruta clara y medible:
 
-- una solicitud de mantenimiento usa `abierto → en_progreso → en_espera → resuelto → cerrado`;
+- una solicitud de mantenimiento usa `abierto → en_progreso → resuelto → cerrado` (con pausas `en_progreso ⇄ en_espera`);
 - una falla usa `abierto → mitigado → cerrado`;
-- una solicitud de cambio usa `pendiente → aprobada → en_validacion → desplegada` o `rechazada`; y
+- una solicitud de cambio usa `pendiente → aprobada → en_validacion → desplegada`, o termina en `rechazada` o `fallida`; y
 - el servicio puede observarse como `operativo`, `degradado` o `caido`.
 
 Este flujo elimina la dependencia de mensajes dispersos y permite medir el tiempo de respuesta, la duración, la carga del técnico y el cumplimiento del SLA.

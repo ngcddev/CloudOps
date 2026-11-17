@@ -1,3 +1,5 @@
+> **Documento histórico** (lista de verificación usada del 14 al 16 nov 2026 (versiones y casillas de esa fecha)). Se conserva como registro y **no describe el estado actual**. Las cifras vigentes están en el paquete de evidencias de la entrega final (`entrega/evidencias/`).
+
 # Checklist de verificación pendiente (módulos 2 al 6) — paso a paso
 
 Los nombres de botones, pestañas y mensajes están tomados del código del Hub (no se recorrió cada pantalla para esta guía): si alguno no coincide, anótalo y se corrige la guía o la pantalla.
@@ -56,7 +58,7 @@ Pantallas del Hub (menú lateral de la agencia): **Inicio · Clientes · Solicit
   kubectl get applications -n argocd      # todas: Synced y Healthy
   kubectl -n hub get pods                 # api, web, voz, postgres, backstage: 1/1 Running
   ```
-  **OK si:** nodo `Ready` y ningún Pod en `CrashLoopBackOff`. **Si falla:** sigue [runbooks/reinicio-del-cluster.md](../runbooks/reinicio-del-cluster.md) (orden de arranque de los contenedores).
+  **OK si:** nodo `Ready` y ningún Pod en `CrashLoopBackOff`. **Si falla:** sigue [runbooks/reinicio-del-cluster.md](../../runbooks/reinicio-del-cluster.md) (orden de arranque de los contenedores).
 - [ ] **0.3 Levantar el Hub de desarrollo con voz** · Tú
   En **Git Bash**: `docker compose --profile voz up -d --build voz web api`. Luego `docker compose ps` debe listar `api`, `web`, `voz` y `db` en `running`.
   Asegúrate de que Ollama está abierto (icono de la llama en la bandeja de Windows).

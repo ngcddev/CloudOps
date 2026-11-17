@@ -1,3 +1,5 @@
+> **Documento histórico** (registro cronológico de lo que se hizo hasta el 16 nov 2026). Se conserva como registro y **no describe el estado actual**. Las cifras vigentes están en el paquete de evidencias de la entrega final (`entrega/evidencias/`).
+
 # Bitácora de desarrollo
 
 > Registro cronológico de lo que se hace, se decide y se verifica, con la evidencia. Es material de trabajo: de aquí salen los

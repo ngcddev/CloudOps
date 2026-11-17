@@ -1,6 +1,8 @@
+> **Documento histórico** (revisión de cumplimiento del diplomado del 13–15 nov 2026; las cifras están superadas). Se conserva como registro y **no describe el estado actual**. Las cifras vigentes están en el paquete de evidencias de la entrega final (`entrega/evidencias/`).
+
 # Cumplimiento del diplomado CloudForge AI 5.0
 
-> Compara lo que exige el [documento del diplomado](diplomado-cloudforge-ai-5.0.md) (entregables mínimos del módulo 7,
+> Compara lo que exige el [documento del diplomado](../diplomado-cloudforge-ai-5.0.md) (entregables mínimos del módulo 7,
 > matriz de evidencias, tecnologías y rúbrica) con lo que existe hoy en este repositorio.
 > Revisado el **13 nov 2026**. Cada «Hecho» cita la evidencia; si no hay evidencia, no se marca.
 > Estados: **Hecho** · **Parcial** (existe pero no cubre todo lo que pide) · **Falta** (no existe).

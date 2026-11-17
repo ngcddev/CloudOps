@@ -9,7 +9,7 @@
 | Parámetros y cuantización | 137 M, F16 |
 | Tamaño en disco | 0,3 GB |
 | Uso | Embeddings de las secciones de la ayuda para el modo RAG del asistente (opcional; por defecto el modo es `completo`) |
-| Dónde corre | Ollama en el PC B |
+| Dónde corre | Ollama en el equipo anfitrión (laptop con GPU) |
 | Datos que recibe | Textos de la ayuda del Hub y la pregunta de quien consulta |
 
 ## Medición

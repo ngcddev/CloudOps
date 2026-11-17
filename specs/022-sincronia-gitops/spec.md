@@ -1,6 +1,6 @@
 # 022 · Sincronía simple y correcta entre el repositorio principal y hub-gitops
 
-> **Acciona:** Equipo de Sistemas · **Módulo:** 2 (GitOps) · **Depende de:** 005, 016, 017 · **Estado:** En curso
+> **Acciona:** Equipo de Sistemas · **Módulo:** 2 (GitOps) · **Depende de:** 005, 016, 017 · **Estado:** Terminada (todas sus tareas cerradas; sincronía verificada el 16 nov 2026)
 
 ## Qué y por qué
 

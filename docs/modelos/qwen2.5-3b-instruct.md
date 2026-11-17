@@ -9,7 +9,7 @@
 | Parámetros y cuantización | 3,1 B, Q4_K_M |
 | Tamaño en disco | 1,9 GB |
 | Uso | Comparación en la evaluación del asistente; **no** responde a nadie en el Hub |
-| Dónde corre | Ollama en el PC B, solo cuando se evalúa |
+| Dónde corre | Ollama en el equipo anfitrión, solo cuando se evalúa |
 | Datos que recibe | Las preguntas del conjunto de evaluación (ficticias) |
 
 ## Medición

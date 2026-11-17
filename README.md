@@ -6,11 +6,12 @@ CloudOps Client Hub **no es otro Vercel**. Ayuda a una agencia digital a gestion
 
 Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep – 30 nov 2026. Equipo de 5: 4 ingenieros de sistemas y 1 ingeniero industrial.
 
-**Documentos de referencia:** [constitución](constitution/README.md) ([misión](constitution/mission.md) · [principios](constitution/principles.md) · [roadmap](constitution/roadmap.md) · [tech stack](constitution/tech-stack.md) · [convenciones](constitution/conventions.md) · [nombres canónicos](constitution/canonical-names.md)) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [glosario](docs/glosario.md) · [documento del diplomado](docs/diplomado-cloudforge-ai-5.0.md) · [cumplimiento del diplomado](docs/cumplimiento-diplomado.md)
+**Documentos de referencia:** [constitución](constitution/README.md) ([misión](constitution/mission.md) · [principios](constitution/principles.md) · [roadmap](constitution/roadmap.md) · [tech stack](constitution/tech-stack.md) · [convenciones](constitution/conventions.md) · [nombres canónicos](constitution/canonical-names.md)) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [glosario](docs/glosario.md) · [documento del diplomado](docs/diplomado-cloudforge-ai-5.0.md) · [cumplimiento del diplomado](docs/historico/cumplimiento-diplomado.md)
 
 ## Tabla de contenidos
 
 - [Estado actual](#estado-actual)
+- [Cómo levantarlo](#cómo-levantarlo)
 - [El problema](#el-problema)
 - [Diferencia frente a Vercel](#diferencia-frente-a-vercel)
 - [Flujo de operación](#flujo-de-operación)
@@ -32,26 +33,35 @@ Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep 
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Convenciones](#convenciones)
 - [Cómo contribuir](#cómo-contribuir)
-- [Decisiones pendientes](#decisiones-pendientes)
+- [Decisiones](#decisiones)
 - [Riesgos](#riesgos)
 - [Fuera de alcance](#fuera-de-alcance)
 - [Conclusión](#conclusión)
 
 ## Estado actual
+El estado verificado del proyecto **no se escribe a mano en este README**: sale de la última corrida del paquete de evidencias, que ejecuta las pruebas, las demos de punta a punta y las evaluaciones de IA y guarda cada salida con fecha y commit.
 
-> Módulo 4 (24 oct – 3 nov). El Hub (backend y frontend), los sitios demo, los manifiestos GitOps, la puerta de
-> seguridad, la observabilidad y la infraestructura como código ya existen en este repositorio.
+- Resumen de la corrida: [`entrega/evidencias/2026-11-16_bb5a284/RESUMEN.md`](entrega/evidencias/2026-11-16_bb5a284/RESUMEN.md) (resultados por nivel, cifras y hallazgos).
+- Reproducirla: `bash entrega/evidencias/correr.sh A B C1 D E F` (los niveles `C2`/`C3` provocan fallas en el clúster; al final, `bash entrega/evidencias/correr.sh Z` deja la demo lista).
+- Estado por spec y tareas abiertas: [mapa de specs](specs/README.md).
 
-| Qué | Estado |
-|---|---|
-| Constitución, requerimientos, calendario, stack, glosario y guía SDD | Listos |
-| Specs 001 a 007, 009 y 010 | Terminadas |
-| Specs 000, 008 y 011 | En curso (quedan la demo de la 000, T29/T32/T33 de la 008 y T15 de la 011) |
-| Spec 012 | En curso: compuerta de ML, asistente con Ollama, MLflow (registro y alias `production`), RAG con embeddings y evaluación de inyección de prompts listos ([bitácora](docs/bitacora.md)); los borradores de incidente con IA también; falta llevarlo al clúster (T27) |
-| Spec 013 | En curso: reportes operativo y ejecutivo (datos congelados, PDF, pantallas de agencia y portal) listos; falta revisarlos con Industrial |
-| Specs 014 y 015 | Solo spec y plan; esperan su módulo |
+## Cómo levantarlo
 
-Estado por spec y tareas abiertas: [mapa de specs](specs/README.md).
+Requisitos: Docker (Docker Desktop en Windows o Docker Engine en Linux) y Git. Para el asistente de IA, [Ollama](https://ollama.com) con `qwen2.5:7b-instruct` y `nomic-embed-text` (sin Ollama el Hub funciona y el asistente avisa que no está disponible).
+
+```bash
+git clone --branch dev https://github.com/ngcddev/CloudOps.git
+cd CloudOps
+cp .env.example .env          # cambiar JWT_SECRET por un valor propio (la API no arranca con el de ejemplo)
+docker compose up --build
+```
+
+- Consola de la agencia y portal del cliente: http://localhost:5173 · API: http://localhost:8000 (`/health`).
+- Usuarios sembrados: `sofia@forjadigital.test` (técnica de la agencia) y `contacto@lasazon.test` (cliente), con la contraseña `SEED_USER_PASSWORD` de tu `.env`.
+- Sitios de los clientes: http://localhost:8081 (restaurante), :8082 (ferretería) y :8083 (consultorio).
+- Pruebas del backend: `docker compose exec api pytest`.
+
+El laboratorio completo en Kubernetes (k3d, Argo CD, Gitea, observabilidad, MLflow y Backstage) se crea con `gitops/platform/k3s/crear-cluster.sh` y se describe en [gitops/README.md](gitops/README.md). En Windows con Git Bash, exporta `KUBECONFIG` con barras normales (`C:/Users/...`).
 
 ## El problema
 
@@ -129,8 +139,8 @@ El sitio del Restaurante La Sazón cae tras desplegar la `v2`:
 | 5. Diagnóstico | El técnico revisa alertas, logs y el último cambio | Grafana, Loki, historial de Argo CD |
 | 6. Recuperación | Pulsa **Rollback**: `git revert` en `hub-gitops` | Gitea + Argo CD |
 | 7. Verificación | La métrica vuelve a verde; el incidente se cierra con su MTTR | Prometheus |
-| 8. Comunicación | La IA local redacta el resumen y el mensaje; un humano los aprueba | Ollama + AnythingLLM |
-| 9. Mejora | El caso queda en el reporte mensual y en la infografía | Hub + ComfyUI |
+| 8. Comunicación | La IA local redacta el resumen y el mensaje; un humano los aprueba | Ollama (IA local en el equipo) |
+| 9. Mejora | El caso queda en el reporte mensual | Hub (reportes) |
 
 Mensaje al cliente: *"Detectamos una falla temporal en su sitio a las {hora}. Activamos la recuperación y a las {hora_fin} el servicio volvió a funcionar. Tiempo total: {min} minutos."*
 
@@ -184,7 +194,7 @@ Cada herramienta de plataforma se instala cuando el diplomado cubre su módulo. 
 
 | Capa | Herramienta | Módulo | Notas |
 |---|---|---|---|
-| Kubernetes | **k3s** | 2 | Nodo único en el PC A; trae Traefik como Ingress |
+| Kubernetes | **k3s** (en k3d para el laboratorio) | 2 | Un nodo; trae Traefik como Ingress |
 | Git, CI y registro | **Gitea + Gitea Actions** | 2–3 | Autoalojado; incluye registro de imágenes |
 | GitOps | **Argo CD** | 2 | Fuente de verdad = repo Git; detecta drift; hace rollback |
 | Platform Engineering | **Backstage** | 2 | Catálogo mínimo de clientes y servicios; se apaga si falta RAM |
@@ -194,8 +204,7 @@ Cada herramienta de plataforma se instala cuando el diplomado cubre su módulo. 
 | SBOM | **Syft** | 3 | Inventario de componentes de cada imagen |
 | Firma y procedencia | **Cosign / Sigstore** | 3 | Firma, `cosign verify` y atestación de procedencia SLSA v1 (commit, repositorio y corrida) verificada contra el commit de la versión |
 | Seguridad de Pods | **Pod Security Admission** | 3 | Nativo de Kubernetes, perfil `restricted` |
-| IaC | **OpenTofu** (compatible con Terraform) | 4 | HCL genérico; binario final según el profesor |
-| Bootstrap de SO | Ansible (opcional) | 4 | Solo para instalar k3s |
+| IaC | **OpenTofu** (compatible con Terraform) | 4 | Versiones fijadas y ejecutadas en contenedor (`infra/tofu.sh`) |
 | Métricas y alertas | **Prometheus + Grafana + Alertmanager** | 4 | Alertmanager dispara el webhook que abre el incidente |
 | Logs | **Loki** | 4 | Retención corta |
 | Trazas | **Tempo** | 4 | Recibe las trazas OTLP del Hub (peticiones y etapas del asistente, sin el texto de las preguntas); se ven en Grafana → Explore → Tempo |
@@ -206,37 +215,36 @@ Cada herramienta de plataforma se instala cuando el diplomado cubre su módulo. 
 
 | Capa | Herramienta | Módulo | Notas |
 |---|---|---|---|
-| LLM | **Ollama** | 5 | Qwen2.5 7B-Instruct o Llama 3.1 8B (Q4, ≈ 5 GB VRAM); respaldo Qwen2.5 3B |
-| RAG | **RAG propio** en el Hub: `nomic-embed-text` (Ollama) + índice en PostgreSQL (`kb_documents`, `kb_chunks`) | 5 | Similitud coseno en Python, sin extensiones; cae a búsqueda léxica si Ollama no responde. Reemplaza a AnythingLLM (ver [bitácora](docs/bitacora.md)) |
-| MLOps | **MLflow** (Docker Compose, `ai/servidor-mlflow/`) | 5 | Experimentos, Model Registry (`compuerta-asistente` con alias `production`) y evaluaciones del asistente |
+| LLM | **Ollama** | 5 | Qwen2.5 7B-Instruct (Q4) en el Hub; Qwen2.5 3B solo para comparar (licencia de investigación) |
+| RAG | **RAG propio** en el Hub: `nomic-embed-text` (Ollama) + índice en PostgreSQL (`kb_documents`, `kb_chunks`) | 5 | Similitud coseno en Python, sin extensiones; cae a búsqueda léxica si Ollama no responde. Reemplaza a AnythingLLM (ver [bitácora](docs/historico/bitacora.md)) |
+| MLOps | **MLflow** (namespace `mlops` del clúster; `ai/servidor-mlflow/` para desarrollo) | 5 | Experimentos, Model Registry (`compuerta-asistente` con alias `production`) y evaluaciones del asistente |
 | Compuerta del asistente | **Clasificador Naive Bayes** (Python puro, JSON de ~40 KB) | 5 | Decide si la pregunta trata del Hub antes de despertar al LLM; se entrena con `ai/classifier/train.py` y se registra en MLflow |
-| Multimodal | **Stability Matrix + ComfyUI** | 6 | SD 1.5 (SDXL Turbo solo si cabe en 6 GB); ilustración de la infografía |
+| Multimodal | **Voz**: faster-whisper `small` (voz a texto) y Piper (texto a voz), en CPU | 6 | Servicio aparte (`voz/`); el audio no se guarda. Generación de imagen (ComfyUI) fuera de alcance por cómputo |
 
 Detalle y justificación de cada elección en [constitution/tech-stack.md](constitution/tech-stack.md).
 
 ## Hardware
+| Equipo | Qué corre |
+|---|---|
+| Laptop del equipo (RTX 4060 de 8 GB) | Docker Desktop con el clúster k3d (Hub, Gitea, Argo CD, observabilidad, MLflow, Backstage y los sitios de los clientes) y Ollama con los modelos en la GPU |
 
-| Equipo | Qué corre | Por qué |
-|---|---|---|
-| **PC A** (16 GB) · plataforma | k3s con el Hub, PostgreSQL, Gitea, Argo CD, Prometheus, Grafana, Loki, Alertmanager y los 3 sitios de clientes | Todo lo que debe estar siempre arriba vive en un nodo; la GPU no se usa |
-| **PC B** (16 GB, GPU ≥ 6 GB) · IA | Ollama, AnythingLLM, MLflow, ComfyUI | 6 GB de VRAM no alcanzan para LLM e imágenes a la vez: se usan por turnos (Ollama con `keep_alive` corto) |
-| Equipos de desarrollo | `docker compose` y runner de Gitea Actions (si tiene RAM) | Mantienen las compilaciones fuera del PC A |
-
-El Hub (PC A) llama a Ollama y AnythingLLM (PC B) por la red local. Ambos PC necesitan IP fija en la red de la demo.
+El Hub llama a Ollama en el equipo anfitrión; si no responde, el asistente avisa y el resto del Hub sigue funcionando. El segundo equipo con GPU que se había previsto (PC B) se descartó el 15 nov 2026; un despliegue en la nube está pendiente.
 
 ## Arquitectura
 
 ### Clúster
 
 ```
-Clúster k3s (PC A)
-├── namespace: hub                  → el Hub (FastAPI, React, PostgreSQL)
+Clúster k3s (k3d, un nodo)
+├── namespace: hub                  → el Hub (FastAPI, React, PostgreSQL), voz y Backstage
+├── namespace: mlops                → MLflow
 ├── namespace: argocd               → Argo CD
 ├── namespace: gitea                → Gitea y registro de imágenes
-├── namespace: monitoring           → Prometheus, Grafana, Alertmanager, Loki
+├── namespace: monitoring           → Prometheus, Grafana, Alertmanager, Loki, Tempo, Alloy, Blackbox
 ├── namespace: cliente-restaurante  → sitio de La Sazón
 ├── namespace: cliente-ferreteria   → sitio de El Tornillo
-└── namespace: cliente-consultorio  → sitio de Dental Popayán
+├── namespace: cliente-consultorio  → sitio de Dental Popayán
+└── namespace: cliente-ferreteria-staging → staging de El Tornillo
 ```
 
 Cada namespace de cliente incluye **ResourceQuota + LimitRange** (según el plan), **NetworkPolicy** (aislamiento entre clientes), **Pod Security Admission `restricted`** (sin root ni privilegios) e **Ingress** (`<cliente>.hub.local`).
@@ -246,14 +254,14 @@ Cada namespace de cliente incluye **ResourceQuota + LimitRange** (según el plan
 ### Flujo de despliegue
 
 1. Push a Gitea → dispara Gitea Actions.
-2. Pipeline: Gitleaks → build de imagen → Trivy → Syft (SBOM) → Cosign (firma) → push al registro → `cosign verify` → actualiza el tag en el repo `hub-gitops`.
+2. Puerta de seguridad: Gitleaks → pruebas y build de la imagen → Trivy → Syft (SBOM) → subir, firmar y atestiguar la procedencia (Cosign) → `cosign verify`; el Hub registra la corrida. Al aprobar el cambio, el Hub actualiza el tag en `hub-gitops`.
 3. Argo CD detecta el cambio y sincroniza el `Deployment` en el namespace del cliente; Pod Security Admission rechaza cualquier Pod que no cumpla `restricted`.
 4. La readiness probe actúa como smoke test antes de recibir tráfico.
 5. Blackbox Exporter monitorea el endpoint público de cada sitio.
 6. Si falla → Alertmanager → webhook → el Hub abre un incidente P1 y arranca el SLA.
 7. Revisión de logs (Loki) y cambios recientes → rollback con `git revert` en `hub-gitops`.
 8. Argo CD reconcilia a la versión estable → las métricas confirman la recuperación → el Hub cierra el incidente y calcula el MTTR.
-9. Ollama (vía AnythingLLM, en el PC B) redacta el resumen y el mensaje al cliente, siempre con aprobación humana.
+9. Ollama (local, en el equipo anfitrión) redacta el resumen y el mensaje al cliente, siempre con aprobación humana.
 
 ### Repositorios
 
@@ -313,31 +321,9 @@ Los 10 principios en una línea cada uno: el flujo empieza en el cliente · infr
 Guía completa en [docs/sdd.md](docs/sdd.md).
 
 ## Especificaciones
+El proyecto se construyó por especificaciones (SDD): 24 specs, de la 000 a la 023. La tabla con quién acciona cada una, sus dependencias y su estado está en un solo lugar: el [mapa de specs](specs/README.md). Para abrir una spec nueva se copia [`specs/_plantilla/`](specs/_plantilla/spec.md).
 
-**Acciona** indica quién ejecuta la spec. El detalle por rol está al inicio de cada `spec.md`.
-
-| Spec | Nombre | Acciona | Módulo | Requerimientos | Depende de |
-|---|---|---|---|---|---|
-| [000](specs/000-modelo-de-servicio/spec.md) | Modelo de servicio | Industrial | 1–2 | Planes, P1–P4, SLA, KPI | — |
-| [001](specs/001-clientes-y-planes/spec.md) | Clientes y planes | Sistemas · apoya Industrial | 1 | RF-01, RF-02 | 000 |
-| [002](specs/002-plantillas-de-sitio/spec.md) | Plantillas de sitio y apps demo | Sistemas | 1 | RNF-01, RNF-02 | — |
-| [003](specs/003-plataforma-k3s/spec.md) | Plataforma multi-cliente en k3s | Sistemas · apoya Industrial | 2 | RF-03, RNF-03 | 002 |
-| [004](specs/004-mesa-de-servicio/spec.md) | Mesa de servicio: tickets y prioridad | Sistemas · apoya Industrial | 2 | RF-04, RF-05 | 000, 001 |
-| [005](specs/005-cambios-gitops/spec.md) | Cambios por GitOps | Sistemas | 2 | RF-06, RF-07, RF-22, RNF-04 | 003, 004 |
-| [006](specs/006-puerta-de-seguridad/spec.md) | Puerta de calidad y seguridad | Sistemas | 3 | RF-08, RF-09, RNF-05, RNF-06 | 005 |
-| [007](specs/007-roles-y-auditoria/spec.md) | Acceso por roles y auditoría | Sistemas | 3 | RF-01 (roles), RF-10 | 001, 004, 005 |
-| [008](specs/008-monitoreo-e-incidentes/spec.md) | Monitoreo e incidente automático | Sistemas · apoya Industrial | 4 | RF-11, RF-12, RF-13, RNF-07 | 000, 003, 004, 005, 007 |
-| [009](specs/009-rollback/spec.md) | Recuperación por rollback | Sistemas | 4 | RF-14 | 005, 008 |
-| [010](specs/010-dashboards/spec.md) | Dashboards y métricas del servicio | Sistemas · apoya Industrial | 4 | RF-15, RF-16, RF-17, RNF-10 | 004, 005, 007, 008, 009 |
-| [011](specs/011-infraestructura-como-codigo/spec.md) | Infraestructura como código | Sistemas | 4 | RNF-08 | 003, 005 |
-| [012](specs/012-asistente-ia/spec.md) | Asistente de incidentes con IA local | Sistemas · apoya Industrial | 5 | RF-18, RF-19, RNF-09 | 008 |
-| [013](specs/013-reportes/spec.md) | Reportes operativo y ejecutivo | Industrial + Sistemas | 5 | RF-20 | 010 |
-| [014](specs/014-infografia/spec.md) | Infografía mensual | Sistemas · apoya Industrial | 6 | RF-21, RF-23 | 010, 013 |
-| [015](specs/015-demo-integrada/spec.md) | Demo integrada | Todo el equipo | 7 | RNF-11 | todas |
-
-**Orden de arranque:** 000, 001 y 002 empiezan ya. Pueden adelantarse (solo producto) la 004 y la parte de backend/frontend de 007, 008 (incidentes manuales), 010 y 013. Todo lo que instala herramientas de plataforma espera su módulo.
-
-Requerimientos completos (RF/RNF con prioridad MoSCoW y trazabilidad): [docs/requerimientos.md](docs/requerimientos.md).
+Los requerimientos originales (RF y RNF con prioridad MoSCoW) están en [docs/requerimientos.md](docs/requerimientos.md); los requerimientos vigentes con su verificación van en el informe final de la entrega.
 
 ## Calendario
 
@@ -350,7 +336,7 @@ Requerimientos completos (RF/RNF con prioridad MoSCoW y trazabilidad): [docs/req
 | 3 · DevSecOps y cadena de suministro | 16 – 24 oct | Un cambio inseguro no llega a producción y el Hub muestra por qué | 006, 007 |
 | 4 · IaC, observabilidad, SRE | 24 oct – 3 nov | El caso del restaurante de punta a punta, sin IA | 008, 009, 010, 011 |
 | 5 · MLOps, LLMOps, IA local | 3 – 12 nov | El Hub redacta el resumen con IA local y un humano lo aprueba | 012, 013 |
-| 6 · IA local multimodal | 13 – 20 nov | Infografía mensual de cada cliente | 014 |
+| 6 · IA local multimodal | 13 – 20 nov | Voz del asistente (la infografía con imagen quedó pospuesta) | 021 |
 | 7 · Integrador | 24 – 30 nov | Demo final ensayada; ninguna funcionalidad nueva | 015 |
 
 **Hitos:** 2 oct matriz P1–P4 cerrada · 13 oct GitOps funcionando · 24 oct puerta de seguridad · 31 oct caso del restaurante sin IA · **3 nov sustentación del módulo 4** · 12 nov asistente IA y reportes · 20 nov infografía · 21–23 nov colchón · **30 nov sustentación final**.
@@ -358,23 +344,22 @@ Requerimientos completos (RF/RNF con prioridad MoSCoW y trazabilidad): [docs/req
 Detalle en [constitution/roadmap.md](constitution/roadmap.md).
 
 ## Alcance de la demo
+Meta para la sustentación final (30 nov). Cada punto tiene su verificación en el paquete de evidencias ([RESUMEN.md](entrega/evidencias/2026-11-16_bb5a284/RESUMEN.md)):
 
-Meta para la sustentación final (30 nov). Avance: los puntos de las specs 000 a 011 ya tienen su código; faltan el resto de la 012, la 013, la 014 y el ensayo integrado (015). Estas 12 casillas desglosan los 10 puntos de la [matriz de trazabilidad](docs/requerimientos.md#matriz-de-trazabilidad-demo-final--requerimientos--specs); se marcan en la demo final.
+| Punto | Specs | Verificación |
+|---|---|---|
+| Registrar una agencia y tres clientes ficticios, con un proyecto o servicio cada uno | [001](specs/001-clientes-y-planes/spec.md) | Recorrido de la interfaz (E01) |
+| Desplegar aplicaciones demo con contenedores y Kubernetes | [002](specs/002-plantillas-de-sitio/spec.md), [003](specs/003-plataforma-k3s/spec.md) | A14–A16, C01, C17 |
+| Validación automática antes de publicar | [006](specs/006-puerta-de-seguridad/spec.md) | B06, C23 |
+| Tablero técnico para la agencia y uno simplificado para el cliente | [010](specs/010-dashboards/spec.md) | C24 (pasos 1–3), E01 |
+| Simular una falla controlada, detectarla y abrir el incidente | [008](specs/008-monitoreo-e-incidentes/spec.md) | C26, C28 |
+| Clasificar prioridad, asignar responsable y medir el SLA | [000](specs/000-modelo-de-servicio/spec.md), [004](specs/004-mesa-de-servicio/spec.md) | Pruebas del backend (B02) |
+| Recuperar el servicio mediante rollback | [009](specs/009-rollback/spec.md) | C25 |
+| Reporte operativo y ejecutivo | [013](specs/013-reportes/spec.md) | E01 (pantallas de reportes) |
+| Asistente local que resume el incidente, con verificación humana | [012](specs/012-asistente-ia/spec.md) | D02–D05 |
+| Componente multimodal | [021](specs/021-voz-del-asistente/spec.md) | D11, D12 (voz) |
 
-- [ ] Registrar una agencia y tres clientes ficticios — [001](specs/001-clientes-y-planes/spec.md)
-- [ ] Crear un proyecto o servicio por cliente — [001](specs/001-clientes-y-planes/spec.md)
-- [ ] Desplegar aplicaciones demo con contenedores y Kubernetes — [002](specs/002-plantillas-de-sitio/spec.md), [003](specs/003-plataforma-k3s/spec.md)
-- [ ] Ejecutar validación automática antes de publicar — [006](specs/006-puerta-de-seguridad/spec.md)
-- [ ] Dashboard técnico para la agencia y uno simplificado para el cliente — [010](specs/010-dashboards/spec.md)
-- [ ] Simular una falla controlada — [002](specs/002-plantillas-de-sitio/spec.md)
-- [ ] Detectarla por monitoreo y abrir un incidente — [008](specs/008-monitoreo-e-incidentes/spec.md)
-- [ ] Clasificar prioridad, asignar responsable y medir SLA — [000](specs/000-modelo-de-servicio/spec.md), [004](specs/004-mesa-de-servicio/spec.md), [008](specs/008-monitoreo-e-incidentes/spec.md)
-- [ ] Recuperar el servicio mediante rollback — [009](specs/009-rollback/spec.md)
-- [ ] Generar un reporte operativo y ejecutivo — [013](specs/013-reportes/spec.md)
-- [ ] Usar un asistente local para resumir el incidente, con verificación humana — [012](specs/012-asistente-ia/spec.md)
-- [ ] Generar una infografía operativa como componente visual o multimodal — [014](specs/014-infografia/spec.md)
-
-La demo final recorre estos puntos en menos de 15 minutos, arrancando siempre desde datos semilla ([spec 015](specs/015-demo-integrada/spec.md)).
+La demo arranca desde datos semilla; `bash entrega/evidencias/dejar-demo-lista.sh` deja el clúster listo ([spec 015](specs/015-demo-integrada/spec.md)).
 
 ## Equipo y roles
 
@@ -404,80 +389,61 @@ Los ingenieros de sistemas construyen la plataforma que publica, monitorea y rec
 | Experiencia del cliente | Define qué debe entender el cliente | Reportes claros y portal no técnico |
 
 ## Estructura del repositorio
-
-**Lo que existe hoy:**
-
 ```
 cloudops/
-├── README.md · CLAUDE.md
+├── README.md · CLAUDE.md · CONTRIBUTING.md · LICENSE · NOTICE
 ├── constitution/       # misión, principios, roadmap, stack, convenciones y nombres canónicos
-├── docs/               # requerimientos, glosario, guía SDD, KPI, prioridades, proceso, personas
-├── specs/              # mapa, plantilla y specs 000 a 015
+├── docs/               # requerimientos, glosario, guía SDD, KPI, prioridades, proceso, modelos, amenazas
+│   └── historico/      # bitácora, auditorías y revisiones fechadas (no describen el estado actual)
+├── specs/              # mapa, plantilla y specs 000 a 023
 ├── backend/            # API FastAPI (app/, alembic/, tests/)
 ├── frontend/           # React + Vite + TS (consola de agencia y portal del cliente)
-├── apps/               # sitios demo (restaurante, ferreteria, consultorio) y plantillas
-├── gitops/             # manifiestos Kubernetes: hub, clients, platform, pruebas
+├── apps/               # sitios demo (restaurante, ferreteria, consultorio, colegio) y plantillas
+├── gitops/             # manifiestos Kubernetes: hub, clients, platform, charts, staging, pruebas
 ├── pipelines/          # puerta de seguridad (Gitea Actions) y runner
-├── observability/      # Prometheus, Alertmanager, Grafana, Loki, Alloy, Blackbox
+├── observability/      # Prometheus, Alertmanager, Grafana, Loki, Tempo, Alloy, Blackbox
 ├── infra/              # OpenTofu y scripts de cliente nuevo
-├── ai/                 # asistente local: compuerta de ML, datos y entrenamiento (spec 012)
+├── ai/                 # compuerta de ML, evaluación del asistente, tutor y registro en MLflow
+├── voz/                # servicio de voz (faster-whisper y Piper)
+├── runbooks/           # procedimientos de operación
+├── demo/               # reinicio y preparación de la demo
 ├── seed/               # datos semilla en JSON
-├── .github/            # plantilla de PR
+├── entrega/            # informe final y paquete de evidencias
+├── .github/            # CI y plantilla de PR
 └── docker-compose.yml  # entorno de desarrollo
 ```
-
-**Lo que se agregará**, cada carpeta cuando empiece su spec:
-
-| Carpeta | Contenido | Spec |
-|---|---|---|
-| `ai/` (resto) | Prompts, evaluación, MLflow, ComfyUI | 012, 014 |
-| `demo/` | Guion y reinicio de la demo | 015 |
 
 ## Convenciones
 
 - **Idioma:** interfaz, documentación y comentarios en español; nombres de código en inglés (`snake_case` en Python y SQL, `camelCase` en TypeScript, `PascalCase` en componentes React).
 - **Diseño:** sobrio entre Vercel y GitHub: monocromo con un solo acento verde, tema claro y oscuro; el estado se comunica con texto e íconos, nunca solo con color.
 - **Datos:** fechas en UTC en la base, mostradas en hora de Colombia (America/Bogota); ids enteros autoincrementales; todo dato de demo es ficticio.
-- **Git:** `main` protegida (se entra por PR). Ramas `feat/<spec>-t<NN>-<slug>`, `fix/<spec>-<slug>`, `docs/<slug>`. Commits con Conventional Commits en español: `feat(001): …`, `docs(004): …`. Un commit = un cambio lógico.
+- **Git:** la rama de integración es `dev` (se entra por PR); `main` recibe lo probado. Ramas `feat/<spec>-t<NN>-<slug>`, `fix/<spec>-<slug>`, `docs/<slug>`. Commits con Conventional Commits en español: `feat(001): …`, `docs(004): …`. Un commit = un cambio lógico.
 - **Secretos:** nunca en el código ni en el repo; `.env` ignorado y `.env.example` con valores de desarrollo.
 - **Editor:** `.editorconfig` y `.gitattributes` fuerzan UTF-8 y finales de línea LF.
 
 ## Cómo contribuir
+Ver [CONTRIBUTING.md](CONTRIBUTING.md): ramas desde `dev`, Conventional Commits en español, una tarea de `tasks.md` por PR y las pruebas que hay que correr antes de abrirlo.
 
-1. Leer la [constitución](constitution/README.md) y la spec en curso (`spec.md`, `plan.md`, `tasks.md`).
-2. Tomar la siguiente tarea libre de `tasks.md` y poner tu nombre al lado.
-3. Crear la rama `feat/<spec>-t<NN>-<slug>` desde `main`.
-4. Commits con Conventional Commits; marcar la casilla de la tarea en `tasks.md` en el mismo PR.
-5. Abrir un PR con la plantilla; otra persona lo revisa contra la spec y la constitución.
+**Plantillas para desarrollar más rápido:**
 
-Para abrir una spec nueva, copiar [`specs/_plantilla/`](specs/_plantilla/spec.md).
+| Qué | Plantilla |
+|---|---|
+| Spec nueva | `specs/_plantilla/` |
+| Sitio de cliente | Plantillas de `apps/templates/` (landing estática y landing con formulario) |
+| Registrar un sitio en el catálogo | *Software Template* «Sitio de cliente» de Backstage (registra el componente en el catálogo; el alta del sitio la hace el Hub por GitOps) |
 
-**Plantillas recomendadas para desarrollar más rápido:**
-
-| Qué | Plantilla | Cuándo |
-|---|---|---|
-| Spec nueva | `specs/_plantilla/` | Siempre |
-| Hub | Esqueleto propio del [plan de la spec 001](specs/001-clientes-y-planes/plan.md) (`full-stack-fastapi-template` solo como referencia: usa SQLModel y Chakra UI, que no encajan con la constitución) | Módulo 1 |
-| Sitio de cliente | Repos plantilla en Gitea (`cliente-landing`, `cliente-landing-form`) marcados como *Template repository* | Módulo 2 |
-| Cliente nuevo de punta a punta | *Software Template* de Backstage que crea repo, namespace y manifiestos con nombre, dominio y plan | Módulos 2–4 |
-
-## Decisiones pendientes
-
-| Decisión | Quién decide | Spec | Fecha límite |
-|---|---|---|---|
-| OpenTofu o Terraform | Profesor | 011 | 24 oct |
-| Qué se presenta en la sustentación del 3 nov | Equipo | 015 | 27 oct |
-| Qwen2.5 7B o Llama 3.1 8B | Prueba en PC B | 012 | 3 nov |
-| SD 1.5 o SDXL Turbo | Prueba en PC B | 014 | 13 nov |
+## Decisiones
+Las decisiones que estaban abiertas ya se tomaron: OpenTofu (compatible con Terraform) para la IaC; Qwen2.5 7B-Instruct como modelo del Hub; la voz como componente multimodal en lugar de la generación de imágenes; y un solo equipo con GPU en lugar de dos. El detalle con su contexto y evidencia va en las decisiones de arquitectura (ADR) del informe final y en [constitution/tech-stack.md](constitution/tech-stack.md).
 
 ## Riesgos
 
 | Riesgo | Respuesta |
 |---|---|
-| PC A justo de RAM con todo el clúster | Límites de memoria en cada componente, retención corta en Prometheus y Loki, runner de Gitea Actions fuera del PC A |
+| Un solo equipo con todo el clúster | Límites de memoria en cada componente, retención corta en Prometheus y Loki, runner de Gitea Actions fuera del PC A |
 | Backstage consume varios GB | Catálogo mínimo; se apaga si falta RAM (la consola del Hub cumple el rol) |
-| Solo 6 GB de VRAM | LLM y ComfyUI por turnos; resúmenes ya aprobados en los datos semilla por si la IA falla |
-| Los dos PC deben verse en la red | IP fija y prueba en la red del salón antes del 30 nov |
+| La GPU de 8 GB la comparten el LLM y los embeddings | Modelo de 7B cuantizado; si la IA no responde, el asistente avisa y el resto del Hub sigue (degradación probada) |
+| Un `apply` de OpenTofu con el inventario completo reescribe a los clientes existentes | Probar con un inventario temporal; hallazgo H-IAC-01 del paquete de evidencias |
 | El Hub se construye desconectado de la infraestructura | Desde el módulo 2, cada pantalla nueva se conecta a Gitea, Argo CD o Prometheus antes de pulirse |
 | Sustentación del 3 nov al cierre del módulo 4 | Caso del restaurante sin IA listo el 31 oct |
 | La firma se verifica en el pipeline, no en el clúster | Nadie despliega a mano; verificación en clúster como mejora futura |
@@ -485,7 +451,7 @@ Para abrir una spec nueva, copiar [`specs/_plantilla/`](specs/_plantilla/spec.md
 
 ## Fuera de alcance
 
-CDN, serverless, escala global, dominios reales, pagos y facturación, video y 3D, multi-agencia.
+CDN, serverless, escala global, dominios reales, pagos y facturación, generación de imagen, video y 3D, multi-agencia.
 
 ## Conclusión
 

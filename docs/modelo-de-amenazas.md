@@ -17,7 +17,7 @@ Una página: qué hay que proteger, quién podría atacar, por dónde, y qué lo
 
 ## Fronteras de confianza
 
-Navegador → Ingress (Traefik) → Hub (web y API) → {PostgreSQL, Gitea, Argo CD, Prometheus, Ollama}. Aparte: runner de Gitea Actions → registro de
+Navegador → Ingress (Traefik) → Hub (web y API) → {PostgreSQL, Gitea, Argo CD, Prometheus, Loki, Tempo (trazas), servicio de voz, Ollama y la compuerta}. Aparte: runner de Gitea Actions → registro de
 imágenes → Argo CD → namespaces de clientes. Las fronteras que más pesan son **cliente ↔ agencia** (roles del Hub) y **Hub ↔ clúster** (el Hub no habla
 con Kubernetes: solo con Gitea, Argo CD y Prometheus).
 
@@ -26,7 +26,7 @@ con Kubernetes: solo con Gitea, Argo CD y Prometheus).
 | # | Amenaza | Control que existe | Riesgo que queda |
 |---|---|---|---|
 | 1 | Un cliente ve datos de otro cliente | Cada ruta filtra por el cliente de la sesión; pruebas de acceso entre clientes (`test_acceso_*`) | Un fallo nuevo de filtrado: se cubre solo con pruebas por ruta nueva |
-| 2 | Sesión robada o suplantada | Token firmado con clave propia, contraseñas con bcrypt, expiración de la sesión | En el laboratorio el Hub se sirve por HTTP; en producción exige HTTPS |
+| 2 | Sesión robada o suplantada | Token firmado con clave propia, contraseñas con bcrypt, expiración de la sesión | En el laboratorio el Hub se sirve por HTTPS (`https://hub.local`, certificado autofirmado de Traefik) y el HTTP sigue abierto para scripts y Alertmanager; en producción, solo HTTPS con un certificado válido |
 | 3 | Una persona se aprueba su propio cambio | Segregación de funciones: quien pide un cambio no lo aprueba (403, queda en bitácora); aprobar exige otra cuenta de la agencia | Dos cuentas de la agencia que se prestan la clave |
 | 4 | Se publica una imagen con un secreto, una CVE crítica o una dependencia vulnerable | Puerta de seguridad: Gitleaks, pruebas, Trivy (imagen, dependencias y configuración), licencias; el Hub no deja aprobar una versión que no pasó | Vulnerabilidades sin arreglo: se aceptan con razón y fecha en el registro de hallazgos |
 | 5 | Se sustituye una imagen por otra manipulada | Firma con Cosign, procedencia SLSA y SBOM firmado, verificados por la puerta; política de admisión que solo deja registro y etiqueta permitidos | La clave de firma vive en un secreto de Gitea; sin transparencia pública (laboratorio) |
