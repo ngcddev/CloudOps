@@ -1,0 +1,15 @@
+# paso:     A05-grafana (A)
+# qué:      Grafana carga el tablero aprovisionado
+# comando:  bash observability/pruebas/grafana.sh
+# inicio:   2026-11-16T22:17:37Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+✓ Grafana cargó el tablero servicio-sitios
+✓ el tablero tiene 13 paneles
+✓ el tablero red-use tiene 8 gráficas (RED y USE)
+✓ fuente de datos prometheus provisionada
+✓ fuente de datos loki provisionada
+✓ fuente de datos tempo provisionada
+Todo en verde.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 32s

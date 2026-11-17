@@ -1,0 +1,59 @@
+{
+  "commit_git": "bb5a284+",
+  "modelo": "faster-whisper-small",
+  "preguntas": 56,
+  "wer_pct": 6.3,
+  "terminos_hub_acertados_pct": 90.5,
+  "preguntas_sin_error_pct": 71.4,
+  "stt_ms_medio": 3412,
+  "stt_ms_p95": 4189,
+  "tts_ms_medio": 695,
+  "audio_s_medio": 2.6,
+  "tiempo_real_x": 0.8,
+  "primera_peticion_ms": 44870,
+  "memoria_mib": 818,
+  "peores": [
+    {
+      "pregunta": "¿Cómo exporto un reporte en PDF?",
+      "transcripcion": "comaxporto, un deporte en pdf.",
+      "errores": 3,
+      "palabras": 6,
+      "terminos": 1,
+      "terminos_bien": 0,
+      "tts_ms": 867,
+      "stt_ms": 3290,
+      "audio_s": 2.62,
+      "total_ms": 8207,
+      "modelo": "faster-whisper-small",
+      "primera": false
+    },
+    {
+      "pregunta": "¿qué base de datos usa el Hub?",
+      "transcripcion": "que base de datos usalub.",
+      "errores": 3,
+      "palabras": 7,
+      "terminos": 1,
+      "terminos_bien": 0,
+      "tts_ms": 341,
+      "stt_ms": 3305,
+      "audio_s": 1.82,
+      "total_ms": 7721,
+      "modelo": "faster-whisper-small",
+      "primera": false
+    },
+    {
+      "pregunta": "¿cómo agrego un técnico nuevo al equipo?",
+      "transcripcion": "Como agredo un tequico nuevo al equipo.",
+      "errores": 2,
+      "palabras": 7,
+      "terminos": 1,
+      "terminos_bien": 0,
+      "tts_ms": 540,
+      "stt_ms": 3250,
+      "audio_s": 2.66,
+      "total_ms": 7883,
+      "modelo": "faster-whisper-small",
+      "primera": false
+    }
+  ]
+}

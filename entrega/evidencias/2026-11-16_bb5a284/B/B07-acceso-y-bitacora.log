@@ -1,0 +1,32 @@
+# paso:     B07-acceso-y-bitacora (B)
+# qué:      Acceso por rol y bitácora de auditoría (spec 007)
+# comando:  bash -c set -a; . ./.env; set +a; HUB=http://localhost:8000 HUB_PASSWORD=$SEED_USER_PASSWORD bash gitops/pruebas/demo-007.sh
+# inicio:   2026-11-16T22:36:09Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== 0. Sin sesión no se responde nada (CA-2) ==
+   OK   GET /api/clients sin sesión: 401
+   OK   GET /api/tickets sin sesión: 401
+== 1. El cliente de La Sazón ve solo lo suyo (CA-3) ==
+   OK   entró como contacto@lasazon.test
+   OK   la lista de clientes trae solo 1
+   OK   es Restaurante La Sazón
+   OK   ninguna solicitud de otros clientes
+== 2. Pedir los datos de El Tornillo da 'no encontrado' (CA-3) ==
+   OK   entró como sofia@forjadigital.test
+   OK   El Tornillo es el cliente #2
+   OK   su detalle como cliente de La Sazón: 404
+   OK   su solicitud #2: 404
+== 3. Un cliente no ejecuta acciones de agencia (CA-4) ==
+   OK   clasificar como cliente: 403
+   OK   la bitácora como cliente: 403
+== 4. La agencia actúa y la bitácora lo registra (CA-5, CA-6) ==
+   OK   solicitud #1 clasificada P2 (el actor del cuerpo se ignora)
+   OK   la bitácora tiene la acción
+   OK   a nombre de Sofía Ramírez, no del id 999 del cuerpo
+   OK   con su hora: 2026-11-16T22:35:27.792754Z
+   OK   la bitácora no tiene ruta para borrar (CA-7)
+
+Demo de la spec 007: todo OK
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 3s

@@ -1,0 +1,30 @@
+# paso:     C30-crear-cliente (C)
+# qué:      Crear, verificar y eliminar un cliente con OpenTofu (k3d no instalado: shim que devuelve el kubeconfig del mismo clúster)
+# comando:  env PYTHON=python K3D_BIN=/c/Users/ngavi/OneDrive/Desktop/CW/CW-CloudOps/entrega/evidencias/shims/k3d bash infra/pruebas/crear-cliente.sh
+# inicio:   2026-11-17T01:31:21Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+>> Creando prueba-t14 (basico)
+[31m╷[0m[0m
+[31m│[0m [0m[1m[31mError: [0m[0m[1mBackend initialization required, please run "tofu init"[0m
+[31m│[0m [0m
+[31m│[0m [0m[0mReason: Initial configuration of the requested backend "local"
+[31m│[0m [0m
+[31m│[0m [0mThe "backend" is the interface that OpenTofu uses to store state,
+[31m│[0m [0mperform operations, etc. If this message is showing up, it means that the
+[31m│[0m [0mOpenTofu configuration you're using is using a custom configuration for
+[31m│[0m [0mthe OpenTofu backend.
+[31m│[0m [0m
+[31m│[0m [0mChanges to backend configurations require reinitialization. This allows
+[31m│[0m [0mOpenTofu to set up the new configuration, copy existing state, etc. Please
+[31m│[0m [0mrun
+[31m│[0m [0m"tofu init" with either the "-reconfigure" or "-migrate-state" flags to
+[31m│[0m [0muse the current configuration.
+[31m│[0m [0m
+[31m│[0m [0mIf the change reason above is incorrect, please verify your configuration
+[31m│[0m [0mhasn't changed and try again. At this point, no changes to your existing
+[31m│[0m [0mconfiguration or state have been made.
+[31m╵[0m[0m
+Error: client-new.sh no pudo completar la creacion de 'prueba-t14'.
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 5s

@@ -1,0 +1,41 @@
+# paso:     C02-imagenes-desplegadas (C)
+# qué:      Imágenes desplegadas en hub y clientes
+# comando:  bash -c kubectl get deploy,cronjob,statefulset -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"/"}{.metadata.name}{"\t"}{.spec.template.spec.containers[*].image}{.spec.jobTemplate.spec.template.spec.containers[*].image}{"\n"}{end}' | sort
+# inicio:   2026-11-16T22:47:42Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+argocd/argocd-application-controller	quay.io/argoproj/argocd:v2.13.3
+argocd/argocd-applicationset-controller	quay.io/argoproj/argocd:v2.13.3
+argocd/argocd-dex-server	ghcr.io/dexidp/dex:v2.41.1
+argocd/argocd-notifications-controller	quay.io/argoproj/argocd:v2.13.3
+argocd/argocd-redis	redis:7.0.15-alpine
+argocd/argocd-repo-server	quay.io/argoproj/argocd:v2.13.3
+argocd/argocd-respaldo	alpine/k8s:1.32.9
+argocd/argocd-server	quay.io/argoproj/argocd:v2.13.3
+cliente-consultorio/backend	gitea.hub.local/forja-digital/consultorio-api:v1
+cliente-consultorio/web	gitea.hub.local/forja-digital/consultorio-web:v1
+cliente-ferreteria-staging/web	gitea.hub.local/forja-digital/ferreteria:v1
+cliente-ferreteria/web	gitea.hub.local/forja-digital/ferreteria:v1.1
+cliente-restaurante/web	gitea.hub.local/forja-digital/restaurante:v1
+gitea/gitea	gitea/gitea:1.22.6-rootless
+gitea/gitea-respaldo	gitea/gitea:1.22.6-rootless
+hub/api	gitea.hub.local/forja-digital/hub-api:v1.17
+hub/backstage	ghcr.io/backstage/backstage@sha256:68f2025a3f2774e04d58a65a948ccd04a93ddab7b7977be850e9df6d3beae6e3
+hub/hub-db-backup	postgres:16-alpine
+hub/postgres	postgres:16-alpine
+hub/voz	gitea.hub.local/forja-digital/hub-voz:v1.2
+hub/web	gitea.hub.local/forja-digital/hub-web:v1.12
+kube-system/coredns	rancher/mirrored-coredns-coredns:1.12.3
+kube-system/local-path-provisioner	rancher/local-path-provisioner:v0.0.31
+kube-system/metrics-server	rancher/mirrored-metrics-server:v0.8.0
+kube-system/traefik	rancher/mirrored-library-traefik:3.3.6
+mlops/mlflow	gitea.hub.local/forja-digital/mlflow:3.18.0
+monitoring/alertmanager	prom/alertmanager:v0.28.1
+monitoring/blackbox	prom/blackbox-exporter:v0.27.0
+monitoring/grafana	grafana/grafana:12.1.1
+monitoring/kube-state-metrics	registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.15.0
+monitoring/loki	grafana/loki:3.5.3
+monitoring/prometheus	prom/prometheus:v3.5.0
+monitoring/tempo	grafana/tempo:2.8.2
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 1s

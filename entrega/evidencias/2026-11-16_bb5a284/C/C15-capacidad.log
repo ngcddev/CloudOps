@@ -1,0 +1,20 @@
+# paso:     C15-capacidad (C)
+# qué:      Informe de cuota, uso y margen por cliente
+# comando:  bash observability/capacidad.sh
+# inicio:   2026-11-16T22:49:11Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Namespaces de clientes: cuota, reservado, uso y margen ==
+namespace                  CPU reservada/cuota Mem reservada/cuota CPU uso      Mem uso      margen
+cliente-consultorio        200m / 250m (80%)  192Mi / 256Mi (75%) 4m           51Mi         AJUSTADO (20% libre en CPU, 25% en memoria)
+cliente-ferreteria-staging 100m / 250m (40%)  64Mi / 256Mi (25%) 1m           12Mi         HOLGADO (60% libre en CPU, 75% en memoria)
+cliente-ferreteria         100m / 500m (20%)  64Mi / 512Mi (12%) 1m           13Mi         HOLGADO (80% libre en CPU, 87% en memoria)
+cliente-restaurante        100m / 1000m (10%) 64Mi / 1024Mi (6%) 1m           13Mi         HOLGADO (90% libre en CPU, 93% en memoria)
+
+== Nodo ==
+k3d-hub-server-0: CPU 405m (2%), memoria 4200Mi (53%)
+k3d-hub-server-0 asignable: 16000m de CPU y 7785Mi de memoria
+
+Todos los namespaces de clientes tienen margen.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 3s

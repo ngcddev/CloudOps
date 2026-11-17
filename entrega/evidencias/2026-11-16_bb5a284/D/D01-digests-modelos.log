@@ -1,0 +1,12 @@
+# paso:     D01-digests-modelos (D)
+# qué:      Los digests de los modelos de Ollama y la suma de la compuerta coinciden con sus fichas
+# comando:  python ai/verificar_modelos.py
+# inicio:   2026-11-17T02:31:27Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+✓ compuerta: el clasificador coincide con su suma SHA-256
+✓ nomic-embed-text: el digest coincide con su ficha
+✓ qwen2.5:3b-instruct: el digest coincide con su ficha
+✓ qwen2.5:7b-instruct: el digest coincide con su ficha
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 3s

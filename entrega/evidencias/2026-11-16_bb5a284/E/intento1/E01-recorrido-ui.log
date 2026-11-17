@@ -1,0 +1,43 @@
+# paso:     E01-recorrido-ui (E)
+# qué:      Recorrido de la interfaz con un navegador real: Hub (agencia y portal), Argo CD, Grafana, MLflow y Gitea, con capturas
+# comando:  env SALIDA=/c/Users/ngavi/OneDrive/Desktop/CW/CW-CloudOps/entrega/evidencias/2026-11-16_bb5a284/E/capturas bash entrega/evidencias/recorrido-ui.sh
+# inicio:   2026-11-17T03:36:59Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+OK    E01-login | https://hub.local/login | esperado: Contraseña
+FALLA E02-agencia-tablero | https://hub.local/login | esperado: La Sazón
+FALLA E03-agencia-clientes | https://hub.local/login | esperado: La Sazón
+FALLA E04-agencia-cliente | https://hub.local/login | esperado: La Sazón
+FALLA E05-agencia-metricas | https://hub.local/login | esperado: isponibilidad
+OK    E06-agencia-solicitudes | https://hub.local/login | esperado: None
+FALLA E07-agencia-cambios | https://hub.local/login | esperado: ambio
+FALLA E08-agencia-servicios | https://hub.local/login | esperado: restaurante
+FALLA E09-agencia-incidentes | https://hub.local/login | esperado: ncidente
+FALLA E10-agencia-reportes | https://hub.local/login | esperado: eporte
+FALLA E11-agencia-asistente | https://hub.local/login | esperado: sistente
+FALLA E12-agencia-bitacora | https://hub.local/login | esperado: itácora
+FALLA E13-portal-inicio | https://hub.local/login | esperado: La Sazón
+OK    E14-portal-solicitudes | https://hub.local/login | esperado: None
+FALLA E15-portal-reportes | https://hub.local/login | esperado: eporte
+AVISO login Argo CD: Page.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("input[name=username], #username")
+
+FALLA E20-argocd-aplicaciones | https://argocd.hub.local/login?return_url=https%3A%2F%2Fargocd.hub.loc | esperado: hub
+FALLA E21-argocd-cliente-restaurante | https://argocd.hub.local/login?return_url=https%3A%2F%2Fargocd.hub.loc | esperado: restaurante
+AVISO login Grafana: Page.fill: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("input[name=user]")
+
+FALLA E30-grafana-tableros | https://grafana.hub.local/login?redirectTo=%2Fdashboards | esperado: ashboard
+AVISO abrir un tablero: Page.click: Timeout 8000ms exceeded.
+Call log:
+  - waiting for locator("a[href*='/d/']")
+
+OK    E31-grafana-tablero | https://grafana.hub.local/login?redirectTo=%2Fdashboards | esperado: None
+OK    E40-mlflow-modelos | https://mlflow.hub.local/#/models | esperado: compuerta
+OK    E41-gitea-hub-gitops | http://gitea.hub.local/forja-digital/hub-gitops | esperado: hub-gitops
+OK    E42-gitea-puerta-ferreteria | http://gitea.hub.local/forja-digital/ferreteria/actions | esperado: ctions
+errores de JavaScript en el Hub: 0 []
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 150s

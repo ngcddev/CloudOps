@@ -1,0 +1,41 @@
+# paso:     C17-demo-003 (C)
+# qué:      Criterios de la spec 003: plataforma del clúster
+# comando:  bash gitops/pruebas/demo.sh
+# inicio:   2026-11-16T22:49:17Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== 1. Espacios y cuota de cada cliente según su plan (CA-1, CA-2) ==
+   argocd                       Active   2d5h                        
+   cliente-consultorio          Active   2d5h   consultorio          basico
+   cliente-ferreteria           Active   2d5h   ferreteria           estandar
+   cliente-ferreteria-staging   Active   2d1h   ferreteria-staging   estandar
+   cliente-restaurante          Active   2d5h   restaurante          premium
+   gitea                        Active   2d5h                        
+   hub                          Active   2d5h                        
+   mlops                        Active   2d3h                        
+   monitoring                   Active   2d5h                        
+   OK   existe hub
+   OK   existe argocd
+   OK   existe monitoring
+   OK   existe gitea
+   OK   existe cliente-restaurante
+   OK   existe cliente-ferreteria
+   OK   existe cliente-consultorio
+   OK   cliente-restaurante: cuota 1000m 1Gi = plan premium
+   OK   cliente-ferreteria: cuota 500m 512Mi = plan estandar
+   OK   cliente-consultorio: cuota 250m 256Mi = plan basico
+== 2. Los 3 sitios y el Hub por su dirección (CA-5) ==
+   OK   restaurante.hub.local/health -> 200
+   OK   ferreteria.hub.local/health -> 200
+   OK   consultorio.hub.local/health -> 200
+   OK   hub.local -> 200
+== 3. De la sala del restaurante a la ferretería (CA-3) ==
+   OK   acceso entre clientes bloqueado
+== 4. Contenedor como root en cliente-restaurante (CA-4) ==
+   OK   root y privilegiado rechazados
+== 5. Un sitio con la salud fallando no recibe tráfico (CA-6) ==
+   OK   el Pod v2 no recibe tráfico
+
+DEMO COMPLETA: todos los criterios pasan.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 38s

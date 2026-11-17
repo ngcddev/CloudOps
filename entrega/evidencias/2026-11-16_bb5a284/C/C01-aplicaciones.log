@@ -1,0 +1,18 @@
+# paso:     C01-aplicaciones (C)
+# qué:      Applications de Argo CD: sincronía y salud
+# comando:  kubectl get applications -n argocd
+# inicio:   2026-11-16T22:47:41Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+NAME                         SYNC STATUS   HEALTH STATUS
+cliente-consultorio          Synced        Healthy
+cliente-ferreteria           Synced        Healthy
+cliente-ferreteria-staging   Synced        Healthy
+cliente-restaurante          Synced        Healthy
+hub                          Synced        Healthy
+monitoring                   Synced        Healthy
+plataforma-backstage         Synced        Healthy
+plataforma-mlops             Synced        Healthy
+plataforma-respaldo          Synced        Healthy
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 0s

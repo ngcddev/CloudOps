@@ -1,0 +1,7 @@
+A01-ruff	A	FALLO	1	8	2026-11-16T22:03:41Z	Lint de Python (ruff 0.14.0, ruff.toml)	docker run --rm -v C:/Users/ngavi/OneDrive/Desktop/CW/CW-CloudOps:/w -w /w python:3.12-slim sh -c pip install -q ruff==0.14.0 2>&1 | tail -1 && ruff check .
+A02-frontend	A	FALLO	2	83	2026-11-16T22:03:50Z	Frontend: npm ci, tsc --noEmit y build (Node 22)	docker run --rm -v C:/Users/ngavi/OneDrive/Desktop/CW/CW-CloudOps/frontend:/src:ro node:22 sh -c cp -r /src /tmp/f && cd /tmp/f && rm -rf node_modules && npm ci --no-audit --no-fund && npx tsc --noEmit && npm run build
+A08-psa-restringido	A	FALLO	1	0	2026-11-16T22:07:14Z	Los manifiestos del Hub cumplen PSA restricted	bash -c kubectl kustomize gitops/hub | python gitops/pruebas/psa_restringido.py
+A09-sincronizador	A	FALLO	1	16	2026-11-16T22:07:15Z	Lógica del sincronizador hub-gitops (repositorios falsos)	bash gitops/pruebas/sincronizar-prueba.sh
+A14-smoke-colegio	A	FALLO	1	50	2026-11-16T22:11:01Z	Smoke del sitio del colegio	bash apps/colegio/smoke-test.sh
+A15-smoke-consultorio	A	FALLO	1	49	2026-11-16T22:11:52Z	Smoke del sitio del consultorio	bash apps/consultorio/smoke-test.sh
+A16-smoke-landing	A	FALLO	1	61	2026-11-16T22:12:42Z	Smoke de la plantilla landing-form	bash apps/templates/landing-form/smoke-test.sh

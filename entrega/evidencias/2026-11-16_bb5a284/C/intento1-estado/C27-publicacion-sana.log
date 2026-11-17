@@ -1,0 +1,10 @@
+# paso:     C27-publicacion-sana (C)
+# qué:      Una publicación sana no abre incidente
+# comando:  bash observability/pruebas/publicacion-sana.sh
+# inicio:   2026-11-16T23:18:39Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Publicar v1.1 en cliente-ferreteria por el Hub ==
+   FALLA no se aprobó: {"detail":"Quien pidió el cambio no puede aprobarlo: debe aprobarlo otra persona de la agencia."}{"id":18,"ticket_id":53,"service_id":2,"from_version":"v9.180050b","to_version":"v1.1","status":"pendiente","requested_by_id":1,"requested_by_name":"Sofía Ramírez","approved_by_id":null,"approved_by_name":null,"ticket_title":"Publicación sana v1.1","gitops_commit_sha":null,"rejection_reason":null,"created_at":"2026-11-16T23:18:41.434914Z","approved_at":null,"deployed_at":null}
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 2s

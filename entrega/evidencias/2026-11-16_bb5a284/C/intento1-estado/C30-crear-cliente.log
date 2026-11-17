@@ -1,0 +1,9 @@
+# paso:     C30-crear-cliente (C)
+# qué:      Crear, verificar y eliminar un cliente con OpenTofu
+# comando:  bash infra/pruebas/crear-cliente.sh
+# inicio:   2026-11-16T23:24:32Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+Error: falta GITEA_TOKEN en el entorno.
+# ---------------------------------------------------------------
+# código de salida: 1 · estado: FALLO · duración: 1s

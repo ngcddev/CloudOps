@@ -1,0 +1,34 @@
+# paso:     C18b-resembrar-puerta (C)
+# qué:      Volver a correr la puerta de seguridad de v1, v1.1 y v2 de los sitios (la base del Hub quedó vacía tras el reinicio)
+# comando:  bash entrega/evidencias/resembrar-puerta.sh
+# inicio:   2026-11-17T00:27:37Z
+# commit:   bb5a284 +cambios locales
+# ---------------------------------------------------------------
+== ferreteria ==
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   v1 subida: la puerta corre sola
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   v1.1 subida: la puerta corre sola
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   v2 subida: la puerta corre sola
+== restaurante ==
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   v1 subida: la puerta corre sola
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   v2 subida: la puerta corre sola
+== consultorio ==
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   v1 subida: la puerta corre sola
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+   v2 subida: la puerta corre sola
+Esperando a que el runner termine las corridas (hasta 15 min)...
+sin corridas pendientes en ferreteria
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 68s

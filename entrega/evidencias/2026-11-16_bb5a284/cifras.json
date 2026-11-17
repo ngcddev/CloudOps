@@ -1,0 +1,132 @@
+{
+  "junit_modo_completo": {
+    "tests": 1139,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 7,
+    "xfail": 1,
+    "omitidas": 6,
+    "pasaron": 1132,
+    "fallan": []
+  },
+  "junit_modo_env": {
+    "tests": 1139,
+    "failures": 6,
+    "errors": 0,
+    "skipped": 7,
+    "xfail": 1,
+    "omitidas": 6,
+    "pasaron": 1126,
+    "fallan": [
+      "test_assistant::test_pregunta_del_tema_despierta_al_llm",
+      "test_assistant::test_en_modo_completo_el_llm_recibe_toda_la_ayuda_y_la_consulta_la_registra",
+      "test_assistant::test_el_llm_responde_de_forma_determinista_y_corta",
+      "test_knowledge::test_en_modo_completo_se_registra_el_modo",
+      "test_pool_y_limites::test_preguntar_al_asistente_no_sostiene_una_conexion_mientras_espera_a_ollama",
+      "test_telemetry::test_una_pregunta_del_tema_deja_un_span_por_etapa"
+    ]
+  },
+  "evaluaciones_ia": {
+    "eval-completo-ayuda": {
+      "preguntas": 40,
+      "recuperacion_pct": 100.0,
+      "acierto_pct": 95.0,
+      "sin_info_correctas": 9,
+      "sin_info_total": 9,
+      "latencia_media_s": 1.6
+    },
+    "eval-completo-ayuda_ciegas": {
+      "preguntas": 16,
+      "recuperacion_pct": 100.0,
+      "acierto_pct": 100.0,
+      "sin_info_correctas": 4,
+      "sin_info_total": 4,
+      "latencia_media_s": 0.9
+    },
+    "eval-completo-exfiltracion": {
+      "preguntas": 12,
+      "recuperacion_pct": 0,
+      "acierto_pct": 91.7,
+      "inyecciones_resistidas": 11,
+      "inyecciones_total": 12,
+      "sin_info_correctas": 0,
+      "sin_info_total": 0,
+      "latencia_media_s": 1.7
+    },
+    "eval-completo-inyeccion": {
+      "preguntas": 10,
+      "recuperacion_pct": 0,
+      "acierto_pct": 90.0,
+      "inyecciones_resistidas": 9,
+      "inyecciones_total": 10,
+      "sin_info_correctas": 0,
+      "sin_info_total": 0,
+      "latencia_media_s": 0.7
+    },
+    "eval-rag-ayuda": {
+      "preguntas": 40,
+      "recuperacion_pct": 93.5,
+      "acierto_pct": 92.5,
+      "sin_info_correctas": 9,
+      "sin_info_total": 9,
+      "latencia_media_s": 1.0
+    },
+    "eval-rag-ayuda_ciegas": {
+      "preguntas": 16,
+      "recuperacion_pct": 100.0,
+      "acierto_pct": 100.0,
+      "sin_info_correctas": 4,
+      "sin_info_total": 4,
+      "latencia_media_s": 0.9
+    },
+    "eval-rag-exfiltracion": {
+      "preguntas": 12,
+      "recuperacion_pct": 0,
+      "acierto_pct": 83.3,
+      "inyecciones_resistidas": 10,
+      "inyecciones_total": 12,
+      "sin_info_correctas": 0,
+      "sin_info_total": 0,
+      "latencia_media_s": 7.7
+    },
+    "eval-rag-inyeccion": {
+      "preguntas": 10,
+      "recuperacion_pct": 0,
+      "acierto_pct": 90.0,
+      "inyecciones_resistidas": 9,
+      "inyecciones_total": 10,
+      "sin_info_correctas": 0,
+      "sin_info_total": 0,
+      "latencia_media_s": 1.0
+    }
+  },
+  "cronometro_p1": {
+    "detección_s": [
+      48,
+      48,
+      49
+    ],
+    "mitigado_s": [
+      168,
+      169,
+      166
+    ]
+  },
+  "caso_restaurante": "3.4",
+  "voz": {
+    "wer_pct": "5.8",
+    "preguntas_sin_error_pct": "78.6",
+    "stt_ms_medio": "3331",
+    "tts_ms_medio": "588",
+    "memoria_mib": "787"
+  },
+  "clon_limpio": {
+    "arranque_frio_s": "23",
+    "pytest": "1128 passed, 6 skipped in 91.46s (0:01:31)",
+    "reinicio_api_s": "6",
+    "apagado_s": "3"
+  },
+  "pytest_ai": "40 passed",
+  "pytest_postgres": "29 passed",
+  "tablas_respaldo": "23"
+}

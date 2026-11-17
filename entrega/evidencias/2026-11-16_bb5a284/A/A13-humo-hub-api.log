@@ -1,0 +1,14 @@
+# paso:     A13-humo-hub-api (A)
+# qué:      Imagen de producción de la API: sin root, sin pytest, migra y responde
+# comando:  bash pipelines/pruebas/humo-hub-api.sh
+# inicio:   2026-11-16T22:23:53Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+✓ la imagen de producción se construye
+✓ corre como usuario 10001, no como root
+✓ no lleva pytest ni las pruebas
+✓ la API responde /health tras migrar
+✓ las migraciones corrieron y se sembraron 5 usuarios
+Todo en verde.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 28s

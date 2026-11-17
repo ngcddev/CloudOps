@@ -1,0 +1,60 @@
+# paso:     A04-validar-observabilidad (A)
+# qué:      promtool, amtool y kustomize sobre la observabilidad
+# comando:  bash observability/pruebas/validar.sh
+# inicio:   2026-11-16T22:17:09Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+Checking /obs/prometheus/prometheus.yml
+  SUCCESS: 3 rule files found
+ SUCCESS: /obs/prometheus/prometheus.yml is valid prometheus config file syntax
+
+Checking /etc/prometheus/reglas/plataforma.yml
+  SUCCESS: 8 rules found
+
+Checking /etc/prometheus/reglas/presupuesto.yml
+  SUCCESS: 12 rules found
+
+Checking /etc/prometheus/reglas/sitios.yml
+  SUCCESS: 1 rules found
+
+✓ prometheus.yml es válido
+Checking /obs/prometheus/reglas/plataforma.yml
+  SUCCESS: 8 rules found
+
+Checking /obs/prometheus/reglas/presupuesto.yml
+  SUCCESS: 12 rules found
+
+Checking /obs/prometheus/reglas/sitios.yml
+  SUCCESS: 1 rules found
+
+✓ las reglas de alerta son válidas
+  SUCCESS
+
+✓ SitioCaido pasa sus pruebas
+  SUCCESS
+
+✓ las alertas de presupuesto de error pasan sus pruebas
+  SUCCESS
+
+✓ el tablero calcula bien el SLI y el presupuesto de error
+  SUCCESS
+
+✓ las alertas de la plataforma (Hub, monitoreo, OOM y reinicios) pasan sus pruebas
+Checking /obs/pruebas/.tablero-reglas.yml
+  SUCCESS: 0 rules found
+
+✓ las expresiones del tablero de Grafana son PromQL válido
+Checking '/obs/alertmanager/alertmanager.yml'  SUCCESS
+Found:
+ - global config
+ - route
+ - 0 inhibit rules
+ - 2 receivers
+ - 0 templates
+
+✓ alertmanager.yml es válido
+✓ las alertas de la plataforma van a solo-ver y SitioCaido sigue yendo al Hub
+✓ observability/ arma con kustomize
+Todo en verde.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 27s

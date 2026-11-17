@@ -1,0 +1,21 @@
+# paso:     A10-drift-opentofu (A)
+# qué:      Drift de OpenTofu (plan -detailed-exitcode)
+# comando:  bash infra/pruebas/drift.sh
+# inicio:   2026-11-16T22:20:33Z
+# commit:   bb5a284
+# ---------------------------------------------------------------
+== Preparación
+   OK   tofu init
+   OK   apply inicial
+== Sin drift: el plan queda en 0
+   OK   plan sin cambios (código 0): la configuración es idempotente
+== Cambio a mano: el plan sale con 2
+   OK   el plan detectó el drift (código 2)
+   OK   el plan nombra el recurso que cambió (local_file.config)
+== Reconciliar: apply devuelve lo declarado
+   OK   el archivo volvió a «replicas = 1»
+   OK   el plan vuelve a 0
+
+Drift de OpenTofu: se detecta y se corrige.
+# ---------------------------------------------------------------
+# código de salida: 0 · estado: PASO · duración: 20s
