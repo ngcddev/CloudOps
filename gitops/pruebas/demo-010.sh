@@ -3,9 +3,12 @@
 #   1. El tablero de la agencia trae los 3 clientes, disponibilidad y carga por técnico.
 #   2. El portal de La Sazón ve lo suyo, sin costo ni horas, y no puede pedir otro cliente.
 #   3. La serie del mes tiene puntos de disponibilidad y latencia cada 5 min.
-#   4. Se tumba el sitio de La Sazón: aparece el incidente de alerta y el tablero lo muestra caído.
-#   5. Se levanta el sitio: el incidente queda mitigado, el MTTR deja de ser nulo y la serie tiene el hueco.
-#   6. Se apaga Prometheus: la consola y el portal responden 200 con «sin datos» (null / listas vacías).
+#   4. Se publica por GitOps la versión rota (v2) de La Sazón, con otra cuenta como aprobadora: el sitio cae, aparece el incidente
+#      de alerta y el tablero lo muestra caído. (No se usa `kubectl scale`: Argo CD con selfHeal lo revierte en segundos, hallazgo H-OPS-02.)
+#   5. Se pide el rollback desde el incidente (el botón del Hub: git revert en hub-gitops): el sitio vuelve, el incidente queda
+#      mitigado, el MTTR deja de ser nulo y la serie tiene el hueco.
+#   6. Se apaga Prometheus con el selfHeal de la Application `monitoring` en pausa (si no, Argo CD lo vuelve a encender): la consola
+#      y el portal responden 200 con «sin datos» (null / listas vacías).
 #   7. Se restaura todo (el trap también lo hace si algo falla).
 #
 # Uso:
@@ -15,33 +18,42 @@
 #   En desarrollo con docker compose: HUB=http://localhost:8000 HUB_PASSWORD=hub-desarrollo ...
 #
 # Requiere: clúster con las specs 003–009 aplicadas (Hub, 3 sitios, Prometheus, Blackbox, Traefik y
-# Alertmanager), entradas *.hub.local en hosts, curl y kubectl. Variables opcionales:
-#   HUB (http://hub.local), MES (mes actual), LIMITE (300 s), CLIENTE_ID (1), NAMESPACE (cliente-restaurante),
-#   SITIO (http://restaurante.hub.local).
+# Alertmanager), entradas *.hub.local en hosts, curl y kubectl, La Sazón en v1 y la versión v2 con su puerta de seguridad en «ok»
+# (bash entrega/evidencias/dejar-demo-lista.sh la deja así). Variables opcionales:
+#   HUB (http://hub.local), MES (mes actual), LIMITE (420 s), CLIENTE_ID (1), NAMESPACE (cliente-restaurante),
+#   SITIO (http://restaurante.hub.local), USUARIO_APROBADOR (camilo@forjadigital.test), VERSION_ROTA (v2).
 #
-# Ojo: deja el sitio y Prometheus apagados un momento; al final (o al fallar) los vuelve a levantar.
+# Ojo: deja el sitio roto y Prometheus apagado un momento; al final (o al fallar) hace el rollback, enciende Prometheus y devuelve el selfHeal.
 set -uo pipefail
 
 HUB="${HUB:-http://hub.local}"
 MES="${MES:-$(date +%Y-%m)}"
-LIMITE="${LIMITE:-300}"
+LIMITE="${LIMITE:-420}"
 CLIENTE_ID="${CLIENTE_ID:-1}"
 NAMESPACE="${NAMESPACE:-cliente-restaurante}"
 SITIO="${SITIO:-http://restaurante.hub.local}"
 USUARIO_AGENCIA="${USUARIO_AGENCIA:-sofia@forjadigital.test}"
 USUARIO_CLIENTE="${USUARIO_CLIENTE:-contacto@lasazon.test}"
+# Segregación de funciones (spec 018): quien pide el cambio no lo aprueba; lo aprueba otra cuenta de la agencia
+USUARIO_APROBADOR="${USUARIO_APROBADOR:-camilo@forjadigital.test}"
+VERSION_ROTA="${VERSION_ROTA:-v2}"
 : "${HUB_PASSWORD:?Falta HUB_PASSWORD (la contraseña de los usuarios sembrados; ver el encabezado)}"
 
 fallos=0
 INCIDENTE=""
-SITIO_TOCADO=0
+ROTA_PUBLICADA=0
 PROMETHEUS_TOCADO=0
+AUTOHEAL_PAUSADO=0
+AUTOHEAL_ON='{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+AUTOHEAL_OFF='{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":false}}}}'
 
 ok()    { echo "   OK   $1"; }
 falla() { echo "   FALLA $1"; fallos=$((fallos+1)); }
 # Primer valor de un campo JSON simple (cadena o número)
 campo() { sed -n "s/.*\"$1\": *\"\{0,1\}\([^\",}]*\)\"\{0,1\}.*/\1/p" | head -1; }
 codigo() { curl -s -m 15 -o /dev/null -w '%{http_code}' "$@"; }
+# Primera aparición de un campo en un JSON de una línea (el detalle repite claves dentro de objetos anidados)
+primero() { grep -o "\"$1\": *\"\{0,1\}[^\",}]*" | head -1 | sed "s/^\"$1\": *\"\{0,1\}//"; }
 
 entrar() {   # entrar <correo> → token
   curl -s -m 15 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login" \
@@ -50,7 +62,8 @@ entrar() {   # entrar <correo> → token
 
 TOKEN_AGENCIA="$(entrar "$USUARIO_AGENCIA")"
 TOKEN_CLIENTE="$(entrar "$USUARIO_CLIENTE")"
-if [ -z "$TOKEN_AGENCIA" ] || [ -z "$TOKEN_CLIENTE" ]; then
+TOKEN_APROBADOR="$(entrar "$USUARIO_APROBADOR")"
+if [ -z "$TOKEN_AGENCIA" ] || [ -z "$TOKEN_CLIENTE" ] || [ -z "$TOKEN_APROBADOR" ]; then
   echo "No se pudo entrar al Hub (¿HUB_PASSWORD correcta y usuarios sembrados?)." >&2
   exit 2
 fi
@@ -58,11 +71,14 @@ agencia_get() { curl -s -m 60 -H "Authorization: Bearer ${TOKEN_AGENCIA}" "$@"; 
 cliente_get() { curl -s -m 60 -H "Authorization: Bearer ${TOKEN_CLIENTE}" "$@"; }
 
 restaurar() {
-  if [ "$SITIO_TOCADO" = "1" ]; then
-    kubectl -n "$NAMESPACE" scale deploy/web --replicas=1 >/dev/null 2>&1 || true
+  if [ "$ROTA_PUBLICADA" = "1" ] && [ -n "$INCIDENTE" ]; then
+    curl -s -m 60 -o /dev/null -H "Authorization: Bearer ${TOKEN_AGENCIA}" -X POST "${HUB}/api/incidents/${INCIDENTE}/rollback" || true
   fi
   if [ "$PROMETHEUS_TOCADO" = "1" ]; then
     kubectl -n monitoring scale deploy/prometheus --replicas=1 >/dev/null 2>&1 || true
+  fi
+  if [ "$AUTOHEAL_PAUSADO" = "1" ]; then
+    kubectl -n argocd patch application monitoring --type merge -p "$AUTOHEAL_ON" >/dev/null 2>&1 || true
   fi
 }
 trap restaurar EXIT
@@ -160,12 +176,25 @@ n_puntos="$(echo "$SERIE" | grep -o '"timestamp":' | wc -l | tr -d ' ')"
 
 # ---------- 4. La caída (T18) ----------
 
-echo "== 4. Caída del sitio de La Sazón =="
+echo "== 4. Caída del sitio de La Sazón (versión rota publicada por GitOps) =="
 BASE_ID="$(incidentes | grep -o '"id":[0-9]*' | cut -d: -f2 | sort -n | tail -1)"
 BASE_ID="${BASE_ID:-0}"
-SITIO_TOCADO=1
-kubectl -n "$NAMESPACE" scale deploy/web --replicas=0 >/dev/null \
-  && ok "sitio apagado (0 réplicas)" || falla "no se pudo apagar el sitio"
+post() { curl -s -m 30 -H "Authorization: Bearer ${TOKEN_AGENCIA}" -H 'Content-Type: application/json' -X POST "$1" -d "$2"; }
+SERVICIO="$(agencia_get "${HUB}/api/services/status" | tr '{' '\n' | grep "\"${NAMESPACE}\"" | primero service_id)"
+[ -n "$SERVICIO" ] || { echo "FALLA: no se encontró el servicio de ${NAMESPACE} en el Hub." >&2; exit 2; }
+ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Demo 010: publicar ${VERSION_ROTA}\",\"description\":\"Caida provocada desde Git para la demo del tablero.\",\"kind\":\"cambio\"}")"
+TICKET_ID="$(echo "$ticket" | primero id)"
+cambio="$(post "${HUB}/api/change-requests" "{\"ticket_id\":${TICKET_ID:-0},\"to_version\":\"${VERSION_ROTA}\"}")"
+CAMBIO_ID="$(echo "$cambio" | primero id)"
+[ -n "$CAMBIO_ID" ] || { falla "no se pudo registrar el cambio a ${VERSION_ROTA}: ${cambio}"; exit 1; }
+aprobado="$(curl -s -m 60 -H "Authorization: Bearer ${TOKEN_APROBADOR}" -H 'Content-Type: application/json' -X POST "${HUB}/api/change-requests/${CAMBIO_ID}/approve" -d '{}')"
+SHA="$(echo "$aprobado" | primero gitops_commit_sha)"
+if [ -n "$SHA" ]; then
+  ROTA_PUBLICADA=1
+  ok "cambio #${CAMBIO_ID} a ${VERSION_ROTA} aprobado por ${USUARIO_APROBADOR} (commit ${SHA:0:7} en hub-gitops)"
+else
+  falla "no se aprobó el cambio a ${VERSION_ROTA}: ${aprobado}"; exit 1
+fi
 esperar "que el sitio deje de responder" sitio_abajo && ok "el sitio no responde"
 
 detalle_incidente() { agencia_get "${HUB}/api/incidents/${INCIDENTE}"; }
@@ -199,11 +228,15 @@ espera=$(( 300 - ahora % 300 + 10 ))
 echo "   (esperando ${espera} s para que la caída quede en un punto de la serie)"
 sleep "$espera"
 
-kubectl -n "$NAMESPACE" scale deploy/web --replicas=1 >/dev/null \
-  && ok "sitio encendido (1 réplica)" || falla "no se pudo encender el sitio"
-SITIO_TOCADO=0
-kubectl -n "$NAMESPACE" rollout status deploy/web --timeout=180s >/dev/null 2>&1 || true
-esperar "que el sitio responda 200" sitio_arriba && ok "el sitio responde 200"
+[ -n "$INCIDENTE" ] || { falla "sin incidente abierto no hay rollback que pedir"; exit 1; }
+codigo_rollback="$(codigo -m 60 -H "Authorization: Bearer ${TOKEN_AGENCIA}" -X POST "${HUB}/api/incidents/${INCIDENTE}/rollback")"
+if [ "$codigo_rollback" = "200" ]; then
+  ok "rollback pedido desde el incidente #${INCIDENTE} (git revert en hub-gitops)"
+  ROTA_PUBLICADA=0
+else
+  falla "el rollback respondió ${codigo_rollback}"; exit 1
+fi
+esperar "que el sitio responda 200" sitio_arriba && ok "el sitio responde 200 (Argo CD aplicó el rollback)"
 
 incidente_mitigado() {
   local detalle
@@ -230,6 +263,24 @@ echo "== 6. Prometheus apagado =="
 # Se usa el mismo mes de la demo, pero hay que esperar a que venza la caché de 60 s de la API
 # (integrations/prometheus.py). Con otro mes sin datos la prueba no probaría nada: daría null
 # aunque Prometheus estuviera encendido.
+# Con el selfHeal en pausa, Argo CD igual sincroniza UNA vez una Application si la revisión actual del repositorio es distinta de la de su última operación de
+# sincronización (un commit nuevo, como el del rollback del paso 5, que no cambió los manifiestos de `monitoring` y por eso no le generó ninguna operación). Si pasara
+# justo después de apagar Prometheus, lo volvería a encender. Por eso antes de pausar se fuerza una operación de sincronización en la revisión actual y se espera a que termine.
+kubectl -n argocd annotate application monitoring argocd.argoproj.io/refresh=hard --overwrite >/dev/null 2>&1
+kubectl -n argocd patch application monitoring --type merge -p '{"operation":{"initiatedBy":{"username":"demo-010"},"sync":{"revision":"main"}}}' >/dev/null 2>&1
+monitoring_al_dia() {
+  local actual operacion fase
+  actual="$(kubectl -n argocd get application monitoring -o jsonpath='{.status.sync.revision}' 2>/dev/null)"
+  operacion="$(kubectl -n argocd get application monitoring -o jsonpath='{.status.operationState.syncResult.revision}' 2>/dev/null)"
+  fase="$(kubectl -n argocd get application monitoring -o jsonpath='{.status.operationState.phase}' 2>/dev/null)"
+  [ -n "$actual" ] && [ "$actual" = "$operacion" ] && [ "$fase" = "Succeeded" ]
+}
+esperar "que la última sincronización de monitoring sea de la revisión actual" monitoring_al_dia && ok "monitoring sincronizado en la revisión actual (sin sincronización pendiente)"
+# Prometheus no se puede apagar por Git sin tocar el repositorio de la plataforma; por eso se pausa el selfHeal de su Application
+# mientras dura la prueba (el trap lo devuelve). Sin la pausa, Argo CD lo vuelve a encender en segundos (H-OPS-02).
+AUTOHEAL_PAUSADO=1
+kubectl -n argocd patch application monitoring --type merge -p "$AUTOHEAL_OFF" >/dev/null \
+  && ok "selfHeal de la Application monitoring en pausa" || falla "no se pudo pausar el selfHeal de monitoring"
 PROMETHEUS_TOCADO=1
 kubectl -n monitoring scale deploy/prometheus --replicas=0 >/dev/null \
   && ok "Prometheus apagado" || falla "no se pudo apagar Prometheus"
@@ -253,6 +304,8 @@ echo "$SERIE_OFF" | grep -q '"availability":\[\]' && echo "$SERIE_OFF" | grep -q
 
 kubectl -n monitoring scale deploy/prometheus --replicas=1 >/dev/null 2>&1 || true
 PROMETHEUS_TOCADO=0
+kubectl -n argocd patch application monitoring --type merge -p "$AUTOHEAL_ON" >/dev/null 2>&1 \
+  && AUTOHEAL_PAUSADO=0 && ok "selfHeal de monitoring devuelto" || falla "no se pudo devolver el selfHeal de monitoring"
 ok "Prometheus encendido de nuevo (puede tardar en volver a tener datos)"
 
 # ---------- Resumen ----------
