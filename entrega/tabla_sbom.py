@@ -9,6 +9,7 @@ import sys
 
 IMAGENES = {
     "hub-api_v1.17": "hub-api:v1.17",
+    "hub-api_v1.18": "hub-api:v1.18",
     "hub-voz_v1.2": "hub-voz:v1.2",
     "hub-web_v1.12": "hub-web:v1.12",
 }

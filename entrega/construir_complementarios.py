@@ -114,6 +114,6 @@ if __name__ == "__main__":
         construir_xlsx(n)
     construir_anexo_csv(RAIZ / "entrega/datos/diccionario.csv", "Apendice_A_Diccionario_de_datos.xlsx", "Diccionario de datos",
                         "Apéndice A. Generado desde backend/app/models/ con entrega/generar_diccionario.py (commit bb5a284).")
-    construir_anexo_csv(RAIZ / "entrega/evidencias/sbom-2026-11-18/tabla-sbom.csv", "Apendice_D_Tabla_SBOM.xlsx", "SBOM Syft",
-                        "Apéndice D. Syft v1.55.0 sobre hub-api:v1.17, hub-web:v1.12 y hub-voz:v1.2 (18 nov 2026); "
-                        "SBOM completos en entrega/evidencias/sbom-2026-11-18/.")
+    construir_anexo_csv(RAIZ / "entrega/evidencias/sbom-2026-11-20/tabla-sbom.csv", "Apendice_D_Tabla_SBOM.xlsx", "SBOM Syft",
+                        "Apéndice D. Syft v1.55.0 sobre hub-api:v1.18, hub-web:v1.12 y hub-voz:v1.2 (20 nov 2026); "
+                        "SBOM completos en entrega/evidencias/sbom-2026-11-20/.")
