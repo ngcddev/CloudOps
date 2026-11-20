@@ -1,0 +1,22 @@
+# Excepciones de laboratorio de la puerta de seguridad (tarea T14 de la spec 023, hallazgo H-CVE-01). Es el archivo de ignorados de Trivy (--ignorefile) y cada
+# excepción trae `expired_at`: pasada esa fecha deja de valer sola y la puerta vuelve a bloquear. Solo cubre las CVE que se nombran aquí, no un paquete entero.
+#
+# Por qué existe: el 20 de noviembre de 2026 la base de datos de Trivy empezó a marcar cuatro CVE críticas en nginx 1.30.6-r1 con arreglo en 1.30.7-r0, pero la imagen base
+# nginxinc/nginx-unprivileged:1.30-alpine (la última publicada) todavía trae la 1.30.6 y el nginx de esa imagen no se puede actualizar desde el repositorio de Alpine sin
+# cambiar la imagen base. Sin esta excepción ninguna versión de los sitios pasa la puerta y la demo del laboratorio no puede publicar.
+#
+# Decisión del equipo (20 nov 2026), solo para el laboratorio. Para producción NO se acepta: se espera la imagen corregida o se cambia de imagen base.
+# Cuando nginxinc publique la 1.30.7: reconstruir las imágenes y borrar este archivo.
+vulnerabilities:
+  - id: CVE-2026-113425
+    statement: "nginx 1.30.6-r1 (arreglo 1.30.7-r0 sin imagen base publicada). Laboratorio con datos sintéticos; el contenedor corre sin root, sin capacidades y con NetworkPolicy que solo deja entrar a Traefik (ver mitigaciones_comunes en hallazgos.yaml)."
+    expired_at: 2026-12-04
+  - id: CVE-2026-121810
+    statement: "nginx 1.30.6-r1 (arreglo 1.30.7-r0 sin imagen base publicada). Laboratorio con datos sintéticos; el contenedor corre sin root, sin capacidades y con NetworkPolicy que solo deja entrar a Traefik (ver mitigaciones_comunes en hallazgos.yaml)."
+    expired_at: 2026-12-04
+  - id: CVE-2026-123007
+    statement: "nginx 1.30.6-r1 (arreglo 1.30.7-r0 sin imagen base publicada). Laboratorio con datos sintéticos; el contenedor corre sin root, sin capacidades y con NetworkPolicy que solo deja entrar a Traefik (ver mitigaciones_comunes en hallazgos.yaml)."
+    expired_at: 2026-12-04
+  - id: CVE-2026-123633
+    statement: "nginx 1.30.6-r1 (arreglo 1.30.7-r0 sin imagen base publicada). Laboratorio con datos sintéticos; el contenedor corre sin root, sin capacidades y con NetworkPolicy que solo deja entrar a Traefik (ver mitigaciones_comunes en hallazgos.yaml)."
+    expired_at: 2026-12-04

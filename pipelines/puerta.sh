@@ -133,10 +133,14 @@ case "$paso" in
     ;;
 
   vulnerabilidades)
+    # Excepciones de laboratorio con vencimiento (trivy-excepciones.yaml, H-CVE-01): viaja con los scripts y se monta en el contenedor de Trivy.
+    # La ruta de los scripts se pasa a la del anfitrión por si el trabajo corre dentro del contenedor del runner.
+    AQUI_HOST="$AQUI"
+    case "$AQUI" in "$PWD"/*) AQUI_HOST="${HOST_PWD}${AQUI#"$PWD"}" ;; esac
     for imagen in $(imagenes); do
       reporte="${OUT}/trivy-${imagen}.json"
-      if docker_run -v "${HOST_PWD}/${OUT}:/out" -v "${CACHE_TRIVY}:/root/.cache" "$TRIVY_IMAGE" image \
-          --input "/out/${imagen}.tar" --severity CRITICAL --ignore-unfixed --exit-code 1 --quiet \
+      if docker_run -v "${HOST_PWD}/${OUT}:/out" -v "${CACHE_TRIVY}:/root/.cache" -v "${AQUI_HOST}:/puerta:ro" "$TRIVY_IMAGE" image \
+          --input "/out/${imagen}.tar" --severity CRITICAL --ignore-unfixed --ignorefile /puerta/trivy-excepciones.yaml --exit-code 1 --quiet \
           ${TRIVY_SKIP_DB_UPDATE:+--skip-db-update} --format json --output "/out/trivy-${imagen}.json"; then
         reportar paso vulnerabilidades ok "Sin vulnerabilidades críticas con arreglo disponible" "$imagen" "$reporte"
       else
@@ -255,7 +259,10 @@ case "$paso" in
           --type slsaprovenance1 --insecure-ignore-tlog=true "${cosign_reg[@]}" "${REGISTRY}/${ORG}/${imagen}@${digest}" > "$procedencia" 2>/dev/null; then
         fallo verificacion "La imagen ${imagen}@${digest:0:19}… no tiene una procedencia SLSA firmada válida" "$imagen"
       fi
-      commit_declarado="$(jq_run -r '.payload' < "$procedencia" | head -1 | base64 -d | jq_run -r '.predicate.buildDefinition.resolvedDependencies[0].digest.gitCommit')"
+      # Un mismo digest puede tener varias procedencias firmadas (la misma imagen reconstruida desde otro commit del repositorio, por ejemplo tras actualizar los scripts de la puerta):
+      # basta con que alguna, ya verificada con la clave, declare el commit de esta versión. Antes se leía solo la primera y una procedencia vieja hacía fallar una versión sana.
+      declarados="$(jq_run -r '.payload' < "$procedencia" | while read -r carga; do printf '%s' "$carga" | base64 -d | jq_run -r '.predicate.buildDefinition.resolvedDependencies[0].digest.gitCommit'; done)"
+      commit_declarado="$(printf '%s\n' "$declarados" | grep -m1 -x "${COMMIT_SHA:-.*}" || printf '%s\n' "$declarados" | head -1)"
       if [ -n "${COMMIT_SHA:-}" ] && [ "$commit_declarado" != "$COMMIT_SHA" ]; then
         fallo verificacion "La procedencia de ${imagen} declara el commit ${commit_declarado:0:12}, no el de la versión (${COMMIT_SHA:0:12})" "$imagen"
       fi

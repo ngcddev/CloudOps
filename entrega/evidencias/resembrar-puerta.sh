@@ -13,6 +13,16 @@ for par in "ferreteria:v1 v1.1 v2" "restaurante:v1 v2" "consultorio:v1 v2"; do
   repo="http://gitea.hub.local/forja-digital/${sitio}.git"
   echo "== ${sitio} =="
   git_gitea clone -q "$repo" "$T/$sitio" 2>/dev/null || { echo "   no se pudo clonar ${sitio}"; continue; }
+  # Los scripts de la puerta viajan dentro de cada repositorio de sitio (.gitea/puerta/): se actualizan con los de pipelines/ para que los cambios (por ejemplo las excepciones
+  # con vencimiento de trivy-excepciones.yaml) lleguen a los sitios que ya existen. Si no cambió nada no se crea ningún commit.
+  mkdir -p "$T/$sitio/.gitea/puerta"
+  cp pipelines/puerta.sh pipelines/reportar.sh pipelines/lib.sh pipelines/cosign.pub pipelines/trivy-excepciones.yaml "$T/$sitio/.gitea/puerta/"
+  cp pipelines/puerta.yaml "$T/$sitio/.gitea/workflows/puerta.yaml"
+  git_gitea -C "$T/$sitio" add -A .gitea
+  if ! git_gitea -C "$T/$sitio" diff --cached --quiet; then
+    git_gitea -C "$T/$sitio" commit -q -m "chore: scripts de la puerta actualizados (excepciones de laboratorio con vencimiento)" \
+      && git_gitea -C "$T/$sitio" push -q origin HEAD:main && echo "   scripts de la puerta actualizados en el repositorio" || echo "   no se pudieron actualizar los scripts de la puerta"
+  fi
   for e in $etiquetas; do
     git_gitea -C "$T/$sitio" push -q origin ":refs/tags/$e" 2>/dev/null
     git_gitea -C "$T/$sitio" tag -f "$e" HEAD >/dev/null

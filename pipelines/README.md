@@ -145,6 +145,9 @@ El VEX es un documento de salida: Trivy no lo consume porque los productos se id
 
 - **SBOM firmado:** `puerta.sh firmar` adjunta a cada imagen el SBOM SPDX como atestación (`cosign attest --type spdxjson`) y `verificar` la comprueba con la
   clave del Hub (`verify-attestation --type spdxjson`) y exige que traiga componentes.
+- **Excepciones de laboratorio con vencimiento:** `trivy-excepciones.yaml` es el archivo de ignorados de Trivy (`--ignorefile`) y viaja con los scripts a `.gitea/puerta/` de cada sitio.
+  Cada excepción nombra una CVE y trae `expired_at`: pasada esa fecha deja de valer y la puerta vuelve a bloquear. Hoy cubre cuatro CVE de nginx 1.30.6 (H-CVE-01, vence el 2026-12-04) y solo vale para el
+  laboratorio. Para llevar los cambios a los sitios que ya existen: `bash entrega/evidencias/resembrar-puerta.sh`.
 - **Dependencias del sitio:** `puerta.sh vulnerabilidades` corre `trivy fs` sobre el repositorio del sitio (requirements.txt, package-lock.json…): una
   vulnerabilidad ALTA o CRÍTICA con arreglo publicado frena la puerta. `trivy config` revisa también los manifiestos de Kubernetes que traiga el repositorio.
 - **Simulación:** se suman los escenarios `dependencia` (flask 0.12) y `manifiesto` (Deployment con `privileged` y `hostNetwork`); la puerta se detiene en los dos.
