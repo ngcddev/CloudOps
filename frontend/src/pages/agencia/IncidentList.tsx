@@ -15,6 +15,7 @@ import {
 } from "../../api";
 import SlaClock from "../../components/SlaClock";
 import { useSondeo } from "../../hooks/useSondeo";
+import { Select } from "../../components/Select";
 
 // Cada cuánto se vuelve a pedir la lista: un incidente abierto por el monitoreo aparece sin recargar
 const REFRESH_MS = 10_000;
@@ -76,23 +77,23 @@ function NewIncidentForm({ clients, onCancel }: { clients: ClientDetail[]; onCan
       )}
       <label>
         Servicio
-        <select value={serviceId} onChange={(event) => setServiceId(event.target.value === "" ? "" : Number(event.target.value))} required>
+        <Select value={serviceId} onChange={(event) => setServiceId(event.target.value === "" ? "" : Number(event.target.value))} required>
           <option value="">Elige un servicio</option>
           {services.map(({ client, service }) => (
             <option key={service.id} value={service.id}>
               {client.name} · {service.name}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label>
         Prioridad
-        <select value={priority} onChange={(event) => setPriority(event.target.value as TicketPriority)}>
+        <Select value={priority} onChange={(event) => setPriority(event.target.value as TicketPriority)}>
           <option value="P1">P1 · crítica</option>
           <option value="P2">P2 · alta</option>
           <option value="P3">P3 · media</option>
           <option value="P4">P4 · baja</option>
-        </select>
+        </Select>
       </label>
       <label>
         Qué pasa
@@ -187,33 +188,33 @@ export default function IncidentList() {
         <div className="filters-grid">
           <label>
             <span>Estado</span>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as IncidentStatus | "")}>
+            <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as IncidentStatus | "")}>
               <option value="">Todos</option>
               <option value="abierto">Abierto</option>
               <option value="mitigado">Mitigado</option>
               <option value="cerrado">Cerrado</option>
-            </select>
+            </Select>
           </label>
           <label>
             <span>Cliente</span>
-            <select value={clientFilter} onChange={(event) => setClientFilter(event.target.value === "" ? "" : Number(event.target.value))}>
+            <Select value={clientFilter} onChange={(event) => setClientFilter(event.target.value === "" ? "" : Number(event.target.value))}>
               <option value="">Todos</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             <span>Prioridad</span>
-            <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as TicketPriority | "")}>
+            <Select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as TicketPriority | "")}>
               <option value="">Todas</option>
               <option value="P1">P1</option>
               <option value="P2">P2</option>
               <option value="P3">P3</option>
               <option value="P4">P4</option>
-            </select>
+            </Select>
           </label>
         </div>
       </div>

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { listAuditLogs, type AuditLog, type AuditLogFilters } from "../../api";
 import { formatDateTime } from "../../format";
+import { Select } from "../../components/Select";
+import { DateField } from "../../components/DateFields";
 
 // Etiquetas en español; si llega un valor nuevo (de una spec posterior) se muestra tal cual
 const ENTITY_LABELS: Record<string, string> = {
@@ -128,44 +130,44 @@ export default function AuditLogList() {
         <div className="filters-grid">
           <label>
             <span>Usuario</span>
-            <select value={filters.user} onChange={set("user")}>
+            <Select value={filters.user} onChange={set("user")}>
               <option value="">Todos</option>
               {people.map((person) => (
                 <option key={person.id} value={person.id}>
                   {person.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             <span>Objeto</span>
-            <select value={filters.entity} onChange={set("entity")}>
+            <Select value={filters.entity} onChange={set("entity")}>
               <option value="">Todos</option>
               {Object.entries(ENTITY_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             <span>Acción</span>
-            <select value={filters.action} onChange={set("action")}>
+            <Select value={filters.action} onChange={set("action")}>
               <option value="">Todas</option>
               {Object.entries(ACTION_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             <span>Desde</span>
-            <input type="date" value={filters.from} onChange={set("from")} />
+            <DateField value={filters.from} onChange={set("from")} />
           </label>
           <label>
             <span>Hasta</span>
-            <input type="date" value={filters.to} onChange={set("to")} />
+            <DateField value={filters.to} onChange={set("to")} />
           </label>
         </div>
       </section>

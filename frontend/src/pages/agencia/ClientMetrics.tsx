@@ -14,6 +14,7 @@ import {
 import LineChart from "../../components/LineChart";
 import StatusBadge from "../../components/StatusBadge";
 import { formatPercent } from "../../format";
+import { MonthField } from "../../components/DateFields";
 
 // Grafana del clúster de la demo (spec 008); se abre en otra pestaña
 const GRAFANA_URL = "http://grafana.hub.local";
@@ -73,8 +74,7 @@ export default function ClientMetrics() {
         <div className="page-actions">
           <label className="month-picker">
             Mes
-            <input
-              type="month"
+            <MonthField
               value={month}
               onChange={(event) => {
                 const nuevo = event.target.value || mesActual();

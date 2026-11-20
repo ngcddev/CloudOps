@@ -4,10 +4,12 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { downloadReportPdf, generateReport, listClients, listReports, type ClientSummary, type ReportKind, type ReportSummary } from "../../api";
 import { formatDateTime } from "../../format";
+import { Select } from "../../components/Select";
+import { MonthField } from "../../components/DateFields";
 
 const KIND_LABELS: Record<ReportKind, string> = { operativo: "Operativo (toda la agencia)", ejecutivo: "Ejecutivo (un cliente)" };
 
-// Mes actual en formato AAAA-MM, el que entiende <input type="month">
+// Mes actual en formato AAAA-MM, el que entiende <MonthField >
 // En America/Bogota, no en la zona del navegador: cerca del cambio de mes el navegador de otra zona dejaba escoger un mes que en Colombia aún no empieza (auditoría FE-15)
 const MES_BOGOTA = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" });
 function currentMonth(): string {
@@ -68,30 +70,30 @@ export default function Reports() {
         <form className="stacked-form" onSubmit={handleSubmit}>
           <label>
             Tipo
-            <select value={kind} onChange={(event) => setKind(event.target.value as ReportKind)}>
+            <Select value={kind} onChange={(event) => setKind(event.target.value as ReportKind)}>
               {(Object.keys(KIND_LABELS) as ReportKind[]).map((k) => (
                 <option key={k} value={k}>
                   {KIND_LABELS[k]}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           {kind === "ejecutivo" && (
             <label>
               Cliente
-              <select value={clientId ?? ""} onChange={(event) => setClientId(event.target.value ? Number(event.target.value) : null)} required>
+              <Select value={clientId ?? ""} onChange={(event) => setClientId(event.target.value ? Number(event.target.value) : null)} required>
                 <option value="">Elige un cliente</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
           <label>
             Mes
-            <input type="month" value={month} max={currentMonth()} onChange={(event) => setMonth(event.target.value)} required />
+            <MonthField value={month} max={currentMonth()} onChange={(event) => setMonth(event.target.value)} required />
           </label>
           <button type="submit" className="button" disabled={busy || (kind === "ejecutivo" && clientId === null)}>
             {busy ? "Generando…" : "Generar y descargar PDF"}

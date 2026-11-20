@@ -9,6 +9,7 @@ import {
   type Ticket,
   type TicketKind,
 } from "../../api";
+import { Select } from "../../components/Select";
 
 export default function PortalTicketList() {
   // El portal muestra siempre la empresa de quien entró: ya no se elige el cliente (spec 007)
@@ -91,24 +92,24 @@ export default function PortalTicketList() {
         <form onSubmit={handleCreateTicket} className="stacked-form">
           <label>
             <span>Servicio</span>
-            <select value={selectedServiceId} onChange={(event) => setSelectedServiceId(event.target.value === "" ? "" : Number(event.target.value))}>
+            <Select value={selectedServiceId} onChange={(event) => setSelectedServiceId(event.target.value === "" ? "" : Number(event.target.value))}>
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name} · {service.host}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
 
           <label>
             <span>¿Qué necesitas?</span>
-            <select
+            <Select
               value={form.kind}
               onChange={(event) => setForm((current) => ({ ...current, kind: event.target.value as TicketKind }))}
             >
               <option value="solicitud">Reportar un problema o hacer una consulta</option>
               <option value="cambio">Pedir un cambio en mi sitio</option>
-            </select>
+            </Select>
           </label>
 
           <label>

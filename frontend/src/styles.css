@@ -391,12 +391,9 @@ code {
 }
 
 /* Campos de formulario: el mismo tratamiento en todas las pantallas */
-.filters-grid select,
 .stacked-form input,
-.stacked-form select,
 .stacked-form textarea,
 .field input,
-.field select,
 .field textarea {
   width: 100%;
   min-height: 36px;
@@ -409,22 +406,16 @@ code {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.filters-grid select:hover,
 .stacked-form input:hover,
-.stacked-form select:hover,
 .stacked-form textarea:hover,
 .field input:hover,
-.field select:hover,
 .field textarea:hover {
   border-color: var(--ink-3);
 }
 
-.filters-grid select:focus-visible,
 .stacked-form input:focus-visible,
-.stacked-form select:focus-visible,
 .stacked-form textarea:focus-visible,
 .field input:focus-visible,
-.field select:focus-visible,
 .field textarea:focus-visible {
   outline: 2px solid transparent;
   border-color: var(--ink);
@@ -1086,11 +1077,10 @@ section {
   font-weight: 600;
 }
 
-.month-picker input {
-  font: inherit;
-  padding: 6px 8px;
-  border: 1px solid var(--edge-strong);
-  background: var(--input-bg);
+.month-picker .campo-disparador {
+  width: auto;
+  min-width: 190px;
+  font-weight: 500;
 }
 
 .cards {
@@ -1375,4 +1365,333 @@ section {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------- Selectores, fechas y meses propios ----------
+   Reemplazan al <select> y a los <input type="date|month"> nativos, cuya lista y calendario no se pueden estilizar.
+   Usan los mismos tokens que el resto de los campos, así que el tema claro y el oscuro salen solos. El estado se dice con
+   marca (✓), negrita, subrayado y fondo invertido, no solo con color. */
+
+.campo-disparador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 10px 7px 12px;
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.campo-disparador:hover:not(:disabled) {
+  border-color: var(--ink-3);
+}
+
+.campo-disparador:focus-visible,
+.campo-disparador[aria-expanded="true"] {
+  outline: 2px solid transparent;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.campo-disparador[aria-invalid="true"] {
+  border-color: var(--ink);
+  border-style: dashed;
+}
+
+.campo-disparador:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.campo-valor {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campo-vacio {
+  color: var(--ink-3);
+}
+
+.campo-flecha,
+.campo-icono {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.campo-disparador:hover:not(:disabled) .campo-flecha,
+.campo-disparador:hover:not(:disabled) .campo-icono,
+.campo-disparador[aria-expanded="true"] .campo-flecha,
+.campo-disparador[aria-expanded="true"] .campo-icono {
+  color: var(--ink);
+}
+
+.campo-disparador[aria-expanded="true"] .campo-flecha {
+  transform: rotate(180deg);
+}
+
+.campo-check {
+  flex: none;
+  color: var(--ink);
+}
+
+/* Lista flotante: se pinta en <body> y se coloca junto al campo (usePopover), así ninguna tarjeta con overflow la recorta */
+.pop {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  background: var(--dialog-bg);
+  color: var(--ink);
+  border: 1px solid var(--edge-strong);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform-origin: top center;
+  animation: pop-entrada 0.12s ease-out;
+}
+
+.pop[data-arriba="true"] {
+  transform-origin: bottom center;
+}
+
+:root[data-theme="dark"] .pop {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes pop-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pop-lista {
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge-strong) transparent;
+}
+
+.pop-opcion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pop-opcion.activa {
+  background: var(--hover);
+}
+
+.pop-opcion.elegida {
+  font-weight: 600;
+}
+
+.pop-opcion[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Calendarios de fecha y de mes */
+.pop-calendario,
+.pop-meses {
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.pop-calendario {
+  width: min(296px, calc(100vw - 16px));
+}
+
+.pop-meses {
+  width: min(264px, calc(100vw - 16px));
+}
+
+.cal-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cal-titulo {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.cal-nav {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.cal-nav:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.cal-cuadricula {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-dia-nombre {
+  padding: 4px 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.cal-dia,
+.cal-mes {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.cal-dia {
+  height: 34px;
+}
+
+.cal-meses {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.cal-mes {
+  height: 38px;
+  text-transform: capitalize;
+}
+
+.cal-dia:hover:not(:disabled),
+.cal-mes:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.cal-dia.fuera {
+  color: var(--ink-3);
+}
+
+/* Hoy: anillo y subrayado, para que no dependa solo del color */
+.cal-dia.hoy,
+.cal-mes.hoy {
+  border-color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Elegido: ficha invertida y negrita */
+.cal-dia[aria-pressed="true"],
+.cal-mes[aria-pressed="true"] {
+  background: var(--invert-bg);
+  border-color: var(--invert-bg);
+  color: var(--invert-ink);
+  font-weight: 600;
+}
+
+.cal-dia:disabled,
+.cal-mes:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cal-dia:focus-visible,
+.cal-mes:focus-visible,
+.cal-nav:focus-visible,
+.cal-accion:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.cal-pie {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--edge);
+}
+
+.cal-accion {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cal-accion:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.cal-accion:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop,
+  .campo-flecha,
+  .campo-icono,
+  .campo-disparador {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Envoltura del campo propio: da el punto de referencia al campo oculto que valida "obligatorio" */
+.campo-envoltura {
+  position: relative;
+  width: 100%;
+}
+
+.campo-validador {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.month-picker .campo-envoltura {
+  width: auto;
 }
