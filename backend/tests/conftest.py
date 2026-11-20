@@ -25,6 +25,14 @@ from app.services.auth import create_token  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
+def modo_del_asistente_fijo(monkeypatch):
+    """H-TEST-01: el modo de contexto del asistente sale del .env del equipo («rag» o «completo»). Cada prueba parte de «completo»; las que necesitan otro lo cambian ellas."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "assistant_context_mode", "completo")
+
+
+@pytest.fixture(autouse=True)
 def limpiar_cache_prometheus():
     """La consulta a Prometheus cachea 60 s: entre pruebas se limpia para que no se filtre un valor simulado."""
     from app.integrations import prometheus
