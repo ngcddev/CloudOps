@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { fijarMes, getAgencyDashboard, mesActual, type AgencyDashboard } from "../../api";
 import StatusBadge from "../../components/StatusBadge";
 import { formatPercent, formatPrice } from "../../format";
+import { MonthField } from "../../components/DateFields";
 
 // Valor con «sin datos» cuando la API no tiene serie (CA-8), nunca un 100 % inventado
 function textoDisponibilidad(value: number | null): string {
@@ -58,8 +59,7 @@ export default function AgencyDashboardPage() {
         </div>
         <label className="month-picker">
           Mes
-          <input
-            type="month"
+          <MonthField
             value={month}
             onChange={(event) => {
               const nuevo = event.target.value || mesActual();

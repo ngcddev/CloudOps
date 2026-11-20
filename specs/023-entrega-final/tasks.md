@@ -40,3 +40,8 @@
   - Asistente en el laboratorio (qwen2.5:7b, modo `rag`): una pregunta normal se responde con los pasos de aprobación; una pregunta con un token inventado se tapa antes de llegar al modelo (`secrets_redacted`) y el token no aparece en la respuesta.
   - Límite de la prueba: **no se pudo provocar con el modelo real que la respuesta traiga un secreto**, así que la redacción de la salida se verifica con la prueba unitaria y con el código desplegado, no de punta a punta.
   - Los documentos que dicen «hub-api v1.17» (informe 00, complementario 06 y Apéndice D con su SBOM) quedan por actualizar.
+
+## Pulido del frontend (propuestas el 20 nov 2026)
+
+- [x] T16 · Selector propio con estilo (`Select`) en lugar del `<select>` nativo, con lista desplegable del mismo diseño que la página (tema claro y oscuro, teclado, lectores de pantalla y celular) — **Verifica:** los 22 selectores de las pantallas de agencia y portal usan el componente, la lista abierta usa los tokens de diseño, se maneja con flechas, Inicio, Fin, Enter, Esc y la primera letra, y `tsc` y `npm run build` pasan.
+- [x] T17 · Campos de fecha y de mes propios (`DateField` y `MonthField`) con calendario desplegable en español, semana desde el lunes y día de hoy en la hora de Bogotá, en lugar de `<input type="date">` y `type="month"` — **Verifica:** las 4 pantallas con fechas (bitácora, tablero, métricas del cliente y reportes) los usan, respetan `max`, se manejan con teclado y se ven bien en claro, oscuro y 375 px de ancho.

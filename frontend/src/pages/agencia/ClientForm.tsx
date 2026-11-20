@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { listPlans, registerClient, type Plan, type Template } from "../../api";
+import { Select } from "../../components/Select";
 
 // Valores del formulario; todos son texto porque vienen de los campos
 const emptyForm = {
@@ -156,17 +157,17 @@ export default function ClientForm() {
           {field("host", "Dirección (host)", { required: true, placeholder: "panaderia.hub.local" })}
           <div className="field">
             <label htmlFor="template">Plantilla</label>
-            <select id="template" value={values.template} onChange={(e) => update("template", e.target.value)}>
+            <Select id="template" value={values.template} onChange={(e) => update("template", e.target.value)}>
               <option value="landing">Landing estática</option>
               <option value="landing_form">Landing + formulario</option>
-            </select>
+            </Select>
           </div>
           {field("namespace", "Espacio en el clúster (namespace)", { required: true, placeholder: "cliente-panaderia" })}
           <div className="field">
             <label htmlFor="plan_id">
               Plan<span aria-hidden="true"> *</span>
             </label>
-            <select
+            <Select
               id="plan_id"
               value={values.plan_id}
               onChange={(e) => update("plan_id", e.target.value)}
@@ -179,7 +180,7 @@ export default function ClientForm() {
                   {plan.name} · SLO {plan.slo_availability.toLocaleString("es-CO", { minimumFractionDigits: 1 })} %
                 </option>
               ))}
-            </select>
+            </Select>
             {errors.plan_id && (
               <span id="plan_id-error" className="field-error">
                 ✕ {errors.plan_id}
