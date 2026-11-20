@@ -39,7 +39,8 @@ imagen() {
   local tmp="$RAIZ/evidencias/analisis"; mkdir -p "$tmp"
   docker build -q --build-context seed="$(ruta_docker "$RAIZ/seed")" -t hub-web:analisis "$(ruta_docker "$RAIZ/frontend")" >/dev/null || { falla "no se pudo construir la imagen del frontend"; return; }
   docker save hub-web:analisis -o "$(ruta_docker "$tmp")/hub-web.tar"
-  if docker run --rm -v "$(ruta_docker "$tmp"):/out" -v puerta-trivy-cache:/root/.cache "$TRIVY_IMAGE" image --input /out/hub-web.tar --severity CRITICAL --ignore-unfixed --exit-code 1 --quiet; then
+  # Excepciones de laboratorio con vencimiento (pipelines/trivy-excepciones.yaml, H-CVE-01): el mismo archivo que lee la puerta de los sitios
+  if docker run --rm -v "$(ruta_docker "$tmp"):/out" -v puerta-trivy-cache:/root/.cache -v "${RAIZ_D}/pipelines:/excepciones:ro" "$TRIVY_IMAGE" image --input /out/hub-web.tar --severity CRITICAL --ignore-unfixed --ignorefile /excepciones/trivy-excepciones.yaml --exit-code 1 --quiet; then
     ok "la imagen del frontend no tiene vulnerabilidades críticas con arreglo"
   else
     falla "la imagen del frontend tiene vulnerabilidades críticas con arreglo"
