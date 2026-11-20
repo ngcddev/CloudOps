@@ -85,6 +85,8 @@ def ask(db: Session, user: User, question: str, gate: GateModel | None = None, t
             latencia = int((time.monotonic() - inicio) * 1000)
             modelo, prompt, llm_ok = settings.ollama_model, PROMPT_VERSION, texto is not None
             respuesta = texto or RESPUESTA_IA_NO_DISPONIBLE
+            # H-IA-01: lo que responde el modelo también puede traer un secreto (de la ayuda o inventado); se tapa antes de guardarlo y mostrarlo
+            respuesta, _ = redactar(respuesta)
 
     registro = AiQuery(
         user_id=user_id,

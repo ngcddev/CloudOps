@@ -1,4 +1,6 @@
 # Excepciones de `trivy config` (spec 016), cada una con su razón y fecha de vencimiento: al vencer vuelve a fallar y obliga a revisarla.
+# Las excepciones de vulnerabilidades de las imágenes (CVE de laboratorio con vencimiento) están en pipelines/trivy-excepciones.yaml: es el mismo archivo que lee la puerta de los sitios
+# (Gitea Actions) y que usan los análisis de imagen del CI (pipelines/pruebas/analisis-estatico.sh y hallazgos.sh). Aquí solo van las de `trivy config` y `trivy fs`.
 misconfigurations:
   - id: KSV-0014   # Root file system is not read-only
     # Los sitios de los clientes (gitops/clients, el chart sitio-cliente y la plantilla del backend) ya corren con sistema de archivos de solo lectura

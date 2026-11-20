@@ -64,7 +64,6 @@ def test_el_sitio_no_pinta_la_respuesta_como_html_ni_markdown():
     assert "{answer.answer}</p>" in codigo
 
 
-@pytest.mark.xfail(strict=True, reason="Hallazgo H-IA-01: la respuesta del modelo no pasa por la redacción de secretos (solo la pregunta). Si se corrige, quitar el xfail.")
 def test_una_respuesta_del_modelo_con_un_secreto_se_tapa_antes_de_guardarse(as_agency, capturar_ollama):
     capturar_ollama.respuesta = "Se aprueba desde Cambios. Tu token es ghp_abcdefghijklmnopqrstuvwxyz0123456789."
 

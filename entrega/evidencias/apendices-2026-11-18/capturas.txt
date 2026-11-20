@@ -1,0 +1,4 @@
+OK F16-argocd-aplicaciones https://argocd.hub.local/applications?view=list&showFavorites=false&proj=&sync=&autoSync=&health=&namespace=&cluster=&labels=
+OK F17-grafana-servicio-sitios http://grafana.hub.local/d/servicio-sitios/servicio-de-los-sitios-c2b7-sli-y-slo?orgId=1&from=2026-11-16T22:50:00.000Z&to=2026-11-17T01:50:00.000Z&timezone=America%2FBogota&refresh=30s
+OK F18-grafana-red-use http://grafana.hub.local/d/red-use/red-y-use-c2b7-sitios-y-pods?orgId=1&from=2026-11-16T22:50:00.000Z&to=2026-11-17T01:50:00.000Z&timezone=America%2FBogota&refresh=30s
+OK F19-mlflow-compuerta https://mlflow.hub.local/#/models/compuerta-asistente

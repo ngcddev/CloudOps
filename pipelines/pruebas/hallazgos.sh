@@ -28,7 +28,8 @@ reportes=()
 for imagen in "${imagenes[@]}"; do
   nombre="$(echo "$imagen" | tr '/:' '__')"
   docker save "$imagen" -o "$SALIDA_D/${nombre}.tar" || { echo "no se pudo guardar $imagen" >&2; exit 1; }
-  docker run --rm -v "$SALIDA_D:/out" -v puerta-trivy-cache:/root/.cache "$TRIVY_IMAGE" image --input "/out/${nombre}.tar" --severity HIGH,CRITICAL --quiet \
+  # --ignorefile: las CVE con excepción de laboratorio y vencimiento (pipelines/trivy-excepciones.yaml, H-CVE-01) no entran al registro como «corregibles» mientras la excepción esté vigente
+  docker run --rm -v "$SALIDA_D:/out" -v puerta-trivy-cache:/root/.cache -v "$RAIZ_D/pipelines:/excepciones:ro" "$TRIVY_IMAGE" image --input "/out/${nombre}.tar" --severity HIGH,CRITICAL --ignorefile /excepciones/trivy-excepciones.yaml --quiet \
     --format json --output "/out/${nombre}.json" >/dev/null 2>&1 || { echo "Trivy no pudo revisar $imagen" >&2; exit 1; }
   rm -f "$SALIDA/${nombre}.tar"
   reportes+=("/out/${nombre}.json")

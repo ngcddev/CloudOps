@@ -70,7 +70,7 @@ for sitio in "${SITIOS[@]}"; do
   cp -r "$RAIZ/apps/$sitio/." "$trabajo/"
   mkdir -p "$trabajo/.gitea/workflows" "$trabajo/.gitea/puerta"
   cp "$AQUI/puerta.yaml" "$trabajo/.gitea/workflows/puerta.yaml"
-  cp "$AQUI/puerta.sh" "$AQUI/reportar.sh" "$AQUI/lib.sh" "$AQUI/cosign.pub" "$trabajo/.gitea/puerta/"
+  cp "$AQUI/puerta.sh" "$AQUI/reportar.sh" "$AQUI/lib.sh" "$AQUI/cosign.pub" "$AQUI/trivy-excepciones.yaml" "$trabajo/.gitea/puerta/"
   # Lo que genera la puerta no es del repositorio ni del contexto de construcción
   printf '.puerta/\n' >> "$trabajo/.gitignore"
   printf '.puerta\n.gitea\n' >> "$trabajo/.dockerignore"
