@@ -1,0 +1,31 @@
+e;descripcion;tipo;como_obtenerla;requisitos;estado
+E-01;Repositorio Git: página principal, ramas, issues y pull requests;captura;Abrir https://github.com/ngcddev/CloudOps y capturar README, ramas y un pull request fusionado;RNF-15;pendiente
+E-02;CI de GitHub con las cinco verificaciones en verde;captura;Abrir un pull request fusionado y capturar la pestaña Checks;RNF-15 RNF-06;pendiente
+E-03;Salida completa de las pruebas del backend;salida de comando;docker compose exec api pytest -q (1.134 recogidas);RF-01 RF-02 RF-05 RF-10 RF-18 RF-23 RNF-11 RNF-12 RNF-14 RNF-15;pendiente
+E-04;Corrida de la puerta de seguridad aprobada en Gitea Actions;captura;Gitea, repositorio del sitio, pestaña Actions, corrida en verde;RF-08 RNF-05;pendiente
+E-05;Corrida rechazada por un secreto (Gitleaks);captura;Tarea T03 de la spec 015: versión con un secreto a propósito;RF-08 RF-09 RNF-06;pendiente
+E-06;Reporte de Trivy y SBOM de una imagen;captura;Hub, versión del servicio, controles, descarga del reporte y del SBOM;RF-08 RNF-05;pendiente
+E-07;Firma y procedencia verificadas con Cosign;captura;Hub, controles de la versión, paso de verificación de firma;RF-08 RNF-05;pendiente
+E-08;Nueve Applications de Argo CD sincronizadas y sanas;captura;Argo CD, lista de Applications;RF-03 RF-06 RF-07 RF-26 RNF-04;pendiente
+E-09;Pods por namespace en Kubernetes;salida de comando;kubectl get pods -A con Pod Security restricted en los clientes;RF-03 RNF-02 RNF-03;pendiente
+E-10;Tablero de Grafana del servicio de sitios;captura;Grafana, tablero de sitios con SLI y presupuesto de error;RF-15 RNF-07;pendiente
+E-11;Tablero de Grafana RED y USE;captura;Grafana, tablero de plataforma;RF-15;pendiente
+E-12;Tablero del Hub con disponibilidad frente al SLO;captura;Consola, tablero de la agencia;RF-15 RF-17;pendiente
+E-13;Alerta SitioCaido en estado firing;captura;Prometheus, pestaña Alerts, con la v2 rota publicada;RF-11 RF-12 RNF-07;pendiente
+E-14;Traza de una petición con su trace_id y el registro correlacionado;captura;Grafana, Explore, Tempo y Loki;RF-15 RNF-18;pendiente
+E-15;Modelo compuerta-asistente con el alias production en MLflow;captura;MLflow, Models;RF-29;pendiente
+E-16;Corridas de evaluación y métricas en MLflow;captura;MLflow, Experiments;RF-29 RNF-20;pendiente
+E-17;Respuesta del asistente en modo RAG con sus fuentes;captura;Consola, Asistente, con ASSISTANT_CONTEXT_MODE=rag;RF-25 RF-28;pendiente
+E-18;Pantallas de la voz del asistente en un navegador real;captura;Existen en capturas-voz-cluster/ (cuatro imágenes del 16 de noviembre de 2026, con micrófono falso);RF-27;existe
+E-19;Resultados de las pruebas de inyección y de documentos maliciosos;salida de comando;python ai/eval/run_eval.py y python ai/eval/probar_documento_malicioso.py;RNF-09;pendiente
+E-20;Rollback con el MTTR en el incidente;captura;Consola, detalle del incidente tras el rollback;RF-14 RF-13;pendiente
+E-21;Reporte ejecutivo en PDF;archivo;Consola, Reportes, descargar el PDF del ejecutivo;RF-20;pendiente
+E-22;Portal del cliente con estado, incidentes y solicitudes;captura;Ventana de incógnito con el usuario de un cliente;RF-04 RF-05 RF-16 RF-19 RNF-17;pendiente
+E-23;Catálogo y plantilla de Backstage;captura;Backstage por HTTPS, Catalog y Create;RF-22;pendiente
+E-24;Plan de OpenTofu sin cambios y prueba de deriva;salida de comando;bash infra/pruebas/drift.sh;RNF-04 RNF-08 RNF-16;pendiente
+E-25;Respaldo y restauración de PostgreSQL;salida de comando;bash gitops/pruebas/respaldo.sh;RNF-13;pendiente
+E-26;Simulaciones de falla en el clúster;salida de comando;bash gitops/pruebas/simulaciones.sh;RNF-07 RNF-21;pendiente
+E-27;Pruebas de red: entrada y salida denegadas por defecto;salida de comando;bash gitops/pruebas/salida-hub.sh y bash gitops/pruebas/aislamiento-red.sh;RNF-03 RNF-01;pendiente
+E-28;Recorrido del caso del restaurante: caída, incidente, rollback y MTTR;salida de comando;bash gitops/pruebas/demo-caso-restaurante.sh;RF-12 RF-14 RNF-07;pendiente
+E-29;Matriz de tutor de IA con aciertos, omisiones y alucinaciones;salida de comando;python ai/tutor/evaluar.py;RF-25;pendiente
+E-30;Modalidad multimodal: audio (la imagen, el video y el 3D no aplican);texto;Remite a la decisión sobre la modalidad y a la voz del asistente (E-18);RF-27;existe

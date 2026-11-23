@@ -1,0 +1,58 @@
+grupo;componente;version;licencia;uso;restriccion;fuente
+Aplicación (Python);FastAPI;0.142.2;MIT;API del Hub y servicio de voz;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);Uvicorn;0.54.0;BSD-3-Clause;Servidor de la API;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);SQLAlchemy;2.1.1;MIT;Acceso a datos;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);Alembic;1.20.0;MIT;Migraciones;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);psycopg;3.3.6;LGPL-3.0-only;Controlador de PostgreSQL;Se usa como biblioteca sin modificarla. Al redistribuir la imagen hay que conservar el aviso y permitir reemplazar la biblioteca;Metadatos del paquete
+Aplicación (Python);pydantic-settings;2.15.0;MIT;Configuración;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);bcrypt;5.0.0;Apache-2.0;Hash de contraseñas;Conservar el aviso de licencia;Metadatos del paquete
+Aplicación (Python);PyJWT;2.15.1;MIT;Tokens de sesión;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);ReportLab;5.1.0;BSD;Reportes en PDF;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);OpenTelemetry (SDK, exportador e instrumentación);1.45.2 y 0.66b2;Apache-2.0;Trazas;Conservar el aviso de licencia;Metadatos del paquete
+Aplicación (Python);faster-whisper;1.2.1;MIT;Voz a texto;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);PyAV (av);16.1.0;BSD-3-Clause;Decodificación de audio;Ninguna relevante;Metadatos del paquete
+Aplicación (Python);piper-tts (motor);1.8.0;GPL-3.0-or-later;Texto a voz;Corre en un servicio aparte al que el Hub llama por HTTP. Si la imagen hub-voz se entrega a un tercero hay que acompañarla de su código fuente;Metadatos del paquete y ficha del modelo
+Aplicación (frontend);React y React DOM;18.3.1;MIT;Consola y portal;Ninguna relevante;package-lock.json
+Aplicación (frontend);React Router;6.30.6;MIT;Navegación;Ninguna relevante;package-lock.json
+Aplicación (frontend);Vite;6.4.3;MIT;Construcción del frontend;Ninguna relevante;package-lock.json
+Aplicación (frontend);TypeScript;5.6.3;Apache-2.0;Tipos y compilación;Conservar el aviso de licencia;package-lock.json
+Aplicación (frontend);Fuentes Geist y Geist Mono;5.3.0;OFL-1.1;Tipografía;Pueden redistribuirse con el software, pero no venderse por separado;package-lock.json
+Plataforma;Kubernetes distribuido por k3s;v1.32.9-k3s1;Apache-2.0;Clúster de un nodo;Ninguna relevante;Declarada por el proyecto
+Plataforma;Traefik (entrada de k3s);3.3.6;MIT;Entrada HTTP y HTTPS;Ninguna relevante;Declarada por el proyecto
+Plataforma;CoreDNS, metrics-server y local-path-provisioner (de k3s);1.12.3, 0.8.0 y 0.0.31;Apache-2.0;DNS, métricas y volúmenes;Ninguna relevante;Declarada por el proyecto
+Plataforma;k3d;Sin registrar;MIT;Clúster de laboratorio en Docker;Ninguna relevante;Declarada por el proyecto
+Plataforma;Argo CD;2.13.3;Apache-2.0;GitOps;Ninguna relevante;Declarada por el proyecto
+Plataforma;Redis (de Argo CD);7.0.15;BSD-3-Clause;Caché de Argo CD;Las versiones posteriores a la 7.2 cambiaron de licencia: no actualizar sin revisarla;Declarada por el proyecto
+Plataforma;Gitea y su ejecutor de Actions;1.22.6 y 0.2.13;MIT;Git, registro de contenedores y puerta de seguridad;Ninguna relevante;Declarada por el proyecto
+Plataforma;Backstage;Imagen fijada por digest;Apache-2.0;Catálogo y plantillas;Ninguna relevante;Declarada por el proyecto
+Plataforma;PostgreSQL;16 (Alpine);PostgreSQL License;Base de datos del Hub;Ninguna relevante;Declarada por el proyecto
+Plataforma;nginx (imagen sin privilegios);1.30;BSD-2-Clause;Servidor de la consola web;Ninguna relevante;Declarada por el proyecto
+Plataforma;SeaweedFS;4.53;Apache-2.0;Estado remoto de OpenTofu (laboratorio);Ninguna relevante;Declarada por el proyecto
+Plataforma;Docker Desktop y Docker Engine;29.9.2;Engine: Apache-2.0. Desktop: términos comerciales de Docker;Contenedores del laboratorio;Docker Desktop tiene condiciones de uso según el tamaño y el tipo de organización: confirmarlas antes de usarlo fuera del entorno académico;Declarada por el proveedor
+Observabilidad;Prometheus;3.5.0;Apache-2.0;Métricas y alertas;Ninguna relevante;Declarada por el proyecto
+Observabilidad;Alertmanager;0.28.1;Apache-2.0;Enrutamiento de alertas;Ninguna relevante;Declarada por el proyecto
+Observabilidad;Blackbox Exporter;0.27.0;Apache-2.0;Sondeo de sitios;Ninguna relevante;Declarada por el proyecto
+Observabilidad;kube-state-metrics;2.15.0;Apache-2.0;Estado de Kubernetes;Ninguna relevante;Declarada por el proyecto
+Observabilidad;Grafana Alloy;1.10.2;Apache-2.0;Recolección de registros;Ninguna relevante;Declarada por el proyecto
+Observabilidad;Grafana;12.1.1;AGPL-3.0;Tableros;Si se modifica y se ofrece como servicio en red hay que publicar el código modificado. Aquí se usa sin modificar;Declarada por el proyecto
+Observabilidad;Grafana Loki;3.5.3;AGPL-3.0;Registros;Igual que Grafana;Declarada por el proyecto
+Observabilidad;Grafana Tempo;2.8.2;AGPL-3.0;Trazas;Igual que Grafana;Declarada por el proyecto
+Entrega y seguridad;Gitleaks;8.30.1;MIT;Secretos;Ninguna relevante;Declarada por el proyecto
+Entrega y seguridad;Trivy;0.76.1;Apache-2.0;Vulnerabilidades y configuración;Ninguna relevante;Declarada por el proyecto
+Entrega y seguridad;Syft;1.55.0;Apache-2.0;SBOM;Ninguna relevante;Declarada por el proyecto
+Entrega y seguridad;Cosign;3.1.4;Apache-2.0;Firma y verificación;Ninguna relevante;Declarada por el proyecto
+Entrega y seguridad;bandit, ruff y pytest;ruff 0.14.0, pytest 9.1.1 y bandit sin fijar;Apache-2.0, MIT y MIT;Análisis estático, lint y pruebas;Solo en desarrollo y CI;Declarada por el proyecto
+Infraestructura como código;OpenTofu;1.13.2;MPL-2.0;Infraestructura como código;Si se modifican archivos de OpenTofu, esos archivos siguen la MPL;Declarada por el proyecto
+Infraestructura como código;Terraform;1.17.0;BUSL-1.1;Solo comprueba la compatibilidad del código;Uso restringido en productos que compitan con HashiCorp: no se usa en producción;Declarada por el proyecto
+Infraestructura como código;Helm y kubectl con Kustomize;4.3.2 y 1.32.9;Apache-2.0;Chart equivalente y manifiestos;Ninguna relevante;Declarada por el proyecto
+Infraestructura como código;Proveedores kubernetes y gitea;3.4.0 y 0.8.1;MPL-2.0 y MIT;Recursos de OpenTofu;Ninguna relevante;Declarada por el proyecto
+IA y MLOps;MLflow;3.18.0;Apache-2.0;Registro de modelos;Ninguna relevante;Declarada por el proyecto
+IA y MLOps;Ollama;0.40.16;MIT;Servidor de modelos locales;Ninguna relevante;Declarada por el proyecto
+Modelo;Qwen2.5 7B Instruct;Q4_K_M;Apache-2.0;Asistente, borradores y diagnóstico;Ninguna relevante;Ficha del modelo (15 nov 2026)
+Modelo;Qwen2.5 3B Instruct;Q4_K_M;Qwen Research License (solo investigación);Solo comparación;No se usa en producción ni se redistribuye;Ficha del modelo (15 nov 2026)
+Modelo;nomic-embed-text;F16;Apache-2.0;Embeddings del RAG;Ninguna relevante;Ficha del modelo (15 nov 2026)
+Modelo;faster-whisper small y base;int8;MIT;Voz a texto;Ninguna relevante;Ficha del modelo (15 nov 2026)
+Modelo;Voz Piper es_MX-claude-high;ONNX;Apache-2.0;Texto a voz;Ninguna relevante;Ficha del modelo (15 nov 2026)
+Modelo;Compuerta del asistente;Versión 1;Sin definir;Clasificador propio;El repositorio no tiene archivo de licencia;Ficha del modelo
+Datos;Preguntas de evaluación, datos de entrenamiento de la compuerta y datos semilla;—;Sin definir;Escritos por el equipo. No se usan conjuntos de datos de terceros;El repositorio no tiene archivo de licencia;Revisión del repositorio
+Base de contenedores;Debian (python:3.12-slim), Alpine y Node 22;3.12 y 22;Licencias de cada paquete (GPL, LGPL, MIT, BSD y otras);Imágenes base;Las licencias de los paquetes del sistema se pueden consultar en el SBOM de cada imagen;SBOM de la puerta
