@@ -1,0 +1,24 @@
+hu;rol;quiero;para;rf;componente
+HU-01;Administrador de la agencia;registrar un cliente con su proyecto, su servicio y su plan;que el sitio quede desplegado en su propio espacio y con su SLA;RF-02 RF-03 RF-26 RNF-11;Hub API / Consola web / Gitea (hub-gitops) / Argo CD
+HU-02;Técnico de la agencia;que una caída del sitio abra un incidente por sí sola;no depender de que el cliente llame;RF-11 RF-12 RNF-07;Prometheus y Blackbox / Alertmanager / Hub API
+HU-03;Técnico de la agencia;ver la prioridad y los tiempos de SLA con hora real de cada solicitud e incidente;atender primero lo urgente y cumplir lo prometido;RF-05 RF-13;Hub API / Consola web
+HU-04;Técnico de la agencia;volver a la última versión estable desde el incidente con un botón;recuperar el sitio en minutos y medir el tiempo;RF-14;Hub API / Gitea (hub-gitops) / Argo CD
+HU-05;Cliente PyME;crear una solicitud y ver su estado desde el portal;saber en qué va mi pedido sin llamar;RF-04 RF-16;Portal del cliente / Hub API
+HU-06;Cliente PyME;entender qué pasó en mi sitio sin términos técnicos;confiar en el servicio y saber cuánto duró la falla;RF-16 RF-19 RNF-10;Portal del cliente / Hub API
+HU-07;Técnico de la agencia;aprobar un cambio y que se publique por Git;tener cada despliegue trazable y reversible;RF-06 RF-07;Hub API / Gitea (hub-gitops) / Argo CD
+HU-08;Técnico de la agencia;que una versión con un secreto o con vulnerabilidades críticas no se pueda aprobar y se vea el motivo;no publicar sitios inseguros;RF-08 RF-09 RNF-05;Puerta de seguridad / Hub API
+HU-09;Administrador de la agencia;auditar quién hizo cada acción y que la bitácora no se pueda editar;responder ante un incidente o un reclamo;RF-01 RF-10;Hub API / PostgreSQL
+HU-10;Administrador de la agencia;ver disponibilidad frente al objetivo, MTTR, carga por técnico y costo por cliente;decidir y explicar el valor del servicio;RF-15 RF-17;Consola web / Hub API / Grafana
+HU-11;Administrador de la agencia;generar el reporte operativo y el ejecutivo en PDF;entregar al cliente un resumen claro del mes;RF-20;Hub API
+HU-12;Técnico de la agencia;obtener borradores de resumen y de mensaje con IA local y aprobarlos antes de enviarlos;ahorrar tiempo sin que nada llegue al cliente sin revisión humana;RF-18;Hub API / Ollama
+HU-13;Técnico de la agencia;recibir un diagnóstico del incidente que cite la evidencia;orientar la investigación sin confiar en afirmaciones sin fuente;RF-23;Hub API / Ollama / Prometheus / Loki
+HU-14;Técnico de la agencia;preguntar al asistente de ayuda y que solo responda lo que dice la ayuda del Hub;recibir ayuda confiable y sin gasto innecesario del modelo;RF-25 RF-28;Hub API / Ollama / PostgreSQL
+HU-15;Técnico de la agencia;dictar la pregunta y escuchar la respuesta;usar el asistente con las manos ocupadas;RF-27;Servicio de voz / Hub API / Consola web
+HU-16;Operador de la plataforma;ver los clientes y sus servicios en un catálogo y crear un sitio desde una plantilla;encontrar y dar de alta servicios de forma uniforme;RF-22;Backstage
+HU-17;Operador de la plataforma;registrar cada versión de la compuerta y del prompt con sus métricas y volver a la anterior;saber qué modelo corre y poder revertir;RF-29 RNF-20;MLflow / Ollama
+HU-18;Operador de la plataforma;recrear la infraestructura desde código y detectar cambios hechos a mano;reconstruir el laboratorio y mantener lo declarado igual a lo desplegado;RNF-02 RNF-04 RNF-08 RNF-16;OpenTofu / Argo CD / Gitea (hub-gitops)
+HU-19;Operador de la plataforma;respaldar la base del Hub cada día y restaurarla;no perder datos ante una falla;RNF-13;PostgreSQL / CronJob de respaldo
+HU-20;Administrador de la agencia;que ningún dato de clientes salga a una IA externa;cumplir la protección de datos personales;RNF-01 RNF-03 RNF-09 RNF-18;Hub API / Políticas de red / Ollama
+HU-21;Operador de la plataforma;que la API tenga límites de tiempo y de tamaño y siga viva si falla una integración;que una petición lenta o la caída de la IA, la voz o el monitoreo no tumbe el Hub;RNF-12 RNF-14 RNF-21;Hub API
+HU-22;Operador de la plataforma;que cada cambio pase lint, pruebas y escaneo de secretos antes de integrarse;mantener la calidad y no filtrar secretos;RNF-06 RNF-15;CI de GitHub / Gitleaks
+HU-23;Cliente PyME;usar una interfaz en español, con tema claro u oscuro y estados con texto e ícono;entender la pantalla sin depender del color;RNF-17;Consola web / Portal del cliente
