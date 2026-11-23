@@ -8,6 +8,12 @@ Guía corta para quien quiera proponer un cambio en este repositorio. Las reglas
 2. Trabajar **una tarea de `tasks.md` a la vez**. Si la tarea no existe, se propone primero en `tasks.md`.
 3. Ubicar cada cosa donde dice la tabla [«Dónde va cada cosa»](constitution/conventions.md#dónde-va-cada-cosa-en-el-código).
 
+## Issues
+
+- Abrir el issue con una de las [plantillas](.github/ISSUE_TEMPLATE) (error, tarea de una spec o mejora); no se aceptan issues en blanco.
+- Un issue de tarea cita la spec y la tarea (`specs/NNN-nombre/` · `TNN`) y su criterio **Verifica**; el PR que lo cierra lo enlaza con `Closes #N`.
+- Nunca pegar secretos, tokens ni datos de clientes en un issue.
+
 ## Ramas y pull requests
 
 - La rama de integración es **`dev`**: todo entra por pull request a `dev`. `main` recibe lo que ya se probó en `dev`.

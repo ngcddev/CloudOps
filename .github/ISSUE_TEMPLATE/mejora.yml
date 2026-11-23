@@ -1,0 +1,16 @@
+# Plantilla de issue para proponer una mejora o una documentación que falta.
+name: Mejora o documentación
+description: Una idea, un ajuste o un documento que falta
+labels: ["enhancement", "documentation"]
+body:
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+    validations:
+      required: true
+  - type: textarea
+    id: motivo
+    attributes:
+      label: Por qué
+      description: A qué requisito, riesgo o usuario responde
