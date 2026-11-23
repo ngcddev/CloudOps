@@ -72,3 +72,13 @@ reglas:
       Las sentencias SQL son fijas en el código y la entrada del visitante va solo como parámetros, nunca concatenada; el dato es de demostración y vive en /tmp del Pod.
       Se acepta mientras Debian no publique el arreglo; si el sitio pasara a guardar datos reales se migra a PostgreSQL.
     revisar_en: "2027-02-15"
+  - id: openssl-sin-arreglo
+    paquetes: [openssl, libssl3t64, openssl-provider-legacy]
+    cves: [CVE-2026-107494, CVE-2026-124709]
+    estado: affected
+    explotabilidad: "No se analizó el aviso en detalle: se trata como alcanzable porque la API usa OpenSSL (TLS) y no hay arreglo publicado en Debian (3.5.7-1~deb13u3)."
+    tratamiento: mitigar
+    detalle: >-
+      Decisión temporal del equipo (23 nov 2026) para no frenar la integración mientras Debian publica el arreglo. Se aplican las mitigaciones comunes (sin root, sin capacidades,
+      NetworkPolicy, sin token de Kubernetes) y la API solo recibe tráfico por Traefik. Al vencer se revisa el aviso, se reconstruyen las imágenes con la versión corregida y se borra la regla.
+    revisar_en: "2026-12-07"
