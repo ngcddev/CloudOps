@@ -2,8 +2,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Cómo contribuir
-    url: https://github.com/ngcddev/CW-CloudOps/blob/main/CONTRIBUTING.md
+    url: https://github.com/ngcddev/CloudOps/blob/dev/CONTRIBUTING.md
     about: Ramas, commits, pruebas y reglas del proyecto antes de abrir un issue o un PR.
   - name: Vulnerabilidad de seguridad
-    url: https://github.com/ngcddev/CW-CloudOps/blob/main/docs/modelo-de-amenazas.md
+    url: https://github.com/ngcddev/CloudOps/blob/dev/docs/modelo-de-amenazas.md
     about: No publicar secretos ni detalles explotables en un issue; reportar en privado al equipo.
