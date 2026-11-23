@@ -30,3 +30,10 @@ misconfigurations:
       El runner de Gitea Actions lanza las herramientas como contenedores hermanos con el socket de Docker del equipo, que exige root.
       Solo corre en el equipo de desarrollo, nunca en el clúster ni en un namespace de clientes.
     expired_at: 2027-03-31
+  - id: GCP-0031    # Instance has a public IP allocated
+    paths:
+      - infra/tofu/gcp/main.tf
+    statement: >-
+      La VM del Hub en GCP necesita IP pública estática porque es la única entrada de los clientes (spec 024): el cortafuegos solo abre 80 y 443 al mundo
+      y deja 22 y 6443 solo para la IP del equipo; el resto de los servicios no se publica. Se revisa al pasar a un balanceador administrado.
+    expired_at: 2027-03-31

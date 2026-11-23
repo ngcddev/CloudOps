@@ -1,6 +1,6 @@
 # Mapa de especificaciones
 
-> Las 24 specs del proyecto (000 a 023). La 000 es la del diseño del servicio (industrial); de la 016 a la 023 se agregaron después del plan inicial (alta en vivo, cierres de módulo, voz, sincronía GitOps y entrega final). Cómo se trabaja cada una: [docs/sdd.md](../docs/sdd.md).
+> Las 25 specs del proyecto (000 a 024). La 000 es la del diseño del servicio (industrial); de la 016 a la 024 se agregaron después del plan inicial (alta en vivo, cierres de módulo, voz, sincronía GitOps, entrega final y producción en la nube). Cómo se trabaja cada una: [docs/sdd.md](../docs/sdd.md).
 >
 > La tabla se regenera desde el encabezado de cada `spec.md` y desde sus `tasks.md` (el conteo de tareas no se escribe a mano). Los requerimientos de la columna son los originales de [docs/requerimientos.md](../docs/requerimientos.md).
 
@@ -34,6 +34,7 @@
 | [021](021-voz-del-asistente/spec.md) | Voz del asistente (componente multimodal, módulo 6) | Equipo de Sistemas | 6 | — | 012, 019, 020 | Terminada (todas sus tareas cerradas; voz verificada en navegador real el 17 nov 2026) | 9 / 9 |
 | [022](022-sincronia-gitops/spec.md) | Sincronía simple y correcta entre el repositorio principal y hub-gitops | Equipo de Sistemas | 2 (GitOps) | — | 005, 016, 017 | Terminada (todas sus tareas cerradas; sincronía verificada el 16 nov 2026) | 37 / 37 |
 | [023](023-entrega-final/spec.md) | Entrega final: informe consolidador | Sistemas (redacción técnica y verificación contra el código) · Industrial (contexto, partes interesadas, riesgos de cronograma) | 7 | — | 015, 019, 020, 021 | En curso | 9 / 10 |
+| [024](024-produccion-en-gcp/spec.md) | CloudOps Hub en producción en GCP con la IA local por túnel | Sistemas (Cloud / Platform) · Industrial (costo y calendario de apagado) | 7 | RNF | 003, 005, 011, 021, 022 | Spec y plan | 0 / 16 |
 
 **Estados posibles:** Spec y plan → Tareas listas → En curso → Terminada (criterios pasan en la demo). «Pospuesta» indica que se reemplazó por otra spec.
 
