@@ -1,3 +1,4 @@
+// Detalle de una solicitud para la agencia (spec 004): asignación, cambio de estado, plazo y cambios de versión ligados (spec 005).
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
