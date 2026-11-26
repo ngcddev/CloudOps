@@ -109,7 +109,7 @@ bash gitops/pruebas/salida-red.sh [cliente] --estado        # solo mide (no fall
 ```
 
 `backend/tests/test_salida_de_red.py` vigila los archivos (en CI): falla si alguien abre una salida (un `ipBlock`, otro namespace u otro puerto) o si Kustomize y el chart difieren.
-**Estado verificado (16 nov 2026, `entrega/evidencias/`):** `hub` y los clientes niegan por defecto la entrada y la salida; `monitoring`, `gitea` y `mlops` restringen la entrada (NetworkPolicies en `observability/networkpolicy.yaml`, `platform/gitea/networkpolicy.yaml` y `platform/mlops/networkpolicy.yaml`) pero no la salida. Loki, Prometheus, Alertmanager y MLflow no piden autenticación: su protección es la red.
+**Estado verificado (16 nov 2026):** `hub` y los clientes niegan por defecto la entrada y la salida; `monitoring`, `gitea` y `mlops` restringen la entrada (NetworkPolicies en `observability/networkpolicy.yaml`, `platform/gitea/networkpolicy.yaml` y `platform/mlops/networkpolicy.yaml`) pero no la salida. Loki, Prometheus, Alertmanager y MLflow no piden autenticación: su protección es la red.
 Si un sitio nuevo necesita llamar a algo (una API externa, por ejemplo), hay que añadir esa salida a propósito en la base y en el chart, con su prueba.
 
 ## Cómo se comprueba
@@ -322,7 +322,7 @@ kubectl -n argocd rollout restart statefulset/argocd-application-controller depl
 | Trazas hacia Tempo | `OTEL_EXPORTER_OTLP_ENDPOINT` en `hub/api.yaml` | `observability/pruebas/trazas.sh` |
 
 Limitaciones: el volumen de respaldos está en el mismo nodo que la base (copiarlos fuera es un paso manual); la NetworkPolicy del Hub, el CronJob y las
-variables nuevas se probaron en el clúster k3d (pruebas de `gitops/pruebas/`; registros en `entrega/evidencias/`).
+variables nuevas se probaron en el clúster k3d (pruebas de `gitops/pruebas/`).
 Para restaurar la base viva: detener la API (`kubectl -n hub scale deploy/api --replicas=0`), restaurar con `REEMPLAZAR=1` y volver a escalar.
 
 ## Levantar el clúster sin instalar k3d (Windows con Docker Desktop)

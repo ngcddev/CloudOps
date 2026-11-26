@@ -44,7 +44,7 @@ El CI de GitHub Actions corre lo mismo y además la observabilidad, el análisis
 - **No desplegar a mano:** el clúster solo cambia por Git (hub-gitops) y Argo CD.
 - **Contenedores sin root.**
 - Textos, comentarios y documentación en español; nombres de código en inglés. Cada archivo empieza con un comentario que dice qué es.
-- **Ninguna cifra de estado se escribe a mano** (número de pruebas, versiones desplegadas, porcentajes): sale del paquete de evidencias (`entrega/evidencias/`) o se cita el comando que la produce.
+- **Ninguna cifra de estado se escribe a mano** (número de pruebas, versiones desplegadas, porcentajes): se cita el comando que la produce o la monografía final.
 
 ## Licencia
 

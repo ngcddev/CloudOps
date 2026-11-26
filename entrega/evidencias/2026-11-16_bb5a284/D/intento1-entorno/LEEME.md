@@ -1,5 +1,0 @@
-# Primer intento de tres evaluaciones de IA
-- D04 y D05: el contenedor no tenía `DATABASE_URL` ni `JWT_SECRET`, que `app.config` exige al importarse; se repiten con valores de evaluación (no son secretos reales).
-- D02 `rag` con el conjunto ciego: «Ollama no calculó el embedding de la pregunta» (a los 77 s); se repite por si fue un fallo transitorio al intercambiar el modelo de chat y el de embeddings en la GPU de 8 GB.
-- D12 (voz en navegador): la prueba falló porque la política CSP del Hub (cabeceras de seguridad, spec 022 T36) prohíbe `eval` y `wait_for_function` de Playwright evalúa texto en la página; **hallazgo H-UI-01**: el script de prueba no se actualizó tras endurecer la CSP. Se corrigió el script (`bypass_csp=True` solo en el navegador de pruebas, no en el Hub) y se repite.
-- Nota posterior (17 nov): el PR #214 trae una corrección mejor para D12 (espera con `page.evaluate`, sin `wait_for_function`, así la prueba corre **con** la CSP real); por eso el `bypass_csp` usado en esta corrida no se incorpora al repositorio.

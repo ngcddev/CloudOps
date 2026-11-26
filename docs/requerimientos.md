@@ -1,6 +1,6 @@
 # Requerimientos
 
-> Requerimientos **originales** del proyecto (MoSCoW). Los vigentes, con su estado verificado y su evidencia, van en el informe final de la entrega (`entrega/`), construido a partir del paquete de evidencias.
+> Requerimientos **originales** del proyecto (MoSCoW). Los vigentes, con su estado verificado y su evidencia, van en la monografía final.
 
 > Fuente: documento "CloudOps Client Hub — Plan por módulos y requerimientos".
 > Cada requerimiento indica en qué módulo se construye y qué spec lo cubre, para que nada quede fuera del [roadmap](../constitution/roadmap.md).

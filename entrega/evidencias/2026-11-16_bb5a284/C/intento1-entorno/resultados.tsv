@@ -1,6 +1,0 @@
-C08-salida-red	C	FALLO	2	1	2026-11-16T22:48:21Z	Salida de red cerrada de un cliente	bash gitops/pruebas/salida-red.sh
-C09-salida-hub	C	FALLO	1	6	2026-11-16T22:48:23Z	Salida de red del Hub (controles)	bash gitops/pruebas/salida-hub.sh
-C10-entrada-gitea	C	FALLO	1	1	2026-11-16T22:48:30Z	Entrada de red a Gitea	bash gitops/pruebas/entrada-gitea.sh
-C11-entrada-mlops	C	FALLO	1	1	2026-11-16T22:48:33Z	Entrada de red a MLflow	bash gitops/pruebas/entrada-mlops.sh
-C12-entrada-observabilidad	C	FALLO	1	5	2026-11-16T22:48:35Z	Entrada de red a la observabilidad	bash observability/pruebas/entrada.sh
-C14-admision	C	FALLO	1	1	2026-11-16T22:49:09Z	Política de admisión de imágenes (SITIO=colegio)	env SITIO=colegio bash gitops/pruebas/admision.sh

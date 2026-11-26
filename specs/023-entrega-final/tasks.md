@@ -45,3 +45,8 @@
 
 - [x] T16 · Selector propio con estilo (`Select`) en lugar del `<select>` nativo, con lista desplegable del mismo diseño que la página (tema claro y oscuro, teclado, lectores de pantalla y celular) — **Verifica:** los 22 selectores de las pantallas de agencia y portal usan el componente, la lista abierta usa los tokens de diseño, se maneja con flechas, Inicio, Fin, Enter, Esc y la primera letra, y `tsc` y `npm run build` pasan.
 - [x] T17 · Campos de fecha y de mes propios (`DateField` y `MonthField`) con calendario desplegable en español, semana desde el lunes y día de hoy en la hora de Bogotá, en lugar de `<input type="date">` y `type="month"` — **Verifica:** las 4 pantallas con fechas (bitácora, tablero, métricas del cliente y reportes) los usan, respetan `max`, se manejan con teclado y se ven bien en claro, oscuro y 375 px de ancho.
+
+## Limpieza final del repositorio (propuestas el 26 nov 2026)
+
+- [ ] T18 · Dejar en el repositorio solo lo vigente: salen los constructores de documentos (`entrega/*.py`, `.sh`, `.ps1`, plantilla e `informe/*.md`), el paquete de evidencias crudas, `docs/historico` y `docs/cumplimiento-tecnico.md`; los scripts que preparan la demo pasan a `demo/`. Lo que sale se archiva fuera del repositorio (`CW/CloudOps-archivo`), no se borra — **Verifica:** ningún enlace vivo (README, CONTRIBUTING, constitución, READMEs y scripts) apunta a una ruta que ya no existe, y `dejar-demo-lista.sh` corre desde `demo/`.
+- [ ] T19 · Revisión de código limpio sin cambiar contratos: encabezado en cada archivo, comentarios y docstrings en español, nombres de código en inglés, sin código muerto ni imports sin usar — **Verifica:** pasan las pruebas del backend y de `ai/`, `ruff check .`, `tsc` y `npm run build`.
