@@ -37,7 +37,7 @@ from app.services.messages import client_message
 from app.services.incident_flow import IncidentFlowError, add_event, mttr_minutes
 from app.services.incident_links import build_links, commit_url
 from app.services.sla import due_dates, incident_clocks
-from app.paginacion import Pagina, pagina
+from app.paginacion import Page, paginate
 
 router = APIRouter(prefix="/api/incidents", tags=["incidentes"], dependencies=[Depends(require_agency)])
 
@@ -134,7 +134,7 @@ def list_incidents(
     status_filter: str | None = Query(default=None, alias="status"),
     client_id: int | None = Query(default=None),
     priority: str | None = Query(default=None),
-    page: Pagina = Depends(pagina),
+    page: Page = Depends(paginate),
     db: Session = Depends(get_db),
 ):
     """Lista los incidentes, los más recientes primero, con filtros por estado, cliente y prioridad."""

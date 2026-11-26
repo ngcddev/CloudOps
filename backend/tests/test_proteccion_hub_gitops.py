@@ -30,7 +30,7 @@ def test_lo_que_el_hub_escribe_esta_permitido(seeded, proteccion):
         escritas.add(gitops_publish.kustomization_path(servicio.namespace))        # versión nueva y rollback
     assert escritas and any(ruta.endswith("backend.yaml") for ruta in escritas), "se esperaban los tres archivos de un sitio con formulario"
 
-    no_permitidas = sorted(ruta for ruta in escritas if not proteccion.lo_puede_cambiar_el_hub(ruta))
+    no_permitidas = sorted(ruta for ruta in escritas if not proteccion.hub_can_change(ruta))
     assert not no_permitidas, f"el Hub escribe rutas que la protección de Gitea le bloquearía: {no_permitidas}"
 
 
@@ -40,25 +40,25 @@ def test_lo_que_el_hub_escribe_esta_permitido(seeded, proteccion):
     "clients/ferreteria/otro.yaml", "clients/a/b/kustomization.yaml", "kustomization.yaml",
 ])
 def test_lo_que_escribe_el_equipo_sigue_protegido(ruta, proteccion):
-    assert not proteccion.lo_puede_cambiar_el_hub(ruta)
+    assert not proteccion.hub_can_change(ruta)
 
 
 def test_la_regla_deja_empujar_solo_al_administrador(proteccion):
-    regla = proteccion.regla("forja-admin")
+    regla = proteccion.rule("forja-admin")
     assert regla["push_whitelist_usernames"] == ["forja-admin"] and regla["enable_push_whitelist"] is True
-    assert regla["unprotected_file_patterns"] == ";".join(proteccion.PATRONES_DEL_HUB)
+    assert regla["unprotected_file_patterns"] == ";".join(proteccion.HUB_PATTERNS)
     assert "protected_file_patterns" not in regla   # se usa la lista de lo permitido, no la de lo prohibido: lo nuevo nace protegido
 
 
 def test_diferencias_detecta_una_regla_que_no_es_la_esperada(proteccion):
-    esperada = proteccion.regla("forja-admin")
-    assert proteccion.diferencias(dict(esperada), esperada) == []
+    esperada = proteccion.rule("forja-admin")
+    assert proteccion.differences(dict(esperada), esperada) == []
     suelta = {**esperada, "enable_push_whitelist": False, "unprotected_file_patterns": "", "push_whitelist_usernames": ["hub-bot"]}
-    campos = " ".join(proteccion.diferencias(suelta, esperada))
+    campos = " ".join(proteccion.differences(suelta, esperada))
     assert "enable_push_whitelist" in campos and "unprotected_file_patterns" in campos and "push_whitelist_usernames" in campos
 
 
 def test_el_glob_se_comporta_como_el_de_gitea(proteccion):
-    assert proteccion.coincide("clients/*/kustomization.yaml", "clients/ferreteria/kustomization.yaml")
-    assert not proteccion.coincide("clients/*/kustomization.yaml", "clients/a/b/kustomization.yaml")   # `*` no cruza carpetas
-    assert proteccion.coincide("observability/**", "observability/a/b/c.yml")                           # `**` sí
+    assert proteccion.matches("clients/*/kustomization.yaml", "clients/ferreteria/kustomization.yaml")
+    assert not proteccion.matches("clients/*/kustomization.yaml", "clients/a/b/kustomization.yaml")   # `*` no cruza carpetas
+    assert proteccion.matches("observability/**", "observability/a/b/c.yml")                           # `**` sí

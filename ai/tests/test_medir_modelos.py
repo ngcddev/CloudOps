@@ -15,21 +15,21 @@ EMBED = {"modelo": "nomic-embed-text", "tipo": "embeddings", "repeticiones": 3, 
 
 
 def test_la_tabla_de_un_modelo_de_chat_trae_velocidad_memoria_y_fecha():
-    tabla = medir_modelos.linea_ficha(CHAT)
+    tabla = medir_modelos.card_line(CHAT)
 
     assert "33.7 tokens/s" in tabla and "4535 MiB / 4535 MiB" in tabla and "Medido el 2026-11-15" in tabla
 
 
 def test_la_tabla_de_embeddings_mide_textos_por_segundo():
-    assert "100.0 textos/s" in medir_modelos.linea_ficha(EMBED)
+    assert "100.0 textos/s" in medir_modelos.card_line(EMBED)
 
 
 def test_actualizar_la_ficha_reemplaza_solo_el_bloque_marcado(tmp_path, monkeypatch):
-    monkeypatch.setattr(medir_modelos, "FICHAS", tmp_path)
+    monkeypatch.setattr(medir_modelos, "CARDS", tmp_path)
     ficha = tmp_path / "qwen2.5-7b-instruct.md"
     ficha.write_text("# Ficha\n\n## Medición\n\n<!-- medicion:qwen2.5:7b-instruct -->\nPendiente de medir.\n<!-- /medicion -->\n\n## Límites\n\nTexto propio.\n", encoding="utf-8")
 
-    assert medir_modelos.actualizar_ficha(CHAT) is True
+    assert medir_modelos.update_card(CHAT) is True
     texto = ficha.read_text(encoding="utf-8")
 
     assert "Pendiente de medir" not in texto and "| Velocidad | 33.7 tokens/s |" in texto
@@ -37,7 +37,7 @@ def test_actualizar_la_ficha_reemplaza_solo_el_bloque_marcado(tmp_path, monkeypa
 
 
 def test_una_ficha_sin_el_bloque_no_se_toca(tmp_path, monkeypatch):
-    monkeypatch.setattr(medir_modelos, "FICHAS", tmp_path)
+    monkeypatch.setattr(medir_modelos, "CARDS", tmp_path)
     (tmp_path / "qwen2.5-7b-instruct.md").write_text("# Ficha sin bloque\n", encoding="utf-8")
 
-    assert medir_modelos.actualizar_ficha(CHAT) is False
+    assert medir_modelos.update_card(CHAT) is False

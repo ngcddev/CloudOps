@@ -7,15 +7,15 @@ from opentelemetry import trace
 
 from app.config import settings
 
-NOMBRE = "hub-api"
+SERVICE_NAME = "hub-api"
 
 
 def tracer() -> trace.Tracer:
     """El tracer de la aplicación; sin telemetría configurada devuelve uno que no hace nada."""
-    return trace.get_tracer(NOMBRE)
+    return trace.get_tracer(SERVICE_NAME)
 
 
-def configurar(app, exporter=None):
+def configure(app, exporter=None):
     """Activa las trazas y devuelve el proveedor de trazas; sin endpoint (ni exportador de prueba) no hace nada y devuelve None.
 
     `exporter` permite a las pruebas inyectar uno en memoria en lugar del exportador OTLP.
@@ -33,7 +33,7 @@ def configurar(app, exporter=None):
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-    proveedor = TracerProvider(resource=Resource.create({"service.name": NOMBRE, "deployment.environment": "laboratorio"}))
+    proveedor = TracerProvider(resource=Resource.create({"service.name": SERVICE_NAME, "deployment.environment": "laboratorio"}))
     proveedor.add_span_processor(BatchSpanProcessor(exporter))
     trace.set_tracer_provider(proveedor)
     # /health y /livez los consulta el clúster cada pocos segundos: no aportan nada y llenarían Tempo

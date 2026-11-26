@@ -93,14 +93,14 @@ def test_cumplimiento_sla_con_4_cerrados_dentro_y_1_fuera_da_80(db):
         closed_at=created_at + timedelta(hours=6, minutes=10),
     )
 
-    assert kpi.cumplimiento_sla(db, service.project.client_id, MES) == 80.0
+    assert kpi.sla_compliance(db, service.project.client_id, MES) == 80.0
 
 
 def test_cumplimiento_sla_con_ninguna_solicitud_terminada_da_none(db):
     service = _servicio(db)
     _solicitud(db, service.id, "abierto", datetime(2026, 10, 5, 14, 0, tzinfo=timezone.utc))
 
-    assert kpi.cumplimiento_sla(db, service.project.client_id, MES) is None
+    assert kpi.sla_compliance(db, service.project.client_id, MES) is None
 
 
 def test_solicitudes_del_mes_cuentan_abiertas_y_cerradas(db):
@@ -120,8 +120,8 @@ def test_solicitudes_del_mes_cuentan_abiertas_y_cerradas(db):
         resolution_due_at=resolution_due_at, first_response_at=created_at, resolved_at=created_at,
     )
 
-    assert kpi.solicitudes_abiertas(db, service.project.client_id, MES) == 1
-    assert kpi.solicitudes_cerradas(db, service.project.client_id, MES) == 1
+    assert kpi.open_requests(db, service.project.client_id, MES) == 1
+    assert kpi.closed_requests(db, service.project.client_id, MES) == 1
 
 
 def test_costo_del_cliente_suma_horas_por_hora_del_parametro(db):
@@ -144,8 +144,8 @@ def test_costo_del_cliente_suma_horas_por_hora_del_parametro(db):
     db.commit()
 
     # 3 horas + 2 horas a 25 000 por hora = 125 000 de costo para el cliente
-    assert kpi.horas_por_cliente(db, service.project.client_id, MES) == 5.0
-    assert kpi.costo_por_cliente(db, service.project.client_id, MES) == 125000.0
+    assert kpi.hours_by_client(db, service.project.client_id, MES) == 5.0
+    assert kpi.cost_by_client(db, service.project.client_id, MES) == 125000.0
 
 
 def test_carga_del_tecnico_con_30_horas_registradas_y_120_disponibles_da_25(db):
@@ -167,8 +167,8 @@ def test_carga_del_tecnico_con_30_horas_registradas_y_120_disponibles_da_25(db):
     db.commit()
 
     # 30 h registradas con 120 disponibles del mes = 25 % de carga
-    assert kpi.horas_del_tecnico(db, tecnico.id, MES) == 30.0
-    assert kpi.carga_tecnico(db, tecnico.id, MES) == 0.25
+    assert kpi.technician_hours(db, tecnico.id, MES) == 30.0
+    assert kpi.technician_load(db, tecnico.id, MES) == 0.25
 
 
 def test_mttr_del_mes_promedia_las_mitigaciones(db):
@@ -192,13 +192,13 @@ def test_mttr_del_mes_promedia_las_mitigaciones(db):
     db.commit()
 
     # (6 min + 10 min) / 2 = 8 min de MTTR
-    assert kpi.mttr_del_mes(db, service.project.client_id, MES) == 8.0
+    assert kpi.monthly_mttr(db, service.project.client_id, MES) == 8.0
 
 
 def test_mttr_del_mes_sin_incidentes_da_none(db):
     service = _servicio(db)
 
-    assert kpi.mttr_del_mes(db, service.project.client_id, MES) is None
+    assert kpi.monthly_mttr(db, service.project.client_id, MES) is None
 
 
 def _transport_ok(valor: float) -> Transport:
@@ -222,9 +222,9 @@ def test_disponibilidad_del_mes_con_prometheus_simulado(db):
     client_id = service.project.client_id
 
     # 0.992 de promedio de probe_success = 99,2 % de disponibilidad
-    assert kpi.disponibilidad_del_mes(db, client_id, MES, transport=_transport_ok(0.992)) == 99.2
+    assert kpi.monthly_availability(db, client_id, MES, transport=_transport_ok(0.992)) == 99.2
     # El SLO del plan Premium es 99,9: la disponibilidad del mes no cumplió
-    assert kpi.cumple_objetivo(db, client_id, MES, transport=_transport_ok(0.992)) is False
+    assert kpi.meets_target(db, client_id, MES, transport=_transport_ok(0.992)) is False
 
 
 def test_disponibilidad_consulta_la_etiqueta_client_del_job_sitios(db):
@@ -242,7 +242,7 @@ def test_disponibilidad_consulta_la_etiqueta_client_del_job_sitios(db):
             {"status": "success", "data": {"result": [{"metric": {}, "value": [1761446400, "0.992"]}]}}
         ).encode()
 
-    assert kpi.disponibilidad_del_mes(db, service.project.client_id, MES, transport=transport) == 99.2
+    assert kpi.monthly_availability(db, service.project.client_id, MES, transport=transport) == 99.2
     assert 'avg_over_time(probe_success{client="restaurante"}' in urls[0]
 
 
@@ -254,15 +254,15 @@ def test_cumple_objetivo_con_slo_distinto(db):
     plan.slo_availability = Decimal("99.0")
     db.commit()
 
-    assert kpi.cumple_objetivo(db, client_id, MES, transport=_transport_ok(0.992)) is True
+    assert kpi.meets_target(db, client_id, MES, transport=_transport_ok(0.992)) is True
 
 
 def test_disponibilidad_con_prometheus_caido_da_none(db):
     service = _servicio(db)
 
-    assert kpi.disponibilidad_del_mes(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
-    assert kpi.cumple_objetivo(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
-    assert kpi.latencia_p95_del_mes(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
+    assert kpi.monthly_availability(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
+    assert kpi.meets_target(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
+    assert kpi.monthly_latency_p95(db, service.project.client_id, "2026-11", transport=_transport_error()) is None
 
 
 def _transport_rango(valores: list[float]) -> Transport:
@@ -293,7 +293,7 @@ def _transport_rango(valores: list[float]) -> Transport:
 def test_serie_disponibilidad_devuelve_porcentajes_cada_5_min(db):
     service = _servicio(db)
 
-    puntos = kpi.serie_disponibilidad(
+    puntos = kpi.availability_series(
         db, service.project.client_id, MES, transport=_transport_rango([0.99, 0.0, 1.0])
     )
 
@@ -305,7 +305,7 @@ def test_serie_disponibilidad_devuelve_porcentajes_cada_5_min(db):
 def test_serie_latencia_p95_devuelve_los_puntos(db):
     service = _servicio(db)
 
-    puntos = kpi.serie_latencia_p95(
+    puntos = kpi.latency_p95_series(
         db, service.project.client_id, MES, transport=_transport_rango([0.2, 0.45])
     )
 
@@ -316,5 +316,5 @@ def test_serie_latencia_p95_devuelve_los_puntos(db):
 def test_series_con_prometheus_caido_dan_none(db):
     service = _servicio(db)
 
-    assert kpi.serie_disponibilidad(db, service.project.client_id, MES, transport=_transport_error()) is None
-    assert kpi.serie_latencia_p95(db, service.project.client_id, MES, transport=_transport_error()) is None
+    assert kpi.availability_series(db, service.project.client_id, MES, transport=_transport_error()) is None
+    assert kpi.latency_p95_series(db, service.project.client_id, MES, transport=_transport_error()) is None

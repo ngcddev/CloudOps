@@ -14,7 +14,7 @@ WHISPER = {
     "base": ("Systran/faster-whisper-base", "ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66", "d01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9"),
     "small": ("Systran/faster-whisper-small", "536b0662742c02347bc0e980a01041f333bce120", "3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671"),
 }
-WHISPER_ARCHIVOS = ["config.json", "tokenizer.json", "vocabulary.txt", "model.bin"]
+WHISPER_FILES = ["config.json", "tokenizer.json", "vocabulary.txt", "model.bin"]
 PIPER_REV = "6b9cfaacb4fb2e02a9621227e3c1a48bec9710c3"
 PIPER_BASE = f"{HF}/rhasspy/piper-voices/resolve/{PIPER_REV}/es/es_MX/claude/high/es_MX-claude-high"
 PIPER_ONNX_SHA256 = "3ef40a71ea63852cd8ab7e6fa7d2ecdcfa67a0b47c9c48e3f10e02ee02083ea0"
@@ -28,7 +28,7 @@ def sha256(ruta: Path) -> str:
     return h.hexdigest()
 
 
-def bajar(url: str, destino: Path, esperado: str | None) -> None:
+def download(url: str, destino: Path, esperado: str | None) -> None:
     """Descarga `url` a `destino`; con `esperado`, comprueba el SHA-256 (si ya está y coincide no vuelve a bajar)."""
     if destino.exists() and (esperado is None or sha256(destino) == esperado):
         print(f"  ya está: {destino.name}")
@@ -45,6 +45,7 @@ def bajar(url: str, destino: Path, esperado: str | None) -> None:
 
 
 def main() -> int:
+    """Descarga los modelos de voz a la carpeta indicada y verifica sus sumas."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("carpeta", type=Path)
     ap.add_argument("--whisper", choices=sorted(WHISPER), default="small")
@@ -52,11 +53,11 @@ def main() -> int:
 
     repo, revision, suma = WHISPER[args.whisper]
     print(f"Voz a texto: {repo}")
-    for archivo in WHISPER_ARCHIVOS:
-        bajar(f"{HF}/{repo}/resolve/{revision}/{archivo}", args.carpeta / f"whisper-{args.whisper}" / archivo, suma if archivo == "model.bin" else None)
+    for archivo in WHISPER_FILES:
+        download(f"{HF}/{repo}/resolve/{revision}/{archivo}", args.carpeta / f"whisper-{args.whisper}" / archivo, suma if archivo == "model.bin" else None)
     print("Texto a voz: Piper es_MX-claude-high")
-    bajar(f"{PIPER_BASE}.onnx", args.carpeta / "piper" / "voz.onnx", PIPER_ONNX_SHA256)
-    bajar(f"{PIPER_BASE}.onnx.json", args.carpeta / "piper" / "voz.onnx.json", None)
+    download(f"{PIPER_BASE}.onnx", args.carpeta / "piper" / "voz.onnx", PIPER_ONNX_SHA256)
+    download(f"{PIPER_BASE}.onnx.json", args.carpeta / "piper" / "voz.onnx.json", None)
     print("Modelos listos.")
     return 0
 

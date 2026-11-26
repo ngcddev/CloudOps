@@ -14,7 +14,7 @@ import {
   type TicketPriority,
 } from "../../api";
 import SlaClock from "../../components/SlaClock";
-import { useSondeo } from "../../hooks/useSondeo";
+import { usePolling } from "../../hooks/usePolling";
 import { Select } from "../../components/Select";
 
 // Cada cuánto se vuelve a pedir la lista: un incidente abierto por el monitoreo aparece sin recargar
@@ -158,7 +158,7 @@ export default function IncidentList() {
   useEffect(() => {
     load();
   }, [load]);
-  useSondeo(load, REFRESH_MS);
+  usePolling(load, REFRESH_MS);
 
   return (
     <>

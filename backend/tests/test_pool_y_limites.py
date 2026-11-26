@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.config import settings
-from app.db import opciones_del_motor, soltar_conexion
+from app.db import engine_options, release_connection
 from app.models import Incident, User
 from app.schemas.change_request import ChangeRequestReject
 from app.schemas.client import ProjectCreate
@@ -25,7 +25,7 @@ def test_postgresql_recibe_el_pool_y_los_tiempos_limite(monkeypatch):
     monkeypatch.setattr(settings, "db_statement_timeout_ms", 1500)
     monkeypatch.setattr(settings, "db_idle_in_transaction_timeout_ms", 99000)
 
-    opciones = opciones_del_motor("postgresql+psycopg://hub:x@db:5432/hub")
+    opciones = engine_options("postgresql+psycopg://hub:x@db:5432/hub")
 
     assert (opciones["pool_size"], opciones["max_overflow"], opciones["pool_timeout"]) == (7, 3, 4)
     assert opciones["pool_pre_ping"] is True
@@ -34,7 +34,7 @@ def test_postgresql_recibe_el_pool_y_los_tiempos_limite(monkeypatch):
 
 def test_sqlite_no_recibe_argumentos_de_pool():
     # El pool de SQLite no admite max_overflow ni pool_timeout: pasarlos rompe las pruebas y los scripts de ai/
-    assert opciones_del_motor("sqlite://") == {"pool_pre_ping": True}
+    assert engine_options("sqlite://") == {"pool_pre_ping": True}
 
 
 def test_los_valores_por_defecto_son_los_documentados():
@@ -48,7 +48,7 @@ def test_soltar_la_conexion_termina_la_transaccion(db):
     db.scalars(select(User)).all()
     assert db.in_transaction()
 
-    soltar_conexion(db)
+    release_connection(db)
 
     assert not db.in_transaction()
 
@@ -58,7 +58,7 @@ def test_soltar_la_conexion_no_tira_cambios_sin_guardar(seeded):
     usuario.name = "Cambio sin guardar"
 
     with pytest.raises(RuntimeError, match="cambios sin guardar"):
-        soltar_conexion(seeded)
+        release_connection(seeded)
 
     assert usuario.name == "Cambio sin guardar"   # sigue ahí: no se hizo rollback
 
@@ -97,7 +97,7 @@ def test_generar_borradores_no_sostiene_una_conexion_mientras_espera_a_ollama(se
     monkeypatch.setattr(settings, "ollama_url", "http://ollama.test:11434")
     seeded.get(Incident, mitigado.id)   # transacción abierta
 
-    borradores = ai_drafts.generar(seeded, mitigado, transport=transporte)
+    borradores = ai_drafts.generate(seeded, mitigado, transport=transporte)
 
     assert durante and not any(durante)
     assert {b.kind for b in borradores} == set(ai_drafts.KINDS) and all(b.status == "borrador_ia" for b in borradores)

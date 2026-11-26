@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
-  fijarMes,
+  rememberMonth,
   getClientDashboard,
   getClientSeries,
-  mesActual,
+  currentMonthKey,
   type ClientDashboardKpi,
   type ClientSeries,
 } from "../../api";
@@ -29,7 +29,7 @@ function p95(valores: number[]): number | null {
 export default function ClientMetrics() {
   const { id } = useParams();
   const clientId = Number(id);
-  const [month, setMonth] = useState(mesActual());
+  const [month, setMonth] = useState(currentMonthKey());
   const [series, setSeries] = useState<ClientSeries | null>(null);
   const [client, setClient] = useState<ClientDashboardKpi | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,9 +77,9 @@ export default function ClientMetrics() {
             <MonthField
               value={month}
               onChange={(event) => {
-                const nuevo = event.target.value || mesActual();
+                const nuevo = event.target.value || currentMonthKey();
                 setMonth(nuevo);
-                fijarMes(nuevo);
+                rememberMonth(nuevo);
               }}
             />
           </label>

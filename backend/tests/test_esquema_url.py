@@ -11,12 +11,12 @@ from app.services.assistant_gate import RemoteGate, load_model
 @pytest.mark.parametrize("url", ["file:///etc/passwd", "ftp://servidor/archivo", "gopher://x", "//sin-esquema", "javascript:alert(1)"])
 def test_validar_esquema_rechaza_lo_que_no_es_http(url):
     with pytest.raises(ValueError):
-        http.validar_esquema(url)
+        http.validate_scheme(url)
 
 
 @pytest.mark.parametrize("url", ["http://gitea.gitea.svc:3000", "https://hub.local/api", "HTTP://MAYUSCULAS"])
 def test_validar_esquema_acepta_http_y_https(url):
-    assert http.validar_esquema(url) == url
+    assert http.validate_scheme(url) == url
 
 
 def test_el_transporte_comun_no_abre_un_archivo_local():

@@ -1,7 +1,7 @@
 // Hook de las listas desplegables propias (selector, fecha y mes): coloca la lista junto a su campo, la voltea hacia arriba si abajo no cabe, la mantiene dentro de la ventana y la cierra al pulsar fuera.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
-export interface PosicionLista {
+export interface ListPosition {
   top: number;
   left: number;
   minWidth: number;
@@ -9,13 +9,13 @@ export interface PosicionLista {
   arriba: boolean;
 }
 
-const MARGEN = 8; // distancia mínima al borde de la ventana
-const SEPARACION = 4; // espacio entre el campo y la lista
+const MARGIN = 8; // distancia mínima al borde de la ventana
+const GAP = 4; // espacio entre el campo y la lista
 
 export function usePopover(abierto: boolean, cerrar: () => void, altoMaximo = 320) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<PosicionLista | null>(null);
+  const [pos, setPos] = useState<ListPosition | null>(null);
 
   const colocar = useCallback(() => {
     const trigger = triggerRef.current;
@@ -23,14 +23,14 @@ export function usePopover(abierto: boolean, cerrar: () => void, altoMaximo = 32
     if (!trigger || !lista) return;
     const campo = trigger.getBoundingClientRect();
     const natural = lista.scrollHeight + 2; // altura del contenido más los dos bordes
-    const debajo = window.innerHeight - campo.bottom - SEPARACION - MARGEN;
-    const encima = campo.top - SEPARACION - MARGEN;
+    const debajo = window.innerHeight - campo.bottom - GAP - MARGIN;
+    const encima = campo.top - GAP - MARGIN;
     const arriba = natural > debajo && encima > debajo;
     const maxHeight = Math.max(120, Math.min(altoMaximo, arriba ? encima : debajo));
     const alto = Math.min(natural, maxHeight);
     const ancho = Math.max(campo.width, lista.offsetWidth);
-    const left = Math.max(MARGEN, Math.min(campo.left, window.innerWidth - ancho - MARGEN));
-    const top = arriba ? campo.top - SEPARACION - alto : campo.bottom + SEPARACION;
+    const left = Math.max(MARGIN, Math.min(campo.left, window.innerWidth - ancho - MARGIN));
+    const top = arriba ? campo.top - GAP - alto : campo.bottom + GAP;
     setPos({ top, left, minWidth: campo.width, maxHeight, arriba });
   }, [altoMaximo]);
 

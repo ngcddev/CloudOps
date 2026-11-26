@@ -8,7 +8,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from app.config import settings
 
 
-def opciones_del_motor(url: str) -> dict:
+def engine_options(url: str) -> dict:
     """Opciones de `create_engine` según la base. Solo PostgreSQL recibe el pool y los tiempos límite: SQLite (pruebas y scripts de ai/) usa otro
     tipo de pool que no admite esos argumentos."""
     opciones: dict = {"pool_pre_ping": True}
@@ -25,7 +25,7 @@ def opciones_del_motor(url: str) -> dict:
     return opciones
 
 
-engine = create_engine(settings.database_url, **opciones_del_motor(settings.database_url))
+engine = create_engine(settings.database_url, **engine_options(settings.database_url))
 SessionLocal = sessionmaker(bind=engine, autoflush=False)
 
 
@@ -46,7 +46,7 @@ def get_db() -> Iterator[Session]:
         db.close()
 
 
-def soltar_conexion(db: Session) -> None:
+def release_connection(db: Session) -> None:
     """Termina la transacción de lectura y devuelve la conexión al pool antes de una llamada lenta (Ollama, Gitea…), para que esperar no sostenga
     una conexión (auditoría BE-02). Los objetos cargados quedan caducados: guarde antes lo que vaya a necesitar. Falla si hay cambios sin guardar,
     para no tirarlos en silencio."""

@@ -32,7 +32,7 @@ def test_dos_preguntas_con_el_indice_vencido_no_chocan(monkeypatch):
         with sesion() as db:
             try:
                 barrera.wait()
-                resultados.append(knowledge.recuperar(db, "¿cómo apruebo un cambio?", transport=transporte))
+                resultados.append(knowledge.retrieve(db, "¿cómo apruebo un cambio?", transport=transporte))
             except Exception as e:  # noqa: BLE001 - lo que se mide es que ninguna pregunta lance
                 errores.append(repr(e))
 

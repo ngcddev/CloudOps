@@ -8,29 +8,30 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(RAIZ / "ai"))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "ai"))
 
 import mlflow_utils  # noqa: E402
 
-EXPERIMENTO = "asistente-ayuda"
-CARPETA = RAIZ / "ai" / "eval" / "runs"
+EXPERIMENT = "asistente-ayuda"
+FOLDER = ROOT / "ai" / "eval" / "runs"
 
 
-def contexto_de(nombre: str, corrida: dict) -> str:
+def context_of(nombre: str, corrida: dict) -> str:
     """Las corridas viejas no guardaban el modo de contexto: «completo» va en el nombre del archivo; si no, era por secciones."""
     return corrida.get("contexto") or ("completo" if "completo" in nombre else "recuperacion")
 
 
 def main() -> int:
-    mlflow = mlflow_utils.iniciar(EXPERIMENTO)
+    """Importa a MLflow las corridas guardadas en JSON que todavía no están registradas."""
+    mlflow = mlflow_utils.start_run(EXPERIMENT)
     if mlflow is None:
         print("ERROR: MLflow no está disponible o no responde (¿MLFLOW_TRACKING_URI?).", file=sys.stderr)
         return 1
     cliente = mlflow.tracking.MlflowClient()
-    experimento = cliente.get_experiment_by_name(EXPERIMENTO)
+    experimento = cliente.get_experiment_by_name(EXPERIMENT)
     importadas = omitidas = 0
-    for archivo in sorted(CARPETA.glob("*.json")):
+    for archivo in sorted(FOLDER.glob("*.json")):
         corrida = json.loads(archivo.read_text(encoding="utf-8"))
         nombre = archivo.stem
         if cliente.search_runs([experimento.experiment_id], filter_string=f"attributes.run_name = '{nombre}'"):
@@ -43,7 +44,7 @@ def main() -> int:
             run_name=nombre,
             tags={"spec": "012", "tipo": "evaluacion", "origen": "importada", "archivo": archivo.name},
         )
-        parametros = {"prompt": corrida.get("prompt", "v2"), "contexto": contexto_de(nombre, corrida), "archivo": nombre}
+        parametros = {"prompt": corrida.get("prompt", "v2"), "contexto": context_of(nombre, corrida), "archivo": nombre}
         if corrida.get("modelo"):
             parametros["modelo"] = corrida["modelo"]
         if corrida.get("embeddings"):

@@ -12,27 +12,28 @@ import uuid
 from opentelemetry import trace
 
 # El id de la petición en curso; fuera de una petición queda vacío
-id_de_peticion: contextvars.ContextVar[str] = contextvars.ContextVar("id_de_peticion", default="")
+request_id: contextvars.ContextVar[str] = contextvars.ContextVar("id_de_peticion", default="")
 
 # Un id que llega en `X-Request-ID` solo se acepta si parece un id: así no entra texto libre (ni saltos de línea) a los registros
-_ID_VALIDO = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
+_VALID_ID = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
 # Los sondeos del clúster llegan cada pocos segundos y no se registran como eventos normales
-_RUTAS_DE_SONDEO = ("/health", "/livez")
+_PROBE_PATHS = ("/health", "/livez")
 
 log = logging.getLogger("hub.peticiones")
 
 
-class FormatoJson(logging.Formatter):
+class JsonFormatter(logging.Formatter):
     """Una línea JSON por registro: hora UTC, nivel, origen, mensaje, id de petición y, si hay una traza activa, su `trace_id` y `span_id`."""
 
     def format(self, record: logging.LogRecord) -> str:
+        """Convierte el registro en una línea JSON con nivel, mensaje, id de petición y traza."""
         datos = {
             "ts": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(record.created)) + f".{int(record.msecs):03d}Z",
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
         }
-        if (rid := id_de_peticion.get()):
+        if (rid := request_id.get()):
             datos["request_id"] = rid
         contexto = trace.get_current_span().get_span_context()
         if contexto.is_valid:
@@ -46,13 +47,13 @@ class FormatoJson(logging.Formatter):
         return json.dumps(datos, ensure_ascii=False)
 
 
-def configurar_registros(nivel: str = "INFO") -> None:
+def configure_logging(nivel: str = "INFO") -> None:
     """Deja la salida estándar con registros JSON. Idempotente. Uvicorn registra el acceso con la cadena de consulta: se apaga y lo reemplaza el middleware."""
     logging.config.dictConfig(
         {
             "version": 1,
             "disable_existing_loggers": False,
-            "formatters": {"json": {"()": FormatoJson}},
+            "formatters": {"json": {"()": JsonFormatter}},
             "handlers": {"salida": {"class": "logging.StreamHandler", "formatter": "json", "stream": "ext://sys.stdout"}},
             "root": {"level": nivel, "handlers": ["salida"]},
             "loggers": {
@@ -64,7 +65,7 @@ def configurar_registros(nivel: str = "INFO") -> None:
     )
 
 
-class IdDePeticion:
+class RequestIdMiddleware:
     """Middleware ASGI: toma `X-Request-ID` si es válido (o crea uno), lo deja disponible para los registros, lo devuelve en la respuesta y registra la petición."""
 
     def __init__(self, app):
@@ -75,12 +76,12 @@ class IdDePeticion:
             await self.app(scope, receive, send)
             return
         recibido = dict(scope["headers"]).get(b"x-request-id", b"").decode("latin-1")
-        rid = recibido if _ID_VALIDO.match(recibido) else uuid.uuid4().hex
-        ficha = id_de_peticion.set(rid)
+        rid = recibido if _VALID_ID.match(recibido) else uuid.uuid4().hex
+        ficha = request_id.set(rid)
         inicio = time.perf_counter()
         estado = 500
 
-        async def send_con_id(mensaje):
+        async def send_with_id(mensaje):
             nonlocal estado
             if mensaje["type"] == "http.response.start":
                 estado = mensaje["status"]
@@ -88,18 +89,18 @@ class IdDePeticion:
             await send(mensaje)
 
         try:
-            await self.app(scope, receive, send_con_id)
+            await self.app(scope, receive, send_with_id)
         except Exception:
             # Un error sin atrapar: queda registrado con el mismo id (y la misma traza) con que se responde; Starlette devuelve el 500
-            log.exception("Error sin atrapar", extra={"evento": self._evento(scope, 500, inicio)})
+            log.exception("Error sin atrapar", extra={"evento": self._event(scope, 500, inicio)})
             raise
         else:
-            nivel = logging.DEBUG if scope["path"] in _RUTAS_DE_SONDEO else (logging.WARNING if estado >= 500 else logging.INFO)
-            log.log(nivel, "petición", extra={"evento": self._evento(scope, estado, inicio)})
+            nivel = logging.DEBUG if scope["path"] in _PROBE_PATHS else (logging.WARNING if estado >= 500 else logging.INFO)
+            log.log(nivel, "petición", extra={"evento": self._event(scope, estado, inicio)})
         finally:
-            id_de_peticion.reset(ficha)
+            request_id.reset(ficha)
 
     @staticmethod
-    def _evento(scope, estado: int, inicio: float) -> dict:
+    def _event(scope, estado: int, inicio: float) -> dict:
         # `scope["path"]` no incluye la cadena de consulta: ni filtros ni identificadores que lleguen en ella se registran
         return {"method": scope["method"], "path": scope["path"], "status": estado, "ms": round((time.perf_counter() - inicio) * 1000, 1)}

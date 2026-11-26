@@ -1,7 +1,7 @@
 // Íconos de los campos propios (selector, fecha y mes): flecha, marca de elegido, calendario y flechas de navegación. Heredan el color del texto y no se leen en voz alta.
 import type { ReactNode } from "react";
 
-function Icono({ children, className }: { children: ReactNode; className?: string }) {
+function Icon({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <svg
       className={className}
@@ -21,43 +21,43 @@ function Icono({ children, className }: { children: ReactNode; className?: strin
   );
 }
 
-export function FlechaIcono() {
+export function ArrowIcon() {
   return (
-    <Icono className="campo-flecha">
+    <Icon className="campo-flecha">
       <path d="M4 6.5 8 10.5 12 6.5" />
-    </Icono>
+    </Icon>
   );
 }
 
-export function CheckIcono() {
+export function CheckIcon() {
   return (
-    <Icono className="campo-check">
+    <Icon className="campo-check">
       <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
-    </Icono>
+    </Icon>
   );
 }
 
-export function CalendarioIcono() {
+export function CalendarIcon() {
   return (
-    <Icono className="campo-icono">
+    <Icon className="campo-icono">
       <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
       <path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" />
-    </Icono>
+    </Icon>
   );
 }
 
-export function ChevronIzquierda() {
+export function ChevronLeft() {
   return (
-    <Icono>
+    <Icon>
       <path d="M10 3.5 5.5 8 10 12.5" />
-    </Icono>
+    </Icon>
   );
 }
 
-export function ChevronDerecha() {
+export function ChevronRight() {
   return (
-    <Icono>
+    <Icon>
       <path d="M6 3.5 10.5 8 6 12.5" />
-    </Icono>
+    </Icon>
   );
 }

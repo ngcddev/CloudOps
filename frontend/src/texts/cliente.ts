@@ -2,7 +2,7 @@
 // Regla: el cliente no ve jerga técnica (principio 8); todo lo que se muestra sale de aquí.
 import type { IncidentStatus, ServiceStatus, TicketStatus } from "../api";
 
-export const textosCliente = {
+export const clientTexts = {
   // Disponibilidad (uptime) frente al objetivo del plan
   disponibilidadDentro: "Su sitio se mantuvo disponible dentro del objetivo acordado.",
   disponibilidadDebajo:
@@ -24,7 +24,7 @@ export const textosCliente = {
 } as const;
 
 // Estados canónicos con el texto que ve el cliente (glosario, «Estados canónicos»)
-export const estadosSolicitud: Record<TicketStatus, string> = {
+export const ticketStatuses: Record<TicketStatus, string> = {
   abierto: "Abierta",
   en_progreso: "En progreso",
   en_espera: "En espera",
@@ -32,32 +32,32 @@ export const estadosSolicitud: Record<TicketStatus, string> = {
   cerrado: "Cerrada",
 };
 
-export const estadosIncidente: Record<IncidentStatus, string> = {
+export const incidentStatuses: Record<IncidentStatus, string> = {
   abierto: "Abierto",
   mitigado: "Mitigado",
   cerrado: "Cerrado",
 };
 
 // Estado actual del sitio en palabras del cliente
-export function textoEstado(status: ServiceStatus | null | undefined): string {
-  if (status === "caido") return textosCliente.sitioCaido;
-  if (status === "degradado") return textosCliente.sitioDegradado;
-  return textosCliente.sitioOperativo;
+export function statusText(status: ServiceStatus | null | undefined): string {
+  if (status === "caido") return clientTexts.sitioCaido;
+  if (status === "degradado") return clientTexts.sitioDegradado;
+  return clientTexts.sitioOperativo;
 }
 
 // Disponibilidad del mes: dentro, por debajo del objetivo o sin datos (nunca un 100 % inventado)
-export function textoDisponibilidad(
+export function availabilityText(
   availability: number | null | undefined,
   cumpleObjetivo: boolean | null | undefined,
 ): string {
   if (availability === null || availability === undefined || cumpleObjetivo === null || cumpleObjetivo === undefined) {
-    return textosCliente.sinDatos;
+    return clientTexts.sinDatos;
   }
-  return cumpleObjetivo ? textosCliente.disponibilidadDentro : textosCliente.disponibilidadDebajo;
+  return cumpleObjetivo ? clientTexts.disponibilidadDentro : clientTexts.disponibilidadDebajo;
 }
 
 // Tiempo medio de recuperación: sin incidentes reales se dice así, no se muestra 0 (CA-9)
-export function textoRecuperacion(mttr: number | null | undefined): string {
-  if (mttr === null || mttr === undefined) return textosCliente.sinIncidentes;
-  return `${textosCliente.tiempoRecuperacion} ${Math.round(mttr)} min.`;
+export function recoveryText(mttr: number | null | undefined): string {
+  if (mttr === null || mttr === undefined) return clientTexts.sinIncidentes;
+  return `${clientTexts.tiempoRecuperacion} ${Math.round(mttr)} min.`;
 }

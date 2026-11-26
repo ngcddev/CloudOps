@@ -19,10 +19,10 @@ import urllib.error
 import urllib.request
 
 # Lo único que escribe el Hub: clients/<cliente>/<archivo>. Gitea compara con glob: `*` no cruza `/`, `**` sí.
-PATRONES_DEL_HUB = ["clients/*/kustomization.yaml", "clients/*/catalog-info.yaml", "clients/*/backend.yaml"]
+HUB_PATTERNS = ["clients/*/kustomization.yaml", "clients/*/catalog-info.yaml", "clients/*/backend.yaml"]
 
 
-def regla(administrador: str, rama: str = "main") -> dict:
+def rule(administrador: str, rama: str = "main") -> dict:
     """La regla de protección que se aplica: solo `administrador` empuja libremente; los demás, solo a PATRONES_DEL_HUB."""
     return {
         "rule_name": rama,
@@ -30,18 +30,18 @@ def regla(administrador: str, rama: str = "main") -> dict:
         "enable_push": True,
         "enable_push_whitelist": True,
         "push_whitelist_usernames": [administrador],
-        "unprotected_file_patterns": ";".join(PATRONES_DEL_HUB),
+        "unprotected_file_patterns": ";".join(HUB_PATTERNS),
     }
 
 
-def coincide(patron: str, ruta: str) -> bool:
+def matches(patron: str, ruta: str) -> bool:
     """Glob como el de Gitea: `**` cruza carpetas y `*` no cruza `/`."""
     expresion = re.escape(patron).replace(r"\*\*", "\0").replace(r"\*", "[^/]*").replace("\0", ".*")
     return re.fullmatch(expresion, ruta) is not None
 
 
-def lo_puede_cambiar_el_hub(ruta: str) -> bool:
-    return any(coincide(patron, ruta) for patron in PATRONES_DEL_HUB)
+def hub_can_change(ruta: str) -> bool:
+    return any(matches(patron, ruta) for patron in HUB_PATTERNS)
 
 
 class Gitea:
@@ -49,7 +49,8 @@ class Gitea:
         self.url = url.rstrip("/") + "/api/v1"
         self.autorizacion = "Basic " + base64.b64encode(f"{usuario}:{clave}".encode()).decode()
 
-    def llamar(self, metodo: str, ruta: str, cuerpo: dict | None = None) -> tuple[int, object]:
+    def call(self, metodo: str, ruta: str, cuerpo: dict | None = None) -> tuple[int, object]:
+        """Hace una petición a la API de Gitea y devuelve el código HTTP y el cuerpo decodificado."""
         pedido = urllib.request.Request(self.url + ruta, method=metodo, data=json.dumps(cuerpo).encode() if cuerpo is not None else None)
         pedido.add_header("Content-Type", "application/json")
         pedido.add_header("Authorization", self.autorizacion)
@@ -65,7 +66,7 @@ class Gitea:
                 return error.code, texto
 
 
-def diferencias(actual: dict, esperada: dict) -> list[str]:
+def differences(actual: dict, esperada: dict) -> list[str]:
     """Qué campos de la regla que hay en Gitea no son los esperados."""
     problemas = []
     for campo in ("enable_push", "enable_push_whitelist", "push_whitelist_usernames", "unprotected_file_patterns"):
@@ -75,25 +76,27 @@ def diferencias(actual: dict, esperada: dict) -> list[str]:
     return problemas
 
 
-def aplicar(gitea: Gitea, org: str, repo: str, esperada: dict) -> str:
+def apply(gitea: Gitea, org: str, repo: str, esperada: dict) -> str:
+    """Crea o actualiza la regla de protección de la rama y devuelve qué se hizo."""
     base = f"/repos/{org}/{repo}/branch_protections"
-    estado, actual = gitea.llamar("GET", f"{base}/{esperada['rule_name']}")
+    estado, actual = gitea.call("GET", f"{base}/{esperada['rule_name']}")
     if estado == 404:
-        estado, respuesta = gitea.llamar("POST", base, esperada)
+        estado, respuesta = gitea.call("POST", base, esperada)
         if estado != 201:
             raise SystemExit(f"No se pudo crear la regla: {estado} {respuesta}")
         return "creada"
     if estado != 200:
         raise SystemExit(f"No se pudo leer la regla: {estado} {actual}")
-    if not diferencias(actual, esperada):
+    if not differences(actual, esperada):
         return "ya estaba como debe"
-    estado, respuesta = gitea.llamar("PATCH", f"{base}/{esperada['rule_name']}", esperada)
+    estado, respuesta = gitea.call("PATCH", f"{base}/{esperada['rule_name']}", esperada)
     if estado != 200:
         raise SystemExit(f"No se pudo actualizar la regla: {estado} {respuesta}")
     return "actualizada"
 
 
 def main(argumentos: list[str]) -> int:
+    """Aplica o comprueba la protección de hub-gitops con las credenciales de GITEA_USER y GITEA_PASSWORD."""
     if len(argumentos) != 1 or argumentos[0] not in ("--aplicar", "--comprobar"):
         print(__doc__.split("Uso:")[1].split("\n#   --aplicar")[0].strip(), file=sys.stderr)
         return 2
@@ -103,15 +106,15 @@ def main(argumentos: list[str]) -> int:
         return 2
     org, repo, rama = os.environ.get("ORG", "forja-digital"), os.environ.get("REPO", "hub-gitops"), os.environ.get("RAMA", "main")
     gitea = Gitea(os.environ.get("GITEA_URL", "http://gitea.hub.local"), usuario, clave)
-    esperada = regla(usuario, rama)
+    esperada = rule(usuario, rama)
     if argumentos[0] == "--aplicar":
-        print(f"{org}/{repo}, rama {rama}: regla {aplicar(gitea, org, repo, esperada)}")
+        print(f"{org}/{repo}, rama {rama}: regla {apply(gitea, org, repo, esperada)}")
         return 0
-    estado, actual = gitea.llamar("GET", f"/repos/{org}/{repo}/branch_protections/{rama}")
+    estado, actual = gitea.call("GET", f"/repos/{org}/{repo}/branch_protections/{rama}")
     if estado == 404:
         print(f"{org}/{repo}, rama {rama}: SIN regla de protección: hub-bot puede escribir en todo el repositorio.")
         return 1
-    problemas = diferencias(actual, esperada) if estado == 200 else [f"no se pudo leer la regla ({estado})"]
+    problemas = differences(actual, esperada) if estado == 200 else [f"no se pudo leer la regla ({estado})"]
     for problema in problemas:
         print(f"  ✗ {problema}")
     print(f"{org}/{repo}, rama {rama}: " + ("regla distinta de la esperada" if problemas else "regla correcta"))

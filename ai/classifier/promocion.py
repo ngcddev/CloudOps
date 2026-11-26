@@ -7,24 +7,24 @@ import json
 import sys
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(RAIZ / "backend"))
-sys.path.insert(0, str(RAIZ / "ai" / "classifier"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "backend"))
+sys.path.insert(0, str(ROOT / "ai" / "classifier"))
 
 from app.services.assistant_gate import GateModel  # noqa: E402
-from train import evaluar, leer  # noqa: E402
+from train import evaluate, read_dataset  # noqa: E402
 
 
-def evaluar_modelo(modelo_json: dict, filas: list[dict] | None = None) -> dict:
+def evaluate_model(modelo_json: dict, filas: list[dict] | None = None) -> dict:
     """Métricas de un modelo exportado sobre `prueba.jsonl` (o las filas dadas), con el mismo código con que se entrena."""
-    return evaluar(GateModel(modelo_json), filas if filas is not None else leer("prueba.jsonl"))
+    return evaluate(GateModel(modelo_json), filas if filas is not None else read_dataset("prueba.jsonl"))
 
 
-def evaluar_archivo(ruta: Path, filas: list[dict] | None = None) -> dict:
-    return evaluar_modelo(json.loads(Path(ruta).read_text(encoding="utf-8")), filas)
+def evaluate_file(ruta: Path, filas: list[dict] | None = None) -> dict:
+    return evaluate_model(json.loads(Path(ruta).read_text(encoding="utf-8")), filas)
 
 
-def decidir(candidato: dict, produccion: dict | None) -> tuple[bool, list[str]]:
+def decide(candidato: dict, produccion: dict | None) -> tuple[bool, list[str]]:
     """(¿se puede promover?, motivos del rechazo). Sin modelo en producción solo se exige no perder preguntas del Hub."""
     motivos = []
     if candidato["en_tema_perdidas"] > 0:
@@ -37,7 +37,7 @@ def decidir(candidato: dict, produccion: dict | None) -> tuple[bool, list[str]]:
     return not motivos, motivos
 
 
-def version_a_la_que_volver(versiones: list[int], actual: int, reemplaza_a: int | None) -> int | None:
+def rollback_target_version(versiones: list[int], actual: int, reemplaza_a: int | None) -> int | None:
     """Versión del rollback: la que la actual reemplazó, si sigue registrada; si no, la mayor anterior a la actual."""
     if reemplaza_a is not None and reemplaza_a in versiones and reemplaza_a != actual:
         return reemplaza_a

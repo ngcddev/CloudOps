@@ -15,16 +15,16 @@ PROMETHEUS_TIMEOUT_SECONDS = 2.0
 PROMETHEUS_CACHE_SECONDS = 60
 _cache: dict[str, tuple[float, object]] = {}
 # Tope de entradas (auditoría BE-11): cada consulta de otro mes o de otro incidente crea una clave y las vencidas nunca se borraban
-MAX_ENTRADAS_CACHE = 256
+MAX_CACHE_ENTRIES = 256
 
 
-def _guardar(key: str, vencimiento: float, valor: object) -> None:
+def _store(key: str, vencimiento: float, valor: object) -> None:
     """Guarda en la caché; al pasar del tope purga primero lo vencido y, si aún sobra, lo más viejo."""
-    if len(_cache) >= MAX_ENTRADAS_CACHE:
+    if len(_cache) >= MAX_CACHE_ENTRIES:
         ahora = time.monotonic()
         for clave in [k for k, (vence, _) in _cache.items() if vence <= ahora]:
             del _cache[clave]
-        while len(_cache) >= MAX_ENTRADAS_CACHE:
+        while len(_cache) >= MAX_CACHE_ENTRIES:
             del _cache[min(_cache, key=lambda k: _cache[k][0])]
     _cache[key] = (vencimiento, valor)
 
@@ -37,11 +37,11 @@ def urllib_transport(url: str, timeout: float) -> tuple[int, bytes]:
     import urllib.error
     import urllib.request
 
-    from app.integrations.http import validar_esquema
+    from app.integrations.http import validate_scheme
 
     try:
         # bandit B310: esquema validado
-        with urllib.request.urlopen(validar_esquema(url), timeout=timeout) as response:  # nosec B310
+        with urllib.request.urlopen(validate_scheme(url), timeout=timeout) as response:  # nosec B310
             return response.status, response.read()
     except urllib.error.HTTPError as error_:
         return error_.code, error_.read()
@@ -75,7 +75,7 @@ def query(promql: str, at: str, transport: Transport | None = None) -> float | N
     except Exception:
         valor = None
 
-    _guardar(key, ahora + PROMETHEUS_CACHE_SECONDS, valor)
+    _store(key, ahora + PROMETHEUS_CACHE_SECONDS, valor)
     return valor
 
 
@@ -122,5 +122,5 @@ def query_range(
     except Exception:
         puntos = None
 
-    _guardar(key, ahora + PROMETHEUS_CACHE_SECONDS, puntos)
+    _store(key, ahora + PROMETHEUS_CACHE_SECONDS, puntos)
     return puntos

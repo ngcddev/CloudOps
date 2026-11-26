@@ -12,7 +12,7 @@ class IncidentCreate(BaseModel):
 
     @field_validator("title")
     @classmethod
-    def _titulo_obligatorio(cls, value: str) -> str:
+    def _title_required(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("El título es obligatorio.")
@@ -115,7 +115,7 @@ class IncidentNoteIn(BaseModel):
 
     @field_validator("message")
     @classmethod
-    def _nota_obligatoria(cls, value: str) -> str:
+    def _note_required(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("La nota no puede estar vacía.")
@@ -127,7 +127,7 @@ class IncidentCloseIn(BaseModel):
 
     @field_validator("root_cause")
     @classmethod
-    def _causa_obligatoria(cls, value: str) -> str:
+    def _cause_required(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("Para cerrar el incidente hay que escribir la causa raíz.")

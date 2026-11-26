@@ -19,7 +19,7 @@ def voz(monkeypatch, tmp_path):
     especificacion.loader.exec_module(modulo)
     vocabulario = tmp_path / "vocabulario.txt"
     vocabulario.write_text("ticket\nrollback\nSLA\n", encoding="utf-8")
-    monkeypatch.setattr(modulo, "VOCABULARIO", vocabulario)
+    monkeypatch.setattr(modulo, "VOCABULARY", vocabulario)
     monkeypatch.setattr(modulo, "TOKEN", "")
     modulo.llamadas = []
 
@@ -39,8 +39,8 @@ def voz(monkeypatch, tmp_path):
             salida.writeframes(b"\x00\x00" * 2205)
 
     modulo.transcriptor, modulo.voz_simulada = Transcriptor(), Voz()
-    monkeypatch.setattr(modulo, "_modelo_whisper", lambda: modulo.transcriptor)
-    monkeypatch.setattr(modulo, "_voz_piper", lambda: modulo.voz_simulada)
+    monkeypatch.setattr(modulo, "_whisper_model", lambda: modulo.transcriptor)
+    monkeypatch.setattr(modulo, "_piper_voice", lambda: modulo.voz_simulada)
     return modulo, TestClient(modulo.app)
 
 
@@ -89,11 +89,11 @@ def test_un_audio_que_no_se_puede_leer_es_422_sin_filtrar_el_error(voz):
 
 def test_una_sola_transcripcion_a_la_vez(voz):
     modulo, cliente = voz
-    modulo._una_transcripcion.acquire()
+    modulo._one_transcription.acquire()
     try:
         assert cliente.post("/stt", content=b"audio").status_code == 429
     finally:
-        modulo._una_transcripcion.release()
+        modulo._one_transcription.release()
     assert cliente.post("/stt", content=b"audio").status_code == 200
 
 
@@ -132,6 +132,6 @@ def test_tts_recorta_el_texto_largo_y_rechaza_el_vacio(voz):
     modulo, cliente = voz
 
     cliente.post("/tts", json={"texto": "a" * 3000})
-    assert len(modulo.leido) == modulo.MAX_CARACTERES
+    assert len(modulo.leido) == modulo.MAX_CHARACTERS
     assert cliente.post("/tts", json={"texto": "```solo código```"}).status_code == 422
     assert cliente.post("/tts", json={"texto": ""}).status_code == 422

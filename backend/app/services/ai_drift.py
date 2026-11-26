@@ -9,20 +9,20 @@ from sqlalchemy.orm import Session
 from app.models.ai_query import AiQuery
 
 # Umbrales: por debajo de las muestras mínimas no se avisa de ese indicador
-MIN_CONSULTAS = 20  # para comparar el reparto de etiquetas entre ventanas
-MIN_OPINIONES = 10  # para fiarse del porcentaje de decisiones corregidas
+MIN_QUERIES = 20  # para comparar el reparto de etiquetas entre ventanas
+MIN_FEEDBACK = 10  # para fiarse del porcentaje de decisiones corregidas
 MIN_LLM = 5  # para comparar la latencia del LLM
-CORREGIDAS_PCT = 15.0  # decisiones corregidas por la gente: desde aquí toca reentrenar
-CAMBIO_FUERA_DE_TEMA_PUNTOS = 20.0  # cambio del porcentaje de preguntas fuera de tema entre ventanas
-LATENCIA_VECES = 1.5  # el LLM tarda al menos 1,5 veces lo de la ventana anterior
-FALLOS_LLM_PCT = 20.0  # respuestas del LLM que fallaron
+CORRECTED_PCT = 15.0  # decisiones corregidas por la gente: desde aquí toca reentrenar
+OFF_TOPIC_CHANGE_POINTS = 20.0  # cambio del porcentaje de preguntas fuera de tema entre ventanas
+LATENCY_FACTOR = 1.5  # el LLM tarda al menos 1,5 veces lo de la ventana anterior
+LLM_FAILURES_PCT = 20.0  # respuestas del LLM que fallaron
 
 
 def _utc(valor: datetime) -> datetime:
     return valor if valor.tzinfo else valor.replace(tzinfo=timezone.utc)
 
 
-def _ventana(db: Session, desde: datetime, hasta: datetime) -> dict:
+def _window(db: Session, desde: datetime, hasta: datetime) -> dict:
     """Indicadores de las consultas con `desde <= creada < hasta`."""
     en_ventana = (AiQuery.created_at >= desde, AiQuery.created_at < hasta)
     total = db.scalar(select(func.count(AiQuery.id)).where(*en_ventana)) or 0
@@ -40,25 +40,25 @@ def _ventana(db: Session, desde: datetime, hasta: datetime) -> dict:
     }
 
 
-def calcular(db: Session, dias: int = 7, ahora: datetime | None = None) -> dict:
+def compute(db: Session, dias: int = 7, ahora: datetime | None = None) -> dict:
     """Ventana actual (los últimos `dias`) frente a la anterior, con los avisos que corresponden."""
     ahora = _utc(ahora or datetime.now(timezone.utc))
     corte = ahora - timedelta(days=dias)
-    actual = _ventana(db, corte, ahora + timedelta(seconds=1))
-    anterior = _ventana(db, corte - timedelta(days=dias), corte)
+    actual = _window(db, corte, ahora + timedelta(seconds=1))
+    anterior = _window(db, corte - timedelta(days=dias), corte)
     avisos: list[dict] = []
 
-    if actual["con_opinion"] >= MIN_OPINIONES and actual["corregidas_pct"] >= CORREGIDAS_PCT:
-        avisos.append({"codigo": "decisiones_corregidas", "mensaje": f"La gente corrigió el {actual['corregidas_pct']} % de las decisiones de la compuerta (umbral {CORREGIDAS_PCT:g} %): conviene reentrenarla con esas correcciones."})
-    if actual["consultas"] >= MIN_CONSULTAS and anterior["consultas"] >= MIN_CONSULTAS:
+    if actual["con_opinion"] >= MIN_FEEDBACK and actual["corregidas_pct"] >= CORRECTED_PCT:
+        avisos.append({"codigo": "decisiones_corregidas", "mensaje": f"La gente corrigió el {actual['corregidas_pct']} % de las decisiones de la compuerta (umbral {CORRECTED_PCT:g} %): conviene reentrenarla con esas correcciones."})
+    if actual["consultas"] >= MIN_QUERIES and anterior["consultas"] >= MIN_QUERIES:
         cambio = abs(actual["fuera_de_tema_pct"] - anterior["fuera_de_tema_pct"])
-        if cambio >= CAMBIO_FUERA_DE_TEMA_PUNTOS:
+        if cambio >= OFF_TOPIC_CHANGE_POINTS:
             avisos.append({"codigo": "cambio_de_temas", "mensaje": f"Cambió lo que preguntan: las preguntas fuera de tema pasaron del {anterior['fuera_de_tema_pct']} % al {actual['fuera_de_tema_pct']} %."})
     if actual["llm_consultas"] >= MIN_LLM and anterior["llm_consultas"] >= MIN_LLM and actual["latencia_llm_ms"] and anterior["latencia_llm_ms"]:
-        if actual["latencia_llm_ms"] >= LATENCIA_VECES * anterior["latencia_llm_ms"]:
-            avisos.append({"codigo": "llm_mas_lento", "mensaje": f"El LLM tarda {actual['latencia_llm_ms']} ms, {LATENCIA_VECES:g} veces o más que los {anterior['latencia_llm_ms']} ms de la ventana anterior."})
-    if actual["llm_consultas"] >= MIN_LLM and actual["llm_fallidas_pct"] >= FALLOS_LLM_PCT:
-        avisos.append({"codigo": "llm_fallando", "mensaje": f"El {actual['llm_fallidas_pct']} % de las respuestas del LLM fallaron (umbral {FALLOS_LLM_PCT:g} %): revisar Ollama."})
+        if actual["latencia_llm_ms"] >= LATENCY_FACTOR * anterior["latencia_llm_ms"]:
+            avisos.append({"codigo": "llm_mas_lento", "mensaje": f"El LLM tarda {actual['latencia_llm_ms']} ms, {LATENCY_FACTOR:g} veces o más que los {anterior['latencia_llm_ms']} ms de la ventana anterior."})
+    if actual["llm_consultas"] >= MIN_LLM and actual["llm_fallidas_pct"] >= LLM_FAILURES_PCT:
+        avisos.append({"codigo": "llm_fallando", "mensaje": f"El {actual['llm_fallidas_pct']} % de las respuestas del LLM fallaron (umbral {LLM_FAILURES_PCT:g} %): revisar Ollama."})
 
-    suficiente = actual["consultas"] >= MIN_CONSULTAS or actual["con_opinion"] >= MIN_OPINIONES or actual["llm_consultas"] >= MIN_LLM
+    suficiente = actual["consultas"] >= MIN_QUERIES or actual["con_opinion"] >= MIN_FEEDBACK or actual["llm_consultas"] >= MIN_LLM
     return {"ventana_dias": dias, "estado": "atencion" if avisos else ("ok" if suficiente else "sin_datos"), "actual": actual, "anterior": anterior, "avisos": avisos}

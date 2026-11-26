@@ -12,27 +12,27 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(RAIZ / "backend"))
-sys.path.insert(0, str(RAIZ / "ai"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "backend"))
+sys.path.insert(0, str(ROOT / "ai"))
 
 import mlflow_utils  # noqa: E402
-from app.services.assistant_gate import ETIQUETAS, FUERA_DE_TEMA, GateModel, features  # noqa: E402
+from app.services.assistant_gate import LABELS, OFF_TOPIC, GateModel, features  # noqa: E402
 
-DATOS = Path(__file__).parent / "data"
-SALIDA = RAIZ / "backend" / "app" / "assets" / "clasificador.json"
-CORRIDAS = Path(__file__).parent / "runs"
-EXPERIMENTO = "compuerta-asistente"
-MODELO_REGISTRADO = "compuerta-asistente"
-ALIAS_PRODUCCION = "production"
+DATA = Path(__file__).parent / "data"
+OUTPUT = ROOT / "backend" / "app" / "assets" / "clasificador.json"
+RUNS = Path(__file__).parent / "runs"
+EXPERIMENT = "compuerta-asistente"
+REGISTERED_MODEL = "compuerta-asistente"
+PRODUCTION_ALIAS = "production"
 
 
-def leer(nombre: str) -> list[dict]:
-    with open(DATOS / nombre, encoding="utf-8") as f:
+def read_dataset(nombre: str) -> list[dict]:
+    with open(DATA / nombre, encoding="utf-8") as f:
         return [json.loads(linea) for linea in f if linea.strip()]
 
 
-PLANTILLAS = [
+TEMPLATES = [
     "¿Cómo funciona {t} en el Hub?",
     "¿Dónde veo {t}?",
     "¿Qué es {t} en la aplicación?",
@@ -42,13 +42,14 @@ PLANTILLAS = [
 ]
 
 
-def aumentar(vocabulario: list[str]) -> list[dict]:
+def augment(vocabulario: list[str]) -> list[dict]:
     """Preguntas sintéticas del tema: cada término de la aplicación en cada plantilla (determinista)."""
-    return [{"text": p.format(t=t), "label": "en_tema"} for t in vocabulario for p in PLANTILLAS]
+    return [{"text": p.format(t=t), "label": "en_tema"} for t in vocabulario for p in TEMPLATES]
 
 
-def entrenar(filas: list[dict], version: str, umbral: float, vocabulario: list[str]) -> dict:
-    conteos = {e: Counter() for e in ETIQUETAS}
+def train(filas: list[dict], version: str, umbral: float, vocabulario: list[str]) -> dict:
+    """Entrena el Naive Bayes de la compuerta: cuenta rasgos por etiqueta y devuelve el modelo con su umbral y vocabulario."""
+    conteos = {e: Counter() for e in LABELS}
     por_clase = Counter()
     vocab: set[str] = set()
     for fila in filas:
@@ -60,20 +61,20 @@ def entrenar(filas: list[dict], version: str, umbral: float, vocabulario: list[s
     return {
         "version": version,
         "threshold": umbral,
-        "priors": {e: por_clase[e] / total for e in ETIQUETAS},
-        "counts": {e: dict(conteos[e]) for e in ETIQUETAS},
-        "totals": {e: sum(conteos[e].values()) for e in ETIQUETAS},
+        "priors": {e: por_clase[e] / total for e in LABELS},
+        "counts": {e: dict(conteos[e]) for e in LABELS},
+        "totals": {e: sum(conteos[e].values()) for e in LABELS},
         "vocab_size": len(vocab),
         "lexicon": vocabulario,
     }
 
 
-def evaluar(modelo: GateModel, filas: list[dict]) -> dict:
+def evaluate(modelo: GateModel, filas: list[dict]) -> dict:
     """La métrica clave es `en_tema_perdidas`: una pregunta de la app que NO llega al LLM."""
     tp = fp = fn = tn = 0  # positivo = fuera_de_tema (se salta el LLM)
     for fila in filas:
         salta = not modelo.decide(fila["text"]).despertar_llm
-        real = fila["label"] == FUERA_DE_TEMA
+        real = fila["label"] == OFF_TOPIC
         tp += salta and real
         fp += salta and not real
         fn += (not salta) and real
@@ -88,18 +89,18 @@ def evaluar(modelo: GateModel, filas: list[dict]) -> dict:
     }
 
 
-def registrar(version: str, umbral: float, metricas: dict, promover: bool = False, tamanos: dict | None = None) -> str:
+def log_run(version: str, umbral: float, metricas: dict, promover: bool = False, tamanos: dict | None = None) -> str:
     """Registra la corrida en MLflow (con el modelo en el Registry); si no se puede, un JSON en ai/classifier/runs/."""
-    archivos_datos = sorted(DATOS.glob("*.jsonl")) + [DATOS / "vocabulario_app.txt"]
+    archivos_datos = sorted(DATA.glob("*.jsonl")) + [DATA / "vocabulario_app.txt"]
     parametros = {
         "version": version,
         "umbral": umbral,
         "algoritmo": "naive_bayes",
-        "huella_datos": mlflow_utils.huella(archivos_datos),
-        "commit_git": mlflow_utils.commit_git(),
+        "huella_datos": mlflow_utils.fingerprint(archivos_datos),
+        "commit_git": mlflow_utils.git_commit(),
         **(tamanos or {}),
     }
-    mlflow = mlflow_utils.iniciar(EXPERIMENTO)
+    mlflow = mlflow_utils.start_run(EXPERIMENT)
     if mlflow is not None:
         try:
             import pandas as pd
@@ -119,23 +120,23 @@ def registrar(version: str, umbral: float, metricas: dict, promover: bool = Fals
                 info = mlflow.pyfunc.log_model(
                     name="compuerta",
                     python_model=str(Path(__file__).parent / "modelo_mlflow.py"),
-                    artifacts={"clasificador": str(SALIDA)},
-                    code_paths=[str(RAIZ / "backend" / "app" / "services" / "assistant_gate.py")],
+                    artifacts={"clasificador": str(OUTPUT)},
+                    code_paths=[str(ROOT / "backend" / "app" / "services" / "assistant_gate.py")],
                     signature=firma,
                     input_example=pd.DataFrame({"text": ["¿Cómo abro un incidente manual?"]}),
-                    registered_model_name=MODELO_REGISTRADO,
+                    registered_model_name=REGISTERED_MODEL,
                     pip_requirements=["mlflow==3.18.0", "pandas"],
                 )
                 numero = info.registered_model_version
                 if promover and numero is not None:
-                    mlflow.tracking.MlflowClient().set_registered_model_alias(MODELO_REGISTRADO, ALIAS_PRODUCCION, numero)
-                destino = f"MLflow ({mlflow_utils.uri_de_seguimiento()}), corrida {corrida.info.run_id[:8]}, modelo {MODELO_REGISTRADO} v{numero}"
+                    mlflow.tracking.MlflowClient().set_registered_model_alias(REGISTERED_MODEL, PRODUCTION_ALIAS, numero)
+                destino = f"MLflow ({mlflow_utils.tracking_uri()}), corrida {corrida.info.run_id[:8]}, modelo {REGISTERED_MODEL} v{numero}"
                 if promover:
-                    destino += f" con alias {ALIAS_PRODUCCION}"
+                    destino += f" con alias {PRODUCTION_ALIAS}"
             return destino
         except Exception as error:  # noqa: BLE001 - el servidor se cayó a mitad de la corrida
             print(f"  (No se pudo registrar en MLflow: {str(error)[:200]}; se guarda el JSON)")
-    CORRIDAS.mkdir(exist_ok=True)
+    RUNS.mkdir(exist_ok=True)
     corrida = {
         "fecha_utc": datetime.now(timezone.utc).isoformat(),
         "version": version,
@@ -144,30 +145,31 @@ def registrar(version: str, umbral: float, metricas: dict, promover: bool = Fals
         "commit_git": parametros["commit_git"],
         "metricas": metricas,
     }
-    (CORRIDAS / f"{version}.json").write_text(json.dumps(corrida, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (RUNS / f"{version}.json").write_text(json.dumps(corrida, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return f"ai/classifier/runs/{version}.json"
 
 
 def main() -> int:
+    """Entrena, evalúa y registra la compuerta en MLflow; con --promover le pone el alias `production`."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--version", default="v1")
     ap.add_argument("--umbral", type=float, default=0.9, help="P(fuera de tema) mínima para saltarse el LLM")
     ap.add_argument("--promover", action="store_true", help="poner el alias `production` a la versión registrada")
     args = ap.parse_args()
 
-    vocabulario = [t.strip() for t in (DATOS / "vocabulario_app.txt").read_text(encoding="utf-8").splitlines() if t.strip()]
-    filas = leer("entrenamiento.jsonl") + aumentar(vocabulario)
-    modelo_json = entrenar(filas, args.version, args.umbral, vocabulario)
-    metricas = evaluar(GateModel(modelo_json), leer("prueba.jsonl"))
+    vocabulario = [t.strip() for t in (DATA / "vocabulario_app.txt").read_text(encoding="utf-8").splitlines() if t.strip()]
+    filas = read_dataset("entrenamiento.jsonl") + augment(vocabulario)
+    modelo_json = train(filas, args.version, args.umbral, vocabulario)
+    metricas = evaluate(GateModel(modelo_json), read_dataset("prueba.jsonl"))
     print(json.dumps(metricas, ensure_ascii=False, indent=2))
     if metricas["en_tema_perdidas"] > 0:
         print("ERROR: la compuerta dejó sin LLM preguntas de la aplicación; no se exporta el modelo.", file=sys.stderr)
         return 1
-    SALIDA.parent.mkdir(parents=True, exist_ok=True)
-    SALIDA.write_text(json.dumps(modelo_json, ensure_ascii=False, separators=(",", ":"), sort_keys=True) + "\n", encoding="utf-8")
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT.write_text(json.dumps(modelo_json, ensure_ascii=False, separators=(",", ":"), sort_keys=True) + "\n", encoding="utf-8")
     tamanos = {"ejemplos_entrenamiento": len(filas), "ejemplos_prueba": metricas["ejemplos_prueba"]}
-    destino = registrar(args.version, args.umbral, metricas, promover=args.promover, tamanos=tamanos)
-    print(f"Modelo {args.version} exportado a {SALIDA.relative_to(RAIZ)}; corrida registrada en {destino}")
+    destino = log_run(args.version, args.umbral, metricas, promover=args.promover, tamanos=tamanos)
+    print(f"Modelo {args.version} exportado a {OUTPUT.relative_to(ROOT)}; corrida registrada en {destino}")
     return 0
 
 

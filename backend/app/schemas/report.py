@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
-MES = re.compile(r"^[0-9]{4}-(0[1-9]|1[0-2])$")
+MONTH = re.compile(r"^[0-9]{4}-(0[1-9]|1[0-2])$")
 
 
 class ReportIn(BaseModel):
@@ -17,8 +17,8 @@ class ReportIn(BaseModel):
 
     @field_validator("month")
     @classmethod
-    def mes_valido(cls, valor: str | None) -> str | None:
-        if valor is not None and not MES.match(valor):
+    def valid_month(cls, valor: str | None) -> str | None:
+        if valor is not None and not MONTH.match(valor):
             raise ValueError("El mes debe tener el formato AAAA-MM, por ejemplo 2026-10.")
         return valor
 

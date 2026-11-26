@@ -29,7 +29,7 @@ def capturar_ollama(monkeypatch):
 
 def test_la_ayuda_y_los_prompts_no_traen_cadenas_con_forma_de_secreto():
     for ruta in [assistant_context.HELP_PATH, assistant_context.PROMPT_PATH]:
-        _, tipos = redaccion.redactar(ruta.read_text(encoding="utf-8"))
+        _, tipos = redaccion.redact(ruta.read_text(encoding="utf-8"))
         assert tipos == [], f"{ruta.name} contiene algo con forma de secreto: {tipos}"
 
 

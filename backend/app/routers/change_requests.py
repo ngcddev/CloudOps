@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
-from app.db import get_db, soltar_conexion
+from app.db import get_db, release_connection
 from app.deps import require_agency
 from app.models.change_request import ChangeRequest
 from app.models.ticket import Ticket
@@ -26,7 +26,7 @@ from app.services.gitops_publish import (
     kustomization_path,
     publish_version,
 )
-from app.paginacion import Pagina, pagina
+from app.paginacion import Page, paginate
 
 router = APIRouter(prefix="/api/change-requests", tags=["change-requests"], dependencies=[Depends(require_agency)])
 
@@ -54,7 +54,7 @@ def list_change_requests(
     status_filter: str | None = Query(default=None, alias="status"),
     service_id: int | None = Query(default=None),
     ticket_id: int | None = Query(default=None),
-    page: Pagina = Depends(pagina),
+    page: Page = Depends(paginate),
     db: Session = Depends(get_db),
 ):
     """Bandeja de solicitudes de cambio, de la más reciente a la más antigua."""
@@ -126,7 +126,7 @@ def create_change_request(
     )
     # Una versión que ya falló la puerta de seguridad no espera aprobación: queda rechazada de una vez
     current = gate.gate_status(db, service.id, change.to_version)
-    if current.status == gate.FALLO:
+    if current.status == gate.FAILED:
         gate.reject_for_security(db, change, current.run)
     db.commit()
     db.refresh(change)
@@ -201,7 +201,7 @@ def approve_change_request(
 
     # Las llamadas a Gitea tardan hasta 10 s cada una: se copia lo que hace falta y se suelta la conexión a la base mientras se espera (auditoría BE-02)
     namespace, to_version, approver_name, approver_email = change.service.namespace, change.to_version, approver.name, approver.email
-    soltar_conexion(db)
+    release_connection(db)
     try:
         sha = publish_version(gitea, namespace, to_version, change_id, approver_name, approver_email)
     except NothingToPublish as error:

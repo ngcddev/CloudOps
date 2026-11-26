@@ -88,7 +88,7 @@ python gitops/proteccion_hub_gitops.py --aplicar     # crea o corrige la regla e
 python gitops/proteccion_hub_gitops.py --comprobar   # sale con 1 si falta o es distinta
 ```
 
-Si el Hub necesita escribir en otra ruta, hay que añadirla a `PATRONES_DEL_HUB` y volver a aplicar; `backend/tests/test_proteccion_hub_gitops.py` falla si el Hub escribe algo que la regla le bloquearía.
+Si el Hub necesita escribir en otra ruta, hay que añadirla a `HUB_PATTERNS` y volver a aplicar; `backend/tests/test_proteccion_hub_gitops.py` falla si el Hub escribe algo que la regla le bloquearía.
 **Límite conocido:** `clients/*/kustomization.yaml` también coincide con `clients/_base/kustomization.yaml`, así que un `hub-bot` comprometido todavía podría cambiarlo (y los archivos de cada cliente); lo acota el proyecto
 `clientes` de Argo CD (solo namespaces `cliente-*` y los tipos de recurso de un sitio), no esta regla.
 

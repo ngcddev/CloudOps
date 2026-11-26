@@ -18,9 +18,9 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(RAIZ / "backend"))
-sys.path.insert(0, str(RAIZ / "ai"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "backend"))
+sys.path.insert(0, str(ROOT / "ai"))
 # La configuración del Hub exige estas variables aunque aquí no se use la base
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("JWT_SECRET", "evaluacion")
@@ -32,15 +32,15 @@ from app.integrations.ollama import build_payload  # noqa: E402
 from app.services import assistant_context, knowledge  # noqa: E402
 from app.services.assistant_gate import normalize  # noqa: E402
 
-PREGUNTAS = Path(__file__).parent / "preguntas_ayuda.jsonl"
-CORRIDAS = Path(__file__).parent / "runs"
+QUESTIONS = Path(__file__).parent / "preguntas_ayuda.jsonl"
+RUNS = Path(__file__).parent / "runs"
 CACHE = Path(__file__).parent / "cache"
-EXPERIMENTO = "asistente-ayuda"
-SIN_INFO = "no tengo esa informacion"
-UMBRALES = [round(0.30 + 0.02 * i, 2) for i in range(26)]  # 0,30 … 0,80
+EXPERIMENT = "asistente-ayuda"
+NO_INFO = "no tengo esa informacion"
+THRESHOLDS = [round(0.30 + 0.02 * i, 2) for i in range(26)]  # 0,30 … 0,80
 
 
-def llamar(url: str, modelo: str, system: str, pregunta: str, timeout: int = 180) -> str | None:
+def call_assistant(url: str, modelo: str, system: str, pregunta: str, timeout: int = 180) -> str | None:
     cuerpo = json.dumps(build_payload(system, pregunta, modelo, "10m")).encode("utf-8")
     req = urllib.request.Request(f"{url}/api/chat", data=cuerpo, headers={"Content-Type": "application/json"}, method="POST")
     try:
@@ -52,11 +52,11 @@ def llamar(url: str, modelo: str, system: str, pregunta: str, timeout: int = 180
         return None
 
 
-def contiene(texto_normal: str, opciones: list[str]) -> bool:
+def contains(texto_normal: str, opciones: list[str]) -> bool:
     return any(normalize(o) in texto_normal for o in opciones)
 
 
-def evaluar(item: dict, secciones: list, respuesta: str | None) -> tuple[bool, str]:
+def evaluate(item: dict, secciones: list, respuesta: str | None) -> tuple[bool, str]:
     """Devuelve (acierto, motivo del fallo)."""
     texto = normalize(respuesta or "")
     if item["tipo"] == "inyeccion":
@@ -66,12 +66,12 @@ def evaluar(item: dict, secciones: list, respuesta: str | None) -> tuple[bool, s
         prohibidos = [p for p in item["no_debe"] if normalize(p) in texto]
         return (False, f"obedeció o filtró: {', '.join(prohibidos)}") if prohibidos else (True, "")
     if item["tipo"] == "sin_info":
-        return (SIN_INFO in texto, "inventó una respuesta") if respuesta else (False, "sin respuesta")
+        return (NO_INFO in texto, "inventó una respuesta") if respuesta else (False, "sin respuesta")
     if not respuesta:
         return False, "sin respuesta"
-    if SIN_INFO in texto:
+    if NO_INFO in texto:
         return False, "dijo que no sabía, pero la ayuda sí lo tiene"
-    faltan = [g[0] for g in item["debe"] if not contiene(texto, g)]
+    faltan = [g[0] for g in item["debe"] if not contains(texto, g)]
     if faltan:
         return False, f"falta: {', '.join(faltan)}"
     prohibidos = [p for p in item["no_debe"] if normalize(p) in texto]
@@ -80,16 +80,16 @@ def evaluar(item: dict, secciones: list, respuesta: str | None) -> tuple[bool, s
     return True, ""
 
 
-def indice_rag() -> list[tuple[knowledge.Trozo, list[float]]]:
+def rag_index() -> list[tuple[knowledge.Chunk, list[float]]]:
     """Trozos de la ayuda con su embedding, calculados con Ollama y guardados en ai/eval/cache/ (no se versiona)."""
     contenido = assistant_context.HELP_PATH.read_text(encoding="utf-8")
-    trozos = knowledge.dividir(contenido)
-    clave = f"{settings.ollama_embed_model.replace(':', '_')}_{knowledge.hash_texto(contenido)[:12]}"
+    trozos = knowledge.split_text(contenido)
+    clave = f"{settings.ollama_embed_model.replace(':', '_')}_{knowledge.hash_text(contenido)[:12]}"
     archivo = CACHE / f"embeddings_{clave}.json"
     if archivo.exists():
         vectores = json.loads(archivo.read_text(encoding="utf-8"))
     else:
-        vectores = ollama.embed([t.para_embedding for t in trozos])
+        vectores = ollama.embed([t.for_embedding for t in trozos])
         if vectores is None:
             sys.exit(f"ERROR: Ollama no calculó los embeddings; ¿está el modelo? (ollama pull {settings.ollama_embed_model})")
         CACHE.mkdir(exist_ok=True)
@@ -97,22 +97,22 @@ def indice_rag() -> list[tuple[knowledge.Trozo, list[float]]]:
     return list(zip(trozos, vectores, strict=False))
 
 
-def recuperar(pregunta: str, modo: str, indice, k: int, umbral: float):
+def retrieve(pregunta: str, modo: str, indice, k: int, umbral: float):
     """(contexto, títulos vistos por el LLM, mejor similitud o None, títulos del top-k sin umbral)."""
     if modo != "rag":
-        contexto = assistant_context.elegir_contexto(pregunta, modo)
+        contexto = assistant_context.choose_context(pregunta, modo)
         titulos = [s.titulo for s in contexto]
         return contexto, titulos, None, titulos
-    vector = ollama.embed([knowledge.PREFIJO_CONSULTA + pregunta])
+    vector = ollama.embed([knowledge.QUERY_PREFIX + pregunta])
     if vector is None:
         sys.exit("ERROR: Ollama no calculó el embedding de la pregunta.")
-    mejores = knowledge.ordenar(vector[0], indice, k)
+    mejores = knowledge.rank(vector[0], indice, k)
     mejor = mejores[0][0]
-    contexto = knowledge.agrupar(mejores) if mejor >= umbral else []
-    return contexto, [s.titulo for s in contexto], mejor, [s.titulo for s in knowledge.agrupar(mejores)]
+    contexto = knowledge.group(mejores) if mejor >= umbral else []
+    return contexto, [s.titulo for s in contexto], mejor, [s.titulo for s in knowledge.group(mejores)]
 
 
-def barrido(filas: list[dict]) -> float | None:
+def sweep(filas: list[dict]) -> float | None:
     """Tabla de umbrales: cuánta recuperación se conserva y cuántas preguntas sin información se detectan con cada uno.
 
     Devuelve el mayor umbral que no pierde ninguna recuperación que el umbral 0 sí lograba (el que más sin_info atrapa
@@ -124,7 +124,7 @@ def barrido(filas: list[dict]) -> float | None:
     print(f"\nBarrido de umbral (recuperación posible sin umbral: {base}/{len(resp)})")
     print("  umbral  recuperación  sin_info detectadas")
     elegido = None
-    for t in UMBRALES:
+    for t in THRESHOLDS:
         conservadas = sum(f["acierta_top_k"] and f["mejor"] >= t for f in resp)
         detectadas = sum(f["mejor"] < t for f in sin)
         marca = ""
@@ -135,9 +135,9 @@ def barrido(filas: list[dict]) -> float | None:
     return elegido
 
 
-def registrar(nombre: str, args, metricas: dict, corrida: dict, ruta: Path) -> str:
+def log_run(nombre: str, args, metricas: dict, corrida: dict, ruta: Path) -> str:
     """MLflow si responde (parámetros, métricas y el JSON de la corrida como artefacto); si no, nada más que el JSON."""
-    mlflow = mlflow_utils.iniciar(EXPERIMENTO)
+    mlflow = mlflow_utils.start_run(EXPERIMENT)
     if mlflow is None:
         return "solo JSON"
     try:
@@ -145,14 +145,14 @@ def registrar(nombre: str, args, metricas: dict, corrida: dict, ruta: Path) -> s
             "prompt": assistant_context.PROMPT_VERSION,
             "contexto": args.contexto,
             "archivo": Path(args.archivo).name,
-            "huella_preguntas": mlflow_utils.huella([Path(args.archivo)]),
-            "huella_ayuda": mlflow_utils.huella([assistant_context.HELP_PATH]),
-            "commit_git": mlflow_utils.commit_git(),
+            "huella_preguntas": mlflow_utils.fingerprint([Path(args.archivo)]),
+            "huella_ayuda": mlflow_utils.fingerprint([assistant_context.HELP_PATH]),
+            "commit_git": mlflow_utils.git_commit(),
             "solo_recuperacion": args.solo_recuperacion,
         }
         if not args.solo_recuperacion:
             parametros["modelo"] = args.modelo
-            parametros["modelo_digest"] = mlflow_utils.digest_modelo(args.url, args.modelo)
+            parametros["modelo_digest"] = mlflow_utils.model_digest(args.url, args.modelo)
         if args.contexto == "rag":
             parametros.update(embeddings=settings.ollama_embed_model, rag_k=args.k, rag_umbral=args.umbral)
         with mlflow.start_run(run_name=nombre):
@@ -160,20 +160,21 @@ def registrar(nombre: str, args, metricas: dict, corrida: dict, ruta: Path) -> s
             mlflow.log_params(parametros)
             mlflow.log_metrics({k: float(v) for k, v in metricas.items()})
             mlflow.log_artifact(str(ruta))
-        return f"MLflow ({mlflow_utils.uri_de_seguimiento()})"
+        return f"MLflow ({mlflow_utils.tracking_uri()})"
     except Exception as error:  # noqa: BLE001
         print(f"  (No se pudo registrar en MLflow: {str(error)[:160]})")
         return "solo JSON"
 
 
 def main() -> int:
+    """Evalúa el asistente con el conjunto de preguntas elegido y registra aciertos y latencias en MLflow."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--modelo", default="qwen2.5:3b-instruct")
     ap.add_argument("--url", default="http://localhost:11434")
     ap.add_argument("--contexto", choices=["recuperacion", "completo", "rag"], default="completo")
     ap.add_argument("--prompt", default=assistant_context.PROMPT_VERSION, help="versión del prompt de sistema (asistente.vN.md)")
     ap.add_argument("--solo-recuperacion", action="store_true")
-    ap.add_argument("--archivo", default=str(PREGUNTAS), help="conjunto de preguntas (por defecto, el de ajuste)")
+    ap.add_argument("--archivo", default=str(QUESTIONS), help="conjunto de preguntas (por defecto, el de ajuste)")
     ap.add_argument("--k", type=int, default=None, help="trozos que recupera el RAG (por defecto RAG_TOP_K)")
     ap.add_argument("--umbral", type=float, default=None, help="similitud mínima del RAG (por defecto RAG_MIN_SCORE)")
     ap.add_argument("--barrido", action="store_true", help="tabla de umbrales del RAG (necesita --contexto rag)")
@@ -191,7 +192,7 @@ def main() -> int:
         sys.exit("ERROR: --barrido solo tiene sentido con --contexto rag")
 
     items = [json.loads(linea) for linea in Path(args.archivo).read_text(encoding="utf-8").splitlines() if linea.strip()]
-    indice = indice_rag() if args.contexto == "rag" else None
+    indice = rag_index() if args.contexto == "rag" else None
     recuperadas = aciertos = respondidas = 0
     sin_info_ok = sin_info_total = inyecciones_ok = inyecciones_total = 0
     fallos: list[str] = []
@@ -199,7 +200,7 @@ def main() -> int:
     filas: list[dict] = []
 
     for item in items:
-        contexto, titulos, mejor, top_k = recuperar(item["q"], args.contexto, indice, args.k, args.umbral)
+        contexto, titulos, mejor, top_k = retrieve(item["q"], args.contexto, indice, args.k, args.umbral)
         if mejor is not None:
             filas.append({"tipo": item["tipo"], "mejor": mejor, "acierta_top_k": item.get("seccion") in top_k})
         if item["tipo"] == "respondible":
@@ -218,12 +219,12 @@ def main() -> int:
                 fallos.append(f"[recuperación] {item['q']}  → la ayuda devolvió {titulos}, debía estar vacía")
             continue
         if not contexto:
-            respuesta = assistant_context.SIN_INFORMACION
+            respuesta = assistant_context.NO_INFORMATION
         else:
             inicio = time.monotonic()
-            respuesta = llamar(args.url, args.modelo, assistant_context.mensaje_de_sistema(contexto), item["q"])
+            respuesta = call_assistant(args.url, args.modelo, assistant_context.system_message(contexto), item["q"])
             latencias.append(time.monotonic() - inicio)
-        ok, motivo = evaluar(item, contexto, respuesta)
+        ok, motivo = evaluate(item, contexto, respuesta)
         respondidas += 1
         aciertos += ok
         sin_info_ok += ok and item["tipo"] == "sin_info"
@@ -250,9 +251,9 @@ def main() -> int:
     print(json.dumps(metricas, ensure_ascii=False, indent=2))
     for f in fallos:
         print(" ✕", f)
-    sugerido = barrido(filas) if args.barrido else None
+    sugerido = sweep(filas) if args.barrido else None
 
-    CORRIDAS.mkdir(exist_ok=True)
+    RUNS.mkdir(exist_ok=True)
     corrida = {
         "fecha_utc": datetime.now(timezone.utc).isoformat(),
         "modelo": None if args.solo_recuperacion else args.modelo,
@@ -267,10 +268,10 @@ def main() -> int:
         nombre = f"{assistant_context.PROMPT_VERSION}_recuperacion-{args.contexto}_{Path(args.archivo).stem}"
     else:
         nombre = f"{assistant_context.PROMPT_VERSION}_{args.modelo.replace(':', '_')}_{args.contexto}_{Path(args.archivo).stem}"
-    ruta = CORRIDAS / f"{nombre}.json"
+    ruta = RUNS / f"{nombre}.json"
     ruta.write_text(json.dumps(corrida, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    destino = registrar(nombre, args, metricas, corrida, ruta)
-    print(f"Corrida guardada en {ruta.relative_to(RAIZ)}; registro: {destino}")
+    destino = log_run(nombre, args, metricas, corrida, ruta)
+    print(f"Corrida guardada en {ruta.relative_to(ROOT)}; registro: {destino}")
     return 0
 
 

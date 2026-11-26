@@ -21,33 +21,33 @@ BUENO = {"exactitud": 0.95, "en_tema_perdidas": 0}
 
 
 def _modelo(version: str, umbral: float = 0.9, recortar: int | None = None) -> dict:
-    vocabulario = [t.strip() for t in (train.DATOS / "vocabulario_app.txt").read_text(encoding="utf-8").splitlines() if t.strip()]
-    filas = train.leer("entrenamiento.jsonl") + train.aumentar(vocabulario)
-    return train.entrenar(filas[:recortar] if recortar else filas, version, umbral, vocabulario)
+    vocabulario = [t.strip() for t in (train.DATA / "vocabulario_app.txt").read_text(encoding="utf-8").splitlines() if t.strip()]
+    filas = train.read_dataset("entrenamiento.jsonl") + train.augment(vocabulario)
+    return train.train(filas[:recortar] if recortar else filas, version, umbral, vocabulario)
 
 
 # ---------- Reglas, sin MLflow ----------
 
 
 def test_un_candidato_igual_o_mejor_se_puede_promover():
-    assert promocion.decidir(BUENO, BUENO) == (True, [])
-    assert promocion.decidir({"exactitud": 0.97, "en_tema_perdidas": 0}, BUENO)[0] is True
+    assert promocion.decide(BUENO, BUENO) == (True, [])
+    assert promocion.decide({"exactitud": 0.97, "en_tema_perdidas": 0}, BUENO)[0] is True
 
 
 def test_sin_produccion_solo_se_exige_no_perder_preguntas_del_hub():
-    assert promocion.decidir(BUENO, None)[0] is True
-    ok, motivos = promocion.decidir({"exactitud": 0.99, "en_tema_perdidas": 2}, None)
+    assert promocion.decide(BUENO, None)[0] is True
+    ok, motivos = promocion.decide({"exactitud": 0.99, "en_tema_perdidas": 2}, None)
     assert ok is False and "2 pregunta" in motivos[0]
 
 
 def test_un_candidato_con_menos_exactitud_se_rechaza():
-    ok, motivos = promocion.decidir({"exactitud": 0.90, "en_tema_perdidas": 0}, BUENO)
+    ok, motivos = promocion.decide({"exactitud": 0.90, "en_tema_perdidas": 0}, BUENO)
 
     assert ok is False and "exactitud baja" in motivos[0]
 
 
 def test_perder_mas_preguntas_que_la_produccion_se_rechaza():
-    ok, motivos = promocion.decidir({"exactitud": 0.99, "en_tema_perdidas": 1}, {"exactitud": 0.90, "en_tema_perdidas": 1})
+    ok, motivos = promocion.decide({"exactitud": 0.99, "en_tema_perdidas": 1}, {"exactitud": 0.90, "en_tema_perdidas": 1})
 
     assert ok is False and any("pierde más" in m or "deja sin LLM" in m for m in motivos)
 
@@ -57,11 +57,11 @@ def test_perder_mas_preguntas_que_la_produccion_se_rechaza():
     [([1, 2, 3], 3, 1, 1), ([1, 2, 3], 3, None, 2), ([1, 2, 3], 3, 9, 2), ([1], 1, None, None), ([1, 3], 3, None, 1), ([2, 3], 3, 3, 2)],
 )
 def test_version_a_la_que_volver(versiones, actual, reemplaza, esperado):
-    assert promocion.version_a_la_que_volver(versiones, actual, reemplaza) == esperado
+    assert promocion.rollback_target_version(versiones, actual, reemplaza) == esperado
 
 
 def test_el_modelo_real_se_evalua_con_el_conjunto_de_prueba():
-    metricas = promocion.evaluar_modelo(_modelo("vreal"))
+    metricas = promocion.evaluate_model(_modelo("vreal"))
 
     assert metricas["en_tema_perdidas"] == 0 and metricas["exactitud"] > 0.9
 
@@ -83,8 +83,8 @@ def registrar(tmp_path, monkeypatch, version: str, modelo: dict) -> None:
     archivo = tmp_path / "modelos" / version / "clasificador.json"  # el registro conserva el nombre del archivo
     archivo.parent.mkdir(parents=True, exist_ok=True)
     archivo.write_text(json.dumps(modelo, ensure_ascii=False, separators=(",", ":"), sort_keys=True) + "\n", encoding="utf-8")
-    monkeypatch.setattr(train, "SALIDA", archivo)
-    train.registrar(version, 0.9, promocion.evaluar_modelo(modelo))
+    monkeypatch.setattr(train, "OUTPUT", archivo)
+    train.log_run(version, 0.9, promocion.evaluate_model(modelo))
 
 
 def promover_con(monkeypatch, tmp_path, *argumentos) -> int:
@@ -93,7 +93,7 @@ def promover_con(monkeypatch, tmp_path, *argumentos) -> int:
 
 
 def alias(servidor) -> str:
-    return str(servidor.get_model_version_by_alias(train.MODELO_REGISTRADO, "production").version)
+    return str(servidor.get_model_version_by_alias(train.REGISTERED_MODEL, "production").version)
 
 
 def test_la_primera_version_se_promueve_sin_comparar(servidor, tmp_path, monkeypatch, capsys):
@@ -132,7 +132,7 @@ def test_el_rollback_vuelve_a_la_version_que_se_reemplazo(servidor, tmp_path, mo
     registrar(tmp_path, monkeypatch, "v2", _modelo("v2", umbral=0.95))  # igual o mejor
     assert promover_con(monkeypatch, tmp_path, "--version", "2") == 0
     assert alias(servidor) == "2"
-    assert servidor.get_model_version(train.MODELO_REGISTRADO, "2").tags["reemplaza_a"] == "1"
+    assert servidor.get_model_version(train.REGISTERED_MODEL, "2").tags["reemplaza_a"] == "1"
 
     assert promover_con(monkeypatch, tmp_path, "--rollback") == 0
 

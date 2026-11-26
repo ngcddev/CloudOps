@@ -8,19 +8,19 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-CLAVE_ARRANQUE = 7_022_001    # migraciones y semilla
-CLAVE_VIGILANTE = 7_022_002   # una vuelta del seguimiento de Argo CD
-CLAVE_REINDEXAR = 7_022_003   # reemplazo del índice del RAG (auditoría BE-07)
+STARTUP_KEY = 7_022_001    # migraciones y semilla
+WATCHER_KEY = 7_022_002   # una vuelta del seguimiento de Argo CD
+REINDEX_KEY = 7_022_003   # reemplazo del índice del RAG (auditoría BE-07)
 
 
-def _usa_candados(engine: Engine) -> bool:
+def _uses_locks(engine: Engine) -> bool:
     return engine.dialect.name == "postgresql"
 
 
 @contextmanager
-def esperar_turno(engine: Engine, clave: int) -> Iterator[None]:
+def wait_turn(engine: Engine, clave: int) -> Iterator[None]:
     """Espera su turno (sin límite) y lo retiene dentro del bloque: quien llegue después espera a que termine."""
-    if not _usa_candados(engine):
+    if not _uses_locks(engine):
         yield
         return
     with engine.connect() as conexion:
@@ -33,9 +33,9 @@ def esperar_turno(engine: Engine, clave: int) -> Iterator[None]:
 
 
 @contextmanager
-def turno_si_libre(engine: Engine, clave: int) -> Iterator[bool]:
+def try_turn(engine: Engine, clave: int) -> Iterator[bool]:
     """Toma el turno si nadie lo tiene y dice si lo consiguió; quien no lo consigue no espera: se salta el trabajo."""
-    if not _usa_candados(engine):
+    if not _uses_locks(engine):
         yield True
         return
     with engine.connect() as conexion:
@@ -48,10 +48,10 @@ def turno_si_libre(engine: Engine, clave: int) -> Iterator[bool]:
                 conexion.execute(text("SELECT pg_advisory_unlock(:clave)"), {"clave": clave})
 
 
-def candado_de_transaccion(db: Session, clave: int) -> None:
+def transaction_lock(db: Session, clave: int) -> None:
     """Toma un candado que dura lo que la transacción de la sesión (se suelta solo al confirmar o deshacer): quien llegue después espera a que ella termine.
 
     A diferencia de `esperar_turno`, va en la misma transacción que las escrituras que protege. Con SQLite (pruebas) no hace nada.
     """
-    if _usa_candados(db.get_bind()):
+    if _uses_locks(db.get_bind()):
         db.execute(text("SELECT pg_advisory_xact_lock(:clave)"), {"clave": clave})

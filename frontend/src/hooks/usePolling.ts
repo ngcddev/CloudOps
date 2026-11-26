@@ -2,7 +2,7 @@
 // lee de inmediato. Antes cada pantalla tenía su `setInterval` y seguía consultando la API con la pestaña oculta (consumo de API y de batería).
 import { useEffect, useRef } from "react";
 
-export function useSondeo(tarea: () => void, cadaMs: number, activo = true): void {
+export function usePolling(tarea: () => void, cadaMs: number, activo = true): void {
   // Siempre se llama a la versión vigente de la tarea sin reiniciar el temporizador cada vez que cambia
   const vigente = useRef(tarea);
   vigente.current = tarea;

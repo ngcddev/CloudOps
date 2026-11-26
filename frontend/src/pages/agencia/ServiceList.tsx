@@ -8,7 +8,7 @@ import {
   type Deployment,
   type ServiceVersionStatus,
 } from "../../api";
-import { useSondeo } from "../../hooks/useSondeo";
+import { usePolling } from "../../hooks/usePolling";
 import { gateSummary } from "../../components/SecurityChecks";
 import StatusBadge from "../../components/StatusBadge";
 import { formatDateTime } from "../../format";
@@ -58,7 +58,7 @@ export default function ServiceList() {
   useEffect(() => {
     void load();
   }, [load]);
-  useSondeo(() => void load(), REFRESH_MS);
+  usePolling(() => void load(), REFRESH_MS);
 
   async function toggleHistory(serviceId: number) {
     if (history?.serviceId === serviceId) {

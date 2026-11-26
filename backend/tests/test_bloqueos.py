@@ -15,14 +15,14 @@ RAIZ = Path(__file__).resolve().parents[1]
 def test_con_sqlite_los_candados_no_hacen_nada():
     motor = create_engine("sqlite://")
 
-    with bloqueos.esperar_turno(motor, 1):
+    with bloqueos.wait_turn(motor, 1):
         pass
-    with bloqueos.turno_si_libre(motor, 1) as primero, bloqueos.turno_si_libre(motor, 1) as segundo:
+    with bloqueos.try_turn(motor, 1) as primero, bloqueos.try_turn(motor, 1) as segundo:
         assert primero is True and segundo is True   # sin candado nadie queda fuera
 
 
 def test_las_claves_de_los_candados_son_distintas():
-    assert bloqueos.CLAVE_ARRANQUE != bloqueos.CLAVE_VIGILANTE
+    assert bloqueos.STARTUP_KEY != bloqueos.WATCHER_KEY
 
 
 def _correr_el_vigilante(session_factory, monkeypatch, turno_libre: bool) -> int:
@@ -30,10 +30,10 @@ def _correr_el_vigilante(session_factory, monkeypatch, turno_libre: bool) -> int
 
     @contextmanager
     def turno(engine, clave):
-        assert clave == bloqueos.CLAVE_VIGILANTE
+        assert clave == bloqueos.WATCHER_KEY
         yield turno_libre
 
-    monkeypatch.setattr(deploy_watch, "turno_si_libre", turno)
+    monkeypatch.setattr(deploy_watch, "try_turn", turno)
     monkeypatch.setattr(deploy_watch, "check_cycle", lambda db, argocd, gitea=None: vueltas.append(1))
 
     async def correr():
@@ -75,7 +75,7 @@ def test_la_api_arranca_de_verdad_con_el_candado_de_arranque(session_factory, mo
 
 def test_alembic_usa_el_mismo_candado_de_arranque():
     # Una réplica migra y las demás esperan: el mismo candado que la semilla del arranque
-    assert "esperar_turno(engine, CLAVE_ARRANQUE)" in (RAIZ / "alembic" / "env.py").read_text(encoding="utf-8")
+    assert "wait_turn(engine, STARTUP_KEY)" in (RAIZ / "alembic" / "env.py").read_text(encoding="utf-8")
 
 
 DOCKERFILE = Path("/repo/backend/Dockerfile")   # el Dockerfile no entra a la imagen: se lee del repositorio montado

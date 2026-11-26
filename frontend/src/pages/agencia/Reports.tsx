@@ -11,9 +11,9 @@ const KIND_LABELS: Record<ReportKind, string> = { operativo: "Operativo (toda la
 
 // Mes actual en formato AAAA-MM, el que entiende <MonthField >
 // En America/Bogota, no en la zona del navegador: cerca del cambio de mes el navegador de otra zona dejaba escoger un mes que en Colombia aún no empieza (auditoría FE-15)
-const MES_BOGOTA = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" });
+const BOGOTA_MONTH = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" });
 function currentMonth(): string {
-  return MES_BOGOTA.format(new Date()).slice(0, 7);
+  return BOGOTA_MONTH.format(new Date()).slice(0, 7);
 }
 
 export default function Reports() {

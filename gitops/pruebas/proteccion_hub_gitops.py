@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from proteccion_hub_gitops import Gitea, aplicar, lo_puede_cambiar_el_hub, regla  # noqa: E402
+from proteccion_hub_gitops import Gitea, apply, hub_can_change, rule  # noqa: E402
 
 URL = os.environ.get("GITEA_URL", "http://gitea.hub.local")
 ORG, REPO, BOT = os.environ.get("ORG", "forja-digital"), "proteccion-prueba", "proteccion-bot"
@@ -33,12 +33,12 @@ def verificar(titulo: str, permitido: bool, esperado: bool, detalle: str = "") -
 
 def escribir(cliente: Gitea, ruta: str) -> tuple[bool, str]:
     """Escribe con la API de contenidos de Gitea, como hace el Hub."""
-    estado, actual = cliente.llamar("GET", f"/repos/{ORG}/{REPO}/contents/{ruta}?ref=main")
+    estado, actual = cliente.call("GET", f"/repos/{ORG}/{REPO}/contents/{ruta}?ref=main")
     cuerpo = {"content": base64.b64encode(b"cambio\n").decode(), "message": "prueba", "branch": "main"}
     if estado == 200:
-        estado, respuesta = cliente.llamar("PUT", f"/repos/{ORG}/{REPO}/contents/{ruta}", {**cuerpo, "sha": actual["sha"]})
+        estado, respuesta = cliente.call("PUT", f"/repos/{ORG}/{REPO}/contents/{ruta}", {**cuerpo, "sha": actual["sha"]})
     else:
-        estado, respuesta = cliente.llamar("POST", f"/repos/{ORG}/{REPO}/contents/{ruta}", cuerpo)
+        estado, respuesta = cliente.call("POST", f"/repos/{ORG}/{REPO}/contents/{ruta}", cuerpo)
     return estado in (200, 201), (respuesta.get("message", "") if isinstance(respuesta, dict) else str(respuesta))[:80]
 
 
@@ -85,13 +85,13 @@ def reescribir_historia(usuario: str, clave: str) -> bool:
 admin = Gitea(URL, *ADMIN)
 bot = Gitea(URL, BOT, CLAVE_BOT)
 try:
-    admin.llamar("DELETE", f"/repos/{ORG}/{REPO}")
-    admin.llamar("DELETE", f"/admin/users/{BOT}?purge=true")
-    estado, r = admin.llamar("POST", "/admin/users", {"username": BOT, "email": f"{BOT}@forja.test", "password": CLAVE_BOT, "must_change_password": False})
+    admin.call("DELETE", f"/repos/{ORG}/{REPO}")
+    admin.call("DELETE", f"/admin/users/{BOT}?purge=true")
+    estado, r = admin.call("POST", "/admin/users", {"username": BOT, "email": f"{BOT}@forja.test", "password": CLAVE_BOT, "must_change_password": False})
     assert estado == 201, f"no se pudo crear el usuario de prueba: {estado} {r}"
-    estado, r = admin.llamar("POST", f"/orgs/{ORG}/repos", {"name": REPO, "auto_init": True, "default_branch": "main", "private": False})
+    estado, r = admin.call("POST", f"/orgs/{ORG}/repos", {"name": REPO, "auto_init": True, "default_branch": "main", "private": False})
     assert estado == 201, f"no se pudo crear el repositorio de prueba: {estado} {r}"
-    estado, r = admin.llamar("PUT", f"/repos/{ORG}/{REPO}/collaborators/{BOT}", {"permission": "write"})
+    estado, r = admin.call("PUT", f"/repos/{ORG}/{REPO}/collaborators/{BOT}", {"permission": "write"})
     assert estado == 204, f"no se pudo dar escritura al usuario de prueba: {estado} {r}"
     for ruta in ("observability/a.txt", "hub/a.txt", "platform/a.txt", "clients/_base/a.txt", "clients/ferreteria/kustomization.yaml"):
         assert escribir(admin, ruta)[0], f"no se pudo crear {ruta}"
@@ -99,7 +99,7 @@ try:
     print("\nSin protección (como estaba hub-gitops):")
     verificar("el bot escribe observability/ por la API", escribir(bot, "observability/a.txt")[0], True)
 
-    print(f"\nCon la regla de gitops/proteccion_hub_gitops.py ({aplicar(admin, ORG, REPO, regla(ADMIN[0]))}):")
+    print(f"\nCon la regla de gitops/proteccion_hub_gitops.py ({apply(admin, ORG, REPO, rule(ADMIN[0]))}):")
     for ruta in ("observability/a.txt", "hub/a.txt", "platform/a.txt", "clients/_base/a.txt"):
         permitido, detalle = escribir(bot, ruta)
         verificar(f"bot · API de contenidos · {ruta}", permitido, False, detalle)
@@ -124,12 +124,12 @@ try:
     verificar("bot · API de contenidos · clients/_base/kustomization.yaml (hoy permitido)", escribir(bot, "clients/_base/kustomization.yaml")[0], True)
 
     print("\nLa lista de PATRONES_DEL_HUB y las rutas:")
-    verificar("coincide clients/ferreteria/kustomization.yaml", lo_puede_cambiar_el_hub("clients/ferreteria/kustomization.yaml"), True)
-    verificar("no coincide observability/prometheus/prometheus.yml", lo_puede_cambiar_el_hub("observability/prometheus/prometheus.yml"), False)
-    verificar("no coincide clients/a/b/kustomization.yaml (`*` no cruza carpetas)", lo_puede_cambiar_el_hub("clients/a/b/kustomization.yaml"), False)
+    verificar("coincide clients/ferreteria/kustomization.yaml", hub_can_change("clients/ferreteria/kustomization.yaml"), True)
+    verificar("no coincide observability/prometheus/prometheus.yml", hub_can_change("observability/prometheus/prometheus.yml"), False)
+    verificar("no coincide clients/a/b/kustomization.yaml (`*` no cruza carpetas)", hub_can_change("clients/a/b/kustomization.yaml"), False)
 finally:
-    admin.llamar("DELETE", f"/repos/{ORG}/{REPO}")
-    admin.llamar("DELETE", f"/admin/users/{BOT}?purge=true")
+    admin.call("DELETE", f"/repos/{ORG}/{REPO}")
+    admin.call("DELETE", f"/admin/users/{BOT}?purge=true")
     print("\n(repositorio y usuario de prueba borrados)")
 print("\nTODO EN VERDE" if not fallos else f"\nFALLÓ: {len(fallos)} comprobación(es)")
 sys.exit(1 if fallos else 0)

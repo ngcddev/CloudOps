@@ -3,41 +3,41 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { usePopover } from "../hooks/usePopover";
-import { CalendarioIcono, ChevronDerecha, ChevronIzquierda } from "./IconosCampo";
-import { eventoDeCambio } from "./Select";
+import { CalendarIcon, ChevronRight, ChevronLeft } from "./FieldIcons";
+import { changeEvent } from "./Select";
 
-const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const DIAS = ["L", "M", "X", "J", "V", "S", "D"];
-const DIAS_LARGOS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const SHORT_MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const DAYS = ["L", "M", "X", "J", "V", "S", "D"];
+const LONG_DAYS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 
-interface Dia {
+interface Day {
   y: number;
   m: number;
   d: number;
 }
 
-const dos = (n: number) => String(n).padStart(2, "0");
-const aTexto = ({ y, m, d }: Dia) => `${y}-${dos(m)}-${dos(d)}`;
-const aTextoMes = (y: number, m: number) => `${y}-${dos(m)}`;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const toText = ({ y, m, d }: Day) => `${y}-${pad2(m)}-${pad2(d)}`;
+const toMonthText = (y: number, m: number) => `${y}-${pad2(m)}`;
 
-function leerFecha(texto: string): Dia | null {
+function parseDate(texto: string): Day | null {
   const c = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto);
   return c ? { y: Number(c[1]), m: Number(c[2]), d: Number(c[3]) } : null;
 }
 
-function leerMes(texto: string): { y: number; m: number } | null {
+function parseMonth(texto: string): { y: number; m: number } | null {
   const c = /^(\d{4})-(\d{2})$/.exec(texto);
   return c ? { y: Number(c[1]), m: Number(c[2]) } : null;
 }
 
-function sumarDias(base: Dia, dias: number): Dia {
+function addDays(base: Day, dias: number): Day {
   const f = new Date(Date.UTC(base.y, base.m - 1, base.d + dias));
   return { y: f.getUTCFullYear(), m: f.getUTCMonth() + 1, d: f.getUTCDate() };
 }
 
 // Mantiene el día y lo recorta al último del mes de llegada (31 de enero + 1 mes = 28 o 29 de febrero)
-function sumarMeses(base: Dia, meses: number): Dia {
+function addMonths(base: Day, meses: number): Day {
   const total = base.y * 12 + (base.m - 1) + meses;
   const y = Math.floor(total / 12);
   const m = (total % 12) + 1;
@@ -46,25 +46,25 @@ function sumarMeses(base: Dia, meses: number): Dia {
 }
 
 // Lunes = 0 … domingo = 6
-const diaDeSemana = (f: Dia) => (new Date(Date.UTC(f.y, f.m - 1, f.d)).getUTCDay() + 6) % 7;
+const weekday = (f: Day) => (new Date(Date.UTC(f.y, f.m - 1, f.d)).getUTCDay() + 6) % 7;
 
 // Hoy en la hora de Bogotá, no en la del navegador
-function hoyEnBogota(): Dia {
+function todayInBogota(): Day {
   const texto = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
-  return leerFecha(texto) ?? { y: 1970, m: 1, d: 1 };
+  return parseDate(texto) ?? { y: 1970, m: 1, d: 1 };
 }
 
-const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
-const textoFecha = (valor: string) => {
-  const f = leerFecha(valor);
-  return f ? `${f.d} ${MESES_CORTOS[f.m - 1]} ${f.y}` : "";
+const capitalize = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
+const dateText = (valor: string) => {
+  const f = parseDate(valor);
+  return f ? `${f.d} ${SHORT_MONTHS[f.m - 1]} ${f.y}` : "";
 };
-const textoMes = (valor: string) => {
-  const f = leerMes(valor);
-  return f ? `${mayuscula(MESES[f.m - 1])} de ${f.y}` : "";
+const monthText = (valor: string) => {
+  const f = parseMonth(valor);
+  return f ? `${capitalize(MONTHS[f.m - 1])} de ${f.y}` : "";
 };
 
-export interface CampoFechaProps {
+export interface DateFieldProps {
   value: string;
   onChange: (evento: ChangeEvent<HTMLInputElement>) => void;
   min?: string;
@@ -83,32 +83,32 @@ export interface CampoFechaProps {
 
 // ---------- Calendario de días ----------
 
-interface CalendarioProps {
+interface CalendarProps {
   valor: string;
   min?: string;
   max?: string;
   puedeBorrar: boolean;
-  onElegir: (fecha: Dia | null) => void;
+  onElegir: (fecha: Day | null) => void;
   onCerrar: () => void;
 }
 
-function CalendarioDias({ valor, min, max, puedeBorrar, onElegir, onCerrar }: CalendarioProps) {
-  const hoy = useMemo(hoyEnBogota, []);
-  const enRango = useCallback((f: Dia) => {
-    const t = aTexto(f);
+function DayCalendar({ valor, min, max, puedeBorrar, onElegir, onCerrar }: CalendarProps) {
+  const hoy = useMemo(todayInBogota, []);
+  const enRango = useCallback((f: Day) => {
+    const t = toText(f);
     return (!min || t >= min) && (!max || t <= max);
   }, [min, max]);
   // Si el rango deja fuera a un día, el foco cae en el límite más cercano
   const ajustar = useCallback(
-    (f: Dia): Dia => {
-      const t = aTexto(f);
-      if (max && t > max) return leerFecha(max) ?? f;
-      if (min && t < min) return leerFecha(min) ?? f;
+    (f: Day): Day => {
+      const t = toText(f);
+      if (max && t > max) return parseDate(max) ?? f;
+      if (min && t < min) return parseDate(min) ?? f;
       return f;
     },
     [min, max],
   );
-  const [foco, setFoco] = useState<Dia>(() => ajustar(leerFecha(valor) ?? hoy));
+  const [foco, setFoco] = useState<Day>(() => ajustar(parseDate(valor) ?? hoy));
   const cuadriculaRef = useRef<HTMLDivElement>(null);
   const primera = useRef(true);
 
@@ -120,9 +120,9 @@ function CalendarioDias({ valor, min, max, puedeBorrar, onElegir, onCerrar }: Ca
     primera.current = false;
   }, [foco]);
 
-  const primeroDelMes: Dia = { y: foco.y, m: foco.m, d: 1 };
-  const celdas = Array.from({ length: 42 }, (_, i) => sumarDias(primeroDelMes, i - diaDeSemana(primeroDelMes)));
-  const textoHoy = aTexto(hoy);
+  const primeroDelMes: Day = { y: foco.y, m: foco.m, d: 1 };
+  const celdas = Array.from({ length: 42 }, (_, i) => addDays(primeroDelMes, i - weekday(primeroDelMes)));
+  const textoHoy = toText(hoy);
 
   const alTeclear = (evento: KeyboardEvent<HTMLDivElement>) => {
     if (evento.key === "Escape") {
@@ -132,16 +132,16 @@ function CalendarioDias({ valor, min, max, puedeBorrar, onElegir, onCerrar }: Ca
       return;
     }
     if (!(evento.target as HTMLElement).closest(".cal-cuadricula")) return;
-    let siguiente: Dia | null = null;
+    let siguiente: Day | null = null;
     switch (evento.key) {
-      case "ArrowLeft": siguiente = sumarDias(foco, -1); break;
-      case "ArrowRight": siguiente = sumarDias(foco, 1); break;
-      case "ArrowUp": siguiente = sumarDias(foco, -7); break;
-      case "ArrowDown": siguiente = sumarDias(foco, 7); break;
-      case "Home": siguiente = sumarDias(foco, -diaDeSemana(foco)); break;
-      case "End": siguiente = sumarDias(foco, 6 - diaDeSemana(foco)); break;
-      case "PageUp": siguiente = sumarMeses(foco, evento.shiftKey ? -12 : -1); break;
-      case "PageDown": siguiente = sumarMeses(foco, evento.shiftKey ? 12 : 1); break;
+      case "ArrowLeft": siguiente = addDays(foco, -1); break;
+      case "ArrowRight": siguiente = addDays(foco, 1); break;
+      case "ArrowUp": siguiente = addDays(foco, -7); break;
+      case "ArrowDown": siguiente = addDays(foco, 7); break;
+      case "Home": siguiente = addDays(foco, -weekday(foco)); break;
+      case "End": siguiente = addDays(foco, 6 - weekday(foco)); break;
+      case "PageUp": siguiente = addMonths(foco, evento.shiftKey ? -12 : -1); break;
+      case "PageDown": siguiente = addMonths(foco, evento.shiftKey ? 12 : 1); break;
     }
     if (siguiente) {
       evento.preventDefault();
@@ -152,24 +152,24 @@ function CalendarioDias({ valor, min, max, puedeBorrar, onElegir, onCerrar }: Ca
   return (
     <div onKeyDown={alTeclear}>
       <div className="cal-cabecera">
-        <button type="button" className="cal-nav" aria-label="Mes anterior" onClick={() => setFoco(ajustar(sumarMeses(foco, -1)))}>
-          <ChevronIzquierda />
+        <button type="button" className="cal-nav" aria-label="Mes anterior" onClick={() => setFoco(ajustar(addMonths(foco, -1)))}>
+          <ChevronLeft />
         </button>
         <div className="cal-titulo" aria-live="polite">
-          {mayuscula(MESES[foco.m - 1])} de {foco.y}
+          {capitalize(MONTHS[foco.m - 1])} de {foco.y}
         </div>
-        <button type="button" className="cal-nav" aria-label="Mes siguiente" onClick={() => setFoco(ajustar(sumarMeses(foco, 1)))}>
-          <ChevronDerecha />
+        <button type="button" className="cal-nav" aria-label="Mes siguiente" onClick={() => setFoco(ajustar(addMonths(foco, 1)))}>
+          <ChevronRight />
         </button>
       </div>
-      <div className="cal-cuadricula" role="group" aria-label={`${mayuscula(MESES[foco.m - 1])} de ${foco.y}`} ref={cuadriculaRef}>
-        {DIAS.map((letra, i) => (
-          <div key={letra} className="cal-dia-nombre" aria-label={DIAS_LARGOS[i]}>
+      <div className="cal-cuadricula" role="group" aria-label={`${capitalize(MONTHS[foco.m - 1])} de ${foco.y}`} ref={cuadriculaRef}>
+        {DAYS.map((letra, i) => (
+          <div key={letra} className="cal-dia-nombre" aria-label={LONG_DAYS[i]}>
             {letra}
           </div>
         ))}
         {celdas.map((f) => {
-          const texto = aTexto(f);
+          const texto = toText(f);
           const esFoco = f.y === foco.y && f.m === foco.m && f.d === foco.d;
           const esHoy = texto === textoHoy;
           return (
@@ -180,7 +180,7 @@ function CalendarioDias({ valor, min, max, puedeBorrar, onElegir, onCerrar }: Ca
               className={`cal-dia${f.m !== foco.m ? " fuera" : ""}${esHoy ? " hoy" : ""}`}
               aria-pressed={texto === valor}
               aria-current={esHoy ? "date" : undefined}
-              aria-label={`${DIAS_LARGOS[diaDeSemana(f)]} ${f.d} de ${MESES[f.m - 1]} de ${f.y}${esHoy ? ", hoy" : ""}`}
+              aria-label={`${LONG_DAYS[weekday(f)]} ${f.d} de ${MONTHS[f.m - 1]} de ${f.y}${esHoy ? ", hoy" : ""}`}
               disabled={!enRango(f)}
               onClick={() => onElegir(f)}
             >
@@ -205,7 +205,7 @@ function CalendarioDias({ valor, min, max, puedeBorrar, onElegir, onCerrar }: Ca
 
 // ---------- Calendario de meses ----------
 
-interface MesesProps {
+interface MonthsProps {
   valor: string;
   min?: string;
   max?: string;
@@ -213,26 +213,26 @@ interface MesesProps {
   onCerrar: () => void;
 }
 
-function CalendarioMeses({ valor, min, max, onElegir, onCerrar }: MesesProps) {
-  const hoy = useMemo(hoyEnBogota, []);
+function MonthCalendar({ valor, min, max, onElegir, onCerrar }: MonthsProps) {
+  const hoy = useMemo(todayInBogota, []);
   const enRango = useCallback(
     (y: number, m: number) => {
-      const t = aTextoMes(y, m);
+      const t = toMonthText(y, m);
       return (!min || t >= min) && (!max || t <= max);
     },
     [min, max],
   );
   const ajustar = useCallback(
     (y: number, m: number) => {
-      const t = aTextoMes(y, m);
-      if (max && t > max) return leerMes(max) ?? { y, m };
-      if (min && t < min) return leerMes(min) ?? { y, m };
+      const t = toMonthText(y, m);
+      if (max && t > max) return parseMonth(max) ?? { y, m };
+      if (min && t < min) return parseMonth(min) ?? { y, m };
       return { y, m };
     },
     [min, max],
   );
   const [foco, setFoco] = useState(() => {
-    const inicial = leerMes(valor) ?? { y: hoy.y, m: hoy.m };
+    const inicial = parseMonth(valor) ?? { y: hoy.y, m: hoy.m };
     return ajustar(inicial.y, inicial.m);
   });
   const cuadriculaRef = useRef<HTMLDivElement>(null);
@@ -265,23 +265,23 @@ function CalendarioMeses({ valor, min, max, onElegir, onCerrar }: MesesProps) {
     }
   };
 
-  const textoActual = aTextoMes(hoy.y, hoy.m);
+  const textoActual = toMonthText(hoy.y, hoy.m);
   return (
     <div onKeyDown={alTeclear}>
       <div className="cal-cabecera">
         <button type="button" className="cal-nav" aria-label="Año anterior" onClick={() => mover(-12)}>
-          <ChevronIzquierda />
+          <ChevronLeft />
         </button>
         <div className="cal-titulo" aria-live="polite">
           {foco.y}
         </div>
         <button type="button" className="cal-nav" aria-label="Año siguiente" onClick={() => mover(12)}>
-          <ChevronDerecha />
+          <ChevronRight />
         </button>
       </div>
       <div className="cal-meses" role="group" aria-label={`Meses de ${foco.y}`} ref={cuadriculaRef}>
-        {MESES.map((nombre, i) => {
-          const texto = aTextoMes(foco.y, i + 1);
+        {MONTHS.map((nombre, i) => {
+          const texto = toMonthText(foco.y, i + 1);
           const esActual = texto === textoActual;
           return (
             <button
@@ -295,7 +295,7 @@ function CalendarioMeses({ valor, min, max, onElegir, onCerrar }: MesesProps) {
               disabled={!enRango(foco.y, i + 1)}
               onClick={() => onElegir(foco.y, i + 1)}
             >
-              {MESES_CORTOS[i]}
+              {SHORT_MONTHS[i]}
             </button>
           );
         })}
@@ -311,7 +311,7 @@ function CalendarioMeses({ valor, min, max, onElegir, onCerrar }: MesesProps) {
 
 // ---------- Campos ----------
 
-interface CampoBaseProps extends CampoFechaProps {
+interface FieldBaseProps extends DateFieldProps {
   texto: string;
   tituloDialogo: string;
   altoMaximo: number;
@@ -319,7 +319,7 @@ interface CampoBaseProps extends CampoFechaProps {
   claseLista: string;
 }
 
-function CampoBase({ value, onChange, id, name, disabled, required, className, placeholder, texto, tituloDialogo, altoMaximo, contenido, claseLista, ...resto }: CampoBaseProps) {
+function FieldBase({ value, onChange, id, name, disabled, required, className, placeholder, texto, tituloDialogo, altoMaximo, contenido, claseLista, ...resto }: FieldBaseProps) {
   const aria = {
     "aria-label": resto["aria-label"],
     "aria-labelledby": resto["aria-labelledby"],
@@ -337,7 +337,7 @@ function CampoBase({ value, onChange, id, name, disabled, required, className, p
   };
   const elegir = (nuevo: string) => {
     cerrarConFoco();
-    if (nuevo !== value) onChange(eventoDeCambio<HTMLInputElement>(nuevo, name));
+    if (nuevo !== value) onChange(changeEvent<HTMLInputElement>(nuevo, name));
   };
 
   return (
@@ -368,7 +368,7 @@ function CampoBase({ value, onChange, id, name, disabled, required, className, p
           {...aria}
         >
           <span className={`campo-valor${value ? "" : " campo-vacio"}`}>{value ? texto : placeholder}</span>
-          <CalendarioIcono />
+          <CalendarIcon />
         </button>
         {/* Un botón no se valida solo: este campo oculto hace que "obligatorio" siga frenando el envío del formulario */}
         {required && <input className="campo-validador" tabIndex={-1} aria-hidden="true" required value={value} onChange={() => undefined} />}
@@ -392,40 +392,40 @@ function CampoBase({ value, onChange, id, name, disabled, required, className, p
   );
 }
 
-export function DateField({ value, min, max, required, placeholder = "Seleccionar fecha", ...resto }: CampoFechaProps) {
+export function DateField({ value, min, max, required, placeholder = "Seleccionar fecha", ...resto }: DateFieldProps) {
   return (
-    <CampoBase
+    <FieldBase
       {...resto}
       value={value}
       min={min}
       max={max}
       required={required}
       placeholder={placeholder}
-      texto={textoFecha(value)}
+      texto={dateText(value)}
       tituloDialogo="Elegir fecha"
       altoMaximo={460}
       claseLista="pop-calendario"
       contenido={(elegir, cerrar) => (
-        <CalendarioDias valor={value} min={min} max={max} puedeBorrar={!required} onElegir={(f) => elegir(f ? aTexto(f) : "")} onCerrar={cerrar} />
+        <DayCalendar valor={value} min={min} max={max} puedeBorrar={!required} onElegir={(f) => elegir(f ? toText(f) : "")} onCerrar={cerrar} />
       )}
     />
   );
 }
 
-export function MonthField({ value, min, max, required, placeholder = "Seleccionar mes", ...resto }: CampoFechaProps) {
+export function MonthField({ value, min, max, required, placeholder = "Seleccionar mes", ...resto }: DateFieldProps) {
   return (
-    <CampoBase
+    <FieldBase
       {...resto}
       value={value}
       min={min}
       max={max}
       required={required}
       placeholder={placeholder}
-      texto={textoMes(value)}
+      texto={monthText(value)}
       tituloDialogo="Elegir mes"
       altoMaximo={380}
       claseLista="pop-meses"
-      contenido={(elegir, cerrar) => <CalendarioMeses valor={value} min={min} max={max} onElegir={(y, m) => elegir(aTextoMes(y, m))} onCerrar={cerrar} />}
+      contenido={(elegir, cerrar) => <MonthCalendar valor={value} min={min} max={max} onElegir={(y, m) => elegir(toMonthText(y, m))} onCerrar={cerrar} />}
     />
   );
 }

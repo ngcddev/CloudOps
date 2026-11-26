@@ -18,7 +18,7 @@ from app.services.incident_flow import IncidentFlowError
 router = APIRouter(prefix="/api", tags=["borradores-ia"], dependencies=[Depends(require_agency)])
 
 
-def _incidente(db: Session, incident_id: int) -> Incident:
+def _get_incident(db: Session, incident_id: int) -> Incident:
     incident = db.scalar(
         select(Incident)
         .options(selectinload(Incident.service).selectinload(Service.project).selectinload(Project.client), selectinload(Incident.events))
@@ -29,14 +29,14 @@ def _incidente(db: Session, incident_id: int) -> Incident:
     return incident
 
 
-def _borrador(db: Session, draft_id: int) -> AiDraft:
+def _get_draft(db: Session, draft_id: int) -> AiDraft:
     borrador = db.get(AiDraft, draft_id)
     if borrador is None:
         raise HTTPException(status_code=404, detail="El borrador no existe.")
     return borrador
 
 
-def _salida(b: AiDraft) -> DraftOut:
+def _present(b: AiDraft) -> DraftOut:
     checks = b.checks or {}
     avisos = []
     if checks.get("motivo_texto_base"):
@@ -61,10 +61,10 @@ def _salida(b: AiDraft) -> DraftOut:
 @router.post("/incidents/{incident_id}/ai-drafts", response_model=list[DraftOut], status_code=201)
 def generate(incident_id: int, body: GenerateIn | None = None, db: Session = Depends(get_db)):
     """Genera el resumen y el mensaje al cliente de un incidente mitigado. Si la IA no responde, deja un texto base para editar."""
-    incident = _incidente(db, incident_id)
+    incident = _get_incident(db, incident_id)
     kinds = tuple(body.kinds) if body and body.kinds else ai_drafts.KINDS
     try:
-        return [_salida(b) for b in ai_drafts.generar(db, incident, kinds)]
+        return [_present(b) for b in ai_drafts.generate(db, incident, kinds)]
     except IncidentFlowError as error:
         raise HTTPException(status_code=409, detail=str(error)) from None
 
@@ -75,24 +75,24 @@ def diagnose(incident_id: int, body: DiagnosisIn | None = None, db: Session = De
 
     Es un borrador: una persona lo edita y lo aprueba; la IA no ejecuta nada. Si no responde o su texto no pasa las verificaciones, queda un texto base.
     """
-    return _salida(aiops.diagnosticar(db, _incidente(db, incident_id), body.evidence if body else None))
+    return _present(aiops.diagnose(db, _get_incident(db, incident_id), body.evidence if body else None))
 
 
 @router.get("/incidents/{incident_id}/ai-drafts", response_model=list[DraftOut])
 def list_drafts(incident_id: int, db: Session = Depends(get_db)):
     """Todos los borradores del incidente, del más nuevo al más viejo."""
-    _incidente(db, incident_id)
+    _get_incident(db, incident_id)
     filas = db.scalars(
         select(AiDraft).options(selectinload(AiDraft.approved_by)).where(AiDraft.incident_id == incident_id).order_by(AiDraft.id.desc())
     ).all()
-    return [_salida(b) for b in filas]
+    return [_present(b) for b in filas]
 
 
 @router.post("/ai-drafts/{draft_id}/approve", response_model=DraftOut)
 def approve(draft_id: int, request: Request, body: ApproveIn | None = None, db: Session = Depends(get_db), user: User = Depends(require_agency)):
     """Aprueba el borrador con el texto que la persona editó; el mensaje al cliente no puede traer jerga ni horas que no coincidan."""
     try:
-        return _salida(ai_drafts.aprobar(db, _borrador(db, draft_id), user, body.text if body else None, audit.request_ip(request)))
+        return _present(ai_drafts.approve(db, _get_draft(db, draft_id), user, body.text if body else None, audit.request_ip(request)))
     except ai_drafts.DraftError as error:
         raise HTTPException(status_code=422, detail=str(error)) from None
 
@@ -101,6 +101,6 @@ def approve(draft_id: int, request: Request, body: ApproveIn | None = None, db: 
 def discard(draft_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(require_agency)):
     """Descarta el borrador: no llega a nadie."""
     try:
-        return _salida(ai_drafts.descartar(db, _borrador(db, draft_id), user, audit.request_ip(request)))
+        return _present(ai_drafts.discard(db, _get_draft(db, draft_id), user, audit.request_ip(request)))
     except ai_drafts.DraftError as error:
         raise HTTPException(status_code=409, detail=str(error)) from None

@@ -37,7 +37,7 @@ def llenar(db, usuario, hace_dias, n, **kw):
 
 
 def test_sin_consultas_el_estado_es_sin_datos(db):
-    r = ai_drift.calcular(db, ahora=AHORA)
+    r = ai_drift.compute(db, ahora=AHORA)
 
     assert r["estado"] == "sin_datos" and r["avisos"] == [] and r["actual"]["consultas"] == 0
 
@@ -46,7 +46,7 @@ def test_con_datos_estables_no_hay_avisos(db, usuario):
     llenar(db, usuario, 1, 25)
     llenar(db, usuario, 9, 25)
 
-    r = ai_drift.calcular(db, ahora=AHORA)
+    r = ai_drift.compute(db, ahora=AHORA)
 
     assert r["estado"] == "ok" and r["avisos"] == [] and r["actual"]["consultas"] == 25 and r["anterior"]["consultas"] == 25
 
@@ -56,7 +56,7 @@ def test_las_ventanas_no_se_mezclan(db, usuario):
     llenar(db, usuario, 9, 4)  # anterior
     llenar(db, usuario, 20, 5)  # fuera de las dos
 
-    r = ai_drift.calcular(db, ahora=AHORA)
+    r = ai_drift.compute(db, ahora=AHORA)
 
     assert (r["actual"]["consultas"], r["anterior"]["consultas"]) == (3, 4)
 
@@ -65,7 +65,7 @@ def test_muchas_decisiones_corregidas_avisan_que_hay_que_reentrenar(db, usuario)
     llenar(db, usuario, 1, 7, label="en_tema", feedback="en_tema")
     llenar(db, usuario, 1, 3, label="fuera_de_tema", feedback="en_tema")  # 3 de 10 corregidas = 30 %
 
-    r = ai_drift.calcular(db, ahora=AHORA)
+    r = ai_drift.compute(db, ahora=AHORA)
 
     assert r["estado"] == "atencion"
     assert [a["codigo"] for a in r["avisos"]] == ["decisiones_corregidas"] and "30" in r["avisos"][0]["mensaje"]
@@ -74,7 +74,7 @@ def test_muchas_decisiones_corregidas_avisan_que_hay_que_reentrenar(db, usuario)
 def test_con_pocas_opiniones_no_se_avisa_aunque_el_porcentaje_sea_alto(db, usuario):
     llenar(db, usuario, 1, 4, label="fuera_de_tema", feedback="en_tema")
 
-    assert ai_drift.calcular(db, ahora=AHORA)["avisos"] == []
+    assert ai_drift.compute(db, ahora=AHORA)["avisos"] == []
 
 
 def test_un_cambio_grande_en_las_preguntas_fuera_de_tema_se_detecta(db, usuario):
@@ -82,7 +82,7 @@ def test_un_cambio_grande_en_las_preguntas_fuera_de_tema_se_detecta(db, usuario)
     llenar(db, usuario, 1, 15, label="en_tema")
     llenar(db, usuario, 1, 10, label="fuera_de_tema")  # ahora: 40 %
 
-    avisos = ai_drift.calcular(db, ahora=AHORA)["avisos"]
+    avisos = ai_drift.compute(db, ahora=AHORA)["avisos"]
 
     assert [a["codigo"] for a in avisos] == ["cambio_de_temas"]
 
@@ -91,7 +91,7 @@ def test_un_llm_que_tarda_el_doble_se_detecta(db, usuario):
     llenar(db, usuario, 9, 6, llm=True, latencia=2000)
     llenar(db, usuario, 1, 6, llm=True, latencia=4500)
 
-    avisos = ai_drift.calcular(db, ahora=AHORA)["avisos"]
+    avisos = ai_drift.compute(db, ahora=AHORA)["avisos"]
 
     assert [a["codigo"] for a in avisos] == ["llm_mas_lento"]
 
@@ -100,7 +100,7 @@ def test_un_llm_que_falla_mucho_se_detecta(db, usuario):
     llenar(db, usuario, 1, 4, llm=True, llm_ok=True, latencia=2000)
     llenar(db, usuario, 1, 2, llm=True, llm_ok=False)
 
-    assert "llm_fallando" in [a["codigo"] for a in ai_drift.calcular(db, ahora=AHORA)["avisos"]]
+    assert "llm_fallando" in [a["codigo"] for a in ai_drift.compute(db, ahora=AHORA)["avisos"]]
 
 
 def test_el_endpoint_responde_para_la_agencia_y_valida_los_dias(client, db, usuario):

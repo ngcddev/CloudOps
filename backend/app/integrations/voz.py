@@ -7,12 +7,12 @@ from app.config import settings
 from app.integrations.http import Transport, urllib_transport
 
 # La primera transcripción carga el modelo (unos segundos); el resto tarda menos de 2 s
-TIMEOUT_TRANSCRIBIR = 60.0
-TIMEOUT_HABLAR = 30.0
-TIMEOUT_ESTADO = 2.0
+TIMEOUT_TRANSCRIBE = 60.0
+TIMEOUT_SPEAK = 30.0
+TIMEOUT_STATUS = 2.0
 
 
-class VozError(Exception):
+class VoiceError(Exception):
     """El servicio de voz respondió con un error o no respondió; `status` es el código que la API debe devolver."""
 
     def __init__(self, status: int, detail: str):
@@ -20,24 +20,24 @@ class VozError(Exception):
         self.status, self.detail = status, detail
 
 
-def habilitada() -> bool:
+def enabled() -> bool:
     return bool(settings.voz_url)
 
 
-def _peticion(ruta: str, cuerpo: bytes | None, tipo: str | None) -> urllib.request.Request:
+def _request(ruta: str, cuerpo: bytes | None, tipo: str | None) -> urllib.request.Request:
     cabeceras = {"Content-Type": tipo} if tipo else {}
     if settings.voz_token:
         cabeceras["X-Voz-Token"] = settings.voz_token
     return urllib.request.Request(f"{settings.voz_url}{ruta}", data=cuerpo, headers=cabeceras, method="POST" if cuerpo is not None else "GET")
 
 
-def _enviar(ruta: str, cuerpo: bytes | None, tipo: str | None, timeout: float, transport: Transport | None) -> bytes:
-    if not habilitada():
-        raise VozError(503, "La voz no está disponible: el servicio de voz no está configurado.")
+def _send(ruta: str, cuerpo: bytes | None, tipo: str | None, timeout: float, transport: Transport | None) -> bytes:
+    if not enabled():
+        raise VoiceError(503, "La voz no está disponible: el servicio de voz no está configurado.")
     try:
-        status, respuesta = (transport or urllib_transport)(_peticion(ruta, cuerpo, tipo), timeout)
+        status, respuesta = (transport or urllib_transport)(_request(ruta, cuerpo, tipo), timeout)
     except Exception:
-        raise VozError(503, "El servicio de voz no respondió.") from None
+        raise VoiceError(503, "El servicio de voz no respondió.") from None
     if status == 200:
         return respuesta
     try:
@@ -46,26 +46,26 @@ def _enviar(ruta: str, cuerpo: bytes | None, tipo: str | None, timeout: float, t
         detalle = ""
     # El servicio ya habla español y no revela rutas; se pasan sus avisos de tamaño, duración y turno ocupado
     if status in (400, 413, 422, 429):
-        raise VozError(status, str(detalle) or "El servicio de voz rechazó la petición.")
-    raise VozError(503, "El servicio de voz no está disponible.")
+        raise VoiceError(status, str(detalle) or "El servicio de voz rechazó la petición.")
+    raise VoiceError(503, "El servicio de voz no está disponible.")
 
 
-def estado(transport: Transport | None = None) -> dict:
+def get_status(transport: Transport | None = None) -> dict:
     """{habilitada, disponible}: si hay URL configurada y el servicio responde en /health."""
-    if not habilitada():
+    if not enabled():
         return {"habilitada": False, "disponible": False}
     try:
-        _enviar("/health", None, None, TIMEOUT_ESTADO, transport)
+        _send("/health", None, None, TIMEOUT_STATUS, transport)
         return {"habilitada": True, "disponible": True}
-    except VozError:
+    except VoiceError:
         return {"habilitada": True, "disponible": False}
 
 
-def transcribir(audio: bytes, tipo: str, transport: Transport | None = None) -> dict:
+def transcribe(audio: bytes, tipo: str, transport: Transport | None = None) -> dict:
     """{texto, duracion_s, tiempo_ms, modelo} del audio dado."""
-    return json.loads(_enviar("/stt", audio, tipo or "application/octet-stream", TIMEOUT_TRANSCRIBIR, transport))
+    return json.loads(_send("/stt", audio, tipo or "application/octet-stream", TIMEOUT_TRANSCRIBE, transport))
 
 
-def sintetizar(texto: str, transport: Transport | None = None) -> bytes:
+def synthesize(texto: str, transport: Transport | None = None) -> bytes:
     """El audio WAV con el texto leído."""
-    return _enviar("/tts", json.dumps({"texto": texto}).encode("utf-8"), "application/json", TIMEOUT_HABLAR, transport)
+    return _send("/tts", json.dumps({"texto": texto}).encode("utf-8"), "application/json", TIMEOUT_SPEAK, transport)

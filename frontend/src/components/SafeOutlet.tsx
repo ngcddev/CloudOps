@@ -5,7 +5,7 @@ import { Outlet, useLocation } from "react-router-dom";
 
 import ErrorBoundary from "./ErrorBoundary";
 
-export default function OutletSeguro() {
+export default function SafeOutlet() {
   const { pathname } = useLocation();
   return (
     <ErrorBoundary key={pathname}>

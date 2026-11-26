@@ -37,6 +37,7 @@ def rollback_commit_message(client: str, tag: str, incident_id: int) -> str:
 
 
 class GiteaClient:
+    """Cliente mínimo de la API de Gitea para leer y escribir archivos del repositorio hub-gitops."""
     def __init__(
         self,
         base_url: str,

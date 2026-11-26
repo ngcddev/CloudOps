@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.archivos import leer_con_cache
+from app.archivos import read_cached
 from app.integrations import prometheus
 from app.integrations.argocd import ArgoCDClient, ArgoCDError
 from app.integrations.gitea import GiteaClient, GiteaError
@@ -35,12 +35,12 @@ def test_argocd_con_una_respuesta_que_no_es_json_lanza_argocd_error():
 
 
 def test_la_cache_de_prometheus_no_pasa_de_su_tope_y_conserva_lo_vigente(monkeypatch):
-    monkeypatch.setattr(prometheus, "MAX_ENTRADAS_CACHE", 5)
+    monkeypatch.setattr(prometheus, "MAX_CACHE_ENTRIES", 5)
     prometheus._cache.clear()
     ahora = time.monotonic()
-    prometheus._guardar("vencida", ahora - 10, 1.0)
+    prometheus._store("vencida", ahora - 10, 1.0)
     for i in range(10):
-        prometheus._guardar(f"viva-{i}", ahora + 60 + i, float(i))
+        prometheus._store(f"viva-{i}", ahora + 60 + i, float(i))
     assert len(prometheus._cache) <= 5
     assert "vencida" not in prometheus._cache and "viva-9" in prometheus._cache   # lo más nuevo se queda; lo vencido y lo más viejo salen
 
@@ -57,15 +57,15 @@ def test_un_archivo_se_lee_una_vez_y_otra_vez_solo_si_cambia(tmp_path):
         llamadas.append(1)
         return texto.split()
 
-    assert leer_con_cache(ruta, transformar) == ["uno", "dos"] and leer_con_cache(ruta, transformar) == ["uno", "dos"]
+    assert read_cached(ruta, transformar) == ["uno", "dos"] and read_cached(ruta, transformar) == ["uno", "dos"]
     assert len(llamadas) == 1   # la segunda lectura salió de la caché
     ruta.write_text("uno\ndos\ntres\n", encoding="utf-8")
-    assert leer_con_cache(ruta, transformar) == ["uno", "dos", "tres"] and len(llamadas) == 2   # editarlo en caliente sigue funcionando
+    assert read_cached(ruta, transformar) == ["uno", "dos", "tres"] and len(llamadas) == 2   # editarlo en caliente sigue funcionando
 
 
 def test_un_archivo_que_no_existe_lanza_oserror_como_read_text(tmp_path):
     with pytest.raises(OSError):
-        leer_con_cache(tmp_path / "no-existe.txt", str)
+        read_cached(tmp_path / "no-existe.txt", str)
 
 
 # ---------- BE-15: horas y correo ----------

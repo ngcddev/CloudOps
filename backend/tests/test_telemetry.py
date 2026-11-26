@@ -52,7 +52,7 @@ def nombres(spans) -> list[str]:
 def test_sin_endpoint_las_trazas_no_se_activan(monkeypatch):
     monkeypatch.setattr(settings, "otel_exporter_otlp_endpoint", "")
 
-    assert telemetry.configurar(app) is None
+    assert telemetry.configure(app) is None
     assert getattr(app, "_is_instrumented_by_opentelemetry", False) is False
 
 
@@ -82,7 +82,7 @@ def test_los_spans_no_llevan_el_texto_de_la_pregunta_ni_de_la_respuesta(client, 
 
 def test_con_un_exportador_la_api_genera_spans_de_cada_ruta(client, spans):
     exportador = InMemorySpanExporter()
-    proveedor = telemetry.configurar(app, exporter=exportador)
+    proveedor = telemetry.configure(app, exporter=exportador)
     app.middleware_stack = None  # en producción se instrumenta al importar; aquí la app ya sirvió peticiones y hay que reconstruir el stack
     try:
         assert proveedor is not None

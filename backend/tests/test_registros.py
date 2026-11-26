@@ -6,7 +6,7 @@ import logging
 import pytest
 from opentelemetry.sdk.trace import TracerProvider
 
-from app.registros import FormatoJson, id_de_peticion
+from app.registros import JsonFormatter, request_id
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def lineas():
     """Captura lo que escribe el registro de peticiones, ya con el formato JSON de la API."""
     salida = io.StringIO()
     manejador = logging.StreamHandler(salida)
-    manejador.setFormatter(FormatoJson())
+    manejador.setFormatter(JsonFormatter())
     log = logging.getLogger("hub.peticiones")
     nivel = log.level
     log.addHandler(manejador)
@@ -60,16 +60,16 @@ def test_los_sondeos_del_cluster_solo_se_registran_en_debug(client, lineas):
 
 def test_el_formato_incluye_el_trace_id_cuando_hay_una_traza_activa():
     proveedor = TracerProvider()
-    formato = FormatoJson()
+    formato = JsonFormatter()
     registro = logging.LogRecord("hub.prueba", logging.INFO, __file__, 1, "hola %s", ("mundo",), None)
-    token = id_de_peticion.set("peticion-0001")
+    token = request_id.set("peticion-0001")
     try:
         with proveedor.get_tracer("prueba").start_as_current_span("tramo") as tramo:
             datos = json.loads(formato.format(registro))
             esperado = format(tramo.get_span_context().trace_id, "032x")
         sin_traza = json.loads(formato.format(registro))
     finally:
-        id_de_peticion.reset(token)
+        request_id.reset(token)
 
     assert datos["trace_id"] == esperado and len(datos["span_id"]) == 16 and datos["request_id"] == "peticion-0001"
     assert datos["message"] == "hola mundo" and datos["level"] == "INFO" and datos["ts"].endswith("Z")
@@ -80,7 +80,7 @@ def test_un_error_sin_atrapar_queda_registrado_con_su_id_y_la_respuesta_es_500(l
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-    from app.registros import IdDePeticion
+    from app.registros import RequestIdMiddleware
 
     app = FastAPI()
 
@@ -88,7 +88,7 @@ def test_un_error_sin_atrapar_queda_registrado_con_su_id_y_la_respuesta_es_500(l
     def falla():
         raise RuntimeError("se rompió")
 
-    app.add_middleware(IdDePeticion)
+    app.add_middleware(RequestIdMiddleware)
     respuesta = TestClient(app, raise_server_exceptions=False).get("/falla", headers={"X-Request-ID": "falla-0000001"})
 
     assert respuesta.status_code == 500

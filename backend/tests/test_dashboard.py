@@ -130,7 +130,7 @@ def test_portal_incidentes_solo_del_cliente_y_sin_datos_internos(as_agency, as_c
     crear("cliente-restaurante", "El sitio de La Sazón no responde")
     crear("cliente-ferreteria", "El sitio de El Tornillo no responde")
 
-    mes = kpi.mes_actual()
+    mes = kpi.current_month()
     response = as_client.get("/api/dashboard/client/1/incidents", params={"month": mes})
 
     assert response.status_code == 200, response.text

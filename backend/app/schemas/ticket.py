@@ -14,7 +14,7 @@ class TicketCreate(BaseModel):
 
     @field_validator("title", "description")
     @classmethod
-    def _texto_obligatorio(cls, value: str) -> str:
+    def _text_required(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("El título y la descripción son obligatorios.")
@@ -29,7 +29,7 @@ class TicketClassify(BaseModel):
 
     @field_validator("correction_reason")
     @classmethod
-    def _limpiar_motivo(cls, value: str | None) -> str | None:
+    def _clean_reason(cls, value: str | None) -> str | None:
         return value.strip() if value is not None else None
 
 
@@ -47,7 +47,7 @@ class WorkLogCreate(BaseModel):
 
     @field_validator("hours")
     @classmethod
-    def _horas_positivas(cls, value: Decimal) -> Decimal:
+    def _positive_hours(cls, value: Decimal) -> Decimal:
         if value <= 0:
             raise ValueError("Las horas deben ser mayores que cero.")
         # Un registro de horas es de un día como máximo y con hasta dos decimales: una cifra enorme llegaba a PostgreSQL y daba un 500 (auditoría BE-15)

@@ -15,18 +15,18 @@ import sys
 import tempfile
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(RAIZ / "ai"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "ai"))
 sys.path.insert(0, str(Path(__file__).parent))
 
 import promocion  # noqa: E402
 
-DESTINO = RAIZ / "backend" / "app" / "assets" / "clasificador.json"
-MODELO = "compuerta-asistente"
+DESTINATION = ROOT / "backend" / "app" / "assets" / "clasificador.json"
+MODEL = "compuerta-asistente"
 ALIAS = "production"
 
 
-def bajar_json(mlflow, modelo: str, referencia: str, tmp: str) -> Path:
+def download_json(mlflow, modelo: str, referencia: str, tmp: str) -> Path:
     """Descarga el modelo registrado (`models:/modelo@alias` o `models:/modelo/N`) y devuelve su clasificador.json."""
     carpeta = Path(mlflow.artifacts.download_artifacts(artifact_uri=f"models:/{modelo}{referencia}", dst_path=tmp))
     candidatos = list(carpeta.rglob("clasificador.json"))
@@ -35,7 +35,7 @@ def bajar_json(mlflow, modelo: str, referencia: str, tmp: str) -> Path:
     return candidatos[0]
 
 
-def exportar(origen: Path, destino: Path) -> dict:
+def export(origen: Path, destino: Path) -> dict:
     """Escribe el JSON en su forma canónica (la misma de train.py: claves ordenadas, sin espacios y con salto de línea final) y deja al lado su suma SHA-256
     (`clasificador.sha256`); devuelve el contenido. Canónica porque el archivo guardado en MLflow puede traer otra serialización del mismo contenido y la suma del Hub
     tiene que ser la misma venga de donde venga (verificación del 15 nov: el exportado y el del repositorio tenían el mismo contenido y sumas distintas)."""
@@ -47,7 +47,7 @@ def exportar(origen: Path, destino: Path) -> dict:
     return contenido
 
 
-def produccion_actual(cliente, modelo: str, alias: str):
+def current_production(cliente, modelo: str, alias: str):
     try:
         return cliente.get_model_version_by_alias(modelo, alias)
     except Exception:  # noqa: BLE001 - todavía no hay nada en producción
@@ -55,13 +55,14 @@ def produccion_actual(cliente, modelo: str, alias: str):
 
 
 def main() -> int:
+    """Promueve una versión de la compuerta tras compararla con la de producción, o vuelve a la anterior con --rollback."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--version", type=int, help="versión registrada que se quiere promover (se compara antes con la de producción)")
     ap.add_argument("--rollback", action="store_true", help="volver a la versión que la actual reemplazó")
     ap.add_argument("--forzar", action="store_true", help="promover sin que la comparación lo apruebe")
-    ap.add_argument("--modelo", default=MODELO)
+    ap.add_argument("--modelo", default=MODEL)
     ap.add_argument("--alias", default=ALIAS)
-    ap.add_argument("--destino", default=str(DESTINO))
+    ap.add_argument("--destino", default=str(DESTINATION))
     args = ap.parse_args()
     if args.version is not None and args.rollback:
         print("ERROR: --version y --rollback no se combinan.", file=sys.stderr)
@@ -77,23 +78,23 @@ def main() -> int:
     cliente = MlflowClient()
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            actual = produccion_actual(cliente, args.modelo, args.alias)
+            actual = current_production(cliente, args.modelo, args.alias)
             if args.rollback:
                 if actual is None:
                     print("ERROR: no hay versión en producción a la que quitarle el alias.", file=sys.stderr)
                     return 1
                 versiones = [int(v.version) for v in cliente.search_model_versions(f"name='{args.modelo}'")]
                 etiqueta = actual.tags.get("reemplaza_a")
-                destino_version = promocion.version_a_la_que_volver(versiones, int(actual.version), int(etiqueta) if etiqueta else None)
+                destino_version = promocion.rollback_target_version(versiones, int(actual.version), int(etiqueta) if etiqueta else None)
                 if destino_version is None:
                     print(f"ERROR: la versión {actual.version} es la primera: no hay a qué volver.", file=sys.stderr)
                     return 1
                 cliente.set_registered_model_alias(args.modelo, args.alias, str(destino_version))
                 print(f"Rollback: {args.modelo} vuelve de la v{actual.version} a la v{destino_version}.")
             elif args.version is not None:
-                candidato = promocion.evaluar_archivo(bajar_json(mlflow, args.modelo, f"/{args.version}", tmp))
-                produccion = promocion.evaluar_archivo(bajar_json(mlflow, args.modelo, f"@{args.alias}", tmp)) if actual is not None else None
-                ok, motivos = promocion.decidir(candidato, produccion)
+                candidato = promocion.evaluate_file(download_json(mlflow, args.modelo, f"/{args.version}", tmp))
+                produccion = promocion.evaluate_file(download_json(mlflow, args.modelo, f"@{args.alias}", tmp)) if actual is not None else None
+                ok, motivos = promocion.decide(candidato, produccion)
                 comparacion = f"candidato v{args.version}: exactitud {candidato['exactitud']}, pierde {candidato['en_tema_perdidas']}"
                 if produccion is not None:
                     comparacion += f" · producción v{actual.version}: exactitud {produccion['exactitud']}, pierde {produccion['en_tema_perdidas']}"
@@ -107,13 +108,13 @@ def main() -> int:
                     cliente.set_model_version_tag(args.modelo, str(args.version), "reemplaza_a", str(actual.version))
                 cliente.set_registered_model_alias(args.modelo, args.alias, str(args.version))
             version = cliente.get_model_version_by_alias(args.modelo, args.alias)
-            contenido = exportar(bajar_json(mlflow, args.modelo, f"@{args.alias}", tmp), Path(args.destino))
+            contenido = export(download_json(mlflow, args.modelo, f"@{args.alias}", tmp), Path(args.destino))
     except Exception as error:  # noqa: BLE001
         print(f"ERROR: no se pudo promover desde MLflow: {error}", file=sys.stderr)
         return 1
 
     destino = Path(args.destino).resolve()
-    mostrado = destino.relative_to(RAIZ) if destino.is_relative_to(RAIZ) else destino
+    mostrado = destino.relative_to(ROOT) if destino.is_relative_to(ROOT) else destino
     print(f"{args.modelo} v{version.version} ({args.alias}) → {mostrado}  [gate_version={contenido['version']}]")
     return 0
 

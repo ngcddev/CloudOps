@@ -14,7 +14,7 @@ class ChangeRequestCreate(BaseModel):
 
     @field_validator("to_version")
     @classmethod
-    def _version_valida(cls, value: str) -> str:
+    def _valid_version(cls, value: str) -> str:
         value = value.strip()
         if not _VERSION.fullmatch(value):
             raise ValueError("La versión destino no es válida (por ejemplo: v1.1).")
@@ -26,7 +26,7 @@ class ChangeRequestReject(BaseModel):
 
     @field_validator("reason")
     @classmethod
-    def _motivo_obligatorio(cls, value: str) -> str:
+    def _reason_required(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("Debe indicar el motivo del rechazo.")

@@ -12,7 +12,7 @@ from app.models.user import User
 from app.integrations import voz
 from app.schemas.assistant import AskIn, AskOut, DriftOut, FeedbackIn, ReindexOut, SpeakIn, StatsOut, TranscriptionOut, VoiceStatusOut
 from app.services import ai_drift, assistant, knowledge, redaccion
-from app.services.assistant_gate import ModeloAlterado
+from app.services.assistant_gate import TamperedModel
 
 router = APIRouter(prefix="/api/assistant", tags=["asistente"])
 
@@ -40,7 +40,7 @@ def ask(body: AskIn, user: User = Depends(require_agency), db: Session = Depends
     """Responde una pregunta sobre el Hub; la compuerta decide si hace falta despertar al LLM."""
     try:
         return _out(assistant.ask(db, user, body.question.strip()))
-    except ModeloAlterado:
+    except TamperedModel:
         # La compuerta no pasó la verificación de integridad (spec 020): no se responde con un modelo que alguien modificó a mano
         raise HTTPException(status_code=503, detail="El modelo de la compuerta no pasó la verificación de integridad; avisa a Sistemas.") from None
 
@@ -48,7 +48,7 @@ def ask(body: AskIn, user: User = Depends(require_agency), db: Session = Depends
 @router.post("/reindex", response_model=ReindexOut, dependencies=[Depends(require_agency)])
 def reindex(db: Session = Depends(get_db)):
     """Vuelve a generar los embeddings de la ayuda del Hub (RAG). Necesita a Ollama con el modelo de embeddings."""
-    resultado = knowledge.indexar(db)
+    resultado = knowledge.build_index(db)
     if resultado is None:
         raise HTTPException(status_code=503, detail="No se pudo indexar: Ollama no respondió o no tiene el modelo de embeddings.")
     return resultado
@@ -76,7 +76,7 @@ def drift(days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_d
 
     Las rutas fijas van antes que `/{query_id}/feedback`, que solo es POST: no chocan.
     """
-    return ai_drift.calcular(db, days)
+    return ai_drift.compute(db, days)
 
 
 # ---------- Voz (spec 021): hablarle al asistente y escuchar su respuesta ----------
@@ -87,7 +87,7 @@ MAX_AUDIO_BYTES = 2_000_000
 @router.get("/voice/status", response_model=VoiceStatusOut, dependencies=[Depends(require_agency)])
 def voice_status():
     """Si la voz está configurada y responde; la pantalla muestra el micrófono solo si está disponible."""
-    return voz.estado()
+    return voz.get_status()
 
 
 @router.post("/voice/transcribe", response_model=TranscriptionOut, dependencies=[Depends(require_agency)])
@@ -101,10 +101,10 @@ async def voice_transcribe(request: Request):
     try:
         # La llamada al servicio de voz es síncrona y puede tardar hasta su timeout: en un hilo, para no congelar el bucle de eventos
         # (y con él /health y las demás peticiones); auditoría BE-01.
-        resultado = await run_in_threadpool(voz.transcribir, audio, request.headers.get("content-type", ""))
-    except voz.VozError as error:
+        resultado = await run_in_threadpool(voz.transcribe, audio, request.headers.get("content-type", ""))
+    except voz.VoiceError as error:
         raise HTTPException(status_code=error.status, detail=error.detail) from None
-    texto, secretos = redaccion.redactar(resultado.get("texto", ""))
+    texto, secretos = redaccion.redact(resultado.get("texto", ""))
     return TranscriptionOut(
         text=texto, duration_s=resultado.get("duracion_s", 0), elapsed_ms=resultado.get("tiempo_ms", 0), model=resultado.get("modelo", ""), secrets_redacted=secretos
     )
@@ -113,9 +113,9 @@ async def voice_transcribe(request: Request):
 @router.post("/voice/speak", dependencies=[Depends(require_agency)], responses={200: {"content": {"audio/wav": {}}}})
 def voice_speak(body: SpeakIn):
     """Lee un texto en voz alta (la respuesta del asistente) y devuelve el audio WAV."""
-    texto, _ = redaccion.redactar(body.text)
+    texto, _ = redaccion.redact(body.text)
     try:
-        audio = voz.sintetizar(texto)
-    except voz.VozError as error:
+        audio = voz.synthesize(texto)
+    except voz.VoiceError as error:
         raise HTTPException(status_code=error.status, detail=error.detail) from None
     return Response(content=audio, media_type="audio/wav")

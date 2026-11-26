@@ -17,7 +17,7 @@ from app.models.deployment import Deployment
 from app.models.incident import Incident
 from app.models.service import Service
 from app.services import audit
-from app.services.bloqueos import CLAVE_VIGILANTE, turno_si_libre
+from app.services.bloqueos import WATCHER_KEY, try_turn
 from app.services.change_flow import step_event, transition
 from app.services.incident_flow import add_event
 from app.services.gitops_publish import kustomization_path
@@ -278,7 +278,7 @@ async def watch_forever(
     def once() -> None:
         with session_factory() as db:
             # Con varias réplicas de la API solo una hace la vuelta (confirmaciones, rollbacks y alineación con Git); las demás la saltan (auditoría K8-04)
-            with turno_si_libre(db.get_bind(), CLAVE_VIGILANTE) as turno:
+            with try_turn(db.get_bind(), WATCHER_KEY) as turno:
                 if turno:
                     check_cycle(db, argocd, gitea=gitea)
 

@@ -33,7 +33,7 @@ class PipelineEvent(BaseModel):
     image_digests: dict[str, str] | None = None
 
     @model_validator(mode="after")
-    def _campos_del_evento(self) -> "PipelineEvent":
+    def _event_fields(self) -> "PipelineEvent":
         if self.event == "paso" and (self.step is None or self.status is None):
             raise ValueError("Un paso necesita el control (step) y su resultado (status).")
         if self.event == "fin" and self.status is None:

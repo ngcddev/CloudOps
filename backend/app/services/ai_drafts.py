@@ -13,8 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.archivos import leer_con_cache
-from app.db import soltar_conexion
+from app.archivos import read_cached
+from app.db import release_connection
 from app.integrations import ollama
 from app.models.ai_draft import AiDraft
 from app.models.incident import Incident
@@ -22,7 +22,7 @@ from app.models.user import User
 from app.services import audit
 from app.services.assistant_gate import normalize
 from app.services.incident_flow import IncidentFlowError
-from app.services.messages import PLANTILLA
+from app.services.messages import TEMPLATE
 from app.services import redaccion
 from app.services.sla import BOGOTA
 
@@ -30,12 +30,12 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 PROMPT_VERSION = "v1"
 KINDS = ("resumen", "mensaje_cliente")
 PROMPTS = {"resumen": f"borrador_resumen.{PROMPT_VERSION}.md", "mensaje_cliente": f"borrador_mensaje_cliente.{PROMPT_VERSION}.md"}
-ORDEN = {
+ORDER = {
     "resumen": "Redacta el resumen técnico de este incidente.",
     "mensaje_cliente": "Redacta el mensaje para el cliente sobre esta falla.",
 }
-HORA = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
-MINUTOS = re.compile(r"\b(\d+)\s*minutos?\b")
+HOUR = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")
+MINUTES = re.compile(r"\b(\d+)\s*minutos?\b")
 
 
 class DraftError(Exception):
@@ -43,7 +43,7 @@ class DraftError(Exception):
 
 
 @dataclass(frozen=True)
-class Hechos:
+class Facts:
     """Lo que el Hub sabe del incidente, y lo único que el LLM puede afirmar."""
 
     cliente: str
@@ -69,39 +69,39 @@ def hhmm(valor: datetime) -> str:
     return _utc(valor).astimezone(BOGOTA).strftime("%H:%M")
 
 
-def _al_minuto(valor: datetime) -> datetime:
+def _to_minute(valor: datetime) -> datetime:
     return _utc(valor).astimezone(BOGOTA).replace(second=0, microsecond=0)
 
 
-def duracion_minutos(h: Hechos) -> int:
+def duration_minutes(h: Facts) -> int:
     """Minutos entre las horas que se muestran (14:00 → 14:07 son 7), para que el texto no se contradiga."""
-    return int((_al_minuto(h.mitigacion) - _al_minuto(h.inicio)).total_seconds() // 60)
+    return int((_to_minute(h.mitigacion) - _to_minute(h.inicio)).total_seconds() // 60)
 
 
-def duracion_texto(minutos: int) -> str:
+def duration_text(minutos: int) -> str:
     if minutos < 1:
         return "menos de 1 minuto"
     return "1 minuto" if minutos == 1 else f"{minutos} minutos"
 
 
-def hechos_de(incident: Incident) -> Hechos:
+def facts_for(incident: Incident) -> Facts:
     """Hechos reales de un incidente ya mitigado; falla si todavía no lo está."""
     if incident.mitigated_at is None:
         raise IncidentFlowError("Los borradores se generan cuando el incidente está mitigado.")
     servicio = incident.service
     cliente = servicio.project.client.name if servicio.project is not None and servicio.project.client is not None else "el cliente"
     # Spec 020: las notas del equipo pueden traer una clave pegada; se tapa antes de dársela al modelo
-    eventos = tuple((hhmm(e.created_at), e.type, redaccion.redactar((e.message or "")[:200])[0]) for e in incident.events if e.created_at is not None)
-    return Hechos(
+    eventos = tuple((hhmm(e.created_at), e.type, redaccion.redact((e.message or "")[:200])[0]) for e in incident.events if e.created_at is not None)
+    return Facts(
         cliente=cliente, servicio=servicio.name, prioridad=incident.priority, titulo=incident.title, origen=incident.source,
-        inicio=incident.started_at, mitigacion=incident.mitigated_at, cierre=incident.closed_at, causa=(redaccion.redactar(incident.root_cause)[0] if incident.root_cause else None),
+        inicio=incident.started_at, mitigacion=incident.mitigated_at, cierre=incident.closed_at, causa=(redaccion.redact(incident.root_cause)[0] if incident.root_cause else None),
         version_de=incident.rollback_from_version, version_a=incident.rollback_to_version, eventos=eventos,
     )
 
 
-def datos_para_el_modelo(h: Hechos, kind: str) -> str:
+def model_input(h: Facts, kind: str) -> str:
     """Los HECHOS como líneas «clave: valor». El mensaje al cliente recibe solo lo que el cliente puede conocer."""
-    inicio, fin, total = hhmm(h.inicio), hhmm(h.mitigacion), duracion_texto(duracion_minutos(h))
+    inicio, fin, total = hhmm(h.inicio), hhmm(h.mitigacion), duration_text(duration_minutes(h))
     if kind == "mensaje_cliente":
         return f"hora en que se detectó la falla: {inicio}\nhora en que el servicio volvió a funcionar: {fin}\ntiempo total: {total}"
     lineas = [
@@ -123,10 +123,11 @@ def datos_para_el_modelo(h: Hechos, kind: str) -> str:
 # ---------- Textos base (la IA no respondió o su texto no pasó las verificaciones) ----------
 
 
-def texto_base(h: Hechos, kind: str) -> str:
-    inicio, fin, total = hhmm(h.inicio), hhmm(h.mitigacion), duracion_texto(duracion_minutos(h))
+def base_text(h: Facts, kind: str) -> str:
+    """Texto de partida del borrador (mensaje al cliente o resumen) armado solo con los hechos del incidente."""
+    inicio, fin, total = hhmm(h.inicio), hhmm(h.mitigacion), duration_text(duration_minutes(h))
     if kind == "mensaje_cliente":
-        return PLANTILLA.format(hora=inicio, hora_fin=fin, duracion=total)
+        return TEMPLATE.format(hora=inicio, hora_fin=fin, duracion=total)
     accion = f"Se hizo rollback de la versión {h.version_de} a la {h.version_a}." if h.version_de and h.version_a else "No hay rollback registrado."
     return (
         f"{h.servicio} ({h.cliente}) tuvo una falla {h.prioridad} desde las {inicio} hasta las {fin} ({total}); "
@@ -138,60 +139,60 @@ def texto_base(h: Hechos, kind: str) -> str:
 # ---------- Verificaciones ----------
 
 
-def _normalizar_terminos(texto: str) -> list[str]:
+def _normalize_terms(texto: str) -> list[str]:
     return [normalize(t) for t in texto.splitlines() if t.strip() and not t.lstrip().startswith("#")]
 
 
-def _terminos() -> list[str]:
-    return leer_con_cache(ASSETS / "terminos_prohibidos.txt", _normalizar_terminos)
+def _terms() -> list[str]:
+    return read_cached(ASSETS / "terminos_prohibidos.txt", _normalize_terms)
 
 
-def terminos_prohibidos_en(texto: str) -> list[str]:
+def forbidden_terms_in(texto: str) -> list[str]:
     """Términos técnicos del glosario que aparecen en el texto (palabras completas) y versiones sueltas como «v2»."""
     normal = f" {normalize(texto)} "
-    encontrados = [t for t in _terminos() if f" {t} " in normal]
+    encontrados = [t for t in _terms() if f" {t} " in normal]
     encontrados += re.findall(r"\bv\d+\b", normal.strip())
     return sorted(set(encontrados))
 
 
-def horas_que_no_coinciden(texto: str, h: Hechos, kind: str) -> list[str]:
+def mismatched_times(texto: str, h: Facts, kind: str) -> list[str]:
     """Horas (y minutos totales, en el mensaje al cliente) del texto que no son las del incidente."""
     if kind == "mensaje_cliente":
         validas = {hhmm(h.inicio), hhmm(h.mitigacion)}
     else:
         validas = {hhmm(h.inicio), hhmm(h.mitigacion)} | ({hhmm(h.cierre)} if h.cierre else set()) | {hora for hora, _, _ in h.eventos}
-    malas = [f"{int(a):02d}:{b}" for a, b in HORA.findall(texto) if f"{int(a):02d}:{b}" not in validas]
+    malas = [f"{int(a):02d}:{b}" for a, b in HOUR.findall(texto) if f"{int(a):02d}:{b}" not in validas]
     if kind == "mensaje_cliente":
-        total = duracion_minutos(h)
-        malas += [f"{n} minutos" for n in MINUTOS.findall(texto) if int(n) != total]
+        total = duration_minutes(h)
+        malas += [f"{n} minutos" for n in MINUTES.findall(texto) if int(n) != total]
     return malas
 
 
-def verificar(texto: str, h: Hechos, kind: str) -> dict:
+def check(texto: str, h: Facts, kind: str) -> dict:
     """Resultado de las verificaciones: lo que el texto trae de más. El resumen interno puede usar jerga; el mensaje al cliente, no."""
     return {
-        "terminos_prohibidos": terminos_prohibidos_en(texto) if kind == "mensaje_cliente" else [],
-        "horas_que_no_coinciden": horas_que_no_coinciden(texto, h, kind),
+        "terminos_prohibidos": forbidden_terms_in(texto) if kind == "mensaje_cliente" else [],
+        "horas_que_no_coinciden": mismatched_times(texto, h, kind),
     }
 
 
-def _limpio(comprobacion: dict) -> bool:
+def _clean(comprobacion: dict) -> bool:
     return not comprobacion["terminos_prohibidos"] and not comprobacion["horas_que_no_coinciden"]
 
 
-def redactar(h: Hechos, kind: str, transport=None) -> dict:
+def draft_text(h: Facts, kind: str, transport=None) -> dict:
     """Texto del borrador y de dónde salió: {texto, source, checks, latency_ms, model, prompt_version}. Sin base de datos, para evaluar."""
     prompt = (ASSETS / PROMPTS[kind]).read_text(encoding="utf-8").strip()
-    sistema = f"{prompt}\n\nDATOS:\n{datos_para_el_modelo(h, kind)}"
+    sistema = f"{prompt}\n\nDATOS:\n{model_input(h, kind)}"
     inicio = time.monotonic()
-    generado = ollama.chat(sistema, ORDEN[kind], transport=transport)
+    generado = ollama.chat(sistema, ORDER[kind], transport=transport)
     latencia = int((time.monotonic() - inicio) * 1000)
-    comprobacion = verificar(generado, h, kind) if generado else {"terminos_prohibidos": [], "horas_que_no_coinciden": []}
-    if generado and _limpio(comprobacion):
+    comprobacion = check(generado, h, kind) if generado else {"terminos_prohibidos": [], "horas_que_no_coinciden": []}
+    if generado and _clean(comprobacion):
         return {"texto": generado.strip(), "source": "llm", "checks": {**comprobacion, "motivo_texto_base": None},
                 "latency_ms": latencia, "model": settings.ollama_model, "prompt_version": PROMPT_VERSION}
     motivo = "La IA no respondió a tiempo." if not generado else "El texto de la IA no pasó las verificaciones (términos técnicos u horas que no coinciden)."
-    return {"texto": texto_base(h, kind), "source": "plantilla", "checks": {**comprobacion, "motivo_texto_base": motivo, "texto_rechazado": generado},
+    return {"texto": base_text(h, kind), "source": "plantilla", "checks": {**comprobacion, "motivo_texto_base": motivo, "texto_rechazado": generado},
             "latency_ms": latencia if generado is not None else None, "model": settings.ollama_model if generado else None,
             "prompt_version": PROMPT_VERSION if generado else None}
 
@@ -199,13 +200,13 @@ def redactar(h: Hechos, kind: str, transport=None) -> dict:
 # ---------- Con base de datos ----------
 
 
-def generar(db: Session, incident: Incident, kinds: tuple[str, ...] = KINDS, transport=None) -> list[AiDraft]:
+def generate(db: Session, incident: Incident, kinds: tuple[str, ...] = KINDS, transport=None) -> list[AiDraft]:
     """Genera los borradores pedidos; los borradores anteriores sin aprobar del mismo tipo se descartan. Hace commit."""
-    h = hechos_de(incident)
+    h = facts_for(incident)
     incident_id = incident.id   # antes de soltar la conexión: ese paso caduca los objetos cargados
     # Primero se redacta todo (cada texto espera a Ollama hasta un minuto) sin una conexión tomada, y después se escribe (auditoría BE-02)
-    soltar_conexion(db)
-    redactados = {kind: redactar(h, kind, transport=transport) for kind in kinds}
+    release_connection(db)
+    redactados = {kind: draft_text(h, kind, transport=transport) for kind in kinds}
     nuevos: list[AiDraft] = []
     for kind in kinds:
         for anterior in db.scalars(select(AiDraft).where(AiDraft.incident_id == incident_id, AiDraft.kind == kind, AiDraft.status == "borrador_ia")):
@@ -223,7 +224,7 @@ def generar(db: Session, incident: Incident, kinds: tuple[str, ...] = KINDS, tra
     return nuevos
 
 
-def aprobar(db: Session, borrador: AiDraft, user: User, texto: str | None, ip: str | None = None) -> AiDraft:
+def approve(db: Session, borrador: AiDraft, user: User, texto: str | None, ip: str | None = None) -> AiDraft:
     """Aprueba el borrador (con el texto que la persona editó). El mensaje al cliente no puede traer jerga ni horas que no coincidan."""
     if borrador.status != "borrador_ia":
         raise DraftError("Este borrador ya no está pendiente de aprobación.")
@@ -231,8 +232,8 @@ def aprobar(db: Session, borrador: AiDraft, user: User, texto: str | None, ip: s
     if not final:
         raise DraftError("El texto no puede quedar vacío.")
     if borrador.kind == "mensaje_cliente":
-        h = hechos_de(db.get(Incident, borrador.incident_id))
-        comprobacion = verificar(final, h, "mensaje_cliente")
+        h = facts_for(db.get(Incident, borrador.incident_id))
+        comprobacion = check(final, h, "mensaje_cliente")
         if comprobacion["terminos_prohibidos"]:
             raise DraftError(f"El mensaje al cliente usa términos técnicos que el cliente no debe ver: {', '.join(comprobacion['terminos_prohibidos'])}.")
         if comprobacion["horas_que_no_coinciden"]:
@@ -250,7 +251,8 @@ def aprobar(db: Session, borrador: AiDraft, user: User, texto: str | None, ip: s
     return borrador
 
 
-def descartar(db: Session, borrador: AiDraft, user: User, ip: str | None = None) -> AiDraft:
+def discard(db: Session, borrador: AiDraft, user: User, ip: str | None = None) -> AiDraft:
+    """Descarta un borrador pendiente y lo deja en la bitácora."""
     if borrador.status != "borrador_ia":
         raise DraftError("Este borrador ya no está pendiente de aprobación.")
     borrador.status = "descartado"
@@ -260,7 +262,7 @@ def descartar(db: Session, borrador: AiDraft, user: User, ip: str | None = None)
     return borrador
 
 
-def mensaje_aprobado(db: Session, incident_id: int) -> str | None:
+def approved_message(db: Session, incident_id: int) -> str | None:
     """El último mensaje al cliente aprobado de un incidente: lo único de la IA que llega al portal del cliente."""
     return db.scalar(
         select(AiDraft.final_text)
