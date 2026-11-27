@@ -164,3 +164,30 @@ temp/
 .cache/
 *.mp4
 *.mov
+
+# Embeddings calculados por ai/eval/run_eval.py (se regeneran con Ollama)
+ai/eval/cache/
+
+# Tareas privadas de Claude: solo local, no se sube a GitHub
+tareas-claude.md
+
+# Estado remoto de OpenTofu (spec 016): credenciales generadas y backend activado
+infra/.estado-remoto.env
+infra/tofu/backend_override.tf
+capturas-backstage/
+
+# Salida de los análisis y del registro de hallazgos (spec 018): se genera en cada corrida
+evidencias/
+
+# Carpeta temporal de la prueba de drift (spec 019)
+infra/pruebas/.drift/
+
+# Modelos de voz descargados en local (spec 021)
+voz/modelos/
+capturas-voz/
+
+# Archivo temporal de credenciales de pipelines/configurar-gitea.sh (se borra al salir)
+.cred-curl-*
+
+# Documentos oficiales de la entrega final (spec 023): se entregan por Drive, no por Git
+Entrega_Final_CloudForge/

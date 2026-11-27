@@ -1,5 +1,7 @@
 # Requerimientos
 
+> Requerimientos **originales** del proyecto (MoSCoW). Los vigentes, con su estado verificado y su evidencia, van en la monografía final.
+
 > Fuente: documento "CloudOps Client Hub — Plan por módulos y requerimientos".
 > Cada requerimiento indica en qué módulo se construye y qué spec lo cubre, para que nada quede fuera del [roadmap](../constitution/roadmap.md).
 > El mapa de specs con enlaces a cada carpeta está en [specs/README.md](../specs/README.md).
@@ -54,6 +56,7 @@ Los entregables de este levantamiento son tareas de la [spec 000](../specs/000-m
 | RF-22 | Catálogo mínimo de clientes y servicios en Backstage | S | 2 | 005 |
 | RF-23 | Sugerir la causa del incidente con un modelo de código | C | 6 | 014 |
 | RF-24 | Facturación, pagos y dominios reales | W | — | — |
+| RF-25 | Asistente de ayuda con compuerta de ML: el LLM solo se despierta si la pregunta trata del Hub | S | 5 | 012 |
 
 ## Requerimientos no funcionales
 
@@ -83,15 +86,15 @@ Los entregables de este levantamiento son tareas de la [spec 000](../specs/000-m
 | 6. Prioridad, responsable y SLA medido | RF-05, RF-13 | 2–4 | 004, 008 | Matriz P1–P4 y tiempos SLA |
 | 7. Rollback | RF-14, RF-06 | 2–4 | 005, 009 | — |
 | 8. Reporte operativo y ejecutivo | RF-17, RF-20 | 4–5 | 010, 013 | Formato del reporte, costos y MTTR |
-| 9. Asistente IA con verificación humana | RF-18, RF-19, RNF-09 | 5 | 012 | — |
-| 10. Infografía operativa | RF-21 | 6 | 014 | Contenido de la infografía |
+| 9. Asistente IA con verificación humana | RF-18, RF-19, RF-25, RNF-09 | 5 | 012 | — |
+| 10. Componente multimodal (voz del asistente; la infografía quedó pospuesta) | RF-21 | 6 | 021 | Voz a texto y texto a voz |
 
-## Decisiones pendientes
+## Decisiones (antes pendientes, ya tomadas)
 
-| Decisión | Quién decide | Spec afectada | Fecha límite |
-|---|---|---|---|
-| OpenTofu o Terraform | Profesor | 011 | Inicio del módulo 4 (24 oct) |
-| Qwen2.5 7B o Llama 3.1 8B | Prueba en PC B | 012 | Inicio del módulo 5 (3 nov) |
-| SD 1.5 o SDXL Turbo | Prueba en PC B | 014 | Inicio del módulo 6 (13 nov) |
-| Tiempos SLA por plan y matriz P1–P4 definitiva | Industrial + equipo | 000 | 2 oct |
-| Qué se presenta en la sustentación del 3 nov | Equipo | 015 | 27 oct |
+| Decisión | Resultado |
+|---|---|
+| OpenTofu o Terraform | OpenTofu; el código HCL también corre con Terraform (`infra/tofu.sh`) |
+| Qwen2.5 7B o Llama 3.1 8B | Qwen2.5 7B-Instruct; Llama no se usó |
+| SD 1.5 o SDXL Turbo | Ninguno: el componente multimodal pasó a ser la voz (spec 021); la infografía (014) quedó pospuesta |
+| Tiempos SLA por plan y matriz P1–P4 | Definidos en `seed/sla_policies.json` y `seed/priority_matrix.json` (spec 000) |
+| Sustentación del 3 nov | Ya ocurrió |

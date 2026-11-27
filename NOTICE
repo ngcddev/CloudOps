@@ -1,0 +1,19 @@
+CloudOps Client Hub (proyecto integrador del Diplomado CloudForge AI 5.0)
+Copyright 2026 Nicolás Gaviria Cerón, Sebastián Camilo Paja Barrios, Andrés Felipe Díaz Duque,
+Eric Sebastián Mesías Rojas y Yisel Andrea Charo Rivera.
+
+El código de este repositorio se distribuye bajo la licencia Apache 2.0 (archivo LICENSE).
+
+Componentes de terceros con obligaciones propias (no se distribuyen modificados):
+
+- piper-tts (GPL-3.0-or-later): motor de texto a voz del servicio de voz (voz/). Corre como un
+  servicio aparte al que el Hub llama por HTTP; la imagen hub-voz que lo contiene queda bajo GPL-3.0.
+- Grafana, Grafana Loki y Grafana Tempo (AGPL-3.0): se usan sin modificar como servicios de la pila de
+  observabilidad (observability/).
+- psycopg (LGPL-3.0): controlador de PostgreSQL, usado como biblioteca sin modificar.
+- Qwen2.5-3B-Instruct (Qwen Research License): solo para comparar modelos; no se usa en producción
+  ni se redistribuye. El modelo del Hub es Qwen2.5-7B-Instruct (Apache 2.0).
+- Modelos de voz y embeddings: faster-whisper (MIT), nomic-embed-text (Apache 2.0) y la voz
+  es_MX-claude-high de Piper (Apache 2.0). Fichas con versión, digest y licencia en docs/modelos/.
+
+Todos los datos de clientes, usuarios y conversaciones del repositorio son sintéticos.

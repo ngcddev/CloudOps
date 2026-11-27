@@ -1,0 +1,148 @@
+# CI del Hub (spec 006, entregable «pipeline CI/CD con controles de calidad y seguridad»): lint, pruebas, validación de la
+# observabilidad y los respaldos, y controles de seguridad de la imagen de producción de la API (secretos, humo, Trivy, SBOM).
+# Corre en GitHub y también en Gitea Actions (lee .github/workflows). Las herramientas de seguridad son las mismas, con la misma
+# versión, que usa la puerta de los sitios (pipelines/lib.sh). Cada paso se puede correr a mano con el comando que muestra.
+# La firma con Cosign y el despliegue no están aquí: la imagen publicada pasa por el registro del laboratorio (ver runbooks).
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    name: Lint y compilación del frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lint de Python (ruff.toml)
+        run: |
+          pip install ruff==0.14.0
+          ruff check .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Tipos y compilación del frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run build
+
+  pruebas:
+    name: Pruebas del backend y de ai/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backend (pytest en la imagen de desarrollo, con las mismas rutas que docker-compose.yml)
+        run: |
+          docker build --target dev --build-context seed=./seed -t hub-api:dev backend
+          docker run --rm -e SEED_DIR=/app/seed \
+            -v "$PWD/seed:/app/seed:ro" -v "$PWD/seed:/seed:ro" -v "$PWD/gitops:/gitops:ro" -v "$PWD/pipelines:/pipelines:ro" -v "$PWD:/repo:ro" \
+            hub-api:dev pytest -q
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Registro en MLflow y evaluación (ai/)
+        env:
+          GIT_PYTHON_REFRESH: quiet
+          SEED_DIR: ${{ github.workspace }}/seed
+        run: |
+          pip install -r ai/requirements.txt
+          cd ai && pytest -q
+
+  operacion:
+    name: Observabilidad y respaldo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reglas, alertas y cuentas del tablero (promtool, amtool, kustomize)
+        run: bash observability/pruebas/validar.sh
+      - name: Grafana carga el tablero provisionado
+        run: bash observability/pruebas/grafana.sh
+      - name: Trazas del Hub de punta a punta (OpenTelemetry hacia Tempo)
+        run: bash observability/pruebas/trazas.sh
+      - name: El chart de Helm del sitio coincide con Kustomize
+        run: bash gitops/pruebas/helm-vs-kustomize.sh
+      - name: Respaldo y restauración de PostgreSQL
+        run: |
+          cp .env.example .env
+          # Desde la auditoría (CT-01) la API no arranca con el JWT_SECRET de ejemplo: en el CI se genera uno aleatorio
+          sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 24)/" .env
+          # La API migra y siembra la base al arrancar: sin tablas, la prueba de respaldo no tiene nada que comparar
+          docker compose up -d --build db api
+          # Con tope de tiempo: si la API no llega a estar sana, falla mostrando su registro en vez de esperar para siempre
+          timeout 180 bash -c 'until curl -fs http://localhost:8000/health >/dev/null; do sleep 2; done' || { docker compose logs api | tail -40; exit 1; }
+          bash gitops/pruebas/respaldo.sh
+
+  analisis:
+    name: Análisis estático y de composición
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bandit (SAST), trivy fs (dependencias) e imagen del frontend (spec 018)
+        run: bash pipelines/pruebas/analisis-estatico.sh
+      - name: Registro de hallazgos de las imágenes con su decisión y VEX (spec 018)
+        run: bash pipelines/pruebas/hallazgos.sh
+      - name: Guardar el registro de hallazgos y el VEX
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registro-de-hallazgos
+          path: |
+            evidencias/hallazgos/hallazgos.md
+            evidencias/hallazgos/hallazgos.json
+            evidencias/hallazgos/vex.openvex.json
+          retention-days: 30
+
+  seguridad:
+    name: Seguridad de la imagen de producción
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Gitleaks revisa toda la historia
+      - name: Secretos (Gitleaks, con .gitleaks.toml)
+        run: |
+          docker run --rm -v "$PWD:/repo" -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/repo \
+            zricethezav/gitleaks:v8.30.1 git /repo --config /repo/.gitleaks.toml --redact --no-banner --exit-code 1
+      - name: Imagen de producción construye, corre sin root, sin pytest y responde /health
+        run: |
+          docker build -q --build-context seed=./seed -t hub-api:ci backend
+          bash pipelines/pruebas/humo-hub-api.sh hub-api:ci
+      - name: Vulnerabilidades críticas con arreglo disponible (Trivy)
+        run: |
+          mkdir -p evidencias
+          docker save hub-api:ci -o evidencias/hub-api.tar
+          docker run --rm -v "$PWD/evidencias:/out" aquasec/trivy:0.76.1 image --input /out/hub-api.tar \
+            --severity CRITICAL --ignore-unfixed --exit-code 1 --format json --output /out/trivy-hub-api.json
+      - name: Configuración insegura en Dockerfile y manifiestos (Trivy config, spec 016)
+        run: |
+          docker run --rm -v "$PWD:/src:ro" aquasec/trivy:0.76.1 config --severity HIGH,CRITICAL --exit-code 1 --quiet             --ignorefile /src/.trivyignore.yaml --skip-dirs '**/node_modules' /src
+      - name: Inventario de componentes (Syft, SPDX)
+        run: |
+          docker run --rm -v "$PWD/evidencias:/out" anchore/syft:v1.55.0 scan docker-archive:/out/hub-api.tar \
+            -o spdx-json=/out/sbom-hub-api.spdx.json -q
+          docker run --rm -v "$PWD/evidencias:/out" aquasec/trivy:0.76.1 sbom --scanners license --severity CRITICAL --exit-code 1 --quiet             /out/sbom-hub-api.spdx.json   # licencias prohibidas (AGPL, SSPL…) frenan; las restringidas se informan (spec 016)
+          rm evidencias/hub-api.tar
+      - name: Guardar la evidencia (reporte de Trivy y SBOM)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencias-seguridad-hub-api
+          path: evidencias/
+          retention-days: 30

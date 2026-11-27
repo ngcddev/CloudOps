@@ -1,0 +1,58 @@
+ticket
+tickets
+incidente
+incidentes
+sla
+rollback
+prioridad
+p1
+p2
+p3
+p4
+cliente
+clientes
+plan
+servicio
+sitio web
+solicitud de cambio
+cambio
+despliegue
+version
+mttr
+disponibilidad
+alerta
+alertmanager
+argo cd
+gitea
+gitops
+grafana
+prometheus
+bitacora
+auditoria
+portal
+tablero
+dashboard
+reporte
+trivy
+gitleaks
+puerta de seguridad
+namespace
+hub
+tecnico
+agencia
+la sazon
+el tornillo
+dental popayan
+forja digital
+asistente local
+ollama
+ia
+ia local
+llm
+asistente
+borrador
+mensaje al cliente
+solicitud
+solicitudes
+soporte
+monitoreo

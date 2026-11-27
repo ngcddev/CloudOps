@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.change_request import ChangeRequest
@@ -16,10 +17,10 @@ STEP_SECRETS = "secretos"
 IMAGE_STEPS = ("construccion", "vulnerabilidades", "sbom", "firma", "verificacion")
 STEPS = (STEP_SECRETS, *IMAGE_STEPS)
 
-SIN_CORRIDA = "sin_corrida"
-EN_CURSO = "en_curso"
+NO_RUN = "sin_corrida"
+IN_PROGRESS = "en_curso"
 OK = "ok"
-FALLO = "fallo"
+FAILED = "fallo"
 
 
 class GateError(Exception):
@@ -67,12 +68,12 @@ def client_text(step: str | None) -> str:
 
 def not_approvable_message(version: str, gate: "Gate") -> str:
     """Por qué no se puede aprobar un cambio hacia `version`, para la agencia."""
-    if gate.status == SIN_CORRIDA:
+    if gate.status == NO_RUN:
         return (
             f"La versión {version} aún no pasó por la puerta de seguridad: "
             "súbela al repositorio del sitio para que corran los controles."
         )
-    if gate.status == EN_CURSO:
+    if gate.status == IN_PROGRESS:
         return f"Los controles de seguridad de la versión {version} todavía están corriendo."
     label = STEP_LABELS.get(gate.failed_step or "", gate.failed_step or "un control")
     return f"La versión {version} no pasó los controles de seguridad ({label})."
@@ -91,14 +92,14 @@ def latest_run(db: Session, service_id: int, version: str) -> SecurityRun | None
 def gate_status(db: Session, service_id: int, version: str) -> Gate:
     run = latest_run(db, service_id, version)
     if run is None:
-        return Gate(SIN_CORRIDA)
+        return Gate(NO_RUN)
     return Gate(run.status, run)
 
 
 def open_run(db: Session, service_id: int, version: str, commit_sha: str | None, images: list[str]) -> SecurityRun:
     """Abre una corrida nueva para la versión; las anteriores quedan como historial."""
     run = SecurityRun(
-        service_id=service_id, version=version, commit_sha=commit_sha, images=images, status=EN_CURSO
+        service_id=service_id, version=version, commit_sha=commit_sha, images=images, status=IN_PROGRESS
     )
     db.add(run)
     db.flush()
@@ -129,7 +130,7 @@ def add_check(
     image: str | None,
 ) -> SecurityCheck:
     """Registra un control. Un control que falla cierra la corrida en `fallo` de inmediato."""
-    if run.status != EN_CURSO:
+    if run.status != IN_PROGRESS:
         raise GateError("La corrida de esa versión ya terminó.")
     if step == STEP_SECRETS:
         image = None  # el control de secretos revisa la versión completa, no una imagen
@@ -137,11 +138,17 @@ def add_check(
         raise GateError(f"La imagen «{image}» no es una de las que declaró la corrida: {', '.join(run.images)}.")
     if any(c.step == step and c.image == image for c in run.checks):
         raise GateError("Ese control ya se registró en esta corrida.")
-    check = SecurityCheck(run=run, step=step, image=image, status=status, summary=summary, report=report)
-    db.add(check)
-    db.flush()
-    if status == FALLO:
-        close_run(db, run, FALLO, failed_step=step)
+    try:
+        # En un punto de guardado: si dos reintentos del pipeline llegan a la vez, el índice único de la base deja pasar a uno (auditoría BD-02).
+        # El control se crea dentro del bloque: así no hay nada a medias en la colección de la corrida cuando el punto de guardado vacía la sesión.
+        with db.begin_nested():
+            check = SecurityCheck(run=run, step=step, image=image, status=status, summary=summary, report=report, has_report=report is not None)
+            db.add(check)
+            db.flush()
+    except IntegrityError:
+        raise GateError("Ese control ya se registró en esta corrida.") from None
+    if status == FAILED:
+        close_run(db, run, FAILED, failed_step=step)
     return check
 
 
@@ -153,20 +160,20 @@ def close_run(
     image_digests: dict | None = None,
 ) -> SecurityRun:
     """Cierra la corrida. `ok` exige todos los controles esperados en ok; si falta alguno queda en `fallo`."""
-    if run.status != EN_CURSO:
+    if run.status != IN_PROGRESS:
         return run
     if status == OK:
         missing = missing_checks(run)
         if missing:
-            status, failed_step = FALLO, missing[0][0]
+            status, failed_step = FAILED, missing[0][0]
     elif failed_step is None:
         failed_step = "pipeline"  # el flujo terminó mal sin registrar qué control falló
     run.status = status
-    run.failed_step = failed_step if status == FALLO else None
+    run.failed_step = failed_step if status == FAILED else None
     run.image_digests = image_digests
     run.finished_at = datetime.now(timezone.utc)
     db.flush()
-    if run.status == FALLO:
+    if run.status == FAILED:
         for change in pending_changes_for(db, run):
             reject_for_security(db, change, run)
     return run

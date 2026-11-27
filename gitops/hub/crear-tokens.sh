@@ -10,6 +10,7 @@
 # Necesita kubectl con acceso al clúster y las entradas de hosts de gitops/README.md.
 # Si el Secret ya existe no se toca; para rotarlo, bórralo y vuelve a correr el script.
 set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/../lib-curl.sh"   # cred_curl: la contraseña no va como argumento de curl (auditoría IA-05)
 
 NS="${NS:-hub}"
 GITEA_URL="${GITEA_URL:-http://gitea.hub.local}"
@@ -32,20 +33,20 @@ campo() { sed -n "s/.*\"$1\" *: *\"\([^\"]*\)\".*/\1/p" | head -1; }
 
 # ---------- Gitea: usuario hub-bot con escritura solo en hub-gitops ----------
 CLAVE_BOT="$(aleatoria)"   # solo sirve para pedir el token; no se guarda
-if ! curl -sf -u "${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" "${GITEA_URL}/api/v1/users/${BOT}" >/dev/null; then
+if ! cred_curl "${GITEA_ADMIN_USER}" "${GITEA_ADMIN_PASSWORD}" | curl -sf -K - "${GITEA_URL}/api/v1/users/${BOT}" >/dev/null; then
   echo ">> Creando el usuario ${BOT} en Gitea"
-  curl -sf -u "${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" -H 'Content-Type: application/json' \
+  cred_curl "${GITEA_ADMIN_USER}" "${GITEA_ADMIN_PASSWORD}" | curl -sf -K - -H 'Content-Type: application/json' \
     -X POST "${GITEA_URL}/api/v1/admin/users" \
     -d "{\"username\":\"${BOT}\",\"email\":\"hub-bot@forja.test\",\"password\":\"${CLAVE_BOT}\",\"must_change_password\":false}" >/dev/null
 else
   # El usuario ya existía: se le fija una clave nueva para poder emitir el token
-  curl -sf -u "${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" -H 'Content-Type: application/json' \
+  cred_curl "${GITEA_ADMIN_USER}" "${GITEA_ADMIN_PASSWORD}" | curl -sf -K - -H 'Content-Type: application/json' \
     -X PATCH "${GITEA_URL}/api/v1/admin/users/${BOT}" \
     -d "{\"login_name\":\"${BOT}\",\"source_id\":0,\"password\":\"${CLAVE_BOT}\",\"must_change_password\":false}" >/dev/null
 fi
-curl -sf -u "${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" -H 'Content-Type: application/json' \
+cred_curl "${GITEA_ADMIN_USER}" "${GITEA_ADMIN_PASSWORD}" | curl -sf -K - -H 'Content-Type: application/json' \
   -X PUT "${GITEA_URL}/api/v1/repos/${ORG}/${REPO}/collaborators/${BOT}" -d '{"permission":"write"}' >/dev/null
-GITEA_TOKEN="$(curl -sf -u "${BOT}:${CLAVE_BOT}" -H 'Content-Type: application/json' \
+GITEA_TOKEN="$(cred_curl "${BOT}" "${CLAVE_BOT}" | curl -sf -K - -H 'Content-Type: application/json' \
   -X POST "${GITEA_URL}/api/v1/users/${BOT}/tokens" \
   -d "{\"name\":\"hub-$(date +%Y%m%d%H%M%S)\",\"scopes\":[\"read:user\",\"write:repository\"]}" | campo sha1)"
 

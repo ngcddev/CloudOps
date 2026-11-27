@@ -28,6 +28,7 @@ spec:
       labels:
         app: grafana
     spec:
+      automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
       securityContext:
         runAsNonRoot: true
         runAsUser: 472        # usuario `grafana` de la imagen
@@ -61,17 +62,28 @@ spec:
               drop: [ALL]
           resources:
             requests: { cpu: 50m, memory: 128Mi }
-            limits: { cpu: 500m, memory: 256Mi }
+            limits: { cpu: "1", memory: 384Mi }
+          # Sondas con margen: con el nodo saturado (verificación del 15 nov) /api/health tardaba más de 1 s y la sonda de vida reiniciaba Grafana en bucle (4 reinicios en minutos)
           readinessProbe:
             httpGet: { path: /api/health, port: http }
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
           livenessProbe:
             httpGet: { path: /api/health, port: http }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 90
             periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
           volumeMounts:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
+              readOnly: true
+            - name: dashboards-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+              readOnly: true
+            - name: dashboards
+              mountPath: /etc/grafana/dashboards-hub
               readOnly: true
             - name: data
               mountPath: /var/lib/grafana
@@ -79,6 +91,12 @@ spec:
         - name: datasources
           configMap:
             name: grafana-datasources
+        - name: dashboards-provider
+          configMap:
+            name: grafana-dashboards-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
         - name: data
           persistentVolumeClaim:
             claimName: grafana-data

@@ -17,7 +17,7 @@ Hub: aprobar solo con corrida ok · si falla, las solicitudes pendientes de esa 
 | `secretos` | Gitleaks | Hay un secreto en los commits nuevos de la versión (antes de construir nada) |
 | `construccion` | `docker build` | La imagen no se construye |
 | `vulnerabilidades` | Trivy (`CRITICAL`, `--ignore-unfixed`) | Hay una CVE crítica con arreglo disponible |
-| `sbom` | Syft (SPDX JSON) | — (evidencia) |
+| `sbom` | Syft (SPDX JSON) y escaneo de licencias | Hay una licencia `CRITICAL` en el inventario (`puerta.sh`) |
 | `firma` | Skopeo (sube) + Cosign (firma el digest) | No se puede subir o firmar |
 | `verificacion` | Cosign verify con `cosign.pub` | La firma es inválida o falta |
 
@@ -95,7 +95,9 @@ prueba el sitio de dos imágenes.
 - **El runner corre como root y con el socket de Docker montado.** Es una excepción consciente a la regla de
   «contenedores sin root» (necesita lanzar contenedores hermanos con el Docker del equipo) y equivale a dar root del
   equipo a quien pueda cambiar un workflow. Por eso va en un equipo de desarrollo aparte del PC A, solo para la
-  agencia. Sus propios límites son `mem_limit` y `cpus` del compose; las herramientas que lanza no los heredan.
+  agencia. Sus propios límites son `mem_limit` y `cpus` del compose; las herramientas que lanza no los heredan. Está endurecido con
+  `cap_drop: [ALL]` y `no-new-privileges` (sin capacidades de Linux ni forma de ganar privilegios nuevos), pero el socket de Docker sigue
+  siendo root del equipo: un proxy de solo lectura del socket o Docker sin root quedan como mejora (auditoría CT-03).
 - **Credenciales en la lista de procesos.** La contraseña del registro (`--dest-creds`, `--registry-password`) y el
   token del Hub (`curl -H`) viajan como argumentos mientras corre cada herramienta: alguien con `ps` o
   `docker inspect` en el runner las lee. Mejora futura: archivos de autenticación temporales.
@@ -113,5 +115,39 @@ prueba el sitio de dos imágenes.
   (`image_digests`); fijar ese digest en `hub-gitops` es una mejora futura.
 - El registro de Gitea del laboratorio va por HTTP: `REGISTRY_INSEGURO=1` (por defecto) desactiva TLS en Skopeo y
   usa `--allow-http-registry` en Cosign. Con certificado, ponerlo en `0`.
-- Eventos con reportes muy grandes (SBOM de varios MB) viajan en el cuerpo de la petición; la API no los limita
-  hoy.
+- Eventos con reportes muy grandes (SBOM de varios MB) viajan en el cuerpo de la petición; la API los limita con
+  `backend/app/limite_cuerpo.py` (tope configurable en `backend/app/config.py`).
+
+## Pruebas del sitio y procedencia SLSA
+
+- **Pruebas:** si el repositorio del sitio trae `backend/pytest.ini` (hoy, el consultorio), `puerta.sh construir` corre sus pruebas en un contenedor antes de
+  construir; si fallan no se construye nada y el Hub registra el fallo en «construcción» con la salida de pytest.
+- **Procedencia:** `puerta.sh firmar` adjunta a cada imagen una atestación SLSA v1 firmada con la misma clave (`cosign attest --type slsaprovenance1`) con el
+  repositorio, la etiqueta, el **commit**, las herramientas con su versión y la corrida. `puerta.sh verificar` la comprueba (`cosign verify-attestation`) y
+  exige que declare el commit de la versión. No certifica un nivel SLSA: demuestra qué commit produjo qué imagen y que no fue sustituida.
+- **Simulación** (`pipelines/pruebas/simular-puerta.sh`, contra el Hub real y un registro local): escenarios `limpia`, `secreto`, `vulnerable`, `firma-ajena`,
+  `procedencia` (otro commit) y `pruebas` (con `SITE=consultorio`). Pasan los seis.
+- **Hallazgo real (14 nov):** `nginxinc/nginx-unprivileged:1.30-alpine` trae `brotli-libs` con una vulnerabilidad crítica ya corregida en Alpine y la puerta bloqueó
+  la versión limpia; los Dockerfile de los sitios nginx llevan ahora `apk upgrade brotli-libs` (con la nota para quitarlo cuando la base lo traiga).
+- **Imagen del Hub:** `backend/Dockerfile` tiene dos destinos: `dev` (con pytest y las pruebas, la usa `docker-compose.yml`) y `prod` (la etapa final, sin pruebas).
+  `pipelines/pruebas/humo-hub-api.sh` comprueba que la de producción arranque, migre, siembre, corra sin root y no lleve pytest. La CI del Hub está en `.github/workflows/ci.yml`.
+
+## Registro de hallazgos y VEX (spec 018)
+
+La puerta frena las vulnerabilidades **críticas con arreglo** (`--ignore-unfixed`). Lo demás, las **altas** y lo que **no tiene arreglo**, no desaparece: `pipelines/hallazgos.yaml` es el registro de las decisiones
+(explotabilidad, tratamiento, justificación y fecha de revisión, como máximo a 6 meses) y `pipelines/hallazgos.py` lo cruza con los reportes de Trivy. `bash pipelines/pruebas/hallazgos.sh` construye las imágenes
+del Hub y del sitio de ejemplo, las escanea mostrando también lo que no tiene arreglo y falla si algo es **corregible**, no tiene **decisión** o la tiene **vencida**. Deja la tabla, el JSON y el VEX (OpenVEX) en
+`evidencias/hallazgos/`, y el CI los guarda como artefacto. Con los hallazgos reales de hoy: 94 altas (47 por imagen de Python) sin arreglo, todas con regla vigente; el resto se corrigió actualizando paquetes.
+El VEX es un documento de salida: Trivy no lo consume porque los productos se identifican por nombre de imagen y no por el digest que Trivy espera.
+
+
+## SBOM atestado y escenarios de SCA/manifiestos (spec 018)
+
+- **SBOM firmado:** `puerta.sh firmar` adjunta a cada imagen el SBOM SPDX como atestación (`cosign attest --type spdxjson`) y `verificar` la comprueba con la
+  clave del Hub (`verify-attestation --type spdxjson`) y exige que traiga componentes.
+- **Excepciones de laboratorio con vencimiento:** `trivy-excepciones.yaml` es el archivo de ignorados de Trivy (`--ignorefile`) y viaja con los scripts a `.gitea/puerta/` de cada sitio.
+  Cada excepción nombra una CVE y trae `expired_at`: pasada esa fecha deja de valer y la puerta vuelve a bloquear. Hoy cubre seis CVE de nginx 1.30.6, cuatro críticas y dos altas (H-CVE-01, vence el 2026-12-04) y solo vale para el
+  laboratorio. Para llevar los cambios a los sitios que ya existen: `bash demo/resembrar-puerta.sh`.
+- **Dependencias del sitio:** `puerta.sh vulnerabilidades` corre `trivy fs` sobre el repositorio del sitio (requirements.txt, package-lock.json…): una
+  vulnerabilidad ALTA o CRÍTICA con arreglo publicado frena la puerta. `trivy config` revisa también los manifiestos de Kubernetes que traiga el repositorio.
+- **Simulación:** se suman los escenarios `dependencia` (flask 0.12) y `manifiesto` (Deployment con `privileged` y `hostNetwork`); la puerta se detiene en los dos.

@@ -1,0 +1,68 @@
+# Respaldo diario de Gitea (spec 016): `gitea dump` con la base SQLite, los repositorios y la configuración, sin los paquetes (las imágenes del registro
+# se reconstruyen) ni los registros. Mismo usuario que Gitea (1000) y el mismo volumen de datos. Guarda los últimos 5 en un volumen propio.
+# Limitación: ese volumen vive en el mismo nodo (k3s de un nodo); gitops/pruebas/respaldo-plataforma.sh copia los archivos fuera.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitea-respaldos
+  namespace: gitea
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitea-respaldo
+  namespace: gitea
+spec:
+  schedule: "30 2 * * *"            # 02:30 UTC (21:30 en Bogotá)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: dump
+              image: gitea/gitea:1.22.6-rootless
+              command: ["sh", "-c"]
+              args:
+                - |
+                  set -e
+                  mkdir -p /tmp/gitea   # carpeta temporal que `gitea dump` exige
+                  destino="/respaldos/gitea-$(date -u +%Y%m%d-%H%M%S).tar.gz"
+                  gitea dump --config /etc/gitea/app.ini --file "$destino" --type tar.gz --skip-log --skip-package-data --skip-attachment-data --quiet
+                  echo "respaldo: $destino ($(du -h "$destino" | cut -f1))"
+                  ls -t /respaldos/gitea-*.tar.gz | tail -n +6 | xargs -r rm -f
+              env:
+                - { name: GITEA_WORK_DIR, value: /var/lib/gitea }
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: { drop: [ALL] }
+              resources:
+                requests: { cpu: 50m, memory: 128Mi }
+                limits: { cpu: 500m, memory: 384Mi }
+              volumeMounts:
+                - { name: data, mountPath: /var/lib/gitea }
+                - { name: data, mountPath: /etc/gitea, subPath: config }
+                - { name: respaldos, mountPath: /respaldos }
+          volumes:
+            - name: data
+              persistentVolumeClaim: { claimName: gitea-data }
+            - name: respaldos
+              persistentVolumeClaim: { claimName: gitea-respaldos }

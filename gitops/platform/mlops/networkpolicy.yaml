@@ -1,0 +1,15 @@
+# Entrada de MLflow (spec 022, T15; auditoría K8-02): MLflow no pide autenticación, así que solo Traefik (la interfaz en mlflow.hub.local)
+# y los Pods del propio namespace pueden llegar a él. Antes cualquier Pod del clúster alcanzaba http://mlflow.mlops.svc:5000.
+# La salida no se restringe aquí: MLflow no llama a nada externo, pero eso queda para otra tarea.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: solo-traefik-y-propio
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - podSelector: {}

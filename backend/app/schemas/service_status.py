@@ -39,3 +39,13 @@ class DeploymentOut(BaseModel):
     author: str
     source: str
     created_at: datetime
+
+
+class ProvisionOut(BaseModel):
+    """Resultado del alta de un sitio en GitOps: qué se escribió y en qué commits."""
+
+    service_id: int
+    namespace: str
+    host: str
+    files: list[str]
+    commits: list[str]

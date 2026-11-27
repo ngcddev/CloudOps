@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { getClient, type ClientDetail as ClientDetailData, type Service } from "../../api";
+import { getClient, provisionService, type ClientDetail as ClientDetailData, type Service } from "../../api";
 import StatusBadge from "../../components/StatusBadge";
 import {
   formatMinutes,
@@ -24,6 +24,19 @@ const priorityMeaning: Record<string, string> = {
 // Tarjeta de un servicio con los datos de su plan
 function ServiceCard({ service }: { service: Service }) {
   const { plan } = service;
+  const [alta, setAlta] = useState<{ estado: "libre" | "enviando" | "lista" | "error"; texto?: string }>({ estado: "libre" });
+  // Argo CD aún no conoce el sitio: se puede dar de alta en GitOps (el Hub escribe en hub-gitops, nada más)
+  const sinAlta = !service.sync_status || service.sync_status === "Unknown";
+
+  async function darDeAlta() {
+    setAlta({ estado: "enviando" });
+    try {
+      const r = await provisionService(service.id);
+      setAlta({ estado: "lista", texto: `Sitio dado de alta en GitOps (${r.commits.length} commits). Argo CD lo crea en unos segundos.` });
+    } catch (e) {
+      setAlta({ estado: "error", texto: (e as Error).message });
+    }
+  }
   return (
     <section className="card">
       <div className="card-header">
@@ -40,6 +53,20 @@ function ServiceCard({ service }: { service: Service }) {
           <code>{service.namespace}</code>
         </dd>
       </dl>
+
+      {sinAlta && alta.estado !== "lista" && (
+        <p>
+          <button type="button" className="button" onClick={darDeAlta} disabled={alta.estado === "enviando"}>
+            {alta.estado === "enviando" ? "Dando de alta…" : "Dar de alta en GitOps"}
+          </button>
+        </p>
+      )}
+      {alta.texto && (
+        <p role="status">
+          {alta.estado === "lista" ? "✓ " : "✕ "}
+          {alta.texto}
+        </p>
+      )}
 
       <h4>
         Plan <span className="plan-name">{plan.name}</span>
@@ -86,7 +113,7 @@ export default function ClientDetail() {
           ✕ No se pudo cargar el cliente: {error}
         </p>
       )}
-      {!client && !error && <p>Cargando cliente…</p>}
+      {!client && !error && <p role="status">Cargando cliente…</p>}
 
       {client && (
         <>
@@ -124,7 +151,7 @@ export default function ClientDetail() {
             <p className="muted">
               Tiempos máximos desde que se abre el caso. P2–P4 corren solo en el horario de atención del plan.
             </p>
-            <table className="table">
+            <table className="table" aria-label="Servicios del cliente">
               <thead>
                 <tr>
                   <th>Prioridad</th>

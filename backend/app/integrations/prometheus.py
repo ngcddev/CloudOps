@@ -1,6 +1,7 @@
 # Consulta HTTP a Prometheus para los dashboards (spec 010, T09 y T11): el job `sitios` expone el
 # Blackbox y el job `traefik` la latencia; la API las consulta y las convierte en KPI y series.
 import json
+import math
 import time
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -13,6 +14,19 @@ PROMETHEUS_TIMEOUT_SECONDS = 2.0
 # Caché en memoria de la última respuesta por consulta y mes.
 PROMETHEUS_CACHE_SECONDS = 60
 _cache: dict[str, tuple[float, object]] = {}
+# Tope de entradas (auditoría BE-11): cada consulta de otro mes o de otro incidente crea una clave y las vencidas nunca se borraban
+MAX_CACHE_ENTRIES = 256
+
+
+def _store(key: str, vencimiento: float, valor: object) -> None:
+    """Guarda en la caché; al pasar del tope purga primero lo vencido y, si aún sobra, lo más viejo."""
+    if len(_cache) >= MAX_CACHE_ENTRIES:
+        ahora = time.monotonic()
+        for clave in [k for k, (vence, _) in _cache.items() if vence <= ahora]:
+            del _cache[clave]
+        while len(_cache) >= MAX_CACHE_ENTRIES:
+            del _cache[min(_cache, key=lambda k: _cache[k][0])]
+    _cache[key] = (vencimiento, valor)
 
 # transport(url, timeout) -> (código HTTP, cuerpo)
 Transport = Callable[[str, float], tuple[int, bytes]]
@@ -23,8 +37,11 @@ def urllib_transport(url: str, timeout: float) -> tuple[int, bytes]:
     import urllib.error
     import urllib.request
 
+    from app.integrations.http import validate_scheme
+
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as response:
+        # bandit B310: esquema validado
+        with urllib.request.urlopen(validate_scheme(url), timeout=timeout) as response:  # nosec B310
             return response.status, response.read()
     except urllib.error.HTTPError as error_:
         return error_.code, error_.read()
@@ -52,10 +69,13 @@ def query(promql: str, at: str, transport: Transport | None = None) -> float | N
             resultados = payload.get("data", {}).get("result") or []
             if resultados:
                 valor = float(resultados[0]["value"][1])
+                # Prometheus devuelve NaN (p. ej. la latencia p95 de un sitio sin tráfico): es «sin datos», no un número que comparar con el SLO
+                if not math.isfinite(valor):
+                    valor = None
     except Exception:
         valor = None
 
-    _cache[key] = (ahora + PROMETHEUS_CACHE_SECONDS, valor)
+    _store(key, ahora + PROMETHEUS_CACHE_SECONDS, valor)
     return valor
 
 
@@ -97,11 +117,10 @@ def query_range(
             puntos = []
             if resultados:
                 for marca, valor in resultados[0].get("values") or []:
-                    puntos.append(
-                        (datetime.fromtimestamp(float(marca), tz=timezone.utc), float(valor))
-                    )
+                    if math.isfinite(float(valor)):  # un NaN no es un punto de la gráfica
+                        puntos.append((datetime.fromtimestamp(float(marca), tz=timezone.utc), float(valor)))
     except Exception:
         puntos = None
 
-    _cache[key] = (ahora + PROMETHEUS_CACHE_SECONDS, puntos)
+    _store(key, ahora + PROMETHEUS_CACHE_SECONDS, puntos)
     return puntos

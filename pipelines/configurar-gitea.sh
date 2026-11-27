@@ -21,6 +21,7 @@
 #   REGISTRY_USER / REGISTRY_PASSWORD   quien sube las imágenes al registro (por defecto, el administrador)
 #   REGISTRY / REGISTRY_IP / DOCKER_NETWORK   cómo el runner llega al registro (gitea.hub.local, 172.30.0.1, k3d-hub)
 set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/../gitops/lib-curl.sh"   # cred_curl: la contraseña no va como argumento de curl (auditoría IA-05)
 
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GITEA_URL="${GITEA_URL:-http://gitea.hub.local}"
@@ -39,7 +40,12 @@ ROTAR=0
 # shellcheck source=lib.sh
 source "$AQUI/lib.sh"
 API="${GITEA_URL%/}/api/v1"
-curl_api() { curl -sS -m 30 -u "${GITEA_ADMIN_USER}:${GITEA_ADMIN_PASSWORD}" -H 'Content-Type: application/json' "$@"; }
+# Aquí `-K -` no sirve: los secretos viajan por la entrada estándar (`--data-binary @-`). Las credenciales van en un archivo local de solo el dueño que se borra al salir
+# (ruta relativa: el curl nativo de Windows no resuelve /tmp de Git Bash), así que tampoco están en la lista de procesos (auditoría IA-05)
+ARCHIVO_CRED=".cred-curl-$$"
+( umask 077; cred_curl "${GITEA_ADMIN_USER}" "${GITEA_ADMIN_PASSWORD}" > "$ARCHIVO_CRED" )
+trap 'rm -f "$ARCHIVO_CRED"' EXIT
+curl_api() { curl -sS -m 30 -K "$ARCHIVO_CRED" -H 'Content-Type: application/json' "$@"; }
 # Código HTTP de una llamada (el cuerpo se descarta); no usa -o /dev/null, que falla con el curl de Windows
 codigo() { local salida; salida="$(curl_api -w $'
 %{http_code}' "$@")" || true; printf '%s' "${salida##*$'
@@ -81,7 +87,7 @@ poner_variable() {  # poner_variable <nombre> <valor>
 # 2. Claves de Cosign: la pública al repositorio, la privada directo a Gitea
 if [ ! -f "$AQUI/cosign.pub" ] || [ "$ROTAR" = "1" ]; then
   temporal="$(mktemp -d)"
-  trap 'rm -rf "$temporal"' EXIT
+  trap 'rm -rf "$temporal"; rm -f "$ARCHIVO_CRED"' EXIT
   temporal_host="$(cd "$temporal" && (pwd -W 2>/dev/null || pwd))"
   clave="$(head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24)"
   docker run --rm -e COSIGN_PASSWORD="$clave" -v "${temporal_host}:/k" -w /k "$COSIGN_IMAGE" generate-key-pair >/dev/null

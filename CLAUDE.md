@@ -40,10 +40,44 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 - Enviar datos de clientes a servicios de IA externos.
 - Marcar una tarea como hecha sin verificar su criterio.
 
-## Comandos (se completan cuando exista el código)
+## Comandos
 
 | Qué | Comando |
 |---|---|
 | Levantar todo | `docker compose up --build` |
 | Pruebas del backend | `docker compose exec api pytest` |
 | Migraciones | `docker compose exec api alembic upgrade head` |
+| Frontend en desarrollo | `cd frontend && npm install && npm run dev` |
+| Pruebas de `ai/` (registro en MLflow, evaluación) | `cd ai && pip install -r requirements.txt && pytest` |
+| Lint de Python | `ruff check .` (configuración en `ruff.toml`) |
+| Imagen de producción de la API | `bash pipelines/pruebas/humo-hub-api.sh` |
+| Validar la observabilidad | `bash observability/pruebas/validar.sh` · `grafana.sh` · `trazas.sh` |
+| Informe de capacidad por cliente (cuota, uso y margen) | `KUBECONFIG=... bash observability/capacidad.sh` |
+| Prueba de drift de OpenTofu (plan -detailed-exitcode) | `bash infra/pruebas/drift.sh` |
+| Levantar el servicio de voz del asistente (faster-whisper y Piper, CPU) | `docker compose --profile voz up -d --build voz web api` |
+| Evaluar la voz sin micrófono (error de palabras, latencia, memoria) | `python ai/eval/evaluar_voz.py --url http://localhost:8100 --actualizar-fichas` |
+| Probar la voz en un navegador real (micrófono falso) | `HUB_USUARIO=... HUB_PASSWORD=... bash voz/pruebas/voz-ui.sh` |
+| Medir latencia y memoria de los modelos de Ollama | `python ai/eval/medir_modelos.py --actualizar-fichas` |
+| Verificar integridad de los modelos (digests y suma de la compuerta) | `python ai/verificar_modelos.py` |
+| Promover la compuerta con comparación / volver a la versión anterior | `python ai/classifier/promover.py --version N` · `--rollback` |
+| Probar documentos maliciosos en el contexto del asistente | `python ai/eval/probar_documento_malicioso.py` |
+| Runbooks de operación (caída, rollback, respaldo, reinicio, saturación, latencia) | [`runbooks/`](runbooks/README.md) |
+| Respaldo y restauración de PostgreSQL | `bash gitops/pruebas/respaldo.sh` |
+| Reiniciar la demo | `bash demo/reiniciar.sh` (borra la base del entorno) |
+| Reiniciar la demo del colegio en el clúster | `GITEA_USER=... GITEA_PASSWORD=... bash demo/reiniciar-cluster.sh` |
+| Dejar la demo del clúster lista tras las pruebas con efecto | `KUBECONFIG=... bash demo/dejar-demo-lista.sh` |
+| Puerta de seguridad del colegio (v1 y v2) | `bash demo/preparar-colegio.sh` |
+| Simulaciones de falla en el clúster | `bash gitops/pruebas/simulaciones.sh` · `admision.sh` |
+| Respaldo de la plataforma (Gitea, Argo CD) fuera del nodo | `bash gitops/pruebas/respaldo-plataforma.sh` |
+| Estado remoto de OpenTofu (laboratorio) | `bash infra/estado-remoto.sh iniciar` · `probar` · `activar` |
+| Probar el drift con selfHeal (Argo CD corrige cambios a mano) | `bash gitops/pruebas/drift.sh` |
+| Promover a hub-gitops lo que escribe el equipo (--simular para ver antes) | `bash gitops/sincronizar-hub-gitops.sh --simular` |
+| ¿hub-gitops está en sincronía con el repositorio principal? | `bash gitops/pruebas/sincronia.sh` |
+| Publicar la documentación de la plataforma en Backstage (TechDocs) | `bash gitops/platform/backstage/publicar-docs.sh` |
+| Publicar una versión en staging de un cliente | `bash gitops/staging/publicar.sh ferreteria v1.1` |
+| Promover a producción lo que está sano en staging | `bash gitops/staging/promover.sh ferreteria` |
+| El chart de Helm del sitio coincide con Kustomize | `bash gitops/pruebas/helm-vs-kustomize.sh` |
+| Preguntar al tutor del módulo 2 (Kubernetes y lineamientos) | `python ai/tutor/tutor.py "¿Para qué sirve un DaemonSet?"` |
+| Evaluar el tutor (matriz de aciertos, omisiones y alucinaciones) | `python ai/tutor/evaluar.py` |
+| Comprobar el AppProject de clientes y que los Pods no montan el token de la API | `bash gitops/pruebas/appproject.sh` |
+| Probar Backstage en un navegador real (plantilla y TechDocs) | `set -a; . ./.env.cluster; set +a; bash gitops/pruebas/backstage-ui.sh` |

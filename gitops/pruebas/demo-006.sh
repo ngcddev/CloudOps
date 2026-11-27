@@ -39,8 +39,11 @@ entrar() {  # entrar <correo> → token del Hub
     -d "{\"email\":\"$1\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token
 }
 TOKEN="$(entrar "$HUB_USUARIO")"
+# Segregación de funciones (spec 018): quien pide un cambio no lo aprueba; lo aprueba otra cuenta de la agencia
+HUB_USUARIO_APROBADOR="${HUB_USUARIO_APROBADOR:-camilo@forjadigital.test}"
+TOKEN_APROBADOR="$(entrar "$HUB_USUARIO_APROBADOR")"
 TOKEN_CLIENTE="$(entrar "$CLIENTE_USUARIO")"
-[ -n "$TOKEN" ] && [ -n "$TOKEN_CLIENTE" ] || { echo "No se pudo entrar al Hub (¿HUB_PASSWORD correcta?)"; exit 1; }
+[ -n "$TOKEN" ] && [ -n "$TOKEN_CLIENTE" ] && [ -n "$TOKEN_APROBADOR" ] || { echo "No se pudo entrar al Hub (¿HUB_PASSWORD correcta?)"; exit 1; }
 hub()    { curl -s -m 20 -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' "$@"; }
 hub_cli() { curl -s -m 20 -H "Authorization: Bearer ${TOKEN_CLIENTE}" "$@"; }
 
@@ -87,7 +90,7 @@ esperar "que la solicitud ${CAMBIO_MALO} se rechace" '[ "$(estado_puerta "${CAMB
     && ok "la puerta falló en «secretos»" || falla "la puerta no falló en «secretos»"
   estado="$(hub "${HUB}/api/change-requests" | tr '{' '\n' | grep "\"id\":${CAMBIO_MALO}," | campo status)"
   [ "$estado" = "rechazada" ] && ok "la solicitud quedó «rechazada»" || falla "la solicitud quedó «${estado}»"
-  [ "$(codigo -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' -X POST "${HUB}/api/change-requests/${CAMBIO_MALO}/approve")" = "409" ] \
+  [ "$(codigo -H "Authorization: Bearer ${TOKEN_APROBADOR}" -H 'Content-Type: application/json' -X POST "${HUB}/api/change-requests/${CAMBIO_MALO}/approve")" = "409" ] \
     && ok "aprobarla ya no es posible (409)" || falla "se pudo aprobar una versión rechazada"
   vista="$(hub_cli "${HUB}/api/tickets/${TICKET_MALO}")"
   echo "$vista" | grep -q "Una actualización fue detenida porque contenía información sensible." \
@@ -103,14 +106,14 @@ git checkout -q -b "demo-buena-${sello}" "$BASE"
 echo "<!-- ${BUENA} -->" >> src/index.html
 git add -A && git_gitea commit -q -m "feat: ajuste menor del sitio" && git tag "$BUENA" && git_gitea push -q origin "$BUENA" 2>/dev/null \
   && ok "versión ${BUENA} subida a Gitea" || { falla "no se pudo subir ${BUENA}"; exit 1; }
-[ "$(codigo -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' -X POST "${HUB}/api/change-requests/${CAMBIO_BUENO}/approve")" = "409" ] \
+[ "$(codigo -H "Authorization: Bearer ${TOKEN_APROBADOR}" -H 'Content-Type: application/json' -X POST "${HUB}/api/change-requests/${CAMBIO_BUENO}/approve")" = "409" ] \
   && ok "mientras corren los controles, aprobar responde 409 (CA-6)" || echo "   (la corrida ya había terminado: se omite la comprobación de 409)"
 esperar "que la puerta termine en ok" '[ "$(estado_puerta "${CAMBIO_BUENO}")" = "ok" ]' && {
   ok "la puerta terminó en «ok»"
   checks="$(hub "${HUB}/api/change-requests/${CAMBIO_BUENO}/checks")"
   n="$(echo "$checks" | grep -o '"step":"' | wc -l | tr -d ' ')"
   [ "$n" = "6" ] && ok "seis controles registrados (secretos, construcción, vulnerabilidades, SBOM, firma, verificación)" || falla "hay ${n} controles, se esperaban 6"
-  aprobado="$(hub -X POST "${HUB}/api/change-requests/${CAMBIO_BUENO}/approve")"
+  aprobado="$(TOKEN="$TOKEN_APROBADOR" hub -X POST "${HUB}/api/change-requests/${CAMBIO_BUENO}/approve")"
   SHA="$(echo "$aprobado" | campo gitops_commit_sha)"
   [ "$(echo "$aprobado" | campo status)" = "en_validacion" ] && ok "aprobado: commit ${SHA:0:7} en hub-gitops" || falla "no se pudo aprobar: ${aprobado:0:200}"
   if [ -n "$SHA" ]; then

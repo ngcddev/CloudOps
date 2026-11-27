@@ -1,23 +1,26 @@
 # Configuración de Backstage para el Hub (spec 005, T22): se suma a app-config.yaml y
-# app-config.production.yaml de la imagen. Catálogo mínimo, sin base de datos (SQLite en memoria):
-# al reiniciar, el catálogo se vuelve a leer de hub-gitops.
+# app-config.production.yaml de la imagen. Catálogo mínimo con SQLite en un volumen (spec 017): las ubicaciones fijas
+# de abajo se releen de hub-gitops en cada arranque y lo registrado con la plantilla se conserva.
 app:
   title: Catálogo · Forja Digital
-  baseUrl: http://backstage.hub.local
+  baseUrl: https://backstage.hub.local
 backend:
-  baseUrl: http://backstage.hub.local
+  baseUrl: https://backstage.hub.local
   # No se redefine `listen`: la imagen ya trae `listen: ':7007'` (texto) y mezclarlo con un objeto
   # hace que Backstage se caiga al arrancar ("got string, wanted object").
   cors:
-    origin: http://backstage.hub.local
+    origin: https://backstage.hub.local
   # Por defecto Backstage manda `upgrade-insecure-requests`, que hace que el navegador pida todos los
   # archivos por https. Aquí se sirve por http (sin certificado), y la página queda en blanco con
   # ERR_CERT_AUTHORITY_INVALID. Con un certificado real se puede volver a activar.
   csp:
     upgrade-insecure-requests: false
+  # SQLite en un archivo del volumen backstage-data (spec 017, T02): lo que registra la plantilla «Sitio de cliente» sobrevive a los reinicios.
+  # Con ':memory:' el catálogo se rearmaba solo con las ubicaciones fijas de este archivo y el sitio registrado desaparecía.
   database:
     client: better-sqlite3
-    connection: ':memory:'
+    connection:
+      directory: /data/sqlite
   # Entorno de pruebas del PC A, solo accesible desde la red local: la API del catálogo se lee sin
   # token (la demo y `curl` lo necesitan). Si Backstage se expone fuera, quitar esta línea.
   auth:
@@ -33,9 +36,16 @@ integrations:
   gitea:
     - host: gitea.gitea.svc:3000
       baseUrl: http://gitea.gitea.svc:3000
+# TechDocs (spec 017, T02): la imagen no trae mkdocs ni Docker, así que la documentación se genera fuera (publicar-docs.sh) y Backstage solo la sirve
+techdocs:
+  builder: external
+  publisher:
+    type: local
+    local:
+      publishDirectory: /techdocs
 catalog:
   rules:
-    - allow: [Component, Group, Location]
+    - allow: [Component, Group, Location, Template]
   locations:
     - type: url
       target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/platform/backstage/group.yaml
@@ -45,3 +55,12 @@ catalog:
       target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/ferreteria/catalog-info.yaml
     - type: url
       target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/consultorio/catalog-info.yaml
+    # El colegio de la demo (spec 016): el Hub escribe su catalog-info.yaml al dar de alta el sitio; antes de eso Backstage avisa que no existe
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/colegio/catalog-info.yaml
+    # Plantilla de «Crear → Sitio de cliente» (spec 017, T02)
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/platform/backstage/templates/sitio-de-cliente.yaml
+    # Documentación de la plataforma con TechDocs (spec 017, T02)
+    - type: url
+      target: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/platform/backstage/docs/catalog-info.yaml

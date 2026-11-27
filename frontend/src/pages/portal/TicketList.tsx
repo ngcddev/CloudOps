@@ -1,3 +1,4 @@
+// Solicitudes del portal del cliente (spec 004): lista de las de su empresa y formulario para crear una nueva (spec 007).
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../../auth";
@@ -9,6 +10,7 @@ import {
   type Ticket,
   type TicketKind,
 } from "../../api";
+import { Select } from "../../components/Select";
 
 export default function PortalTicketList() {
   // El portal muestra siempre la empresa de quien entró: ya no se elige el cliente (spec 007)
@@ -91,24 +93,24 @@ export default function PortalTicketList() {
         <form onSubmit={handleCreateTicket} className="stacked-form">
           <label>
             <span>Servicio</span>
-            <select value={selectedServiceId} onChange={(event) => setSelectedServiceId(event.target.value === "" ? "" : Number(event.target.value))}>
+            <Select value={selectedServiceId} onChange={(event) => setSelectedServiceId(event.target.value === "" ? "" : Number(event.target.value))}>
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name} · {service.host}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
 
           <label>
             <span>¿Qué necesitas?</span>
-            <select
+            <Select
               value={form.kind}
               onChange={(event) => setForm((current) => ({ ...current, kind: event.target.value as TicketKind }))}
             >
               <option value="solicitud">Reportar un problema o hacer una consulta</option>
               <option value="cambio">Pedir un cambio en mi sitio</option>
-            </select>
+            </Select>
           </label>
 
           <label>
@@ -141,7 +143,7 @@ export default function PortalTicketList() {
         <h2>Mis solicitudes</h2>
         {tickets.length === 0 && <p>No tienes solicitudes en este momento.</p>}
         {tickets.length > 0 && (
-          <table className="table">
+          <table className="table" aria-label="Mis solicitudes">
             <thead>
               <tr>
                 <th>Solicitud</th>

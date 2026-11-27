@@ -1,0 +1,88 @@
+# Grafana Alloy (spec 008, T25; DaemonSet en la spec 017, T06): un Pod por nodo, cada uno recoge solo los registros de los Pods de su nodo
+# (selector spec.nodeName), así que añadir un nodo no duplica ni deja sin recoger nada. Lee por la API y no del disco del nodo: sin root y sin carpetas del nodo montadas.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: alloy
+  labels:
+    app: alloy
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: alloy
+  template:
+    metadata:
+      labels:
+        app: alloy
+    spec:
+      serviceAccountName: alloy
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 473        # usuario `alloy` de la imagen
+        runAsGroup: 473
+        fsGroup: 473
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.10.2
+          env:
+            # El nodo del Pod: la configuración filtra con él los Pods que recoge (config.alloy)
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef: { fieldPath: spec.nodeName }
+          args:
+            - run
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --storage.path=/var/lib/alloy/data
+            - --disable-reporting
+            - /etc/alloy/config.alloy
+          ports:
+            - name: http
+              containerPort: 12345
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            # Memoria 128 → 256 Mi (spec 019): el tablero USE mostró a Alloy en el 87 % de su límite y con 14 reinicios (código 137) en 4 horas; con 111 Mi de uso base, cualquier pico lo mataba
+            requests: { cpu: 25m, memory: 128Mi }
+            limits: { cpu: 1000m, memory: 256Mi }
+          # Alloy tarda ~70 s en abrir el puerto en el nodo del laboratorio y más de 5 min si el PC está cargado:
+          # la startupProbe le da hasta 10 min
+          # antes de que la de vida pueda matarlo (sin ella lo reiniciaba en bucle)
+          startupProbe:
+            httpGet: { path: /-/ready, port: http }
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet: { path: /-/ready, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet: { path: /-/healthy, port: http }
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/alloy/data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: alloy-config
+        - name: data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

@@ -8,6 +8,30 @@ useDefault = true
 [allowlist]
 description = "Valores de desarrollo de .env.example: nunca son reales, y en k3s las claves salen de Secrets"
 # Solo este valor exacto; cualquier otra clave que aparezca (en .env.example o en otro archivo) sigue bloqueada
+# Las expresiones se comparan con la línea completa: así se pueden fijar a un contexto (JWT_SECRET=..., -u usuario:clave) y no a una palabra suelta
+regexTarget = "line"
 regexes = [
   '''clave-de-desarrollo-cambiala-en-produccion-0123456789''',
+  # Contraseñas de laboratorio de las pruebas de humo (spec 006 y 008): viven solo en contenedores efímeros que la propia prueba crea y borra
+  '''JWT_SECRET=humo-0123456789-0123456789-0123''',
+  '''-u admin:prueba''',
+  # Valores falsos del checklist de verificación (checklist de verificación, pasos 3.1 y 3.3): el primero y el segundo son los formatos que se le dan al redactor
+  # de secretos para ver si los tapa; el tercero es la clave de un contenedor desechable. Ninguno es real. Gitleaks revisa la historia, así que editar el
+  # documento no los quita del commit que ya los trae.
+  '''AccountKey=Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MGFiY2RlZmdoaWprbG1ub3A=''',
+  # Gitleaks también decodifica los tramos en base64 y revisa el texto resultante: este es el mismo valor, decodificado
+  '''AccountKey=foobarbazqux1234567890abcdefghijklmnop''',
+  '''api_key=sk-live-51Habcdefghijklmnopqrstu''',
+  '''JWT_SECRET=x-0123456789-0123456789-0123456789''',
+  # JWT de ejemplo (el de jwt.io) en las pruebas de redacción de secretos (spec 020): no firma nada real; la prueba comprueba que el redactor lo tapa
+  '''eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.dBjftJeZ4CVPmB92K27uhbUJU1p1r''',
+  # Valor falso de las pruebas de redacción de secretos (backend/tests/test_seguridad_ia.py): no es una clave real
+  '''secret_key = abcd1234efgh5678''',
+  # Secretos inventados de la prueba de secretos en prompts con el modelo real (ai/eval/probar_secretos_en_prompt.py, spec 020 T07): la prueba los pega
+  # en preguntas y comprueba que se tapan antes de llegar al modelo; ninguno es real
+  '''ghp_Zx81qLmN0pQrStUvWxYz1234567890abcd''',
+  '''AKIAZ3MQ7XK2VWR9TDLP''',
+  '''Sup3rSecreta!2026''',
+  '''tok-9f8e7d6c5b4a39281706f5e4d3c2b1a0''',
+  '''Bearer abcdef0123456789abcdef0123456789''',
 ]

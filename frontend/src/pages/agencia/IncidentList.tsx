@@ -1,5 +1,5 @@
 // Lista de incidentes de la consola de agencia: filtros, reloj del SLA y alta de un incidente manual (spec 008).
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import {
@@ -8,11 +8,14 @@ import {
   listClients,
   listIncidents,
   type ClientDetail,
+  type ClientSummary,
   type Incident,
   type IncidentStatus,
   type TicketPriority,
 } from "../../api";
 import SlaClock from "../../components/SlaClock";
+import { usePolling } from "../../hooks/usePolling";
+import { Select } from "../../components/Select";
 
 // Cada cuánto se vuelve a pedir la lista: un incidente abierto por el monitoreo aparece sin recargar
 const REFRESH_MS = 10_000;
@@ -74,23 +77,23 @@ function NewIncidentForm({ clients, onCancel }: { clients: ClientDetail[]; onCan
       )}
       <label>
         Servicio
-        <select value={serviceId} onChange={(event) => setServiceId(event.target.value === "" ? "" : Number(event.target.value))} required>
+        <Select value={serviceId} onChange={(event) => setServiceId(event.target.value === "" ? "" : Number(event.target.value))} required>
           <option value="">Elige un servicio</option>
           {services.map(({ client, service }) => (
             <option key={service.id} value={service.id}>
               {client.name} · {service.name}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <label>
         Prioridad
-        <select value={priority} onChange={(event) => setPriority(event.target.value as TicketPriority)}>
+        <Select value={priority} onChange={(event) => setPriority(event.target.value as TicketPriority)}>
           <option value="P1">P1 · crítica</option>
           <option value="P2">P2 · alta</option>
           <option value="P3">P3 · media</option>
           <option value="P4">P4 · baja</option>
-        </select>
+        </Select>
       </label>
       <label>
         Qué pasa
@@ -109,7 +112,9 @@ function NewIncidentForm({ clients, onCancel }: { clients: ClientDetail[]; onCan
 }
 
 export default function IncidentList() {
-  const [clients, setClients] = useState<ClientDetail[]>([]);
+  // La lista basta para el filtro por cliente; el detalle (proyectos y servicios) solo hace falta al abrir «Nuevo incidente» (auditoría FE-05)
+  const [clients, setClients] = useState<ClientSummary[]>([]);
+  const [clientDetails, setClientDetails] = useState<ClientDetail[] | null>(null);
   const [incidents, setIncidents] = useState<Incident[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<IncidentStatus | "">("");
@@ -119,29 +124,41 @@ export default function IncidentList() {
 
   useEffect(() => {
     listClients()
-      .then((list) => Promise.all(list.map((client) => getClient(client.id))))
       .then(setClients)
       .catch((loadError: Error) => setError(loadError.message));
   }, []);
 
+  // Una sola vez, en paralelo y solo cuando alguien abre el formulario
+  useEffect(() => {
+    if (!creating || clientDetails !== null) return;
+    Promise.all(clients.map((client) => getClient(client.id)))
+      .then(setClientDetails)
+      .catch((loadError: Error) => setError(loadError.message));
+  }, [creating, clients, clientDetails]);
+
+  // Una respuesta vieja (de un filtro anterior) no pisa a la nueva (auditoría FE-09)
+  const ultimaLectura = useRef(0);
   const load = useCallback(() => {
+    const lectura = ++ultimaLectura.current;
     listIncidents({
       status: statusFilter || undefined,
       client_id: clientFilter || undefined,
       priority: priorityFilter || undefined,
     })
       .then((data) => {
+        if (lectura !== ultimaLectura.current) return;
         setIncidents(data);
         setError(null);
       })
-      .catch((loadError: Error) => setError(loadError.message));
+      .catch((loadError: Error) => {
+        if (lectura === ultimaLectura.current) setError(loadError.message);
+      });
   }, [clientFilter, priorityFilter, statusFilter]);
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, REFRESH_MS);
-    return () => window.clearInterval(timer);
   }, [load]);
+  usePolling(load, REFRESH_MS);
 
   return (
     <>
@@ -154,7 +171,12 @@ export default function IncidentList() {
         )}
       </div>
 
-      {creating && <NewIncidentForm clients={clients} onCancel={() => setCreating(false)} />}
+      {creating &&
+        (clientDetails === null ? (
+          <p role="status">Cargando servicios…</p>
+        ) : (
+          <NewIncidentForm clients={clientDetails} onCancel={() => setCreating(false)} />
+        ))}
 
       {error && (
         <p className="error" role="alert">
@@ -166,41 +188,41 @@ export default function IncidentList() {
         <div className="filters-grid">
           <label>
             <span>Estado</span>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as IncidentStatus | "")}>
+            <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as IncidentStatus | "")}>
               <option value="">Todos</option>
               <option value="abierto">Abierto</option>
               <option value="mitigado">Mitigado</option>
               <option value="cerrado">Cerrado</option>
-            </select>
+            </Select>
           </label>
           <label>
             <span>Cliente</span>
-            <select value={clientFilter} onChange={(event) => setClientFilter(event.target.value === "" ? "" : Number(event.target.value))}>
+            <Select value={clientFilter} onChange={(event) => setClientFilter(event.target.value === "" ? "" : Number(event.target.value))}>
               <option value="">Todos</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             <span>Prioridad</span>
-            <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as TicketPriority | "")}>
+            <Select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as TicketPriority | "")}>
               <option value="">Todas</option>
               <option value="P1">P1</option>
               <option value="P2">P2</option>
               <option value="P3">P3</option>
               <option value="P4">P4</option>
-            </select>
+            </Select>
           </label>
         </div>
       </div>
 
-      {incidents === null && !error && <p>Cargando incidentes…</p>}
+      {incidents === null && !error && <p role="status">Cargando incidentes…</p>}
       {incidents !== null && incidents.length === 0 && <p>No hay incidentes con esos filtros.</p>}
       {incidents !== null && incidents.length > 0 && (
-        <table className="table">
+        <table className="table" aria-label="Incidentes">
           <thead>
             <tr>
               <th>Prioridad</th>

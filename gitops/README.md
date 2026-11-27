@@ -55,6 +55,63 @@ Cambia `127.0.0.1` por la IP fija del PC A cuando se entre desde otro equipo.
 Al editar el archivo, la línea nueva debe ir en su propia línea: si la última línea existente no
 termina en salto de línea, `Add-Content` la pega a ella y rompe las dos entradas.
 
+## Quién escribe qué en hub-gitops (spec 022)
+
+Hay dos lugares con manifiestos y cada cosa tiene **un solo dueño y un solo sentido**: la carpeta `gitops/` del repositorio principal (GitHub) es donde el equipo escribe y revisa por PR;
+`forja-digital/hub-gitops` (Gitea, dentro del clúster) es lo único que Argo CD vigila y donde el Hub escribe las versiones. No dependen de GitHub ni Argo CD ni el Hub (principios 2 y 5).
+
+| Quién escribe | Qué | Cómo llega a `hub-gitops` |
+|---|---|---|
+| El equipo | `clients/_base`, el resto de cada cliente (p. ej. `backend.yaml`), `observability/`, `hub/`, `platform/backstage/`, `platform/mlops/`, `platform/respaldo/` | `bash gitops/sincronizar-hub-gitops.sh` (la carpeta destino se reemplaza; solo lo que ya se mezcló en `origin/dev` u `origin/main`, con el árbol limpio) |
+| El Hub (API de Gitea) | `clients/<cliente>/kustomization.yaml` (la versión: `images.newTag`) y `catalog-info.yaml`; los archivos de un cliente nuevo al dar de alta el sitio | Los escribe el Hub al aprobar, al hacer rollback y al provisionar; **la promoción nunca los pisa** |
+| Nadie (arranque único) | `platform/argocd`, `platform/gitea`, `platform/k3s`, `platform/namespaces.yaml` | `kubectl apply` una vez desde el repositorio principal; no se copian a `hub-gitops` (`--limpiar` retira las copias viejas) |
+
+**Excepción de arranque (auditoría K8-06):** Argo CD y Gitea no pueden reconciliarse por Argo CD: Argo CD no se administra a sí mismo y Gitea guarda el repositorio que Argo CD lee (si Argo CD lo reiniciara con un error en Git, perdería su propia fuente). Por eso son lo único de la plataforma que se aplica a mano, una vez. Todo lo demás (el Hub, la observabilidad, Backstage, MLflow y los respaldos) entra por Git con una Application cada uno (`platform/argocd/applications/`), con `selfHeal` y sin `prune`: un cambio manual se revierte y un borrado por error no se lleva un volumen.
+
+```bash
+bash gitops/sincronizar-hub-gitops.sh --simular     # qué cambiaría en hub-gitops; no sube nada
+GITEA_USER=... GITEA_PASSWORD=... bash gitops/sincronizar-hub-gitops.sh      # promueve (commit en hub-gitops con el SHA y la rama de origen)
+bash gitops/pruebas/sincronia.sh                    # ¿están en sincronía? sale con 1 y lista lo distinto si no
+bash gitops/pruebas/sincronizar-prueba.sh           # prueba del sincronizador con repositorios locales (sin Gitea)
+```
+
+### Esa tabla la hace cumplir Gitea (spec 022, T13)
+
+Sin una regla, `hub-bot` (el token del Hub) podía escribir en todo `hub-gitops`: un `ClusterRoleBinding` en `observability/` lo aplicaría Argo CD con el proyecto `default`. Una regla de protección de la rama `main`
+lo cierra: solo `forja-admin` empuja libremente; a los demás Gitea les deja cambiar únicamente `clients/*/kustomization.yaml`, `clients/*/catalog-info.yaml` y `clients/*/backend.yaml`, que es lo único que escribe el Hub.
+Nadie (tampoco el administrador) puede reescribir la historia de `main` con `git push --force`. Se prueba con un repositorio y un usuario desechables, sin tocar `hub-gitops`; el script es idempotente:
+
+```bash
+set -a; . ./.env.cluster; set +a; export GITEA_USER="$GITEA_ADMIN_USER" GITEA_PASSWORD="$GITEA_ADMIN_PASSWORD"
+python gitops/pruebas/proteccion_hub_gitops.py       # prueba la regla (API de contenidos y git push, bot y administrador)
+python gitops/proteccion_hub_gitops.py --aplicar     # crea o corrige la regla en hub-gitops
+python gitops/proteccion_hub_gitops.py --comprobar   # sale con 1 si falta o es distinta
+```
+
+Si el Hub necesita escribir en otra ruta, hay que añadirla a `HUB_PATTERNS` y volver a aplicar; `backend/tests/test_proteccion_hub_gitops.py` falla si el Hub escribe algo que la regla le bloquearía.
+**Límite conocido:** `clients/*/kustomization.yaml` también coincide con `clients/_base/kustomization.yaml`, así que un `hub-bot` comprometido todavía podría cambiarlo (y los archivos de cada cliente); lo acota el proyecto
+`clientes` de Argo CD (solo namespaces `cliente-*` y los tipos de recurso de un sitio), no esta regla.
+
+Un cliente que está en el repositorio principal pero no en `hub-gitops` se omite: lo crea el Hub. En un entorno real el CI promovería a un repositorio de configuración alcanzable por el clúster
+(con PR y revisión) y el CI de la aplicación solo subiría las etiquetas de imagen; aquí lo hace el comando porque el clúster está en un portátil al que GitHub no llega.
+
+## Aislamiento de red de los clientes (spec 003 y 022)
+
+Cada namespace de cliente niega **toda entrada y toda salida** (`clients/_base/networkpolicy.yaml` y el chart `sitio-cliente`, que deben coincidir: `bash gitops/pruebas/helm-vs-kustomize.sh`).
+Entra Traefik (`kube-system`), Prometheus y Blackbox (`monitoring`) y los Pods del mismo cliente. **Sale** solo el DNS (CoreDNS) y los Pods del mismo cliente (el frontend del consultorio llama a su backend).
+Un sitio no necesita más: sus métricas las lee Prometheus y sus registros los lee Alloy por la API de Kubernetes. Sin la salida denegada, un Pod de cliente comprometido llegaba a Loki, Prometheus, Alertmanager,
+Grafana, MLflow, Gitea e internet, y todos son accesibles sin autenticación (auditoría K8-02).
+
+```bash
+bash gitops/pruebas/aislamiento-red.sh [origen] [destino]   # entre clientes: debe estar bloqueado
+bash gitops/pruebas/salida-red.sh [cliente]                 # salida de un cliente: DNS y su propio sitio sí; monitoreo, MLflow, Gitea, el Hub, otro cliente e internet no
+bash gitops/pruebas/salida-red.sh [cliente] --estado        # solo mide (no falla la salida): útil para ver cuánto alcanza un Pod antes de cambiar una política
+```
+
+`backend/tests/test_salida_de_red.py` vigila los archivos (en CI): falla si alguien abre una salida (un `ipBlock`, otro namespace u otro puerto) o si Kustomize y el chart difieren.
+**Estado verificado (16 nov 2026):** `hub` y los clientes niegan por defecto la entrada y la salida; `monitoring`, `gitea` y `mlops` restringen la entrada (NetworkPolicies en `observability/networkpolicy.yaml`, `platform/gitea/networkpolicy.yaml` y `platform/mlops/networkpolicy.yaml`) pero no la salida. Loki, Prometheus, Alertmanager y MLflow no piden autenticación: su protección es la red.
+Si un sitio nuevo necesita llamar a algo (una API externa, por ejemplo), hay que añadir esa salida a propósito en la base y en el chart, con su prueba.
+
 ## Cómo se comprueba
 
 ```bash
@@ -129,7 +186,7 @@ GITEA_USER=forja-admin GITEA_PASSWORD='<contraseña>' bash gitops/platform/gitea
 ```
 
 El script es idempotente: si el repo ya tiene commits no lo vuelve a sembrar. Desde ese momento el
-contenido de `hub-gitops` manda; los cambios del monorepo en `gitops/` no se propagan solos.
+contenido de `hub-gitops` manda para lo que escribe el Hub (las versiones); lo que escribe el equipo se promueve con `bash gitops/sincronizar-hub-gitops.sh` (ver «Quién escribe qué en hub-gitops»). Tras sembrar un repo nuevo, corre `bash gitops/sincronizar-hub-gitops.sh --limpiar` para retirar las copias de `platform/` que nadie lee.
 
 ## Una Application por cliente
 
@@ -147,7 +204,7 @@ el del namespace: el Hub la consulta por ese nombre. Argo CD llega a Gitea por e
 (`gitea.gitea.svc:3000`), no por `gitea.hub.local`, que los Pods no resuelven.
 
 Si el sitio ya se había aplicado a mano con `kubectl apply -k` (spec 003), Argo CD lo adopta sin
-recrearlo porque los manifiestos son los mismos. OpenTofu administra el overlay y la Application;
+recrearlo porque los manifiestos son los mismos. OpenTofu administra el overlay (la Application la crea el ApplicationSet `clientes`; `crear_application` es `false` por defecto en el módulo);
 Argo CD sigue administrando los recursos Kubernetes de cada sitio.
 
 ## Tokens del Hub (Gitea y Argo CD)
@@ -213,7 +270,7 @@ kubectl apply -k gitops/platform/backstage
 kubectl -n hub rollout status deploy/backstage --timeout=300s
 ```
 
-Backstage queda en `http://backstage.hub.local` con un catálogo mínimo: la agencia (`forja-digital`) y
+Backstage queda en `https://backstage.hub.local` (certificado autofirmado de Traefik: el navegador pide aceptarlo una vez) con un catálogo mínimo: la agencia (`forja-digital`) y
 los 3 clientes con su servicio y el enlace a la consola del Hub. Lee los `catalog-info.yaml` de
 `hub-gitops`, así que primero hay que sembrar ese repo. Usa hasta 1 GiB de memoria: si el PC A queda
 justo, se apaga sin afectar nada más y `/agencia/servicios` del Hub cumple el rol:
@@ -253,3 +310,99 @@ menos de 3 minutos" no estaba garantizado. `gitops/platform/argocd` fija `timeou
 kubectl apply -k gitops/platform/argocd
 kubectl -n argocd rollout restart statefulset/argocd-application-controller deploy/argocd-repo-server
 ```
+
+## El Hub: respaldo, aislamiento y asistente
+
+| Qué | Archivo | Cómo se prueba |
+|---|---|---|
+| Respaldo diario de PostgreSQL (03:00 UTC, últimos 7, verificado con `pg_restore --list`) | `hub/backup.yaml`, `hub/respaldo/respaldar.sh` | `bash gitops/pruebas/respaldo.sh`: respalda, rota, restaura en `hub_restaurada` y compara las filas de las 21 tablas |
+| Restaurar un respaldo en una base nueva | `hub/respaldo/restaurar.sh` (se niega a pisar una base y rechaza nombres con SQL) | el mismo script de prueba |
+| Pod Security `restricted` y NetworkPolicy en el namespace `hub` | `platform/namespaces.yaml`, `hub/networkpolicy.yaml` | `kubectl kustomize gitops/hub \| python gitops/pruebas/psa_restringido.py` (verifica sin clúster las reglas del perfil) |
+| Conectar el Hub con Ollama (equipo anfitrión) y elegir el modo del asistente | `hub/configurar-ia.sh <url> [completo\|recuperacion\|rag]` crea el ConfigMap `hub-ia` | `--solo-mostrar` imprime el ConfigMap sin clúster |
+| Trazas hacia Tempo | `OTEL_EXPORTER_OTLP_ENDPOINT` en `hub/api.yaml` | `observability/pruebas/trazas.sh` |
+
+Limitaciones: el volumen de respaldos está en el mismo nodo que la base (copiarlos fuera es un paso manual); la NetworkPolicy del Hub, el CronJob y las
+variables nuevas se probaron en el clúster k3d (pruebas de `gitops/pruebas/`).
+Para restaurar la base viva: detener la API (`kubectl -n hub scale deploy/api --replicas=0`), restaurar con `REEMPLAZAR=1` y volver a escalar.
+
+## Levantar el clúster sin instalar k3d (Windows con Docker Desktop)
+
+Probado el 14 nov. `k3d` corre desde su imagen oficial de Docker y el kubeconfig queda en un archivo aparte:
+
+```bash
+docker network create k3d-hub --subnet 172.30.0.0/24 --gateway 172.30.0.1
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/gitops/platform/k3s/registries.yaml:/cfg/registries.yaml:ro" \
+  ghcr.io/k3d-io/k3d:5.8.3 cluster create hub --image rancher/k3s:v1.32.9-k3s1 --network k3d-hub -p "80:80@loadbalancer" -p "443:443@loadbalancer" \
+  --registry-config /cfg/registries.yaml --host-alias "172.30.0.1:gitea.hub.local" --wait
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/k3d-io/k3d:5.8.3 kubeconfig get hub > ~/.kube/k3d-hub.yaml   # y corregir server: a https://127.0.0.1:<puerto>
+export KUBECONFIG=C:/Users/<tú>/.kube/k3d-hub.yaml     # kubectl de Windows necesita la ruta de Windows, no /c/...
+```
+
+Orden de lo demás: `kubectl apply -f platform/namespaces.yaml` → Gitea (`-k platform/gitea`, administrador y organización `forja-digital` pública) →
+`apps/publicar-imagenes.sh` → Argo CD (`-k platform/argocd`) → `platform/gitea/sembrar-hub-gitops.sh` → `hub/crear-secretos.sh` → `hub/crear-tokens.sh` →
+`sincronizar-hub-gitops.sh` → `kubectl apply -k hub` → `kubectl apply -k platform/argocd/applications` y `-f platform/argocd/applications/monitoring.yaml` →
+`hub/configurar-ia.sh <url de Ollama> [modo]`. Sin editar el archivo `hosts`, los scripts de `curl` y `git` funcionan con `CURL_HOME` apuntando a una carpeta con un `.curlrc`
+(`resolve = "gitea.hub.local:80:127.0.0.1"`, una línea por nombre) y `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.curloptResolve GIT_CONFIG_VALUE_0=gitea.hub.local:80:127.0.0.1`.
+En Git Bash no se debe exportar `MSYS_NO_PATHCONV=1` al correr scripts que usen `curl -o /dev/null`. La prueba `pruebas/aislamiento-red.sh` necesita `busybox:v1` en el registro
+(`skopeo copy docker://docker.io/library/busybox:1.36 docker://gitea.hub.local/forja-digital/busybox:v1`). Para dejar la puerta de un sitio en `ok` sin runner:
+`SITE=restaurante VERSION_FIJA=v2 bash pipelines/pruebas/simular-puerta.sh limpia`. El caso completo: `HUB_PASSWORD=... CORRIDAS=1 bash gitops/pruebas/demo-caso-restaurante.sh`.
+
+## Alta de un sitio nuevo por GitOps (spec 016)
+
+El Hub escribe `clients/<cliente>/` en hub-gitops (`POST /api/services/{id}/provision`, botón «Dar de alta en GitOps» en la ficha del cliente). El
+ApplicationSet `clientes` (`platform/argocd/applications/clientes-appset.yaml`) ve la carpeta cada 20 s y crea la Application `cliente-<nombre>`; los tres clientes
+sembrados conservan su Application propia y están excluidos. Las imágenes `<cliente>:v1` (o `-web` y `-api`) deben estar antes en el registro (`apps/publicar-imagenes.sh`).
+`demo/reiniciar-cluster.sh` lo deshace para ensayar de nuevo.
+
+## Política de admisión y simulaciones (spec 016)
+
+El servicio de voz del asistente (`hub/voz.yaml`, spec 021) va en el namespace `hub` sin Ingress y con el token del Secret `hub-voz`; `hub/ingress.yaml` suma `hub-https` (https://hub.local) para que el navegador dé el micrófono. Las imágenes del Hub (`hub-api`, `hub-web`, `hub-voz`) se publican con `apps/publicar-imagenes.sh`.
+
+`kubectl apply -f platform/politicas/` aplica el `ValidatingAdmissionPolicy` que solo admite imágenes de `gitea.hub.local/forja-digital/` con etiqueta o digest fijos en los namespaces de
+clientes (`pruebas/admision.sh`). No verifica la firma de Cosign: eso exige Kyverno o policy-controller y el nodo no tiene RAM; la firma se verifica en la puerta de seguridad.
+`pruebas/simulaciones.sh` provoca réplica caída, latencia (netem en los veth del nodo) y saturación (HPA) y comprueba lo que se ve en Prometheus y en el HPA.
+
+## Respaldo de la plataforma, MLflow y Backstage (spec 016)
+
+- `platform/respaldo` (Application `plataforma-respaldo`; antes `kubectl apply -k platform/respaldo`) crea los CronJob de Gitea y Argo CD (02:30 y 02:40 UTC, últimos 5). `pruebas/respaldo-plataforma.sh` los lanza, los copia fuera del nodo y comprueba que hub-gitops se puede clonar del dump.
+- `kubectl apply -f platform/namespaces.yaml` y la Application `plataforma-mlops` (antes `kubectl apply -k platform/mlops`) despliegan MLflow en el namespace `mlops` (imagen: `bash apps/publicar-imagenes.sh mlflow`); interfaz en `mlflow.hub.local`.
+- La Application `plataforma-backstage` (antes `kubectl apply -k platform/backstage`) despliega Backstage (≈ 400 MiB); el alta de un sitio añade su `catalog-info.yaml` y aparece en el catálogo.
+- Runner de Gitea Actions: `pipelines/README.md`. Con el runner encendido, `demo/preparar-colegio.sh` vuelve a subir las etiquetas del colegio y la puerta corre sola.
+
+## Drift y selfHeal (spec 017)
+
+
+
+`pruebas/drift.sh` escala a mano el Deployment de un sitio y borra su Ingress; Argo CD los detecta (OutOfSync) y los devuelve a lo que dice Git sin que nadie toque Git (medido: 4 s y menos de 1 s). Falla si `selfHeal` está apagado.
+
+## Plantilla y documentación en Backstage (spec 017)
+
+
+
+- **Crear → Sitio de cliente** registra en el catálogo el `catalog-info.yaml` que el Hub escribió al dar de alta el sitio (sin editar la configuración de Backstage). La plantilla vive en `platform/backstage/templates/` y se publica con `actualizar-hub-gitops.sh gitops/platform/backstage`.
+
+- **TechDocs:** la imagen de Backstage no trae mkdocs ni Docker; `platform/backstage/publicar-docs.sh` genera el sitio con la imagen `spotify/techdocs` y lo copia al volumen `backstage-techdocs` (`builder: external`). La fuente está en `platform/backstage/docs/` y se ve en `https://backstage.hub.local/docs/default/component/plataforma-cloudops`.
+- **El catálogo persiste:** Backstage guarda su base SQLite en el volumen `backstage-datos`; lo que se registra con la plantilla sobrevive a los reinicios (con `:memory:` se perdía). Probado reiniciando el Pod con un sitio registrado.
+
+## Staging y promoción (spec 017)
+
+
+
+`clients/ferreteria-staging` es el mismo sitio en `cliente-ferreteria-staging` (`ferreteria-staging.hub.local`, cuota menor); el ApplicationSet crea su Application al ver la carpeta. `staging/publicar.sh <cliente> <versión>` la publica con un commit y `staging/promover.sh <cliente>` la pasa a producción **solo si está lista y sana en staging**, pidiendo el cambio por el Hub (ticket → puerta → aprobación). La v2 rota se frena en staging (producción no se toca); la v1.1 sana se promueve. Staging no está en el Hub: una falla ahí no abre incidentes. La imagen de la versión debe estar antes en el registro (`apps/publicar-imagenes.sh ferreteria:v1.1`).
+
+## Chart de Helm del sitio (spec 017)
+
+
+
+`charts/sitio-cliente` empaqueta lo mismo que `clients/_base` (namespace con Pod Security restricted, cuota, red, sitio, servicio e Ingress, y el backend opcional de las plantillas con formulario) y trae un archivo de valores por cliente en `valores/`. `helm template ferreteria charts/sitio-cliente -f charts/sitio-cliente/valores/ferreteria.yaml` produce los mismos objetos que `kustomize build clients/ferreteria`: `pruebas/helm-vs-kustomize.sh` lo comprueba con `helm lint --strict` y una comparación objeto por objeto (corre en el CI y sin instalar Helm: usa la imagen `alpine/helm`). Argo CD sigue aplicando Kustomize; el chart es el artefacto empaquetable (`helm package`).
+
+## Menor privilegio: token de la API, AppProject y Alloy (spec 017)
+
+
+
+- Ningún Pod monta el token de la API de Kubernetes si no la usa (`automountServiceAccountToken: false`); solo Prometheus, Alloy y el respaldo de Argo CD tienen ServiceAccount con un rol mínimo y sin comodines. `backend/tests/test_menor_privilegio.py` lo exige para todos los manifiestos de `gitops/`.
+
+- El AppProject `clientes` (`platform/argocd/projects/`) limita a las Applications de los clientes: solo `hub-gitops`, solo namespaces `cliente-*` y solo los recursos de un sitio. `pruebas/appproject.sh` muestra el rechazo de un ClusterRole y de un despliegue en kube-system. `monitoring` queda en `default`.
+
+- Alloy corre como DaemonSet y cada Pod recoge solo los registros de su nodo.
+- **Solo por HTTPS:** por HTTP plano el navegador no ofrece `crypto.randomUUID` (solo existe en contextos seguros) y Backstage mostraba «Error in extension 'nav-content:app'» y perdía el menú lateral. `pruebas/backstage-ui.sh` abre Backstage en un Chromium real (Playwright en un contenedor), ejecuta la plantilla desde la interfaz, abre TechDocs y falla si hay errores de JavaScript.

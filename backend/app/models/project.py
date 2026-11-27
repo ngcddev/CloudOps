@@ -1,7 +1,7 @@
 # Modelo de proyecto de un cliente (tabla projects, spec 001).
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,7 @@ from app.db import Base
 
 class Project(Base):
     __tablename__ = "projects"
+    __table_args__ = (Index("ix_projects_client_id", "client_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"), nullable=False)

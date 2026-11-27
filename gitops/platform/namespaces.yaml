@@ -5,6 +5,12 @@ kind: Namespace
 metadata:
   name: hub
   labels:
+    # Pod Security `restricted` también en el Hub (igual que en los clientes): sin root ni privilegios. Todas sus cargas
+    # (postgres, api, web y el CronJob de respaldo) lo cumplen: gitops/pruebas/psa_restringido.py
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
     app.kubernetes.io/part-of: cloudops-hub
 ---
 apiVersion: v1
@@ -13,6 +19,9 @@ metadata:
   name: argocd
   labels:
     app.kubernetes.io/part-of: cloudops-hub
+    # Solo avisa y audita (auditoría K8-09): un Pod que no cumpla `restricted` se ve en el evento y en el registro de auditoría, pero no se rechaza
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
 ---
 apiVersion: v1
 kind: Namespace
@@ -20,10 +29,26 @@ metadata:
   name: monitoring
   labels:
     app.kubernetes.io/part-of: cloudops-hub
+    # Solo avisa y audita (auditoría K8-09): un Pod que no cumpla `restricted` se ve en el evento y en el registro de auditoría, pero no se rechaza
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: gitea
   labels:
+    app.kubernetes.io/part-of: cloudops-hub
+    # Solo avisa y audita (auditoría K8-09): un Pod que no cumpla `restricted` se ve en el evento y en el registro de auditoría, pero no se rechaza
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlops
+  labels:
+    # MLflow (spec 016) cumple `restricted`: sin root, sin privilegios, seccomp por defecto
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
     app.kubernetes.io/part-of: cloudops-hub

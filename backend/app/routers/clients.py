@@ -1,6 +1,7 @@
 # Endpoints de clientes: crear, listar, ver y editar (spec 001, T06). Con sesión y alcance por cliente (spec 007).
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
@@ -25,6 +26,7 @@ from app.schemas.client import (
 )
 from app.schemas.sla_policy import SlaPolicyOut
 from app.services import audit
+from app.paginacion import Page, paginate
 
 router = APIRouter(prefix="/api/clients", tags=["clientes"])
 projects_router = APIRouter(prefix="/api", tags=["proyectos"])
@@ -46,7 +48,7 @@ def _get_visible_or_404(db: Session, client_id: int, user: User) -> Client:
 
 
 @router.get("", response_model=list[ClientSummary])
-def list_clients(db: Session = Depends(get_db), user: User = Depends(current_user)):
+def list_clients(page: Page = Depends(paginate), db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Lista los clientes, del más antiguo al más reciente (un cliente solo ve el suyo)."""
     query = select(Client).options(
         selectinload(Client.projects).selectinload(Project.services).selectinload(Service.plan)
@@ -54,7 +56,7 @@ def list_clients(db: Session = Depends(get_db), user: User = Depends(current_use
     scope = client_scope(user)
     if scope is not None:
         query = query.where(Client.id == scope)
-    return db.scalars(query.order_by(Client.id)).all()
+    return db.scalars(query.order_by(Client.id).limit(page.limit).offset(page.offset)).all()
 
 
 @router.post("", response_model=ClientOut, status_code=status.HTTP_201_CREATED)
@@ -77,7 +79,10 @@ def create_client(
 @router.get("/{client_id}", response_model=ClientDetail)
 def get_client(client_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Detalle de un cliente con sus proyectos, servicios, plan y los tiempos de SLA."""
-    detail = ClientDetail.model_validate(_get_visible_or_404(db, client_id, user))
+    _get_visible_or_404(db, client_id, user)
+    # Proyectos, servicios y planes en bloque: sin esto cada uno se cargaba con su propia consulta (auditoría BE-17)
+    cliente = db.scalar(select(Client).options(selectinload(Client.projects).selectinload(Project.services).selectinload(Service.plan)).where(Client.id == client_id))
+    detail = ClientDetail.model_validate(cliente)
     policies = db.scalars(select(SlaPolicy).order_by(SlaPolicy.priority)).all()
     detail.sla_policies = [SlaPolicyOut.model_validate(policy) for policy in policies]
     return detail
@@ -140,13 +145,20 @@ def create_service(
     if plan is None:
         raise HTTPException(status_code=404, detail="El plan no existe.")
     # Cada sitio tiene su propia dirección y su propio namespace: no se pueden repetir.
-    if db.scalar(select(Service).where(Service.host == data.host)) is not None:
+    if db.scalar(select(Service).where(func.lower(Service.host) == data.host.lower())) is not None:
         raise HTTPException(status_code=409, detail="Ya existe un servicio con esa dirección (host).")
     if db.scalar(select(Service).where(Service.namespace == data.namespace)) is not None:
         raise HTTPException(status_code=409, detail="Ya existe un servicio con ese namespace.")
-    service = Service(project_id=project.id, plan_id=plan.id, **data.model_dump(exclude={"plan_id"}))
+    campos = data.model_dump(exclude={"plan_id"})
+    campos["host"] = campos["host"].lower()   # los nombres de host no distinguen mayúsculas
+    service = Service(project_id=project.id, plan_id=plan.id, **campos)
     db.add(service)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # Dos altas a la vez con la misma dirección o namespace: la segunda choca con el único de la base (auditoría BD-08)
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya existe un servicio con esa dirección (host) o ese namespace.") from None
     audit.record(
         db, user, "crear", "service", service.id,
         {"name": service.name, "host": service.host, "namespace": service.namespace},

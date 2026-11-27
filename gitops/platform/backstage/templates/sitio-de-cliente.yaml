@@ -1,0 +1,43 @@
+# Plantilla («golden path») de Backstage para dar de alta un sitio de cliente en el catálogo (spec 017, T02).
+# El camino completo tiene dos pasos y cada herramienta hace lo suyo (principio: solo el Hub escribe en hub-gitops):
+#   1. En el Hub, en la ficha del cliente, «Dar de alta en GitOps»: escribe clients/<cliente>/ (kustomization, backend y catalog-info.yaml) y
+#      Argo CD crea el sitio.
+#   2. Aquí, «Crear» → «Sitio de cliente»: registra en el catálogo el catalog-info.yaml que el Hub dejó en hub-gitops. Sin editar la
+#      configuración de Backstage ni reiniciarlo.
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: sitio-de-cliente
+  title: Sitio de cliente
+  description: Registra en el catálogo un sitio de cliente ya dado de alta en GitOps desde el Hub.
+  tags:
+    - sitio-web
+    - golden-path
+spec:
+  owner: forja-digital
+  type: website
+  parameters:
+    - title: Sitio dado de alta en el Hub
+      required:
+        - slug
+      properties:
+        slug:
+          title: Nombre del cliente en hub-gitops
+          type: string
+          description: La carpeta clients/<nombre> que escribió el Hub (por ejemplo colegio). Es lo que va después de «cliente-» en el namespace.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          ui:autofocus: true
+  steps:
+    - id: registrar
+      name: Registrar el sitio en el catálogo
+      action: catalog:register
+      input:
+        catalogInfoUrl: http://gitea.gitea.svc:3000/forja-digital/hub-gitops/src/branch/main/clients/${{ parameters.slug }}/catalog-info.yaml
+  output:
+    links:
+      - title: Abrir el sitio en el catálogo
+        icon: catalog
+        entityRef: ${{ steps.registrar.output.entityRef }}
+      - title: Estado del servicio en el Hub
+        icon: dashboard
+        url: http://hub.local/agencia/servicios

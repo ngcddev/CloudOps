@@ -1,7 +1,7 @@
 // Cliente de la API del Hub: todas las llamadas del frontend pasan por aquí.
 // Contrato: plan 001 (specs/001-clientes-y-planes/plan.md#api).
-// Si la API aún no responde (T04–T07 pendientes o contenedor caído), se usan datos de prueba
-// construidos desde seed/ y la interfaz lo avisa. Al conectar la API real no cambia nada más.
+// En desarrollo (`npm run dev`) o compilado con VITE_MOCK=1, si la API no responde se usan datos de prueba
+// construidos desde seed/ y la interfaz lo avisa. En producción no existen (ver MOCK_PERMITIDO).
 import seedClients from "@seed/clients.json";
 import seedPlans from "@seed/plans.json";
 import seedSlaPolicies from "@seed/sla_policies.json";
@@ -38,6 +38,8 @@ export interface Service {
   template: Template;
   namespace: string;
   status: ServiceStatus;
+  // Estado que informa Argo CD; «Unknown» = el sitio todavía no se dio de alta en GitOps (spec 016)
+  sync_status?: string;
   plan: Plan;
 }
 
@@ -178,9 +180,16 @@ export class ApiError extends Error {
 
 let modePromise: Promise<"api" | "mock"> | null = null;
 
+// Los datos de prueba solo existen en desarrollo (`npm run dev`) o si se compila con VITE_MOCK=1 (una demo sin API). En producción esta constante
+// vale `false` al compilar: el compilador quita el código de prueba y los JSON de seed/ del bundle (auditoría FE-02), y un fallo pasajero de la API
+// se ve como un error en pantalla, no como una sesión de agencia falsa con datos inventados (auditoría FE-01). Cada rama de prueba la lleva delante
+// (`MOCK_PERMITIDO && ...`) para que el compilador la pueda descartar.
+export const MOCK_ALLOWED: boolean = import.meta.env.DEV || import.meta.env.VITE_MOCK === "1";
+
 // Se decide una sola vez: si /api/plans no contesta con JSON, se trabaja con datos de prueba.
 // Sin sesión la API responde 401 con JSON (spec 007): también cuenta como API real.
 function detectMode(): Promise<"api" | "mock"> {
+  if (!MOCK_ALLOWED) return Promise.resolve("api");
   modePromise ??= fetch("/api/plans", { headers: { Accept: "application/json" } })
     .then((res) =>
       (res.ok || res.status === 401) && res.headers.get("content-type")?.includes("application/json")
@@ -193,7 +202,7 @@ function detectMode(): Promise<"api" | "mock"> {
 
 // true cuando la interfaz muestra datos de prueba en lugar de la API
 export async function isUsingMockData(): Promise<boolean> {
-  return (await detectMode()) === "mock";
+  return MOCK_ALLOWED && (await detectMode()) === "mock";
 }
 
 // ---------- Llamadas a la API real ----------
@@ -238,7 +247,13 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
-  const res = await fetch(`/api${path}`, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { ...init, headers });
+  } catch {
+    // Sin red, o el Hub no contesta: un mensaje claro en vez del error técnico del navegador (auditoría FE-01)
+    throw new ApiError("No se pudo conectar con el Hub. Revisa tu conexión e inténtalo de nuevo.", 0);
+  }
   if (res.status === 401 && authToken && path !== "/auth/login") onUnauthorized?.();
   if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
   return res.json() as Promise<T>;
@@ -264,7 +279,7 @@ const MOCK_USER_NAME = "Sofía Ramírez";
 
 // ---------- Datos de prueba en memoria (se pierden al recargar la página) ----------
 
-const mock = (() => {
+const mock = /*#__PURE__*/ (() => {
   const plans: Plan[] = seedPlans.map((p, i) => ({ id: i + 1, ...p }));
   const slaPolicies: SlaPolicy[] = seedSlaPolicies.map((s, i) => ({ id: i + 1, ...s }));
   const clients: ClientDetail[] = [];
@@ -435,22 +450,22 @@ function requireText(value: string, message: string) {
 // ---------- Funciones públicas ----------
 
 export async function listPlans(): Promise<Plan[]> {
-  if ((await detectMode()) === "mock") return mock.plans;
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return mock.plans;
   return request<Plan[]>("/plans");
 }
 
 export async function listClients(): Promise<ClientSummary[]> {
-  if ((await detectMode()) === "mock") return mock.clients.map(summarize);
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return mock.clients.map(summarize);
   return request<ClientSummary[]>("/clients");
 }
 
 export async function getClient(id: number): Promise<ClientDetail> {
-  if ((await detectMode()) === "mock") return findMockClient(id);
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return findMockClient(id);
   return request<ClientDetail>(`/clients/${id}`);
 }
 
 export async function createClient(input: ClientInput): Promise<Client> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     requireText(input.name, "El nombre del cliente es obligatorio.");
     const client: ClientDetail = { id: mock.newId(), ...input, projects: [], sla_policies: mock.slaPolicies };
     mock.clients.push(client);
@@ -460,7 +475,7 @@ export async function createClient(input: ClientInput): Promise<Client> {
 }
 
 export async function createProject(clientId: number, input: ProjectInput): Promise<Project> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     requireText(input.name, "El nombre del proyecto es obligatorio.");
     const project: Project = { id: mock.newId(), ...input, services: [] };
     findMockClient(clientId).projects.push(project);
@@ -470,7 +485,7 @@ export async function createProject(clientId: number, input: ProjectInput): Prom
 }
 
 export async function createService(projectId: number, input: ServiceInput): Promise<Service> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     requireText(input.name, "El nombre del servicio es obligatorio.");
     const plan = mock.plans.find((p) => p.id === input.plan_id);
     if (!plan) throw new ApiError("El servicio necesita un plan.", 422);
@@ -488,7 +503,7 @@ export async function createService(projectId: number, input: ServiceInput): Pro
 export async function listTickets(
   params?: { client_id?: number; status?: TicketStatus; priority?: TicketPriority },
 ): Promise<Ticket[]> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     let tickets = [...mock.tickets];
     if (params?.client_id !== undefined) {
       const clientServiceIds = new Set(
@@ -513,12 +528,12 @@ export async function listTickets(
 }
 
 export async function getTicket(id: number): Promise<TicketDetail> {
-  if ((await detectMode()) === "mock") return findMockTicket(id);
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return findMockTicket(id);
   return request<TicketDetail>(`/tickets/${id}`);
 }
 
 export async function createTicket(input: TicketInput): Promise<Ticket> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     requireText(input.title, "El título de la solicitud es obligatorio.");
     requireText(input.description, "La descripción de la solicitud es obligatoria.");
     const service = mock.clients.flatMap((client) => client.projects.flatMap((project) => project.services)).find((item) => item.id === input.service_id);
@@ -551,7 +566,7 @@ export async function createTicket(input: TicketInput): Promise<Ticket> {
 }
 
 export async function classifyTicket(id: number, input: TicketClassifyInput): Promise<Ticket> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const ticket = findMockTicket(id);
     const previousPriority = ticket.priority;
     ticket.impact = input.impact;
@@ -575,7 +590,7 @@ export async function classifyTicket(id: number, input: TicketClassifyInput): Pr
 }
 
 export async function assignTicket(id: number, input: TicketAssignInput): Promise<Ticket> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const ticket = findMockTicket(id);
     const previousAssignee = ticket.assignee_id;
     ticket.assignee_id = input.assignee_id;
@@ -595,7 +610,7 @@ export async function assignTicket(id: number, input: TicketAssignInput): Promis
 }
 
 export async function transitionTicket(id: number, input: TicketTransitionInput): Promise<Ticket> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const ticket = findMockTicket(id);
     const previousStatus = ticket.status;
     ticket.status = input.new_status;
@@ -620,7 +635,7 @@ export async function transitionTicket(id: number, input: TicketTransitionInput)
 }
 
 export async function createWorkLog(id: number, input: WorkLogInput): Promise<WorkLog> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const ticket = findMockTicket(id);
     const workLog: WorkLog = {
       id: Date.now(),
@@ -633,6 +648,22 @@ export async function createWorkLog(id: number, input: WorkLogInput): Promise<Wo
     return workLog;
   }
   return request<WorkLog>(`/tickets/${id}/work-logs`, { method: "POST", body: JSON.stringify(input) });
+}
+
+export interface ProvisionResult {
+  service_id: number;
+  namespace: string;
+  host: string;
+  files: string[];
+  commits: string[];
+}
+
+// Da de alta el sitio en GitOps: el Hub escribe sus manifiestos en hub-gitops y Argo CD lo crea (spec 016).
+export async function provisionService(serviceId: number): Promise<ProvisionResult> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
+    return { service_id: serviceId, namespace: "cliente-demo", host: "demo.hub.local", files: ["clients/demo/kustomization.yaml"], commits: ["0000000"] };
+  }
+  return request<ProvisionResult>(`/services/${serviceId}/provision`, { method: "POST" });
 }
 
 export async function registerClient(
@@ -739,7 +770,7 @@ function findMockChange(id: number): ChangeRequest {
 }
 
 export async function listChangeRequests(params?: { ticket_id?: number }): Promise<ChangeRequest[]> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const changes = changeMock.changes.filter((c) => params?.ticket_id === undefined || c.ticket_id === params.ticket_id);
     return changes.sort((a, b) => b.id - a.id);
   }
@@ -748,7 +779,7 @@ export async function listChangeRequests(params?: { ticket_id?: number }): Promi
 }
 
 export async function createChangeRequest(input: ChangeRequestInput): Promise<ChangeRequest> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const ticket = findMockTicket(input.ticket_id);
     if (ticket.kind !== "cambio") throw new ApiError("La solicitud debe ser de tipo cambio.", 422);
     requireText(input.to_version, "La versión destino es obligatoria.");
@@ -784,7 +815,7 @@ export async function createChangeRequest(input: ChangeRequestInput): Promise<Ch
 }
 
 export async function approveChangeRequest(id: number): Promise<ChangeRequest> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const change = findMockChange(id);
     if (change.status !== "pendiente") {
       throw new ApiError(`No se permite pasar de «${change.status}» a «aprobada».`, 409);
@@ -809,7 +840,7 @@ export async function approveChangeRequest(id: number): Promise<ChangeRequest> {
 }
 
 export async function rejectChangeRequest(id: number, reason: string): Promise<ChangeRequest> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const change = findMockChange(id);
     requireText(reason, "Debe indicar el motivo del rechazo.");
     if (change.status !== "pendiente") {
@@ -834,7 +865,7 @@ function mockServiceStatus(serviceId: number): ServiceStatus {
 }
 
 export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     return mockServices().map(({ client, service }) => {
       const version = mockVersion(service.id);
       const open = changeMock.changes.find(
@@ -866,7 +897,7 @@ export async function listServicesStatus(): Promise<ServiceVersionStatus[]> {
 }
 
 export async function listDeployments(serviceId: number): Promise<Deployment[]> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     return changeMock.changes
       .filter((c) => c.service_id === serviceId && c.status === "desplegada")
       .map((c) => ({
@@ -908,7 +939,7 @@ export interface AuditLogFilters {
 }
 
 export async function listAuditLogs(filters: AuditLogFilters = {}): Promise<AuditLog[]> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const now = Date.now();
     const hoursAgo = (hours: number) => new Date(now - hours * 60 * 60 * 1000).toISOString();
     const sample: AuditLog[] = [
@@ -930,6 +961,103 @@ export async function listAuditLogs(filters: AuditLogFilters = {}): Promise<Audi
   if (filters.from) query.set("from", filters.from);
   if (filters.to) query.set("to", filters.to);
   return request<AuditLog[]>(`/audit-logs${query.size ? `?${query.toString()}` : ""}`);
+}
+
+
+// ---------- Asistente local (spec 012) ----------
+
+export type GateLabel = "en_tema" | "fuera_de_tema";
+
+export interface AssistantAnswer {
+  id: number;
+  answer: string;
+  // Quién respondió: la compuerta (LLM dormido) o el LLM local
+  answered_by: "compuerta" | "ayuda" | "llm";
+  // Secciones de la ayuda del Hub en las que se basó la respuesta
+  context_sections: string[];
+  // Cómo se eligió ese contexto (el RAG puede caer a la búsqueda por palabras) y la similitud del mejor trozo
+  context_mode?: "completo" | "recuperacion" | "rag" | null;
+  retrieval_score?: number | null;
+  gate_label: GateLabel;
+  p_fuera_de_tema: number;
+  llm_woken: boolean;
+  // Falso si se llamó al LLM y no respondió
+  llm_ok: boolean | null;
+  model: string | null;
+  latency_ms: number | null;
+}
+
+export interface AssistantStats {
+  total: number;
+  llm_despertado: number;
+  llm_evitado: number;
+  llm_evitado_pct: number | null;
+  llm_sin_respuesta: number;
+  latencia_llm_ms: number | null;
+  con_opinion: number;
+  decisiones_corregidas: number;
+  decisiones_corregidas_pct: number | null;
+}
+
+// Datos de muestra para cuando la API no está disponible (modo sin conexión de la consola)
+let mockAssistantId = 0;
+const mockAssistantLog: { label: GateLabel; woken: boolean; feedback?: GateLabel }[] = [];
+
+export async function askAssistant(question: string): Promise<AssistantAnswer> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
+    const delHub = /ticket|incidente|sla|rollback|prioridad|cliente|plan|cambio|servicio|hub/i.test(question);
+    mockAssistantId += 1;
+    mockAssistantLog[mockAssistantId] = { label: delHub ? "en_tema" : "fuera_de_tema", woken: delHub };
+    return {
+      id: mockAssistantId,
+      answer: delHub
+        ? "Respuesta de muestra: con la API conectada, aquí contesta el asistente local."
+        : "Solo puedo ayudarte con el uso del Hub. Reformula tu pregunta sobre clientes, tickets, SLA, cambios o incidentes.",
+      answered_by: delHub ? "llm" : "compuerta",
+      context_sections: delHub ? ["Ayuda de muestra"] : [],
+      gate_label: delHub ? "en_tema" : "fuera_de_tema",
+      p_fuera_de_tema: delHub ? 0.02 : 0.98,
+      llm_woken: delHub,
+      llm_ok: delHub ? true : null,
+      model: delHub ? "muestra" : null,
+      latency_ms: delHub ? 900 : null,
+    };
+  }
+  return request<AssistantAnswer>("/assistant/ask", { method: "POST", body: JSON.stringify({ question }) });
+}
+
+export async function sendAssistantFeedback(id: number, label: GateLabel): Promise<void> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
+    if (mockAssistantLog[id]) mockAssistantLog[id].feedback = label;
+    return;
+  }
+  // 204 sin cuerpo: no se usa request(), que espera JSON
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch(`/api/assistant/${id}/feedback`, { method: "POST", headers, body: JSON.stringify({ label }) });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+}
+
+export async function getAssistantStats(): Promise<AssistantStats> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
+    const rows = mockAssistantLog.filter(Boolean);
+    const woken = rows.filter((r) => r.woken).length;
+    const opinadas = rows.filter((r) => r.feedback);
+    const erradas = opinadas.filter((r) => r.feedback !== r.label).length;
+    return {
+      total: rows.length,
+      llm_despertado: woken,
+      llm_evitado: rows.length - woken,
+      llm_evitado_pct: rows.length ? Math.round((1000 * (rows.length - woken)) / rows.length) / 10 : null,
+      llm_sin_respuesta: 0,
+      latencia_llm_ms: woken ? 900 : null,
+      con_opinion: opinadas.length,
+      decisiones_corregidas: erradas,
+      decisiones_corregidas_pct: opinadas.length ? Math.round((1000 * erradas) / opinadas.length) / 10 : null,
+    };
+  }
+  return request<AssistantStats>("/assistant/stats");
 }
 
 
@@ -975,7 +1103,7 @@ export interface Gate {
 const MOCK_STEPS: SecurityStep[] = ["secretos", "construccion", "vulnerabilidades", "sbom", "firma", "verificacion"];
 
 export async function getChangeGate(changeId: number): Promise<Gate> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const change = findMockChange(changeId);
     const startedAt = change.created_at;
     return {
@@ -1010,7 +1138,7 @@ export async function getChangeGate(changeId: number): Promise<Gate> {
 
 // Descarga el reporte de un control (la evidencia). Va por fetch para enviar la sesión en la cabecera.
 export async function downloadCheckReport(checkId: number): Promise<void> {
-  if ((await detectMode()) === "mock") throw new ApiError("Con datos de prueba no hay reportes guardados.", 404);
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") throw new ApiError("Con datos de prueba no hay reportes guardados.", 404);
   const headers: Record<string, string> = {};
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
   const res = await fetch(`/api/security-checks/${checkId}/report`, { headers });
@@ -1156,7 +1284,7 @@ export function responseStoppedAt(incident: Pick<Incident, "acknowledged_at" | "
 }
 
 // Incidentes de prueba en memoria: uno de alerta de La Sazón que empezó hace 3 minutos
-const incidentMock = (() => {
+const incidentMock = /*#__PURE__*/ (() => {
   const incidents: IncidentDetail[] = [];
   let nextId = 1;
   return {
@@ -1255,7 +1383,7 @@ function addMockIncidentEvent(incident: IncidentDetail, type: IncidentEventType,
 }
 
 export async function listIncidents(filters: IncidentFilters = {}): Promise<Incident[]> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     ensureMockIncidents();
     return incidentMock.incidents
       .filter((i) => !filters.status || i.status === filters.status)
@@ -1271,12 +1399,12 @@ export async function listIncidents(filters: IncidentFilters = {}): Promise<Inci
 }
 
 export async function getIncident(id: number): Promise<IncidentDetail> {
-  if ((await detectMode()) === "mock") return withClocks(findMockIncident(id));
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return withClocks(findMockIncident(id));
   return request<IncidentDetail>(`/incidents/${id}`);
 }
 
 export async function createIncident(input: IncidentInput): Promise<Incident> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     ensureMockIncidents();
     requireText(input.title, "El título es obligatorio.");
     return withClocks(newMockIncident(input.service_id, input.priority, input.title.trim(), "manual", new Date().toISOString()));
@@ -1285,7 +1413,7 @@ export async function createIncident(input: IncidentInput): Promise<Incident> {
 }
 
 export async function acknowledgeIncident(id: number): Promise<IncidentDetail> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const incident = findMockIncident(id);
     if (incident.acknowledged_at) throw new ApiError("El incidente ya fue tomado.", 409);
     if (incident.status === "cerrado") throw new ApiError("El incidente ya está cerrado.", 409);
@@ -1299,7 +1427,7 @@ export async function acknowledgeIncident(id: number): Promise<IncidentDetail> {
 }
 
 export async function addIncidentNote(id: number, message: string): Promise<IncidentDetail> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const incident = findMockIncident(id);
     requireText(message, "La nota no puede estar vacía.");
     if (incident.status === "cerrado") throw new ApiError("El incidente ya está cerrado.", 409);
@@ -1310,7 +1438,7 @@ export async function addIncidentNote(id: number, message: string): Promise<Inci
 }
 
 export async function mitigateIncident(id: number): Promise<IncidentDetail> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const incident = findMockIncident(id);
     if (incident.source !== "manual" && !incident.rollback.confirmed_at) {
       throw new ApiError(
@@ -1328,7 +1456,7 @@ export async function mitigateIncident(id: number): Promise<IncidentDetail> {
 }
 
 export async function closeIncident(id: number, rootCause: string): Promise<IncidentDetail> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const incident = findMockIncident(id);
     requireText(rootCause, "Para cerrar el incidente hay que escribir la causa raíz.");
     if (incident.status !== "mitigado") throw new ApiError(`No se permite pasar de «${incident.status}» a «cerrado».`, 409);
@@ -1382,6 +1510,8 @@ export interface ClientIncident {
   title: string;
   status: IncidentStatus;
   started_at: string;
+  // Mensaje de la agencia sobre la falla: lo redactó la IA y lo aprobó una persona (spec 012); nulo si aún no hay uno aprobado
+  message?: string | null;
 }
 
 export interface TechnicianLoad {
@@ -1413,21 +1543,21 @@ export interface ClientSeries {
 // Mes de la pantalla, con el formato YYYY-MM que recibe la API.
 // Se puede fijar con `?month=2026-10` (útil para la demo cuando el mes ya cambió) y se recuerda
 // durante la pestaña; sin parámetro se usa el mes actual en America/Bogota.
-const MES_KEY = "hub.mes";
+const MONTH_STORAGE_KEY = "hub.mes";
 
-function mesValido(valor: string | null): string | null {
+function isValidMonth(valor: string | null): string | null {
   return valor && /^\d{4}-(0[1-9]|1[0-2])$/.test(valor) ? valor : null;
 }
 
-export function mesActual(): string {
+export function currentMonthKey(): string {
   if (typeof window !== "undefined") {
     try {
-      const deUrl = mesValido(new URLSearchParams(window.location.search).get("month"));
+      const deUrl = isValidMonth(new URLSearchParams(window.location.search).get("month"));
       if (deUrl) {
-        window.sessionStorage.setItem(MES_KEY, deUrl);
+        window.sessionStorage.setItem(MONTH_STORAGE_KEY, deUrl);
         return deUrl;
       }
-      const guardado = mesValido(window.sessionStorage.getItem(MES_KEY));
+      const guardado = isValidMonth(window.sessionStorage.getItem(MONTH_STORAGE_KEY));
       if (guardado) return guardado;
     } catch {
       // Sin sessionStorage (modo privado o navegador antiguo): se usa el mes actual.
@@ -1443,11 +1573,11 @@ export function mesActual(): string {
 }
 
 // Fija el mes elegido en la URL y en la pestaña, para que no se pierda al navegar.
-export function fijarMes(mes: string): void {
-  const valido = mesValido(mes);
+export function rememberMonth(mes: string): void {
+  const valido = isValidMonth(mes);
   if (!valido || typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(MES_KEY, valido);
+    window.sessionStorage.setItem(MONTH_STORAGE_KEY, valido);
   } catch {
     // Sin sessionStorage: al menos queda en la URL.
   }
@@ -1496,8 +1626,8 @@ function mockClientKpi(clientId: number): ClientKpi {
 }
 
 export async function getAgencyDashboard(month?: string): Promise<AgencyDashboard> {
-  const mes = month ?? mesActual();
-  if ((await detectMode()) === "mock") {
+  const mes = month ?? currentMonthKey();
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     return {
       month: mes,
       clients: mock.clients.map((client) => mockClientKpi(client.id)),
@@ -1511,8 +1641,8 @@ export async function getAgencyDashboard(month?: string): Promise<AgencyDashboar
 }
 
 export async function getClientDashboard(clientId: number, month?: string): Promise<ClientDashboardKpi> {
-  const mes = month ?? mesActual();
-  if ((await detectMode()) === "mock") {
+  const mes = month ?? currentMonthKey();
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const { hours: _hours, cost: _cost, ...client } = mockClientKpi(clientId);
     return {
       ...client,
@@ -1529,8 +1659,8 @@ export async function listClientIncidents(
   clientId: number,
   month?: string,
 ): Promise<ClientIncident[]> {
-  const mes = month ?? mesActual();
-  if ((await detectMode()) === "mock") {
+  const mes = month ?? currentMonthKey();
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     ensureMockIncidents();
     return incidentMock.incidents
       .filter((incident) => incident.client_id === clientId)
@@ -1561,8 +1691,8 @@ function mockSeries(clientId: number, month: string): ClientSeries {
 }
 
 export async function getClientSeries(clientId: number, month?: string): Promise<ClientSeries> {
-  const mes = month ?? mesActual();
-  if ((await detectMode()) === "mock") return mockSeries(clientId, mes);
+  const mes = month ?? currentMonthKey();
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return mockSeries(clientId, mes);
   return request<ClientSeries>(`/dashboard/client/${clientId}/series?month=${encodeURIComponent(mes)}`);
 }
 
@@ -1621,13 +1751,13 @@ function mockRollbackPlan(incident: IncidentDetail): RollbackPlan {
 }
 
 export async function getRollbackPlan(id: number): Promise<RollbackPlan> {
-  if ((await detectMode()) === "mock") return mockRollbackPlan(findMockIncident(id));
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return mockRollbackPlan(findMockIncident(id));
   return request<RollbackPlan>(`/incidents/${id}/rollback-plan`);
 }
 
 // El cuerpo va vacío: quién pide el rollback sale de la sesión, no de lo que mande el navegador
 export async function rollbackIncident(id: number): Promise<IncidentDetail> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const incident = findMockIncident(id);
     const plan = mockRollbackPlan(incident);
     if (!plan.can_rollback) throw new ApiError(plan.reason ?? "No se puede hacer el rollback.", 409);
@@ -1659,7 +1789,7 @@ function bogotaHourMinute(iso: string): string {
 }
 
 export async function getClientMessage(id: number): Promise<{ message: string }> {
-  if ((await detectMode()) === "mock") {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") {
     const incident = findMockIncident(id);
     if (!incident.mitigated_at) {
       throw new ApiError("El mensaje al cliente se genera cuando el incidente está mitigado.", 409);
@@ -1674,4 +1804,168 @@ export async function getClientMessage(id: number): Promise<{ message: string }>
     };
   }
   return request<{ message: string }>(`/incidents/${id}/client-message`);
+}
+
+// ---------- Borradores de IA del incidente (spec 012) ----------
+
+export type AiDraftKind = "resumen" | "mensaje_cliente" | "diagnostico";
+
+export interface AiDraft {
+  id: number;
+  incident_id: number;
+  kind: AiDraftKind;
+  status: "borrador_ia" | "aprobado" | "descartado";
+  // llm: lo redactó el modelo · plantilla: texto base (la IA no respondió o su texto no pasó las verificaciones)
+  source: "llm" | "plantilla";
+  model: string | null;
+  prompt_version: string | null;
+  generated_text: string;
+  final_text: string | null;
+  // Por qué se usó el texto base o qué se rechazó de lo que escribió la IA
+  notice: string | null;
+  latency_ms: number | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+
+// Los borradores necesitan la API (la IA vive en el laboratorio): en el modo de muestra se avisa en vez de inventar un texto
+async function requireApi(): Promise<void> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") throw new ApiError("Los borradores de IA necesitan la API conectada.", 503);
+}
+
+export async function listAiDrafts(incidentId: number): Promise<AiDraft[]> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return [];
+  return request<AiDraft[]>(`/incidents/${incidentId}/ai-drafts`);
+}
+
+export async function generateAiDrafts(incidentId: number): Promise<AiDraft[]> {
+  await requireApi();
+  return request<AiDraft[]>(`/incidents/${incidentId}/ai-drafts`, { method: "POST", body: JSON.stringify({}) });
+}
+
+// Hipótesis de diagnóstico y borrador de runbook (spec 019): sirve con el incidente abierto; `evidence` suma datos a la evidencia reunida
+export async function requestAiDiagnosis(incidentId: number, evidence: string[] = []): Promise<AiDraft> {
+  await requireApi();
+  return request<AiDraft>(`/incidents/${incidentId}/ai-diagnosis`, { method: "POST", body: JSON.stringify({ evidence }) });
+}
+
+export async function approveAiDraft(id: number, text?: string): Promise<AiDraft> {
+  await requireApi();
+  return request<AiDraft>(`/ai-drafts/${id}/approve`, { method: "POST", body: JSON.stringify({ text }) });
+}
+
+export async function discardAiDraft(id: number): Promise<AiDraft> {
+  await requireApi();
+  return request<AiDraft>(`/ai-drafts/${id}/discard`, { method: "POST" });
+}
+
+// ---------- Reportes mensuales (spec 013) ----------
+
+export type ReportKind = "operativo" | "ejecutivo";
+
+export interface ReportSummary {
+  id: number;
+  kind: ReportKind;
+  client_id: number | null;
+  client_name: string | null;
+  month: string;
+  month_label: string;
+  generated_by: string | null;
+  created_at: string;
+}
+
+export interface Report extends ReportSummary {
+  // Los datos del mes, congelados al generar el reporte
+  data: Record<string, unknown>;
+}
+
+export async function listReports(): Promise<ReportSummary[]> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return [];
+  return request<ReportSummary[]>("/reports");
+}
+
+export async function generateReport(input: { kind: ReportKind; client_id?: number | null; month?: string }): Promise<Report> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") throw new ApiError("Los reportes necesitan la API conectada.", 503);
+  return request<Report>("/reports", { method: "POST", body: JSON.stringify(input) });
+}
+
+// Descarga el PDF con la sesión del usuario (un enlace directo no llevaría el token) y lo entrega al navegador
+export async function downloadReportPdf(id: number): Promise<void> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") throw new ApiError("Los reportes necesitan la API conectada.", 503);
+  const res = await fetch(`/api/reports/${id}/pdf`, { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+  const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? `reporte-${id}.pdf`;
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------- Deriva del asistente (spec 020) ----------
+
+export interface AssistantDrift {
+  ventana_dias: number;
+  estado: "ok" | "atencion" | "sin_datos";
+  avisos: { codigo: string; mensaje: string }[];
+}
+
+// Sin la API (modo de muestra) no hay deriva que calcular: se devuelve «sin datos»
+export async function getAssistantDrift(days = 7): Promise<AssistantDrift> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return { ventana_dias: days, estado: "sin_datos", avisos: [] };
+  return request<AssistantDrift>(`/assistant/drift?days=${days}`);
+}
+
+// ---------- Voz del asistente (spec 021) ----------
+
+export interface VoiceStatus {
+  habilitada: boolean; // hay un servicio de voz configurado
+  disponible: boolean; // y responde ahora
+}
+
+export interface Transcription {
+  text: string;
+  duration_s: number;
+  elapsed_ms: number;
+  model: string;
+  // Tipos de secreto que se taparon en lo dictado
+  secrets_redacted: string[];
+}
+
+// Sin la API (modo de muestra) no hay voz: el micrófono no se ofrece
+// La pantalla del asistente y el micrófono lo pedían a la vez: la respuesta se comparte unos segundos (auditoría FE-08)
+let voiceStatusOf: { hasta: number; promesa: Promise<VoiceStatus> } | null = null;
+export async function getVoiceStatus(): Promise<VoiceStatus> {
+  if (MOCK_ALLOWED && (await detectMode()) === "mock") return { habilitada: false, disponible: false };
+  if (voiceStatusOf && voiceStatusOf.hasta > Date.now()) return voiceStatusOf.promesa;
+  const promesa = request<VoiceStatus>("/assistant/voice/status");
+  voiceStatusOf = { hasta: Date.now() + 10_000, promesa };
+  // Un fallo no se queda guardado: el siguiente intento vuelve a preguntar
+  promesa.catch(() => {
+    if (voiceStatusOf?.promesa === promesa) voiceStatusOf = null;
+  });
+  return promesa;
+}
+
+// El audio va en el cuerpo tal cual (webm, ogg o wav); la API no lo guarda
+export async function transcribeAudio(audio: Blob): Promise<Transcription> {
+  const headers: Record<string, string> = { "Content-Type": audio.type || "application/octet-stream" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch("/api/assistant/voice/transcribe", { method: "POST", headers, body: audio });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+  return res.json() as Promise<Transcription>;
+}
+
+// El texto se lee con la voz del laboratorio; devuelve el audio WAV
+export async function speakText(text: string): Promise<Blob> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch("/api/assistant/voice/speak", { method: "POST", headers, body: JSON.stringify({ text }) });
+  if (res.status === 401 && authToken) onUnauthorized?.();
+  if (!res.ok) throw new ApiError(await errorMessage(res), res.status);
+  return res.blob();
 }

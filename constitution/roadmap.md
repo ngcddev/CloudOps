@@ -22,7 +22,7 @@
 | 3 · DevSecOps | 16 – 24 oct | Un cambio inseguro no llega a producción y el Hub muestra por qué | 006, 007 | Un commit con contraseña lo bloquea Gitleaks y el Hub marca "rechazado por seguridad" |
 | 4 · IaC, observabilidad, SRE | 24 oct – 3 nov | El caso del restaurante de punta a punta, sin IA | 008, 009, 010, 011 | v2 rota → alerta → P1 → rollback → métrica verde → MTTR |
 | 5 · MLOps, LLMOps, IA local | 3 – 12 nov | El Hub redacta el resumen con IA local y un humano lo aprueba | 012, 013 | Del incidente sale el mensaje al cliente, revisado y aprobado |
-| 6 · IA multimodal | 13 – 20 nov | Infografía mensual de cada cliente | 014 | Se genera la infografía del restaurante en menos de 2 min |
+| 6 · IA multimodal | 13 – 20 nov | El asistente recibe voz y responde con voz | 021 | Se pregunta hablando, se corrige lo entendido y se escucha la respuesta (spec 014, la infografía, queda como mejora) |
 | 7 · Integrador | 24 – 30 nov | Demo final ensayada; ninguna funcionalidad nueva | 015 | Los 10 puntos en menos de 15 min |
 
 ## Orden de arranque y dependencias
@@ -37,10 +37,8 @@
 Todas ──> 015
 ```
 
-- **Terminadas:** 001, 002 (la 000 sigue con tareas abiertas del industrial).
-- **Ahora (módulo 2):** 003, 004, 005.
-- **Pueden adelantarse (solo producto):** 004 y la parte de backend/frontend de 007, 008 (incidentes manuales), 010 y 013.
-- **Esperan su módulo:** todo lo que instala herramientas de plataforma (003, 005, 006, 008-monitoreo, 009, 011, 012, 014).
+- El estado de cada spec (terminada, en curso, pospuesta) está en un solo lugar: el [mapa de specs](../specs/README.md).
+- Las specs 016 a 023 se agregaron después del plan inicial: alta de sitio y demo del colegio (016), cierres de los módulos 2 a 5 (017 a 020), voz del asistente (021, reemplaza a la infografía 014), sincronía GitOps (022) y entrega final (023).
 
 ## Hitos con fecha
 
@@ -53,7 +51,7 @@ Todas ──> 015
 | 31 oct | Caso del restaurante sin IA listo (1–2 nov solo se ensaya) |
 | **3 nov** | **Sustentación módulo 4** |
 | 12 nov | Cierre módulo 5: asistente IA y reportes |
-| 20 nov | Cierre módulo 6: infografía |
+| 20 nov | Cierre módulo 6: voz del asistente (la infografía quedó pospuesta) |
 | 21–23 nov | Colchón para correcciones |
 | 24–29 nov | Integración, ensayos, video de respaldo |
 | **30 nov** | **Sustentación final** |
@@ -69,9 +67,8 @@ Qué corre en cada equipo: [tech-stack.md](tech-stack.md#distribución-del-hardw
 | El módulo 1 termina el 1 oct y el equipo apenas arranca | Incremento 1 tarde | Terminarlo el fin de semana 3–4 oct, en paralelo con el módulo 2 |
 | Sustentación del 3 nov al cierre del módulo 4 | Llegar sin flujo completo | Caso del restaurante sin IA listo el 31 oct |
 | El Hub se construye desconectado de la infraestructura | Pantallas que no reflejan nada | Desde el módulo 2, cada pantalla nueva se conecta a Gitea, Argo CD o Prometheus antes de pulirse |
-| PC A justo de RAM | Pods reiniciándose en la demo | Límites de memoria, retención corta en Prometheus/Loki, runner de Gitea Actions fuera del PC A |
-| Backstage consume varios GB | Deja sin memoria al PC A | Catálogo mínimo; apagarlo si falta RAM (la consola del Hub cumple el rol) |
-| Solo 6 GB de VRAM | LLM y ComfyUI no caben a la vez | Por turnos (Ollama con `keep_alive` corto) y resúmenes aprobados en los datos semilla |
-| Los dos PC deben verse en la red | La IA no responde en la sustentación | IP fija para cada PC y prueba en la red del salón antes del 30 nov |
+| Un solo equipo corre clúster e IA | Pods reiniciándose en la demo | Límites de memoria y retención corta en Prometheus, Loki y Tempo |
+| Backstage consume varios GB | Deja sin memoria al equipo | Catálogo mínimo; apagarlo si falta RAM (la consola del Hub cumple el rol) |
+| La GPU de 8 GB la comparten el LLM y los embeddings | La IA tarda o no responde | Modelo de 7B cuantizado; si la IA no responde, el Hub degrada con un aviso (probado) |
 | La firma se verifica en el pipeline, no en el clúster | Un despliegue manual podría saltarla | Nadie despliega a mano (principio 3); verificación en clúster como mejora futura |
 | La frontera de "no avanzar más de lo visto" | El profesor objeta avances | Adelantar solo el carril de producto; confirmar la regla con el docente |

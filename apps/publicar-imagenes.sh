@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Construye y publica en el registro de Gitea las imágenes de los sitios de clientes (spec 003, T06):
 # restaurante, ferreteria, consultorio-web y consultorio-api, cada una en v1 (sana) y v2 (rota, 500).
-# También las del Hub (T17): hub-api y hub-web, solo en v1.6 (cada cambio del Hub lleva una etiqueta nueva: el nodo guarda en caché las ya bajadas). Se piden por nombre; no se publican por defecto.
+# El colegio de la demo (spec 016: colegio-web y colegio-api) se pide por nombre. También las del Hub (T17): hub-api (v1.18), hub-web (v1.12) y hub-voz (v1.2, servicio de voz de la spec 021) (cada cambio del Hub lleva una etiqueta nueva: el nodo guarda en caché las ya bajadas). Se piden por nombre; no se publican por defecto.
 # Uso:  REGISTRY_USER=forja-admin REGISTRY_PASSWORD='...' bash apps/publicar-imagenes.sh [app[:versión] ...]
 # Con `app:versión` (por ejemplo ferreteria:v1.1) se publica solo esa versión de la app (spec 005, T05).
 # Sin argumentos publica las cuatro de los sitios. La contraseña va en el entorno: nunca en el repo.
@@ -19,11 +19,11 @@ NETWORK="${NETWORK:-k3d-hub}"
 : "${REGISTRY_PASSWORD:?Falta REGISTRY_PASSWORD}"
 
 # app -> carpeta de contexto y Dockerfile
-declare -A CONTEXT=( [restaurante]=restaurante [ferreteria]=ferreteria [consultorio-web]=consultorio [consultorio-api]=consultorio [hub-api]=../backend [hub-web]=../frontend )
-declare -A DOCKERFILE=( [restaurante]=Dockerfile [ferreteria]=Dockerfile [consultorio-web]=Dockerfile.frontend [consultorio-api]=Dockerfile.backend [hub-api]=Dockerfile [hub-web]=Dockerfile )
+declare -A CONTEXT=( [restaurante]=restaurante [ferreteria]=ferreteria [consultorio-web]=consultorio [consultorio-api]=consultorio [colegio-web]=colegio [colegio-api]=colegio [mlflow]=../ai/servidor-mlflow [hub-api]=../backend [hub-web]=../frontend [hub-voz]=../voz )
+declare -A DOCKERFILE=( [restaurante]=Dockerfile [ferreteria]=Dockerfile [consultorio-web]=Dockerfile.frontend [consultorio-api]=Dockerfile.backend [colegio-web]=Dockerfile.frontend [colegio-api]=Dockerfile.backend [mlflow]=Dockerfile [hub-api]=Dockerfile [hub-web]=Dockerfile [hub-voz]=Dockerfile )
 # Versiones por app y opciones extra de build (el Hub necesita seed/ como contexto adicional)
-declare -A VERSIONS=( [hub-api]=v1.6 [hub-web]=v1.6 )
-declare -A EXTRA=( [hub-api]="--build-context seed=../seed" [hub-web]="--build-context seed=../seed" )
+declare -A VERSIONS=( [mlflow]=3.18.0 [hub-api]=v1.18 [hub-web]=v1.12 [hub-voz]=v1.2 )
+declare -A EXTRA=( [hub-api]="--build-context seed=../seed" [hub-web]="--build-context seed=../seed" [hub-voz]="--build-context vocab=../ai/classifier/data" )
 
 APPS=("$@")
 [ ${#APPS[@]} -eq 0 ] && APPS=(restaurante ferreteria consultorio-web consultorio-api)
@@ -42,7 +42,8 @@ for entrada in "${APPS[@]}"; do
     echo ">> ${app}:${version}"
     docker build -q ${EXTRA[$app]:-} --build-arg "APP_VERSION=${version}" \
       -f "${CONTEXT[$app]}/${DOCKERFILE[$app]}" -t "$local_tag" "${CONTEXT[$app]}" >/dev/null
-    docker save "$local_tag" -o "$TMP/${app}-${version}.tar"
+    # En Git Bash (Windows) docker.exe no entiende /tmp/...: se guarda por la ruta que Docker puede montar (en Linux es la misma)
+    docker save "$local_tag" -o "$MOUNT/${app}-${version}.tar"
     MSYS_NO_PATHCONV=1 docker run --rm --network "$NETWORK" --add-host "${REGISTRY}:${REGISTRY_IP}" \
       -v "${MOUNT}:/w" quay.io/skopeo/stable copy --dest-tls-verify=false \
       --dest-creds "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \

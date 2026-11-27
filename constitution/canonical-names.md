@@ -11,7 +11,10 @@ Todas las specs usan exactamente estos nombres. Si hace falta cambiarlos, se cam
 | Cliente 2 | Ferretería **El Tornillo** | Estándar | `cliente-ferreteria` | `ferreteria.hub.local` | Landing estática |
 | Cliente 3 | Consultorio **Dental Popayán** | Básico | `cliente-consultorio` | `consultorio.hub.local` | Landing + formulario |
 
-Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
+| Cliente de la demo en vivo (spec 016) | Colegio **San Marcos** | — | `cliente-colegio` | `colegio.hub.local` | Se da de alta durante la demo y se borra al reiniciarla |
+| Staging (spec 019) | Ferretería El Tornillo (staging) | — | `cliente-ferreteria-staging` | — | Prueba de publicación antes de producción |
+
+Namespaces de plataforma: `hub` (API, web, voz, Backstage y PostgreSQL), `argocd`, `monitoring`, `gitea`, `mlops` (MLflow).
 
 ## Planes (propuesta; la spec 000 los confirma)
 
@@ -37,6 +40,7 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 - **Servicio (sitio):** `operativo` · `degradado` · `caido`.
 - **Solicitud de cambio:** `pendiente` → `aprobada` → `en_validacion` → `desplegada` | `fallida`; o `pendiente` → `rechazada`. `fallida` es un cambio aprobado que no llegó a publicarse sano dentro del tiempo de validación (10 min por defecto).
 - **Texto de IA:** `borrador_ia` → `aprobado` | `descartado`.
+- **Decisión de la compuerta del asistente:** `en_tema` (despierta al LLM) · `fuera_de_tema` (responde la compuerta, LLM dormido).
 
 ## Apps demo
 
@@ -58,7 +62,7 @@ Namespaces de plataforma: `hub`, `argocd`, `monitoring`, `gitea`.
 | Qué | Dirección / nombre |
 |---|---|
 | Gitea | `gitea.hub.local` · organización `forja-digital` |
-| Registro de imágenes | `gitea.hub.local/forja-digital/<app>:<versión>` (`restaurante`, `ferreteria`, `consultorio-web`, `consultorio-api`) |
+| Registro de imágenes | `gitea.hub.local/forja-digital/<app>:<versión>` (sitios: `restaurante`, `ferreteria`, `consultorio-web`, `consultorio-api`, `colegio-web`, `colegio-api`; Hub: `hub-api`, `hub-web`, `hub-voz`; plataforma: `mlflow`) |
 | Repo GitOps | `forja-digital/hub-gitops` |
 | Argo CD | `argocd.hub.local` |
 | Backstage (catálogo, opcional) | `backstage.hub.local` |

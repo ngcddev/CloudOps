@@ -2,7 +2,7 @@
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Etiqueta de imagen válida de Docker (v1, v1.1, v2.0.3-rc1); misma regla que app.services.kustomization
 _VERSION = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}")
@@ -14,7 +14,7 @@ class ChangeRequestCreate(BaseModel):
 
     @field_validator("to_version")
     @classmethod
-    def _version_valida(cls, value: str) -> str:
+    def _valid_version(cls, value: str) -> str:
         value = value.strip()
         if not _VERSION.fullmatch(value):
             raise ValueError("La versión destino no es válida (por ejemplo: v1.1).")
@@ -22,11 +22,11 @@ class ChangeRequestCreate(BaseModel):
 
 
 class ChangeRequestReject(BaseModel):
-    reason: str
+    reason: str = Field(max_length=1000)
 
     @field_validator("reason")
     @classmethod
-    def _motivo_obligatorio(cls, value: str) -> str:
+    def _reason_required(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("Debe indicar el motivo del rechazo.")

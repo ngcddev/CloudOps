@@ -12,6 +12,9 @@ import {
   type IncidentDetail as IncidentDetailData,
   type IncidentEventType,
 } from "../../api";
+import { usePolling } from "../../hooks/usePolling";
+import AiDraftsPanel from "../../components/AiDraftsPanel";
+import DiagnosisPanel from "../../components/DiagnosisPanel";
 import RecoveryPanel from "../../components/RecoveryPanel";
 import SlaClock from "../../components/SlaClock";
 import { formatDateTime } from "../../format";
@@ -56,9 +59,8 @@ export default function IncidentDetail() {
   const rollbackRunning = rollbackStatus === "enviado" || rollbackStatus === "sincronizando";
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, rollbackRunning ? ROLLBACK_REFRESH_MS : REFRESH_MS);
-    return () => window.clearInterval(timer);
-  }, [load, rollbackRunning]);
+  }, [load]);
+  usePolling(load, rollbackRunning ? ROLLBACK_REFRESH_MS : REFRESH_MS);
 
   // Corre una acción y pinta el detalle que devuelve la API, sin recargar la página
   async function run(action: () => Promise<IncidentDetailData>, after?: () => void) {
@@ -94,7 +96,7 @@ export default function IncidentDetail() {
       </>
     );
   }
-  if (!incident) return <p>Cargando incidente…</p>;
+  if (!incident) return <p role="status">Cargando incidente…</p>;
 
   const open = incident.status === "abierto";
   const closed = incident.status === "cerrado";
@@ -245,6 +247,10 @@ export default function IncidentDetail() {
           )}
         </section>
       </div>
+
+      <DiagnosisPanel incidentId={incidentId} />
+
+      {(incident.status === "mitigado" || incident.status === "cerrado") && <AiDraftsPanel incidentId={incidentId} />}
 
       <section className="card" aria-label="Línea de tiempo">
         <h2>Línea de tiempo</h2>

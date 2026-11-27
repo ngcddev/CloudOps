@@ -1,0 +1,40 @@
+{"tipo": "respondible", "q": "¿Qué botones tiene un incidente?", "seccion": "Atender un incidente", "debe": [["tomar incidente"], ["mitigado"], ["cerrar incidente"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo apruebo un cambio?", "seccion": "Aprobar o rechazar un cambio", "debe": [["aprobar"], ["segur"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué significa la prioridad P1?", "seccion": "Prioridades P1 a P4 y tiempos de SLA", "debe": [["15"], ["4 horas", "4 h"]], "no_debe": ["8 horas"]}
+{"tipo": "respondible", "q": "¿Cuál es el SLA de respuesta de un ticket P2?", "seccion": "Prioridades P1 a P4 y tiempos de SLA", "debe": [["1 hora", "60 min"]], "no_debe": ["15 minutos"]}
+{"tipo": "respondible", "q": "¿En qué horario atiende el plan Básico?", "seccion": "Planes", "debe": [["lunes a viernes"], ["8:00"]], "no_debe": ["sábado"]}
+{"tipo": "respondible", "q": "¿Cuántas horas de soporte incluye el plan Estándar?", "seccion": "Planes", "debe": [["10"]], "no_debe": ["20 horas"]}
+{"tipo": "respondible", "q": "¿Cuánto cuesta el plan Premium?", "seccion": "Planes", "debe": [["700"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo crea una solicitud un cliente?", "seccion": "Crear una solicitud (cliente)", "debe": [["nueva solicitud"], ["enviar solicitud"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué estados puede tener una solicitud?", "seccion": "Estados de una solicitud", "debe": [["en progreso"], ["resuelto"], ["cerrado"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Una solicitud puede pasar de abierto a resuelto directamente?", "seccion": "Estados de una solicitud", "debe": [["en progreso"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo hago un rollback?", "seccion": "Rollback", "debe": [["confirm"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Por qué está desactivado el botón de rollback?", "seccion": "Rollback", "debe": [["ya hay un rollback", "ya no está abierto", "versión estable", "en curso"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo abro un incidente manual?", "seccion": "Abrir un incidente", "debe": [["nuevo incidente"], ["título"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué pasa cuando el sitio de un cliente cae?", "seccion": "Abrir un incidente", "debe": [["p1"], ["alertmanager", "alerta", "monitoreo"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo cierro un incidente?", "seccion": "Mitigar y cerrar un incidente", "debe": [["causa raíz"], ["mitigado"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué es el MTTR?", "seccion": "Mitigar y cerrar un incidente", "debe": [["recuper", "mitig"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué filtros tiene la bitácora?", "seccion": "Bitácora", "debe": [["usuario"], ["acción"], ["desde", "fechas"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Puedo editar la bitácora?", "seccion": "Bitácora", "debe": [["solo lectura", "no se pueden editar", "no se puede"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué ve el cliente en su portal?", "seccion": "Portal del cliente", "debe": [["inicio"], ["solicitudes"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo registro un cliente nuevo?", "seccion": "Registrar un cliente", "debe": [["registrar cliente"], ["plan"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo registro horas en una solicitud?", "seccion": "Asignar, cambiar estado y registrar horas", "debe": [["registrar horas", "guardar horas"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué son los controles de seguridad?", "seccion": "Puerta de seguridad", "debe": [["trivy", "gitleaks", "secretos", "vulnerabilidades"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cuáles son las opciones del menú de la consola?", "seccion": "Menú de la consola de agencia", "debe": [["bitácora"], ["incidentes"], ["reportes"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué significa Sin plazo en una solicitud?", "seccion": "Lista de solicitudes de la agencia", "debe": [["clasific"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿El Hub despliega a mano?", "seccion": "Lo que el Hub no hace", "debe": [["no"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cómo se calcula la prioridad de una solicitud?", "seccion": "Clasificar una solicitud y prioridad", "debe": [["impacto"], ["urgencia"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Para qué sirve el botón Ver en Servicios?", "seccion": "Pantalla de Servicios", "debe": [["historial"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿El asistente puede aprobar cambios por mí?", "seccion": "Este asistente", "debe": [["no"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Qué hace el botón Registrar cambio?", "seccion": "Pedir un cambio de versión", "debe": [["versión destino"], ["pendiente"]], "no_debe": []}
+{"tipo": "respondible", "q": "¿Cuánto tiempo tiene un cambio para quedar publicado antes de fallar?", "seccion": "Estados de un cambio", "debe": [["10 minutos"]], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cómo exporto un reporte en PDF?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "respondible", "q": "¿Dónde veo los reportes?", "seccion": "Reportes", "debe": [["todavía no", "no existe", "próximamente"]], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cómo cambio mi contraseña?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cómo elimino un cliente?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cuántos usuarios soporta el Hub al mismo tiempo?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cómo cambio el logo del Hub?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿En qué lenguaje de programación está hecho el backend?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cómo configuro una alerta nueva en Prometheus?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cómo conecto el Hub con WhatsApp para avisar a los clientes?", "seccion": null, "debe": [], "no_debe": []}
+{"tipo": "sin_info", "q": "¿Cómo restauro una copia de seguridad de la base de datos?", "seccion": null, "debe": [], "no_debe": []}

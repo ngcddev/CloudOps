@@ -30,7 +30,12 @@ resource "gitea_repository_file" "overlay" {
   }
 }
 
+# La Application del cliente la crea el ApplicationSet `clientes` (gitops/platform/argocd/applications/clientes-appset.yaml) en cuanto existe el overlay
+# en hub-gitops, en el AppProject `clientes` (destinos y recursos limitados). Dos creadores para el mismo nombre chocan, así que por defecto OpenTofu solo
+# crea el overlay (auditoría IA-01). `crear_application = true` queda para un clúster sin ApplicationSet, y entonces usa el mismo proyecto confinado.
 resource "kubernetes_manifest" "application" {
+  count = var.crear_application ? 1 : 0
+
   manifest = {
     apiVersion = "argoproj.io/v1alpha1"
     kind       = "Application"
@@ -44,7 +49,7 @@ resource "kubernetes_manifest" "application" {
       }
     }
     spec = {
-      project = "default"
+      project = "clientes" # nunca `default`: sin lista de destinos ni de recursos permitidos (auditoría IA-01)
       source = {
         repoURL        = "http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git"
         targetRevision = "main"

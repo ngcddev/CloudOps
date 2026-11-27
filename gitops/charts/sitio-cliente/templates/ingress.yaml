@@ -1,0 +1,28 @@
+# <cliente>.hub.local entra por Traefik; con backend, /api va al backend del formulario.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: {{ include "sitio.namespace" . }}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  name: http
+          {{- if .Values.backend.habilitado }}
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  name: http
+          {{- end }}

@@ -9,12 +9,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class TicketCreate(BaseModel):
     service_id: int
     title: str = Field(max_length=200)
-    description: str
+    description: str = Field(max_length=5000)   # tope de texto libre (auditoría BE-05)
     kind: Literal["solicitud", "cambio"] = "solicitud"
 
     @field_validator("title", "description")
     @classmethod
-    def _texto_obligatorio(cls, value: str) -> str:
+    def _text_required(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("El título y la descripción son obligatorios.")
@@ -25,11 +25,11 @@ class TicketClassify(BaseModel):
     impact: Literal["alto", "medio", "bajo"]
     urgency: Literal["alta", "media", "baja"]
     priority: Literal["P1", "P2", "P3", "P4"] | None = None
-    correction_reason: str | None = None
+    correction_reason: str | None = Field(default=None, max_length=1000)
 
     @field_validator("correction_reason")
     @classmethod
-    def _limpiar_motivo(cls, value: str | None) -> str | None:
+    def _clean_reason(cls, value: str | None) -> str | None:
         return value.strip() if value is not None else None
 
 
@@ -43,13 +43,18 @@ class TicketTransition(BaseModel):
 
 class WorkLogCreate(BaseModel):
     hours: Decimal
-    note: str | None = None
+    note: str | None = Field(default=None, max_length=2000)
 
     @field_validator("hours")
     @classmethod
-    def _horas_positivas(cls, value: Decimal) -> Decimal:
+    def _positive_hours(cls, value: Decimal) -> Decimal:
         if value <= 0:
             raise ValueError("Las horas deben ser mayores que cero.")
+        # Un registro de horas es de un día como máximo y con hasta dos decimales: una cifra enorme llegaba a PostgreSQL y daba un 500 (auditoría BE-15)
+        if value > 24:
+            raise ValueError("Un registro de horas no puede pasar de 24.")
+        if value.as_tuple().exponent < -2:
+            raise ValueError("Las horas llevan como máximo dos decimales.")
         return value
 
 

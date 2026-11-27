@@ -4,7 +4,9 @@ Esta carpeta contiene la configuración OpenTofu/Terraform para administrar el p
 
 ## Alcance
 
-OpenTofu/Terraform crea y administra los archivos de configuración del cliente en Gitea y la `Application` que los entrega a Argo CD. Argo CD sigue siendo responsable de reconciliar los recursos Kubernetes del cliente, como el namespace, las cuotas, los límites, la red y el sitio.
+OpenTofu/Terraform crea y administra los archivos de configuración del cliente en Gitea (su overlay en `hub-gitops`). La `Application` que los entrega a Argo CD la crea el ApplicationSet `clientes` en cuanto existe el overlay, en el AppProject `clientes`; por defecto el módulo no la crea (`crear_application = false`) para que no haya dos creadores del mismo recurso, y si se activa usa el mismo proyecto confinado, nunca `default` (auditoría IA-01). Los tres clientes anteriores (restaurante, ferretería y consultorio) conservan su Application manual y no están en el estado de OpenTofu. Argo CD sigue siendo responsable de reconciliar los recursos Kubernetes del cliente, como el namespace, las cuotas, los límites, la red y el sitio.
+
+> **Cuidado (hallazgo H-IAC-01, 17 nov 2026):** el inventario `infra/tofu/clients.auto.tfvars.json` declara también a los tres clientes reales, que no están en el estado. Un `apply` con ese inventario **reescribe sus overlays en hub-gitops** (pasó en la verificación: los tres sitios quedaron sin imagen hasta revertirlo). Para probar `infra/pruebas/crear-cliente.sh`, usar un inventario temporal o importar antes los clientes al estado.
 
 Esta configuración no crea ni administra las máquinas, el clúster, la red del laboratorio ni los componentes compartidos de la plataforma. Tampoco administra Deployments, Services o Ingress directamente.
 
@@ -25,3 +27,10 @@ Las cuotas se obtendrán de `seed/plans.json`; ese archivo es la fuente única d
 Ejemplo: `GITEA_TOKEN=<token> infra/tofu.sh tofu plan`.
 
 No guardes tokens, kubeconfigs ni archivos de estado en el repositorio. Antes de ejecutar cambios sobre un cliente existente, revisa el plan de ejecución y confirma que no propone recrearlo.
+
+## Kit offline
+
+`bash infra/kit-offline.sh exportar kit-offline` junta las imágenes OCI del proyecto, los paquetes de Python del backend, la caché de npm del frontend, la base de
+Trivy y el inventario de los modelos de Ollama (`--con-modelos` copia la carpeta de modelos), con sumas SHA-256. `verificar` detecta archivos corruptos y `restaurar`
+carga las imágenes y muestra cómo instalar sin red. Probado el 14 nov: exportar, verificar, detectar un archivo alterado, borrar una imagen y restaurarla,
+`pip install --no-index` y `npm ci --offline` con la red cortada. Pendiente de probar a escala: el kit completo con todas las imágenes (varios GB).

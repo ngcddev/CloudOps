@@ -1,0 +1,52 @@
+# Pruebas de las alertas de presupuesto de error (spec 016) con promtool test rules. Las corre observability/pruebas/validar.sh.
+rule_files:
+  - ../prometheus/reglas/presupuesto.yml
+
+evaluation_interval: 30s
+
+tests:
+  # Caída total de un sitio Premium (margen 0,1 %): el quemado de 1 h y de 5 min supera 14,4 y dispara la alerta rápida a los 2 min de cumplirse.
+  - interval: 30s
+    input_series:
+      - series: 'probe_success{job="sitios", client="restaurante", namespace="cliente-restaurante"}'
+        values: "1x20 0x40"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: PresupuestoQuemadoRapido
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: PresupuestoQuemadoRapido
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              client: restaurante
+            exp_annotations:
+              summary: "El sitio de restaurante gasta su margen de error 656 veces más rápido de lo permitido"
+              description: "A este ritmo el margen del mes se agota en unos 2 días. Revise la última publicación."
+              accion: "Revisar la última publicación del cliente y, si empeoró el sitio, hacer rollback."
+              runbook_url: "runbooks/rollback.md"
+
+  # Un sitio sano no avisa nunca; y la alerta no lleva `namespace`, así que el Hub no abre un incidente por ella.
+  - interval: 30s
+    input_series:
+      - series: 'probe_success{job="sitios", client="ferreteria", namespace="cliente-ferreteria"}'
+        values: "1x120"
+    alert_rule_test:
+      - eval_time: 55m
+        alertname: PresupuestoQuemadoRapido
+        exp_alerts: []
+      - eval_time: 55m
+        alertname: PresupuestoQuemadoLento
+        exp_alerts: []
+
+  # Un cliente nuevo (sin fila de SLO) usa el margen del Básico, 1 %: el quemado de una falla se mide contra él.
+  - interval: 30s
+    input_series:
+      - series: 'probe_success{job="sitios", client="colegio", namespace="cliente-colegio"}'
+        values: "1x20 0x40"
+    promql_expr_test:
+      - expr: sitio:margen_error:ratio{client="colegio"}
+        eval_time: 30m
+        exp_samples:
+          - labels: 'sitio:margen_error:ratio{client="colegio"}'
+            value: 0.010000000000000009

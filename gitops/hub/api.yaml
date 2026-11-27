@@ -18,15 +18,20 @@ spec:
       labels:
         app: api
     spec:
+      automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+      serviceAccountName: api
+      priorityClassName: hub-critico
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - { name: tmp, emptyDir: { sizeLimit: 64Mi } }
       containers:
         - name: api
-          image: gitea.hub.local/forja-digital/hub-api:v1.6
+          image: gitea.hub.local/forja-digital/hub-api:v1.18
           ports:
             - name: http
               containerPort: 8000
@@ -72,21 +77,47 @@ spec:
             # Dashboards y métricas (spec 010): la API consulta Prometheus (jobs `sitios` y Traefik) para los
             # KPIs de disponibilidad y latencia; con la URL vacía el panel responde «sin datos».
             - { name: PROMETHEUS_URL, value: "http://prometheus.monitoring.svc:9090" }
+            # Registros de los Pods de los clientes como evidencia del diagnóstico con IA (spec 019); con la URL vacía el diagnóstico usa solo métricas
+            - { name: LOKI_URL, value: "http://loki.monitoring.svc:3100" }
+            # Voz del asistente (spec 021): el servicio de voz (voz.yaml) transcribe y sintetiza; el token es el del Secret hub-voz. Sin el servicio la voz queda no disponible y el asistente sigue por texto.
+            - { name: VOZ_URL, value: "http://voz.hub.svc:8100" }
+            - name: VOZ_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hub-voz, key: VOZ_TOKEN, optional: true }
+            # Trazas (OpenTelemetry): la API manda spans a Tempo (observability/tempo). Sin Tempo la API sigue igual; solo se pierden las trazas.
+            # Los spans llevan tiempos y estados, nunca el texto de las preguntas ni de las respuestas.
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://tempo.monitoring.svc:4318"
+          # Asistente local (spec 012): OLLAMA_URL, OLLAMA_MODEL, OLLAMA_EMBED_MODEL, ASSISTANT_CONTEXT_MODE (completo | recuperacion | rag),
+          # RAG_TOP_K y RAG_MIN_SCORE salen del ConfigMap hub-ia, que crea gitops/hub/configurar-ia.sh con la IP del PC B (no va en el
+          # repo). Sin el ConfigMap la API arranca igual y el asistente avisa que la IA no está disponible.
+          envFrom:
+            - configMapRef: { name: hub-ia, optional: true }
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true   # solo escribe en /tmp (auditoría K8-08)
             capabilities:
               drop: [ALL]
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
           resources:
             requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 256Mi }
+          # Arranque (alembic y la semilla): hasta 150 s (30 × 5) antes de que empiecen la readiness y la liveness; sustituye a la espera fija de 40 s
+          startupProbe:
+            httpGet: { path: /livez, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+            timeoutSeconds: 3
           readinessProbe:
-            httpGet: { path: /health, port: http }   # ok solo si la base contesta
+            httpGet: { path: /health, port: http }   # ok solo si la base contesta: sin base la API sale del Service, pero no se reinicia
             initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 3   # el valor por defecto (1 s) marcaba la API como caída ante cualquier pausa corta (auditoría BE-01)
           livenessProbe:
-            httpGet: { path: /health, port: http }
-            initialDelaySeconds: 40
+            httpGet: { path: /livez, port: http }   # solo dice si el proceso responde; con /health un reinicio de PostgreSQL mataba la API en bucle (auditoría K8-03)
             periodSeconds: 15
+            timeoutSeconds: 3
 ---
 apiVersion: v1
 kind: Service

@@ -2,7 +2,7 @@
 
 > **Acciona:** Sistemas (Cloud / Platform, Backend)
 >
-> **Módulo:** 2 · **Requerimientos:** RF-06, RF-07, RF-22, RNF-04 · **Depende de:** 003, 004 · **Estado:** Tareas listas
+> **Módulo:** 2 · **Requerimientos:** RF-06, RF-07, RF-22, RNF-04 · **Depende de:** 003, 004 · **Estado:** Terminada
 
 ## Qué y por qué
 

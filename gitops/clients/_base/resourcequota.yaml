@@ -8,3 +8,5 @@ spec:
   hard:
     limits.cpu: 250m
     limits.memory: 256Mi
+    # Tope de Pods (auditoría K8-13): sin él un cliente podía crear muchos Pods diminutos dentro de su cuota de CPU y memoria
+    pods: "10"

@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: monitoring
 resources:
   - rbac.yaml
-  - deployment.yaml
+  - daemonset.yaml
 configMapGenerator:
   - name: alloy-config
     files:

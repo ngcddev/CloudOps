@@ -1,3 +1,4 @@
+// Detalle de una solicitud para la agencia (spec 004): asignación, cambio de estado, plazo y cambios de versión ligados (spec 005).
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -17,6 +18,7 @@ import {
   type TicketUrgency,
 } from "../../api";
 import { getTicketSlaState, SLA_ICONS, SLA_LABELS } from "./ticketSla";
+import { Select } from "../../components/Select";
 
 // Texto de cada estado de un cambio (glosario)
 const CHANGE_STATUS_TEXT: Record<ChangeRequest["status"], string> = {
@@ -154,7 +156,7 @@ export default function TicketDetail() {
         </p>
       )}
 
-      {!ticket && !error && <p>Cargando solicitud…</p>}
+      {!ticket && !error && <p role="status">Cargando solicitud…</p>}
 
       {ticket && (
         <>
@@ -202,28 +204,28 @@ export default function TicketDetail() {
               <form onSubmit={handleClassify} className="stacked-form">
                 <label>
                   <span>Impacto</span>
-                  <select value={classifyForm.impact} onChange={(event) => setClassifyForm((current) => ({ ...current, impact: event.target.value }))}>
+                  <Select value={classifyForm.impact} onChange={(event) => setClassifyForm((current) => ({ ...current, impact: event.target.value }))}>
                     <option value="alto">Alto</option>
                     <option value="medio">Medio</option>
                     <option value="bajo">Bajo</option>
-                  </select>
+                  </Select>
                 </label>
                 <label>
                   <span>Urgencia</span>
-                  <select value={classifyForm.urgency} onChange={(event) => setClassifyForm((current) => ({ ...current, urgency: event.target.value }))}>
+                  <Select value={classifyForm.urgency} onChange={(event) => setClassifyForm((current) => ({ ...current, urgency: event.target.value }))}>
                     <option value="alta">Alta</option>
                     <option value="media">Media</option>
                     <option value="baja">Baja</option>
-                  </select>
+                  </Select>
                 </label>
                 <label>
                   <span>Prioridad</span>
-                  <select value={classifyForm.priority} onChange={(event) => setClassifyForm((current) => ({ ...current, priority: event.target.value as TicketPriority }))}>
+                  <Select value={classifyForm.priority} onChange={(event) => setClassifyForm((current) => ({ ...current, priority: event.target.value as TicketPriority }))}>
                     <option value="P1">P1</option>
                     <option value="P2">P2</option>
                     <option value="P3">P3</option>
                     <option value="P4">P4</option>
-                  </select>
+                  </Select>
                 </label>
                 <label>
                   <span>Motivo de corrección</span>
@@ -253,12 +255,12 @@ export default function TicketDetail() {
               <form onSubmit={handleTransition} className="stacked-form">
                 <label>
                   <span>Nuevo estado</span>
-                  <select value={transitionForm.new_status} onChange={(event) => setTransitionForm({ new_status: event.target.value as Exclude<TicketStatus, "abierto"> })}>
+                  <Select value={transitionForm.new_status} onChange={(event) => setTransitionForm({ new_status: event.target.value as Exclude<TicketStatus, "abierto"> })}>
                     <option value="en_progreso">En progreso</option>
                     <option value="en_espera">En espera</option>
                     <option value="resuelto">Resuelto</option>
                     <option value="cerrado">Cerrado</option>
-                  </select>
+                  </Select>
                 </label>
                 <button type="submit" className="button">Actualizar estado</button>
               </form>

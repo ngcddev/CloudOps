@@ -1,0 +1,9 @@
+# MLflow dentro del clúster (spec 016): registro de experimentos y Model Registry de la IA local, en el namespace mlops. Es la misma imagen del
+# laboratorio (ai/servidor-mlflow) con SQLite y artefactos en un volumen. Se aplica a mano: `kubectl apply -k gitops/platform/mlops`
+# (antes: `bash apps/publicar-imagenes.sh mlflow` y el namespace de gitops/platform/namespaces.yaml). Interfaz: http://mlflow.hub.local.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: mlops
+resources:
+  - mlflow.yaml
+  - networkpolicy.yaml

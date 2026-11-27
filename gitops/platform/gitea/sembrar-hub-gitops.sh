@@ -5,6 +5,7 @@
 # Si el repo ya tiene commits no se toca: a partir de aquí el contenido cambia solo por PR del Hub o
 # a mano en Gitea. La contraseña va en el entorno: nunca en el repo ni en la URL del remoto.
 set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/../../lib-curl.sh"   # cred_curl: la contraseña no va como argumento de curl (auditoría IA-05)
 
 GITEA_URL="${GITEA_URL:-http://gitea.hub.local}"
 ORG="${ORG:-forja-digital}"
@@ -14,7 +15,7 @@ REPO="${REPO:-hub-gitops}"
 
 RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
 API="${GITEA_URL}/api/v1"
-curl_api() { curl -sS -u "${GITEA_USER}:${GITEA_PASSWORD}" -H 'Content-Type: application/json' "$@"; }
+curl_api() { cred_curl "${GITEA_USER}" "${GITEA_PASSWORD}" | curl -sS -K - -H 'Content-Type: application/json' "$@"; }
 
 codigo="$(curl_api -o /dev/null -w '%{http_code}' "${API}/repos/${ORG}/${REPO}")"
 if [ "$codigo" = "404" ]; then

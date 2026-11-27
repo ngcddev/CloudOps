@@ -20,6 +20,8 @@ jobs:
       SITE: ${{ gitea.event.repository.name }}
       VERSION: ${{ gitea.ref_name }}
       COMMIT_SHA: ${{ gitea.sha }}
+      REPO_URL: ${{ gitea.server_url }}/${{ gitea.repository }}
+      RUN_URL: ${{ gitea.server_url }}/${{ gitea.repository }}/actions/runs/${{ gitea.run_id }}
       ORG: ${{ gitea.repository_owner }}
       HUB_URL: ${{ secrets.HUB_URL }}
       HUB_PIPELINE_TOKEN: ${{ secrets.HUB_PIPELINE_TOKEN }}
@@ -40,7 +42,7 @@ jobs:
       - name: Secretos (Gitleaks)
         run: bash "$PUERTA" secretos
 
-      - name: Construir la imagen
+      - name: Pruebas del sitio y construcción de la imagen
         run: bash "$PUERTA" construir
 
       - name: Vulnerabilidades críticas (Trivy)
@@ -49,7 +51,7 @@ jobs:
       - name: Inventario de componentes (Syft)
         run: bash "$PUERTA" sbom
 
-      - name: Subir y firmar (Cosign)
+      - name: Subir, firmar y atestiguar la procedencia (Cosign)
         env:
           REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
@@ -57,7 +59,7 @@ jobs:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: bash "$PUERTA" firmar
 
-      - name: Verificar la firma
+      - name: Verificar la firma y la procedencia
         env:
           REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}

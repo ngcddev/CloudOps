@@ -22,6 +22,9 @@ spec:
       labels:
         app: backend
     spec:
+      automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+      volumes:
+        - { name: tmp, emptyDir: { sizeLimit: 32Mi } }
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -36,8 +39,11 @@ spec:
               containerPort: 8000
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true   # solo escribe en los emptyDir de abajo (spec 018, T06)
             capabilities:
               drop: [ALL]
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }                      # base SQLite de demostración (CONTACT_DB_PATH)
           resources:
             requests: { cpu: 50m, memory: 64Mi }
             limits: { cpu: 100m, memory: 128Mi }

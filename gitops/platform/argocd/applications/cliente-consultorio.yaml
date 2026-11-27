@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: cloudops-hub
     hub/client: consultorio
 spec:
-  project: default
+  project: clientes   # AppProject con destinos y recursos limitados (spec 017, T06)
   source:
     # Dentro del clúster se llega a Gitea por su Service; el repo es público (solo lectura)
     repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git

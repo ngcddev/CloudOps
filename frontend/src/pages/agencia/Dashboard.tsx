@@ -3,22 +3,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { fijarMes, getAgencyDashboard, mesActual, type AgencyDashboard } from "../../api";
+import { rememberMonth, getAgencyDashboard, currentMonthKey, type AgencyDashboard } from "../../api";
 import StatusBadge from "../../components/StatusBadge";
 import { formatPercent, formatPrice } from "../../format";
+import { MonthField } from "../../components/DateFields";
 
 // Valor con «sin datos» cuando la API no tiene serie (CA-8), nunca un 100 % inventado
-function textoDisponibilidad(value: number | null): string {
+function availabilityText(value: number | null): string {
   return value === null ? "Sin datos" : formatPercent(value);
 }
 
-function textoObjetivo(cumple: boolean | null): string {
+function targetText(cumple: boolean | null): string {
   if (cumple === null) return "Sin datos";
   return cumple ? "✓ Dentro del objetivo" : "! Por debajo del objetivo";
 }
 
 export default function AgencyDashboardPage() {
-  const [month, setMonth] = useState(mesActual());
+  const [month, setMonth] = useState(currentMonthKey());
   const [data, setData] = useState<AgencyDashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,13 +59,12 @@ export default function AgencyDashboardPage() {
         </div>
         <label className="month-picker">
           Mes
-          <input
-            type="month"
+          <MonthField
             value={month}
             onChange={(event) => {
-              const nuevo = event.target.value || mesActual();
+              const nuevo = event.target.value || currentMonthKey();
               setMonth(nuevo);
-              fijarMes(nuevo);
+              rememberMonth(nuevo);
             }}
           />
         </label>
@@ -75,7 +75,7 @@ export default function AgencyDashboardPage() {
           ✕ No se pudo cargar el tablero: {error}
         </p>
       )}
-      {!data && !error && <p>Cargando tablero…</p>}
+      {!data && !error && <p role="status">Cargando tablero…</p>}
 
       {data && (
         <>
@@ -113,7 +113,7 @@ export default function AgencyDashboardPage() {
               <p>Todavía no hay clientes registrados.</p>
             ) : (
               <div className="table-scroll">
-                <table className="table">
+                <table className="table" aria-label="Indicadores por cliente">
                   <thead>
                     <tr>
                       <th>Cliente</th>
@@ -125,7 +125,7 @@ export default function AgencyDashboardPage() {
                       <th>Solicitudes</th>
                       <th>Horas</th>
                       <th>Costo</th>
-                      <th />
+                      <th><span className="sr-only">Detalle</span></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -138,8 +138,8 @@ export default function AgencyDashboardPage() {
                         <td>
                           <StatusBadge status={client.service_status} />
                         </td>
-                        <td>{textoDisponibilidad(client.availability)}</td>
-                        <td>{textoObjetivo(client.cumple_objetivo)}</td>
+                        <td>{availabilityText(client.availability)}</td>
+                        <td>{targetText(client.cumple_objetivo)}</td>
                         <td>
                           {client.sla_compliance === null ? "Sin datos" : formatPercent(client.sla_compliance)}
                         </td>

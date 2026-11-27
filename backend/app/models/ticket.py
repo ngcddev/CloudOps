@@ -1,7 +1,7 @@
 # Modelo de solicitud o cambio de un servicio (tabla tickets, spec 004).
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,8 @@ from app.db import Base
 
 class Ticket(Base):
     __tablename__ = "tickets"
+    # Índices de las consultas de la bandeja y de los KPI del mes (auditoría BD-01)
+    __table_args__ = (Index("ix_tickets_service_id", "service_id"), Index("ix_tickets_created_at", "created_at"))
 
     id: Mapped[int] = mapped_column(primary_key=True)
     service_id: Mapped[int] = mapped_column(ForeignKey("services.id"), nullable=False)

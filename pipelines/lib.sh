@@ -9,6 +9,8 @@ SYFT_IMAGE="${SYFT_IMAGE:-anchore/syft:v1.55.0}"
 COSIGN_IMAGE="${COSIGN_IMAGE:-ghcr.io/sigstore/cosign/cosign:v3.1.4}"
 SKOPEO_IMAGE="${SKOPEO_IMAGE:-quay.io/skopeo/stable:v1.22.3}"
 JQ_IMAGE="${JQ_IMAGE:-ghcr.io/jqlang/jq:1.8.1}"
+# Las pruebas de los sitios con backend corren en esta imagen (la misma base que sus Dockerfile)
+PYTHON_IMAGE="${PYTHON_IMAGE:-python:3.12-slim}"
 
 # En Git Bash (Windows) Docker necesita la ruta de Windows y que no se reescriban las rutas de los contenedores
 export MSYS_NO_PATHCONV=1

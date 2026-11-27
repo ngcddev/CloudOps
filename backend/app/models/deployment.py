@@ -1,7 +1,7 @@
 # Modelo del historial de versiones publicadas de un servicio (tabla deployments, spec 005).
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,6 +9,8 @@ from app.db import Base
 
 class Deployment(Base):
     __tablename__ = "deployments"
+    # (servicio, id): sirve `ORDER BY id DESC` del último despliegue de cada servicio
+    __table_args__ = (Index("ix_deployments_service_id_id", "service_id", "id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     service_id: Mapped[int] = mapped_column(ForeignKey("services.id"), nullable=False)

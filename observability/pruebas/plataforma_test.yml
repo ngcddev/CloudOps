@@ -1,0 +1,329 @@
+# Pruebas unitarias de las reglas de la plataforma con promtool test rules (spec 022, T10; auditoría OB-01, OB-02 y OB-03).
+# Las corre observability/pruebas/validar.sh.
+rule_files:
+  - ../prometheus/reglas/plataforma.yml
+
+evaluation_interval: 15s
+
+tests:
+  # --- HubCaido ---
+  # Un tropiezo de 30 s (el API reinicia en una publicación sana): no hay alerta.
+  - interval: 15s
+    input_series:
+      - series: 'probe_success{job="hub", componente="api", instance="http://api.hub.svc.cluster.local:8000/health"}'
+        values: "1 1 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: HubCaido
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: HubCaido
+        exp_alerts: []
+
+  # El API deja de responder (503 sin base, o caído) y no vuelve: a 1 minuto de caído la alerta dispara.
+  - interval: 15s
+    input_series:
+      - series: 'probe_success{job="hub", componente="api", instance="http://api.hub.svc.cluster.local:8000/health"}'
+        values: "1 1 0 0 0 0 0 0 0 0 0 0 0 0"
+      - series: 'probe_success{job="hub", componente="web", instance="http://web.hub.svc.cluster.local/"}'
+        values: "1 1 1 1 1 1 1 1 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 75s    # a 45 s de caído todavía no
+        alertname: HubCaido
+        exp_alerts: []
+      - eval_time: 105s
+        alertname: HubCaido
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              destino: plataforma
+              job: hub
+              componente: api
+              instance: http://api.hub.svc.cluster.local:8000/health
+            exp_annotations:
+              summary: "El api del Hub no responde"
+              accion: "Ver si el Pod del Hub está listo y si la base contesta; si hubo una publicación reciente del Hub, volver a la versión anterior por Git."
+              runbook_url: "runbooks/caida-del-hub.md"
+
+  # SitioCaido no se entera del Hub: un sondeo del job `hub` en 0 no toca la regla de los sitios (otro archivo, otro job).
+
+  # --- MonitoreoCiego ---
+  # Blackbox caído: `up` de los sondeos en 0 durante 2 minutos.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="sitios", client="restaurante", namespace="cliente-restaurante"}'
+        values: "1 1 0 0 0 0 0 0 0 0 0 0"
+      - series: 'up{job="hub", componente="api"}'
+        values: "1 1 1 1 1 1 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 90s
+        alertname: MonitoreoCiego
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: MonitoreoCiego
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              destino: plataforma
+              job: sitios
+              client: restaurante
+              namespace: cliente-restaurante
+            exp_annotations:
+              summary: "El monitoreo no está sondeando: los sitios podrían estar caídos sin que nadie lo sepa"
+              accion: "Revisar Blackbox y Prometheus en el namespace monitoring; mientras tanto, comprobar a mano el /health de los sitios."
+              runbook_url: "runbooks/monitoreo-ciego.md"
+
+  # Los objetivos desaparecen (ningún sitio descubierto): `absent` dispara aunque no haya ninguna serie `up{job="sitios"}`.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="hub", componente="api"}'
+        values: "1 1 1 1 1 1 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: MonitoreoCiego
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              destino: plataforma
+              job: sitios
+            exp_annotations:
+              summary: "El monitoreo no está sondeando: los sitios podrían estar caídos sin que nadie lo sepa"
+              accion: "Revisar Blackbox y Prometheus en el namespace monitoring; mientras tanto, comprobar a mano el /health de los sitios."
+              runbook_url: "runbooks/monitoreo-ciego.md"
+
+  # Todo sondeando bien: no hay alerta.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="sitios", client="restaurante", namespace="cliente-restaurante"}'
+        values: "1 1 1 1 1 1 1 1 1 1 1 1"
+      - series: 'up{job="hub", componente="api"}'
+        values: "1 1 1 1 1 1 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: MonitoreoCiego
+        exp_alerts: []
+
+  # --- Watchdog ---
+  # Siempre activa, desde la primera evaluación.
+  - interval: 15s
+    input_series:
+      - series: 'up{job="hub"}'
+        values: "1 1 1"
+    alert_rule_test:
+      - eval_time: 0s
+        alertname: Watchdog
+        exp_alerts:
+          - exp_labels:
+              severity: none
+              destino: plataforma
+            exp_annotations:
+              summary: "Latido del monitoreo: la cadena Prometheus → Alertmanager funciona"
+              accion: "Nada que hacer: esta alerta debe estar siempre activa. Si NO aparece en Alertmanager, el monitoreo está ciego."
+              runbook_url: "runbooks/monitoreo-ciego.md"
+
+  # --- ContenedorSinMemoria ---
+  # Un OOM nuevo del API del Hub: el contador sube de 5 a 6.
+  - interval: 1m
+    input_series:
+      - series: 'container_oom_events_total{namespace="hub", pod="api-abc", container="api", id="/kubepods/x"}'
+        values: "5 5 5 5 5 6 6 6 6 6 6 6"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ContenedorSinMemoria
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: ContenedorSinMemoria
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              destino: plataforma
+              namespace: hub
+              pod: api-abc
+              container: api
+              id: /kubepods/x
+            exp_annotations:
+              summary: "El contenedor api de hub se quedó sin memoria (OOM)"
+              accion: "Comparar el uso de memoria con su límite en el tablero USE; si va al límite, subirlo por Git."
+              runbook_url: "runbooks/saturacion.md"
+
+  # OOM viejos (el contador no se mueve) y un contenedor de otro namespace que no vigilamos: no hay alerta.
+  - interval: 1m
+    input_series:
+      - series: 'container_oom_events_total{namespace="hub", pod="api-abc", container="api", id="/kubepods/x"}'
+        values: "5 5 5 5 5 5 5 5 5 5 5 5"
+      - series: 'container_oom_events_total{namespace="kube-system", pod="coredns", container="coredns", id="/kubepods/y"}'
+        values: "0 0 0 0 0 3 3 3 3 3 3 3"
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: ContenedorSinMemoria
+        exp_alerts: []
+
+  # --- ContenedorEnBucle ---
+  # Un contenedor que arranca una y otra vez: cAdvisor crea una serie con otro `id` en cada arranque (valor = hora de arranque en segundos).
+  - interval: 1m
+    input_series:
+      - series: 'container_start_time_seconds{namespace="hub", pod="postgres-0", container="postgres", id="/kubepods/a"}'
+        values: "60 60 _ _ _ _ _ _ _ _ _ _"
+      - series: 'container_start_time_seconds{namespace="hub", pod="postgres-0", container="postgres", id="/kubepods/b"}'
+        values: "_ _ 180 180 _ _ _ _ _ _ _ _"
+      - series: 'container_start_time_seconds{namespace="hub", pod="postgres-0", container="postgres", id="/kubepods/c"}'
+        values: "_ _ _ _ 300 300 300 300 300 300 300 300"
+    alert_rule_test:
+      - eval_time: 3m     # dos arranques en 15 minutos (a y b): todavía no
+        alertname: ContenedorEnBucle
+        exp_alerts: []
+      - eval_time: 4m     # el tercer arranque (c) a los 4 minutos
+        alertname: ContenedorEnBucle
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              destino: plataforma
+              namespace: hub
+              pod: postgres-0
+              container: postgres
+            exp_annotations:
+              summary: "El contenedor postgres del Pod postgres-0 (hub) lleva 3 arranques en 15 minutos"
+              accion: "Ver por qué muere: los registros del contenedor anterior y los eventos del Pod."
+              runbook_url: "runbooks/contenedor-en-bucle.md"
+      - eval_time: 7m     # sigue mientras los tres arranques estén dentro de la ventana
+        alertname: ContenedorEnBucle
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              destino: plataforma
+              namespace: hub
+              pod: postgres-0
+              container: postgres
+            exp_annotations:
+              summary: "El contenedor postgres del Pod postgres-0 (hub) lleva 3 arranques en 15 minutos"
+              accion: "Ver por qué muere: los registros del contenedor anterior y los eventos del Pod."
+              runbook_url: "runbooks/contenedor-en-bucle.md"
+
+  # Una publicación normal: el Pod nuevo tiene otro nombre y cuenta 1; el viejo arrancó hace horas y ya no cuenta. No hay alerta.
+  - interval: 1m
+    input_series:
+      - series: 'container_start_time_seconds{namespace="cliente-ferreteria", pod="web-old", container="web", id="/kubepods/old"}'
+        values: "100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100 100"
+      - series: 'container_start_time_seconds{namespace="cliente-ferreteria", pod="web-new", container="web", id="/kubepods/new"}'
+        values: "_ _ _ _ _ _ _ _ _ _ 1500 1500 1500 1500 1500 1500 1500 1500 1500 1500"
+    alert_rule_test:
+      - eval_time: 18m
+        alertname: ContenedorEnBucle
+        exp_alerts: []
+
+  # --- NodoSinMemoria (spec 022, T25) ---
+  # El nodo pasa de 90 % de memoria y sigue ahí 10 minutos: dispara. Un pico de 5 minutos no.
+  - interval: 1m
+    input_series:
+      - series: 'container_memory_working_set_bytes{id="/", instance="k3d-hub-server-0"}'
+        values: "50 50 95 95 95 95 95 95 95 95 95 95 95 95 95 50 50 50"
+      - series: 'machine_memory_bytes{instance="k3d-hub-server-0"}'
+        values: "100x17"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: NodoSinMemoria
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: NodoSinMemoria
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              destino: plataforma
+              instance: k3d-hub-server-0
+            exp_annotations:
+              summary: "El nodo k3d-hub-server-0 usa 95% de su memoria"
+              accion: "Ver en el tablero USE qué contenedor crece y, si no hay fuga, bajar réplicas o límites por Git."
+              runbook_url: "runbooks/saturacion.md"
+      - eval_time: 17m
+        alertname: NodoSinMemoria
+        exp_alerts: []
+
+  # --- DiscoDelNodoLleno ---
+  # Queda 10 % libre durante 10 minutos: dispara una sola alerta por nodo aunque haya varios volúmenes. Con 80 % libre no.
+  - interval: 1m
+    input_series:
+      - series: 'kubelet_volume_stats_available_bytes{instance="k3d-hub-server-0", namespace="gitea", persistentvolumeclaim="gitea-data"}'
+        values: "10x15"
+      - series: 'kubelet_volume_stats_capacity_bytes{instance="k3d-hub-server-0", namespace="gitea", persistentvolumeclaim="gitea-data"}'
+        values: "100x15"
+      - series: 'kubelet_volume_stats_available_bytes{instance="k3d-hub-server-0", namespace="hub", persistentvolumeclaim="data-postgres-0"}'
+        values: "10x15"
+      - series: 'kubelet_volume_stats_capacity_bytes{instance="k3d-hub-server-0", namespace="hub", persistentvolumeclaim="data-postgres-0"}'
+        values: "100x15"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: DiscoDelNodoLleno
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: DiscoDelNodoLleno
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              destino: plataforma
+              instance: k3d-hub-server-0
+            exp_annotations:
+              summary: "Al disco del nodo k3d-hub-server-0 le queda 10% libre"
+              accion: "Ver qué volumen crece (Loki, Prometheus, Gitea o los respaldos del Hub) y liberar espacio o reducir su retención por Git."
+              runbook_url: "runbooks/saturacion.md"
+
+  - interval: 1m
+    input_series:
+      - series: 'kubelet_volume_stats_available_bytes{instance="k3d-hub-server-0", namespace="gitea", persistentvolumeclaim="gitea-data"}'
+        values: "80x15"
+      - series: 'kubelet_volume_stats_capacity_bytes{instance="k3d-hub-server-0", namespace="gitea", persistentvolumeclaim="gitea-data"}'
+        values: "100x15"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: DiscoDelNodoLleno
+        exp_alerts: []
+
+  # --- RespaldoDelHubSinExito ---
+  # El último respaldo exitoso fue hace 2 días (172800 s): dispara tras los 15 minutos de espera. Uno de hace 20 horas no.
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_successful_time{namespace="hub", cronjob="hub-db-backup"}'
+        values: "-172800x40"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: RespaldoDelHubSinExito
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: RespaldoDelHubSinExito
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              destino: plataforma
+              namespace: hub
+              cronjob: hub-db-backup
+            exp_annotations:
+              summary: "El respaldo diario de la base del Hub no termina bien desde hace más de 36 horas"
+              accion: "Ver los registros del último Job de hub-db-backup y el espacio del volumen de respaldos; hacer un respaldo a mano mientras se corrige."
+              runbook_url: "runbooks/respaldo-y-restauracion.md"
+
+  - interval: 1m
+    input_series:
+      - series: 'kube_cronjob_status_last_successful_time{namespace="hub", cronjob="hub-db-backup"}'
+        values: "-72000x40"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: RespaldoDelHubSinExito
+        exp_alerts: []
+
+  # Sin ninguna serie del respaldo (kube-state-metrics caído o el CronJob nunca corrió) también avisa: no se confunde «sin datos» con «todo bien».
+  - interval: 1m
+    input_series:
+      - series: 'up{job="hub"}'
+        values: "1x40"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: RespaldoDelHubSinExito
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              destino: plataforma
+              namespace: hub
+              cronjob: hub-db-backup
+            exp_annotations:
+              summary: "El respaldo diario de la base del Hub no termina bien desde hace más de 36 horas"
+              accion: "Ver los registros del último Job de hub-db-backup y el espacio del volumen de respaldos; hacer un respaldo a mano mientras se corrige."
+              runbook_url: "runbooks/respaldo-y-restauracion.md"

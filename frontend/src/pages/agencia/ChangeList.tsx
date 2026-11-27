@@ -1,5 +1,5 @@
 // Bandeja de solicitudes de cambio: aprobar o rechazar y seguir la publicación (spec 005, T18).
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import SecurityChecks, { gateSummary } from "../../components/SecurityChecks";
@@ -29,6 +29,9 @@ const STATUS_TEXT: Record<ChangeStatus, { icon: string; text: string }> = {
 // Mientras un cambio espera a Argo CD la bandeja se vuelve a leer sola
 const REFRESH_MS = 5000;
 
+// Estados de los que un cambio ya no sale: su puerta de seguridad no cambia más
+const FINAL_STATUSES = new Set<ChangeStatus>(["desplegada", "rechazada", "fallida"]);
+
 export default function ChangeList() {
   const [changes, setChanges] = useState<ChangeRequest[] | null>(null);
   const [services, setServices] = useState<ServiceVersionStatus[]>([]);
@@ -39,21 +42,23 @@ export default function ChangeList() {
   const [rejecting, setRejecting] = useState<number | null>(null);
   const [reason, setReason] = useState("");
 
+  // La puerta de un cambio ya terminado no vuelve a cambiar: se guarda y no se vuelve a pedir en cada vuelta (auditoría FE-06)
+  const gateCache = useRef<Map<number, Gate>>(new Map());
+
   const load = useCallback(async () => {
     try {
       const [changeData, serviceData] = await Promise.all([listChangeRequests(), listServicesStatus()]);
+      // Solo se piden las puertas que pueden haber cambiado: las de cambios en curso o que aún no se han leído.
       // Si la puerta de un cambio no se puede leer, ese cambio queda sin controles pero la bandeja sigue
-      const gateResults = await Promise.allSettled(changeData.map((change) => getChangeGate(change.id)));
+      const pending = changeData.filter((change) => !gateCache.current.has(change.id) || !FINAL_STATUSES.has(change.status));
+      const gateResults = await Promise.allSettled(pending.map((change) => getChangeGate(change.id)));
+      pending.forEach((change, index) => {
+        const result = gateResults[index];
+        if (result.status === "fulfilled") gateCache.current.set(change.id, result.value);
+      });
       setChanges(changeData);
       setServices(serviceData);
-      setGates(
-        new Map(
-          changeData.flatMap((change, index) => {
-            const result = gateResults[index];
-            return result.status === "fulfilled" ? [[change.id, result.value] as [number, Gate]] : [];
-          }),
-        ),
-      );
+      setGates(new Map(changeData.flatMap((change) => (gateCache.current.has(change.id) ? [[change.id, gateCache.current.get(change.id)!] as [number, Gate]] : []))));
       setError(null);
     } catch (loadError) {
       setError((loadError as Error).message);
@@ -70,8 +75,16 @@ export default function ChangeList() {
     changes?.some((change) => change.status === "pendiente" && gates.get(change.id)?.status === "en_curso");
   useEffect(() => {
     if (!waiting) return;
-    const timer = window.setInterval(() => void load(), REFRESH_MS);
-    return () => window.clearInterval(timer);
+    // Con la pestaña oculta no se consulta; al volver se lee de inmediato
+    const tick = () => {
+      if (!document.hidden) void load();
+    };
+    const timer = window.setInterval(tick, REFRESH_MS);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [waiting, load]);
 
   const serviceById = useMemo(() => new Map(services.map((s) => [s.service_id, s])), [services]);
@@ -117,7 +130,7 @@ export default function ChangeList() {
         </p>
       )}
 
-      {!changes && !error && <p>Cargando cambios…</p>}
+      {!changes && !error && <p role="status">Cargando cambios…</p>}
 
       {changes && changes.length === 0 && (
         <p>
@@ -127,7 +140,7 @@ export default function ChangeList() {
       )}
 
       {changes && changes.length > 0 && (
-        <table className="table">
+        <table className="table" aria-label="Solicitudes de cambio">
           <thead>
             <tr>
               <th>Cliente</th>

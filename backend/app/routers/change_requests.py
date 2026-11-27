@@ -2,9 +2,11 @@
 # el actor tomado de la sesión (spec 007).
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.db import get_db
+from app.config import settings
+from app.db import get_db, release_connection
 from app.deps import require_agency
 from app.models.change_request import ChangeRequest
 from app.models.ticket import Ticket
@@ -24,6 +26,7 @@ from app.services.gitops_publish import (
     kustomization_path,
     publish_version,
 )
+from app.paginacion import Page, paginate
 
 router = APIRouter(prefix="/api/change-requests", tags=["change-requests"], dependencies=[Depends(require_agency)])
 
@@ -51,6 +54,7 @@ def list_change_requests(
     status_filter: str | None = Query(default=None, alias="status"),
     service_id: int | None = Query(default=None),
     ticket_id: int | None = Query(default=None),
+    page: Page = Depends(paginate),
     db: Session = Depends(get_db),
 ):
     """Bandeja de solicitudes de cambio, de la más reciente a la más antigua."""
@@ -66,7 +70,7 @@ def list_change_requests(
         query = query.where(ChangeRequest.service_id == service_id)
     if ticket_id is not None:
         query = query.where(ChangeRequest.ticket_id == ticket_id)
-    return db.scalars(query.order_by(ChangeRequest.id.desc())).all()
+    return db.scalars(query.order_by(ChangeRequest.id.desc()).limit(page.limit).offset(page.offset)).all()
 
 
 @router.post("", response_model=ChangeRequestOut, status_code=status.HTTP_201_CREATED)
@@ -103,7 +107,12 @@ def create_change_request(
         requested_by_id=actor.id,
     )
     db.add(change)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # Dos peticiones a la vez pasaron la comprobación de arriba: el índice único de la base deja pasar solo a una (auditoría BD-02)
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Ya hay un cambio en curso para este sitio.") from None
     db.add(
         step_event(
             change, None, actor.id,
@@ -117,7 +126,7 @@ def create_change_request(
     )
     # Una versión que ya falló la puerta de seguridad no espera aprobación: queda rechazada de una vez
     current = gate.gate_status(db, service.id, change.to_version)
-    if current.status == gate.FALLO:
+    if current.status == gate.FAILED:
         gate.reject_for_security(db, change, current.run)
     db.commit()
     db.refresh(change)
@@ -168,6 +177,18 @@ def approve_change_request(
             status_code=409,
             detail=f"No se permite pasar de «{change.status}» a «aprobada».",
         )
+    # Segregación de funciones (spec 018): quien pidió el cambio no lo aprueba; el intento queda en la bitácora
+    if settings.segregacion_funciones and change.requested_by_id is not None and change.requested_by_id == approver.id:
+        audit.record(
+            db, approver, "denegar", "change_request", change.id,
+            {"motivo": "segregación de funciones: quien pide el cambio no lo aprueba", "a": change.to_version},
+            audit.request_ip(request),
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=403,
+            detail="Quien pidió el cambio no puede aprobarlo: debe aprobarlo otra persona de la agencia.",
+        )
     # Puerta de seguridad (spec 006): solo se publica una versión cuyos controles pasaron
     current = gate.gate_status(db, change.service_id, change.to_version)
     if current.status != gate.OK:
@@ -178,19 +199,15 @@ def approve_change_request(
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
+    # Las llamadas a Gitea tardan hasta 10 s cada una: se copia lo que hace falta y se suelta la conexión a la base mientras se espera (auditoría BE-02)
+    namespace, to_version, approver_name, approver_email = change.service.namespace, change.to_version, approver.name, approver.email
+    release_connection(db)
     try:
-        sha = publish_version(
-            gitea,
-            change.service.namespace,
-            change.to_version,
-            change.id,
-            approver.name,
-            approver.email,
-        )
+        sha = publish_version(gitea, namespace, to_version, change_id, approver_name, approver_email)
     except NothingToPublish as error:
         # Puede ser una aprobación anterior que escribió en Gitea y no alcanzó a guardarse: se adopta
         try:
-            sha = find_existing_publication(gitea, change.service.namespace, change.to_version, change.id)
+            sha = find_existing_publication(gitea, namespace, to_version, change_id)
         except GiteaError as gitea_error:
             raise HTTPException(
                 status_code=502, detail=f"No se pudo publicar en Gitea: {gitea_error}"
@@ -200,6 +217,11 @@ def approve_change_request(
     except GiteaError as error:
         raise HTTPException(status_code=502, detail=f"No se pudo publicar en Gitea: {error}") from error
 
+    # Se vuelve a leer el cambio: mientras se esperaba a Gitea alguien pudo aprobarlo o rechazarlo. El commit ya está escrito; si otro lo resolvió primero no se pisa.
+    # Con la fila bloqueada: dos aprobaciones que llegan juntas aquí no se pisan, la segunda espera y ve el estado nuevo (auditoría BE-09)
+    change = db.scalar(select(ChangeRequest).where(ChangeRequest.id == change_id).with_for_update())
+    if change is None or change.status != "pendiente":
+        raise HTTPException(status_code=409, detail=f"El cambio pasó a «{change.status if change is not None else 'otro estado'}» mientras se publicaba; no se cambia nada más.")
     # aprobada y en_validacion ocurren en el mismo instante: el commit ya está escrito
     transition(change, "aprobada", actor_id=approver.id)
     db.add(step_event(change, "pendiente", approver.id, "Su solicitud fue aprobada."))

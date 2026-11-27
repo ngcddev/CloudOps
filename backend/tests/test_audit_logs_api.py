@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy import select
 
-from app.models import AuditLog, User
+from app.models import User
 from app.services.audit import record
 
 

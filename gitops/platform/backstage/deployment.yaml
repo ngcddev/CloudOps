@@ -8,6 +8,8 @@ metadata:
     app: backstage
 spec:
   replicas: 1
+  strategy:
+    type: Recreate   # SQLite en un volumen ReadWriteOnce: nunca dos Pods con el mismo archivo
   selector:
     matchLabels:
       app: backstage
@@ -16,10 +18,12 @@ spec:
       labels:
         app: backstage
     spec:
+      automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+        fsGroup: 1000   # el volumen de TechDocs se escribe como usuario 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -54,10 +58,18 @@ spec:
             periodSeconds: 20
           volumeMounts:
             - { name: config, mountPath: /config, readOnly: true }
+            - { name: techdocs, mountPath: /techdocs }
+            - { name: datos, mountPath: /data }
       volumes:
         - name: config
           configMap:
             name: backstage-config
+        - name: techdocs
+          persistentVolumeClaim:
+            claimName: backstage-techdocs
+        - name: datos
+          persistentVolumeClaim:
+            claimName: backstage-datos
 ---
 apiVersion: v1
 kind: Service
@@ -70,3 +82,27 @@ spec:
     - name: http
       port: 7007
       targetPort: http
+---
+# Documentación generada de TechDocs (spec 017, T02): la genera publicar-docs.sh con mkdocs y la copia aquí; el volumen sobrevive a los reinicios.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backstage-techdocs
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 256Mi
+---
+# Base SQLite del catálogo de Backstage (spec 017, T02): conserva lo que se registra desde la interfaz o con la plantilla.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backstage-datos
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 512Mi

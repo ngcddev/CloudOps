@@ -72,14 +72,14 @@ def test_los_secretos_salen_de_gitea_y_ninguno_esta_escrito(workflow):
 def test_la_clave_de_firma_solo_llega_a_los_pasos_que_la_usan(workflow):
     con_clave = [p["name"] for p in _pasos(workflow) if "COSIGN_PRIVATE_KEY" in p.get("env", {})]
 
-    assert con_clave == ["Subir y firmar (Cosign)"]
+    assert con_clave == ["Subir, firmar y atestiguar la procedencia (Cosign)"]
 
 
 def test_los_scripts_fijan_la_version_de_cada_herramienta():
     lib = _leer("lib.sh")
 
     for herramienta in ("GITLEAKS_IMAGE", "TRIVY_IMAGE", "SYFT_IMAGE", "COSIGN_IMAGE", "SKOPEO_IMAGE", "JQ_IMAGE"):
-        linea = next(l for l in lib.splitlines() if l.startswith(f"{herramienta}="))
+        linea = next(ln for ln in lib.splitlines() if ln.startswith(f"{herramienta}="))
         etiqueta = linea.split(":-")[1].rstrip('}"').rsplit(":", 1)[1]
         assert etiqueta not in ("latest", "stable"), f"{herramienta} usa una etiqueta móvil"
 

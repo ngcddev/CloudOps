@@ -15,7 +15,7 @@ cloudops/
 ├── gitops/                # manifiestos Kubernetes; semilla del repo hub-gitops en Gitea (spec 003)
 ├── pipelines/             # workflows de Gitea Actions (spec 006)
 ├── observability/         # Prometheus, Alertmanager, Grafana, Loki (spec 008)
-├── infra/                 # OpenTofu/Terraform y Ansible (spec 011)
+├── infra/                 # OpenTofu/Terraform (spec 011)
 ├── ai/                    # prompts, set de evaluación, integración con Ollama/MLflow (specs 012, 014)
 ├── seed/                  # datos semilla en JSON (specs 000, 001, 015)
 ├── demo/                  # scripts y guion de la demo (spec 015)
@@ -58,11 +58,11 @@ cloudops/
 
 - Imágenes multi-stage y usuario no root.
 - Todo servicio expone `GET /health`.
-- Límites de CPU y RAM en cada componente (el PC A queda justo de memoria).
+- Límites de CPU y RAM en cada componente (un solo equipo corre todo el clúster).
 
 ## Git
 
-- Rama principal: `main` (protegida; se entra por PR).
+- Rama de integración: `dev` (se entra por PR); `main` recibe lo que ya se probó en `dev`.
 - Ramas de trabajo: `feat/<spec>-t<NN>-<slug>` (ej. `feat/001-t06-crud-clientes`), `fix/<spec>-<slug>`, `docs/<slug>`.
 - Commits con **Conventional Commits**: `tipo(alcance): descripción en español`.
   - Tipos: `feat`, `fix`, `docs`, `test`, `build`, `ci`, `chore`, `refactor`, `style`, `perf`.
@@ -71,3 +71,4 @@ cloudops/
 - Commits y PR sin atribución al asistente: el autor es la persona que hace el commit (lo aplica `.claude/settings.json`).
 - Secretos: jamás en el código ni en el repo (RNF-06). Se usan `.env` (ignorado) y `.env.example` con valores de desarrollo.
 - Cada PR usa la [plantilla](../.github/pull_request_template.md) y marca su tarea en `tasks.md`.
+- **Ninguna cifra de estado se escribe a mano** en la documentación (número de pruebas, versiones desplegadas, porcentajes de acierto, MTTR): se cita el comando que la produce o la monografía final. Así la documentación no vuelve a quedar desactualizada.

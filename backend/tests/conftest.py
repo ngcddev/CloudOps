@@ -8,6 +8,8 @@ os.environ["JWT_SECRET"] = "clave-de-pruebas-que-no-es-secreta-0123456789"
 os.environ["SEED_USER_PASSWORD"] = "clave-de-desarrollo"
 os.environ["BCRYPT_ROUNDS"] = "4"
 os.environ["PIPELINE_TOKEN"] = "token-del-pipeline-de-pruebas"
+# Las pruebas de flujo piden y aprueban con la misma cuenta; la segregación de funciones (spec 018) se prueba en test_segregacion_funciones.py
+os.environ["SEGREGACION_FUNCIONES"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -20,6 +22,14 @@ from app.main import app  # noqa: E402
 from app.models import Plan, User  # noqa: E402
 from app.seed import seed_if_empty  # noqa: E402
 from app.services.auth import create_token  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def modo_del_asistente_fijo(monkeypatch):
+    """H-TEST-01: el modo de contexto del asistente sale del .env del equipo («rag» o «completo»). Cada prueba parte de «completo»; las que necesitan otro lo cambian ellas."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "assistant_context_mode", "completo")
 
 
 @pytest.fixture(autouse=True)
@@ -164,3 +174,18 @@ def pass_gate(db):
         return run
 
     return make
+
+
+@pytest.fixture
+def sesiones_de_peticion(session_factory):
+    """Guarda la sesión de cada petición HTTP para que una prueba vea, desde un transporte falso, si en ese momento había una transacción abierta (auditoría BE-02).
+    Pedirla DESPUÉS de `client`/`as_agency`: vuelve a poner la dependencia `get_db` de la app."""
+    sesiones = []
+
+    def override_get_db():
+        with session_factory() as session:
+            sesiones.append(session)
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    return sesiones

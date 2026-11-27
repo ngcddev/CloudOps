@@ -26,6 +26,11 @@ TABLES = {
     "security_checks",
     "incidents",
     "incident_events",
+    "ai_queries",
+    "kb_documents",
+    "kb_chunks",
+    "ai_drafts",
+    "reports",
 }
 
 
@@ -57,6 +62,70 @@ def test_upgrade_creates_all_tables_and_downgrade_removes_them():
         assert {"password_hash", "is_active", "last_login_at"} <= {
             c["name"] for c in inspect(connection).get_columns("users")
         }
+
+        # 0017 (spec 022, T34): quita el índice único de lower(email); lo anterior sigue ahí
+        indices_usuarios = {fila[0] for fila in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'users'"))}
+        assert "uq_users_email_lower" in indices_usuarios
+        command.downgrade(_config(connection), "-1")
+        indices_usuarios = {fila[0] for fila in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'users'"))}
+        assert "uq_users_email_lower" not in indices_usuarios and "ix_users_client_id" in indices_usuarios
+
+        # 0016 (spec 022, T19): quita has_report; lo anterior sigue ahí
+        assert "has_report" in {c["name"] for c in inspect(connection).get_columns("security_checks")}
+        command.downgrade(_config(connection), "-1")
+        assert "has_report" not in {c["name"] for c in inspect(connection).get_columns("security_checks")}
+
+        # 0015 (spec 022, T06): quita los índices de las claves foráneas y los dos únicos; las tablas siguen
+        nuevos = {
+            "tickets": {"ix_tickets_service_id", "ix_tickets_created_at"},
+            "ticket_events": {"ix_ticket_events_ticket_id"},
+            "work_logs": {"ix_work_logs_ticket_id", "ix_work_logs_user_id"},
+            "change_requests": {"ix_change_requests_service_status", "ix_change_requests_ticket_id", "uq_change_requests_open_per_service"},
+            "deployments": {"ix_deployments_service_id_id"},
+            "services": {"ix_services_project_id"},
+            "projects": {"ix_projects_client_id"},
+            "users": {"ix_users_client_id"},
+            "security_checks": {"uq_security_checks_run_step_image"},
+        }
+        indices = {
+            nombre: {fila[0] for fila in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = :t"), {"t": nombre})}
+            for nombre in nuevos
+        }
+        assert all(esperados <= indices[tabla] for tabla, esperados in nuevos.items())
+        command.downgrade(_config(connection), "-1")
+        indices = {
+            nombre: {fila[0] for fila in connection.execute(text("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = :t"), {"t": nombre})}
+            for nombre in nuevos
+        }
+        assert all(not (esperados & indices[tabla]) for tabla, esperados in nuevos.items())
+        assert TABLES <= set(inspect(connection).get_table_names())
+
+        # 0014 (spec 013): quita los reportes; lo anterior sigue ahí
+        assert "reports" in set(inspect(connection).get_table_names())
+        command.downgrade(_config(connection), "-1")
+        assert "reports" not in set(inspect(connection).get_table_names())
+
+        # 0013 (spec 012): quita los borradores del asistente; lo anterior sigue ahí
+        assert "ai_drafts" in set(inspect(connection).get_table_names())
+        command.downgrade(_config(connection), "-1")
+        assert "ai_drafts" not in set(inspect(connection).get_table_names())
+
+        # 0012 (spec 012): quita la base de conocimiento del RAG y las dos columnas de ai_queries; la tabla sigue
+        consultas = {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+        assert {"context_mode", "retrieval_score", "context_sections"} <= consultas
+        command.downgrade(_config(connection), "-1")
+        consultas = {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+        assert not {"context_mode", "retrieval_score"} & consultas and "context_sections" in consultas
+        assert not {"kb_documents", "kb_chunks"} & set(inspect(connection).get_table_names())
+
+        # 0011 (spec 012): quita las secciones de ayuda de cada consulta; la tabla sigue
+        assert "context_sections" in {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+        command.downgrade(_config(connection), "-1")
+        assert "context_sections" not in {c["name"] for c in inspect(connection).get_columns("ai_queries")}
+
+        # 0010 (spec 012): quita el registro de preguntas al asistente
+        command.downgrade(_config(connection), "-1")
+        assert "ai_queries" not in set(inspect(connection).get_table_names())
 
         # 0009 (spec 009): quita las columnas del rollback; los incidentes de la 008 siguen ahí
         incident_columns = {c["name"] for c in inspect(connection).get_columns("incidents")}
@@ -131,3 +200,37 @@ def test_0008_no_deja_dos_incidentes_abiertos_con_el_mismo_fingerprint():
         with pytest.raises(IntegrityError):
             with connection.begin_nested():
                 _insert_incident(connection, "abc123")
+
+
+def test_0015_se_detiene_con_un_mensaje_claro_si_ya_hay_cambios_abiertos_repetidos():
+    """Un índice único no se crea sobre datos que ya lo violan: la migración dice cuáles son (spec 022, T06)."""
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        command.upgrade(_config(connection), "0014")
+        connection.execute(text(
+            "INSERT INTO change_requests (ticket_id, service_id, from_version, to_version, status)"
+            " VALUES (1, 7, 'v1', 'v1.1', 'pendiente'), (2, 7, 'v1', 'v1.2', 'en_validacion'),"
+            " (3, 8, 'v1', 'v1.1', 'pendiente'), (4, 7, 'v1', 'v1.3', 'desplegada')"
+        ))
+        with pytest.raises(RuntimeError, match="duplicados") as error:
+            command.upgrade(_config(connection), "head")
+        assert "(7, 2)" in str(error.value) and "(8," not in str(error.value)
+
+
+def test_0015_acepta_controles_distintos_y_se_detiene_si_hay_repetidos():
+    insertar = "INSERT INTO security_checks (run_id, step, image, status, summary) VALUES (:r, :s, :i, 'ok', '')"
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        command.upgrade(_config(connection), "0014")
+        connection.execute(text(insertar), [{"r": 1, "s": "secretos", "i": None}, {"r": 1, "s": "sbom", "i": "a"}, {"r": 1, "s": "sbom", "i": "b"}])
+        command.upgrade(_config(connection), "head")   # sin repetidos: no se queja
+        # Con NULL pasa lo mismo que con una imagen: dos controles de secretos en la misma corrida chocan
+        with pytest.raises(IntegrityError):
+            with connection.begin_nested():
+                connection.execute(text(insertar), {"r": 1, "s": "secretos", "i": None})
+
+    with engine.begin() as connection:
+        command.downgrade(_config(connection), "0014")
+        connection.execute(text(insertar), {"r": 1, "s": "secretos", "i": None})   # ya repetido
+        with pytest.raises(RuntimeError, match=r"duplicados.*secretos"):
+            command.upgrade(_config(connection), "head")

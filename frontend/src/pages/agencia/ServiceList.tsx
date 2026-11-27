@@ -8,6 +8,7 @@ import {
   type Deployment,
   type ServiceVersionStatus,
 } from "../../api";
+import { usePolling } from "../../hooks/usePolling";
 import { gateSummary } from "../../components/SecurityChecks";
 import StatusBadge from "../../components/StatusBadge";
 import { formatDateTime } from "../../format";
@@ -56,9 +57,8 @@ export default function ServiceList() {
 
   useEffect(() => {
     void load();
-    const timer = window.setInterval(() => void load(), REFRESH_MS);
-    return () => window.clearInterval(timer);
   }, [load]);
+  usePolling(() => void load(), REFRESH_MS);
 
   async function toggleHistory(serviceId: number) {
     if (history?.serviceId === serviceId) {
@@ -83,10 +83,10 @@ export default function ServiceList() {
           ✕ No se pudo cargar el estado: {error}
         </p>
       )}
-      {!rows && !error && <p>Cargando servicios…</p>}
+      {!rows && !error && <p role="status">Cargando servicios…</p>}
 
       {rows && (
-        <table className="table">
+        <table className="table" aria-label="Servicios y versiones">
           <thead>
             <tr>
               <th>Cliente</th>

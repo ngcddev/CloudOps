@@ -8,14 +8,18 @@ import "@fontsource-variable/geist-mono";
 
 import App from "./App";
 import { AuthProvider } from "./auth";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./styles.css";
 
+// El ErrorBoundary de fuera atrapa lo que falle fuera de un layout (Login, la sesión); los layouts llevan el suyo por pantalla (SafeOutlet)
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>,
 );

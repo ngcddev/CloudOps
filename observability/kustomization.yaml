@@ -9,6 +9,9 @@ resources:
   - prometheus
   - alertmanager
   - loki
+  - tempo
   - alloy
   - grafana
   - traefik
+  - kube-state-metrics
+  - networkpolicy.yaml

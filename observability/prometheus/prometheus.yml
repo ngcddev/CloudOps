@@ -48,10 +48,81 @@ scrape_configs:
       - target_label: __address__
         replacement: blackbox.monitoring.svc:9115
 
+  # Uso de CPU y memoria de cada contenedor (spec 019, T03): cAdvisor, que va dentro del kubelet de cada nodo. Es lo que alimenta el
+  # tablero USE y `observability/capacidad.sh`. El certificado del kubelet es autofirmado; se lee por dentro del clúster con el token del Pod.
+  - job_name: cadvisor
+    scheme: https
+    metrics_path: /metrics/cadvisor
+    scrape_interval: 30s
+    tls_config:
+      insecure_skip_verify: true
+    authorization:
+      credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    kubernetes_sd_configs:
+      - role: node
+    # Solo lo que usa el tablero (los contenedores de los clientes, del Hub y del monitoreo) y, del nodo entero (`id="/"`), la memoria y el disco
+    # para las alertas NodoSinMemoria y DiscoDelNodoLleno (spec 022, T25; auditoría OB-03). Las series del nodo no llevan `namespace`.
+    metric_relabel_configs:
+      - source_labels: [__name__, id, namespace]
+        regex: "machine_memory_bytes;.*;|(container_memory_working_set_bytes|container_fs_usage_bytes|container_fs_limit_bytes);/;|[^;]*;[^;]*;(cliente-.*|hub|monitoring)"
+        action: keep
+
+  # Espacio de los volúmenes (PVC) que ve el kubelet (spec 022, T25; auditoría OB-03). Con `local-path` el «tamaño» del PVC es el disco entero del nodo y nadie
+  # impone el límite de 2Gi, así que lo que se vigila es lo que queda libre en el disco que comparten Gitea, Postgres, Loki, Prometheus y el respaldo.
+  - job_name: kubelet
+    scheme: https
+    metrics_path: /metrics
+    scrape_interval: 60s
+    tls_config:
+      insecure_skip_verify: true
+    authorization:
+      credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    kubernetes_sd_configs:
+      - role: node
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "kubelet_volume_stats_(available|capacity|used)_bytes"
+        action: keep
+
+  # Estado de los CronJob y los Job (kube-state-metrics, solo esos dos recursos): saber si el respaldo diario del Hub terminó bien
+  - job_name: kube-state-metrics
+    static_configs:
+      - targets: ["kube-state-metrics.monitoring.svc:8080"]
+
+  # El propio Hub (spec 022, T10; auditoría OB-01): Blackbox sondea el API (/health: sin base no está sano) y la web por dentro del clúster. Va en un
+  # job aparte de `sitios` para que SitioCaido, que abre incidentes en el Hub, no se dispare por el Hub ni dependa de él. El timeout del sondeo lo
+  # fija Blackbox (4 s); `scrape_timeout` solo debe ser mayor.
+  - job_name: hub
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets:
+          - http://api.hub.svc.cluster.local:8000/health
+          - http://web.hub.svc.cluster.local/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      # El componente sale del nombre del Service: api, web
+      - source_labels: [__param_target]
+        regex: "http://([^.]+)\\..*"
+        target_label: componente
+      - target_label: __address__
+        replacement: blackbox.monitoring.svc:9115
+
   # Peticiones y errores por sitio que ve Traefik (T27); los usa la spec 010
   - job_name: traefik
     static_configs:
       - targets: ["traefik-metrics.kube-system.svc:9100"]
+    # Solo las dos familias que usan los tableros y la spec 010 (peticiones y duración por servicio): el resto del endpoint no se guarda (auditoría OB-07)
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "traefik_service_requests_total|traefik_service_request_duration_seconds_(bucket|sum|count)"
+        action: keep
 
   # Métricas propias de las apps de los clientes (spec 008, T32): se descubren por la anotación hub/metrics de
   # su Service y se leen en /metrics del puerto del Service. Un cliente nuevo con métricas queda recogido sin

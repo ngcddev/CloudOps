@@ -1,0 +1,13 @@
+# Pod Security `restricted` en el namespace del cliente: rechaza Pods con root o privilegios (igual que gitops/clients/_base/namespace.yaml).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "sitio.namespace" . }}
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    app.kubernetes.io/part-of: cloudops-hub
+    hub/client: {{ .Values.cliente }}
+    hub/plan: {{ .Values.plan }}

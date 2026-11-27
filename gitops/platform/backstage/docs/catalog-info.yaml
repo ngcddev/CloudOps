@@ -1,0 +1,24 @@
+# Entrada de Backstage de la plataforma: lleva la documentación como código (TechDocs, spec 017 T02). Argo CD la ignora.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: plataforma-cloudops
+  title: Plataforma CloudOps Client Hub
+  description: El Hub, el clúster y las herramientas con que Forja Digital opera los sitios de sus clientes.
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    hub.local/console-url: http://hub.local/agencia
+  links:
+    - url: http://hub.local
+      title: Hub
+    - url: http://argocd.hub.local
+      title: Argo CD
+    - url: http://grafana.hub.local
+      title: Grafana
+  tags:
+    - plataforma
+    - documentacion
+spec:
+  type: service
+  lifecycle: production
+  owner: forja-digital

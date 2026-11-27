@@ -2,7 +2,7 @@
 
 > Diplomado CloudForge AI 5.0 — Unicomfacauca
 > Equipo de 5 (4 Ing. Sistemas + 1 Ing. Industrial)
-> Última actualización: 30 sep 2026
+> Última actualización: 17 nov 2026 (alineado con el código y con el paquete de evidencias de la entrega final)
 
 ## Contexto del proyecto
 
@@ -27,9 +27,9 @@ Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([pri
 | 1 · Cloud Native, Linux, Git, contenedores | 28 sep – 1 oct | Linux, Git, Docker, docker compose, Nginx, FastAPI + PostgreSQL, React + Vite |
 | 2 · Kubernetes, GitOps, Platform Engineering | 2 – 13 oct | k3s (Traefik), Gitea (Git + registro), Argo CD, Backstage |
 | 3 · DevSecOps y cadena de suministro | 16 – 24 oct | Gitea Actions, Gitleaks, Trivy, Syft, Cosign, Pod Security Admission |
-| 4 · IaC, observabilidad, SRE | 24 oct – 3 nov | OpenTofu/Terraform, Ansible (opcional), Prometheus, Grafana, Alertmanager, Loki, Blackbox Exporter, OpenTelemetry |
-| 5 · MLOps, LLMOps, IA local | 3 – 12 nov | Ollama (Qwen2.5 7B o Llama 3.1 8B Q4; respaldo Qwen2.5 3B), AnythingLLM + nomic-embed-text, MLflow |
-| 6 · IA local multimodal | 13 – 20 nov | Stability Matrix + ComfyUI (SD 1.5; SDXL Turbo solo si cabe en 6 GB) |
+| 4 · IaC, observabilidad, SRE | 24 oct – 3 nov | OpenTofu/Terraform, Prometheus, Grafana, Alertmanager, Loki, Blackbox Exporter, OpenTelemetry |
+| 5 · MLOps, LLMOps, IA local | 3 – 12 nov | Ollama (Qwen2.5 7B-Instruct; 3B para comparar), RAG propio con nomic-embed-text, MLflow |
+| 6 · IA local multimodal | 13 – 20 nov | Audio: faster-whisper (voz a texto) + Piper (texto a voz), en CPU (decisión 15 nov 2026: reemplaza a Stability Matrix + ComfyUI por consumo; ver `specs/021-voz-del-asistente/`) |
 | 7 · Integrador | 24 – 30 nov | Sin herramientas nuevas: integración, ensayo y documentación |
 
 ## Stack de producto (fijo desde el módulo 1)
@@ -46,31 +46,28 @@ Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([pri
 
 | Capa | Herramienta | Notas |
 |---|---|---|
-| Kubernetes | **k3s** | Nodo único en el PC A, liviano, trae Ingress (Traefik) |
-| IaC | **OpenTofu** (compatible con Terraform) | Código HCL genérico; el binario final (`tofu` o `terraform`) se decide al confirmar el profesor |
-| Bootstrap de SO (opcional) | Ansible | Solo para instalar k3s en el nodo, no reemplaza IaC |
+| Kubernetes | **k3s** (en k3d para el laboratorio) | Un nodo, liviano, trae Ingress (Traefik) |
+| IaC | **OpenTofu** (compatible con Terraform) | Código HCL genérico; `infra/tofu.sh` corre OpenTofu 1.13 (o Terraform 1.17) en contenedor |
 | Git + CI + registro | **Gitea + Gitea Actions** | Autoalojado, incluye registro de imágenes |
 | GitOps | **Argo CD** | Fuente de verdad = repo Git; detecta drift; hace rollback |
-| Platform Engineering | **Backstage** | Catálogo mínimo de servicios/clientes; se apaga si falta RAM en el PC A |
+| Platform Engineering | **Backstage** | Catálogo mínimo de servicios y clientes, con TechDocs y la plantilla «Sitio de cliente» (registra en el catálogo) |
 | Seguridad (DevSecOps) | **Trivy** (vulnerabilidades), **Gitleaks** (secretos), **Syft** (SBOM), **Cosign/Sigstore** (firma y verificación), **Pod Security Admission** (nativo de Kubernetes) | Cadena de suministro de software sin instalar motores de políticas extra (ver "Políticas de seguridad") |
 | Observabilidad | **Prometheus + Grafana + Alertmanager**, **Loki** (logs), **Blackbox Exporter** (uptime), **OpenTelemetry** (instrumentación) | Alertmanager dispara el webhook que abre el incidente |
 | Backend (Hub) | **FastAPI + PostgreSQL** | API, usuarios, roles, clientes, tickets, SLA |
 | Frontend (Hub) | **React + Vite** | Consola de agencia + portal de cliente, mismas rutas con roles distintos |
-| MLOps | **MLflow** (Docker Compose) | Registro de versiones de prompt/modelo y sus evaluaciones; corre en el PC B |
-| LLM local | **Ollama** | Modelo: Qwen2.5 7B-Instruct o Llama 3.1 8B (Q4, ~5 GB de VRAM); respaldo Qwen2.5 3B |
-| RAG | **AnythingLLM** | Embeddings vía `nomic-embed-text` servido también desde Ollama |
-| Multimodal obligatorio | **Stability Matrix + ComfyUI** | Modelo: SD 1.5; SDXL Turbo solo si corre bien en 6 GB — genera la ilustración de la infografía operativa |
+| MLOps | **MLflow** 3.18 | Registro de la compuerta (alias `production`) y de las evaluaciones; corre en el namespace `mlops` del clúster (`ai/servidor-mlflow/` para desarrollo) |
+| LLM local | **Ollama** | Qwen2.5 7B-Instruct (Q4, Apache 2.0) en el Hub; Qwen2.5 3B solo para comparar (licencia de investigación) |
+| Compuerta del asistente | **Clasificador Naive Bayes** (Python puro) | Corre en el Hub, entrenado y registrado en MLflow; el LLM solo se despierta si la pregunta trata del Hub (spec 012) |
+| RAG | **RAG propio en el Hub** (decisión 14 nov 2026) | Embeddings `nomic-embed-text` servidos por Ollama; índice en PostgreSQL (`kb_documents`, `kb_chunks`) con similitud coseno en Python. AnythingLLM queda como alternativa opcional, no se despliega |
+| Multimodal obligatorio | **Voz del asistente: faster-whisper `small` + Piper** (decisión 15 nov 2026) | Voz a texto y texto a voz en CPU, sin VRAM ni PyTorch: no compite con el 7B de Ollama. Reemplaza a Stability Matrix + ComfyUI (SD 1.5), que pedían ~5 GB y turnos de GPU; la infografía de la spec 014 queda como mejora |
 
 ## Distribución del hardware
 
-| Equipo | Qué corre | Por qué |
-|---|---|---|
-| PC A (16 GB) · plataforma | k3s con el Hub, PostgreSQL, Gitea, Argo CD, Prometheus, Grafana, Loki, Alertmanager y los sitios de clientes | Todo lo que debe estar arriba siempre vive en un solo nodo; la GPU no se usa |
-| PC B (16 GB, GPU ≥ 6 GB) · IA | Ollama, AnythingLLM, MLflow y ComfyUI | 6 GB de VRAM no alcanzan para el LLM y la generación de imágenes a la vez: se usan por turnos (Ollama con `keep_alive` corto) |
-| Equipos menos potentes | Desarrollo local con `docker compose` y runner de Gitea Actions (si tiene RAM suficiente) | Mantienen las compilaciones fuera del PC A |
+| Equipo | Qué corre |
+|---|---|
+| Laptop del equipo (RTX 4060 de 8 GB) | Docker Desktop con el clúster k3d (Hub, Gitea, Argo CD, observabilidad, MLflow, Backstage y los sitios de los clientes) y Ollama con los modelos en la GPU |
 
-El Hub (en el PC A) llama a Ollama y AnythingLLM (en el PC B) por la red local. Ambos PC necesitan IP
-fija en la red donde se haga la demo.
+El PC B previsto al inicio se descartó el 15 nov 2026. El Hub llama a Ollama en el equipo anfitrión; si no responde, el asistente avisa y el resto del Hub sigue. Un despliegue en la nube queda como opción pendiente.
 
 ## Políticas de seguridad (sin herramientas extra)
 
@@ -130,10 +127,12 @@ usuario no root para cumplir Pod Security Admission `restricted` (por ejemplo, `
 ## Estructura de Kubernetes
 
 ```
-Clúster k3s (PC A)
-├── namespace: hub                  → el Hub (FastAPI, React, PostgreSQL)
+Clúster k3s (k3d, un nodo)
+├── namespace: hub                  → el Hub (FastAPI, React, PostgreSQL), voz y Backstage
+├── namespace: mlops                → MLflow
 ├── namespace: argocd               → Argo CD
-├── namespace: monitoring           → Prometheus, Grafana, Alertmanager, Loki
+├── namespace: gitea                → Gitea y registro de imágenes
+├── namespace: monitoring           → Prometheus, Grafana, Alertmanager, Loki, Tempo, Alloy, Blackbox
 ├── namespace: cliente-restaurante  → sitio del restaurante
 ├── namespace: cliente-ferreteria   → sitio de la ferretería
 └── namespace: cliente-consultorio  → sitio del consultorio
@@ -151,8 +150,9 @@ despliegue) y Prometheus (métricas). Alertmanager avisa al Hub por webhook cuan
 ## Flujo de despliegue
 
 1. Push a Gitea → dispara Gitea Actions.
-2. Pipeline: build de imagen → Trivy (vulnerabilidades) → Gitleaks (secretos) → Syft (SBOM) →
-   Cosign (firma) → push al registro → `cosign verify` → actualiza el tag en el repo GitOps.
+2. Puerta de seguridad (`pipelines/puerta.yaml`): Gitleaks (secretos) → pruebas y build de la imagen → Trivy
+   (vulnerabilidades) → Syft (SBOM) → subir, firmar y atestiguar la procedencia (Cosign) → `cosign verify`.
+   Al aprobar el cambio (otra persona, no quien lo pidió), el Hub actualiza el tag en el repo GitOps.
 3. Argo CD detecta el cambio y sincroniza el `Deployment` en el namespace del cliente;
    Pod Security Admission rechaza cualquier Pod que no cumpla el perfil `restricted`.
 4. Readiness probe actúa como smoke test antes de recibir tráfico real.
@@ -162,7 +162,7 @@ despliegue) y Prometheus (métricas). Alertmanager avisa al Hub por webhook cuan
 7. Revisión de logs (Loki) y cambios recientes → rollback vía `git revert` en el repo GitOps.
 8. Argo CD reconcilia a la versión estable → métricas confirman recuperación → Hub cierra el
    incidente y calcula MTTR.
-9. Ollama (vía AnythingLLM/RAG, en el PC B) redacta el resumen del incidente y el mensaje al
+9. Ollama (local, con el RAG propio del Hub) redacta el resumen del incidente y el mensaje al
    cliente — siempre con aprobación humana antes de enviarse.
 
 ## Qué audita el sistema por cliente
@@ -176,23 +176,17 @@ despliegue) y Prometheus (métricas). Alertmanager avisa al Hub por webhook cuan
 | Seguridad de la imagen desplegada | Reporte de Trivy y resultado de `cosign verify`, guardados como evidencia |
 | Versión activa y quién la desplegó | Historial de Argo CD + commits de Git |
 
-## Pendientes / decisiones abiertas
+## Decisiones que estaban abiertas (cerradas)
 
-- [ ] Confirmar con el profesor si el IaC debe entregarse específicamente en Terraform u OpenTofu
-      (el código HCL es compatible con ambos, solo cambia el binario usado).
-- [ ] Probar en el PC B qué rinde mejor: Qwen2.5 7B o Llama 3.1 8B, y SD 1.5 o SDXL Turbo
-      (antes del módulo 5).
-- [ ] Tiempos SLA por plan y matriz P1–P4 definitiva.
-- [ ] Qué se presenta exactamente en la sustentación del 3 nov.
+- IaC: **OpenTofu**; el código HCL es compatible con Terraform (`infra/tofu.sh` acepta los dos binarios).
+- LLM: **Qwen2.5 7B-Instruct**; el 3B queda solo para comparar. Llama 3.1 no se usó.
+- Multimodal: **voz** (faster-whisper y Piper) en lugar de imagen con SD/ComfyUI, por el cómputo disponible.
+- SLA por plan y matriz P1–P4: definidos en `seed/sla_policies.json` y `seed/priority_matrix.json` (spec 000).
 
 ## Riesgos conocidos
 
-- El PC A queda justo de RAM con todo el clúster: límites de memoria en cada componente, retención
-  corta en Prometheus y Loki, y el runner de Gitea Actions fuera de ese equipo.
-- 6 GB de VRAM: el LLM y ComfyUI se usan por turnos; los datos semilla incluyen resúmenes ya aprobados
-  por si la IA falla en la demo.
-- La demo depende de que los dos PC se vean en la red: IP fija y prueba en el salón antes del 30 nov.
-- Construir el Hub antes de tener un despliegue GitOps de punta a punta funcionando suele dejarlo
-  desconectado de la infraestructura real — desplegar primero, luego construir el Hub encima.
-- No sobre-diseñar autenticación: dos roles (agencia y cliente) con usuarios sembrados en la base de
-  datos bastan para la demo.
+- Un solo equipo corre el clúster y la IA: límites de memoria en cada componente y retención corta en Prometheus (30 días o 1 GB), Loki (72 h) y Tempo (24 h).
+- La GPU de 8 GB la comparten el LLM y los embeddings: modelo de 7B cuantizado; si la IA no responde, el Hub degrada con un aviso.
+- Un `apply` de OpenTofu con el inventario completo reescribe a los clientes que no están en el estado (hallazgo H-IAC-01 del paquete de evidencias): probar con un inventario temporal.
+- Argo CD con selfHeal revierte cualquier cambio manual en el clúster en segundos: las pruebas deben provocar fallas por Git (versión rota), no con `kubectl scale`.
+- No sobre-diseñar autenticación: dos roles (agencia y cliente) con usuarios sembrados bastan para la demo.

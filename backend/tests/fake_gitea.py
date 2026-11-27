@@ -23,6 +23,8 @@ class FakeGitea:
         self.requests: list[tuple[str, str]] = []
         # SHA que devuelve la rama; si es None, el del último commit (o ceros si no hay ninguno)
         self.head: str | None = None
+        # Imágenes «nombre:tag» del registro; None = el registro dice que todas existen
+        self.images: set[str] | None = None
         fake = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -56,14 +58,28 @@ class FakeGitea:
                     return
                 base = f"/api/v1/repos/{fake.repo}/"
                 url = urlparse(self.path)
+                paquete = re.fullmatch(r"/api/v1/packages/[^/]+/container/([^/]+)/([^/]+)", url.path)
+                if paquete:
+                    existe = fake.images is None or f"{paquete.group(1)}:{paquete.group(2)}" in fake.images
+                    return self._send(200 if existe else 404, {})
                 if url.path.startswith(base + "branches/"):
                     head = fake.head or (fake.commits[-1]["sha"] if fake.commits else "0" * 40)
                     return self._send(200, {"commit": {"id": head}})
                 if url.path == base + "commits":
-                    path = parse_qs(url.query).get("path", [None])[0]
-                    found = [c for c in reversed(fake.commits) if path is None or c["path"] == path]
+                    consulta = parse_qs(url.query)
+                    path = consulta.get("path", [None])[0]
+                    historia = fake.commits
+                    desde = consulta.get("sha", [None])[0]
+                    if desde and re.fullmatch(r"[0-9a-f]{40}", desde):
+                        # Como Gitea: la historia llega hasta el commit pedido; si no existe, 404
+                        posicion = next((i for i, c in enumerate(fake.commits) if c["sha"] == desde), None)
+                        if posicion is None:
+                            return self._send(404, {"message": "commit not found"})
+                        historia = fake.commits[: posicion + 1]
+                    limite = int(consulta.get("limit", [1])[0])
+                    found = [c for c in reversed(historia) if path is None or c["path"] == path]
                     return self._send(
-                        200, [{"sha": c["sha"], "commit": {"message": c["message"] + "\n"}} for c in found[:1]]
+                        200, [{"sha": c["sha"], "commit": {"message": c["message"] + "\n"}} for c in found[:limite]]
                     )
                 path = self._contents_path()
                 if path is None:
@@ -76,6 +92,25 @@ class FakeGitea:
                     "sha": _blob_sha(text),
                     "content": base64.b64encode(text.encode()).decode(),
                 })
+
+            def do_POST(self):
+                if not self._authorized():
+                    return
+                path = self._contents_path()
+                if path is None:
+                    return
+                body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                if path in fake.files:
+                    return self._send(422, {"message": "repository file already exists"})
+                fake.files[path] = base64.b64decode(body["content"]).decode()
+                sha = hashlib.sha1(f"{len(fake.commits)}{body['message']}".encode()).hexdigest()
+                fake.commits.append({
+                    "sha": sha,
+                    "message": body["message"],
+                    "author": body["author"],
+                    "path": path,
+                })
+                self._send(201, {"commit": {"sha": sha, "message": body["message"]}, "content": {"path": path}})
 
             def do_PUT(self):
                 if not self._authorized():

@@ -1,0 +1,43 @@
+{
+  "commit_git": "desconocido",
+  "resultados": [
+    {
+      "modelo": "qwen2.5:7b-instruct",
+      "tipo": "chat",
+      "repeticiones": 3,
+      "arranque_en_frio_s": 12.58,
+      "carga_s": 8.53,
+      "latencia_media_s": 3.61,
+      "tokens_por_s": 33.7,
+      "memoria_total_mib": 4535,
+      "vram_mib": 4535,
+      "digest": "845dbda0ea48",
+      "fecha_utc": "2026-11-15T06:24:17.903649+00:00"
+    },
+    {
+      "modelo": "qwen2.5:3b-instruct",
+      "tipo": "chat",
+      "repeticiones": 3,
+      "arranque_en_frio_s": 8.03,
+      "carga_s": 6.11,
+      "latencia_media_s": 1.72,
+      "tokens_por_s": 69.8,
+      "memoria_total_mib": 2063,
+      "vram_mib": 2063,
+      "digest": "357c53fb659c",
+      "fecha_utc": "2026-11-15T06:24:29.424264+00:00"
+    },
+    {
+      "modelo": "nomic-embed-text",
+      "tipo": "embeddings",
+      "repeticiones": 3,
+      "arranque_en_frio_s": 2.24,
+      "latencia_media_s": 0.07,
+      "textos_por_s": 106.8,
+      "memoria_total_mib": 0,
+      "vram_mib": 0,
+      "digest": "desconocido",
+      "fecha_utc": "2026-11-15T06:24:31.863421+00:00"
+    }
+  ]
+}

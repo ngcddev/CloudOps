@@ -36,11 +36,11 @@ export default function ClientList() {
           ✕ No se pudo cargar la lista: {error}
         </p>
       )}
-      {!clients && !error && <p>Cargando clientes…</p>}
+      {!clients && !error && <p role="status">Cargando clientes…</p>}
       {clients && clients.length === 0 && <p>Todavía no hay clientes registrados.</p>}
 
       {clients && clients.length > 0 && (
-        <table className="table">
+        <table className="table" aria-label="Clientes">
           <thead>
             <tr>
               <th>Cliente</th>

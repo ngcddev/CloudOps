@@ -13,9 +13,12 @@ que cambiar un campo, se cambia aquí en un PR que revisan el industrial y el ba
 | `sla_policies.json` | Tiempos de respuesta y solución por prioridad, y cuándo corre el reloj | Industrial (000-T08) | 000 → 001, 004, 008 |
 | `clients.json` | La agencia Forja Digital y los 3 clientes con su proyecto, servicio y versión (`v1`) | Backend, con los nombres canónicos | 001, 005 |
 | `users.json` | 2 usuarios de la agencia y 1 por cliente. **Sin contraseñas**: el seed guarda el hash de `SEED_USER_PASSWORD` (`.env.example`) para todos | Backend | 004, 007 |
-| `priority_matrix.json` | Matriz provisional impacto × urgencia → P1–P4 | Industrial (000-T07) | 000 → 004, 008 |
+| `priority_matrix.json` | Matriz impacto × urgencia → P1–P4 | Industrial (000-T07) | 000 → 004, 008 |
+| `kpi_params.json` | Parámetros de los KPI (costo por hora, metas) que usa `backend/app/services/kpi.py` | Industrial ([docs/kpi.md](../docs/kpi.md)) | 000 → 010 |
 
-## Estado actual: propuesta
+## Estado de los valores
+
+Los KPI se aprobaron el 26 oct 2026 ([docs/kpi.md](../docs/kpi.md)). Sobre los planes:
 
 Los valores vienen de la propuesta de la [constitución](../constitution/canonical-names.md#planes-propuesta-la-spec-000-los-confirma).
 El industrial los confirma o ajusta en las tareas de la spec 000. Mientras tanto:

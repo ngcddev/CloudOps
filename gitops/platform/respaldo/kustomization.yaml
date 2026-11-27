@@ -1,0 +1,9 @@
+# Respaldo de la plataforma (spec 016): lo que NO se puede reconstruir desde Git. Gitea guarda los usuarios, los tokens y el historial de
+# hub-gitops (la fuente de verdad del clúster); Argo CD, las Applications que se crearon al dar de alta sitios. Grafana no se respalda: sus
+# fuentes y tableros salen de archivos del repositorio. Las imágenes del registro tampoco: se reconstruyen con apps/publicar-imagenes.sh.
+# Se aplica una vez: `kubectl apply -k gitops/platform/respaldo`. Para sacar los archivos del nodo: gitops/pruebas/respaldo-plataforma.sh.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gitea.yaml
+  - argocd.yaml

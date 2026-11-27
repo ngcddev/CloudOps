@@ -1,0 +1,32 @@
+# Plantilla de issue para una tarea de tasks.md, con su criterio de verificación.
+name: Tarea de una spec
+description: Trabajo planificado en tasks.md
+labels: ["enhancement"]
+body:
+  - type: input
+    id: spec
+    attributes:
+      label: Spec y tarea
+      placeholder: specs/NNN-nombre/ · TNN
+    validations:
+      required: true
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+    validations:
+      required: true
+  - type: textarea
+    id: verifica
+    attributes:
+      label: Criterio "Verifica"
+      description: Comando, captura o prueba que demuestra que la tarea está hecha
+    validations:
+      required: true
+  - type: checkboxes
+    id: constitucion
+    attributes:
+      label: Constitución
+      options:
+        - label: Usa solo herramientas de módulos ya vistos
+        - label: No despliega a mano ni mete secretos en el repositorio

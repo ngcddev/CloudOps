@@ -15,7 +15,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (loading) return <p className="muted">Cargando…</p>;
+  if (loading) return <p className="muted" role="status">Cargando…</p>;
   if (mock) return <Navigate to="/agencia/clientes" replace />;
   if (user) return <Navigate to={homeFor(user)} replace />;
 

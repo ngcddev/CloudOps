@@ -143,3 +143,23 @@ def test_query_range_con_prometheus_caido_devuelve_none(monkeypatch):
         )
         is None
     )
+
+
+def test_query_trata_nan_como_sin_datos(monkeypatch):
+    # Prometheus devuelve "NaN" para la latencia p95 de un sitio sin tráfico; comparado con el SLO daría «incumple» (lo descubrió el clúster real)
+    monkeypatch.setattr(settings, "prometheus_url", "http://prometheus.test:9090")
+    cuerpo = _cuerpo({"status": "success", "data": {"resultType": "vector", "result": [{"metric": {}, "value": [1761446400, "NaN"]}]}})
+
+    assert prometheus.query("histogram_quantile(0.95, x)", "2026-10", transport=lambda url, timeout: (200, cuerpo)) is None
+
+
+def test_query_range_descarta_los_puntos_nan(monkeypatch):
+    from datetime import datetime, timezone
+
+    monkeypatch.setattr(settings, "prometheus_url", "http://prometheus.test:9090")
+    cuerpo = _cuerpo({"status": "success", "data": {"resultType": "matrix", "result": [{"metric": {}, "values": [[1761446400, "0.5"], [1761446700, "NaN"], [1761447000, "0.7"]]}]}})
+    inicio = datetime(2026, 10, 26, tzinfo=timezone.utc)
+
+    puntos = prometheus.query_range("x", inicio, inicio, transport=lambda url, timeout: (200, cuerpo))
+
+    assert [valor for _, valor in puntos] == [0.5, 0.7]

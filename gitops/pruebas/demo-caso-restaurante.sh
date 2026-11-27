@@ -18,8 +18,8 @@
 set -uo pipefail
 
 HUB="${HUB:-http://hub.local}"
-SITIO="${SITIO:-http://restaurante.hub.local}"
-NS="cliente-restaurante"
+NS="${NS:-cliente-restaurante}"   # NS=cliente-colegio corre el mismo caso con el colegio de la spec 016
+SITIO="${SITIO:-http://${NS#cliente-}.hub.local}"
 HUB_USUARIO="${HUB_USUARIO:-sofia@forjadigital.test}"
 : "${HUB_PASSWORD:?Falta HUB_PASSWORD (kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d)}"
 VERSION_ROTA="${VERSION_ROTA:-v2}"
@@ -39,6 +39,11 @@ bloque_rollback() { sed -n 's/.*"rollback": *{\([^}]*\)}.*/\1/p'; }
 TOKEN="$(curl -s -m 10 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login" \
   -d "{\"email\":\"${HUB_USUARIO}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
 [ -n "$TOKEN" ] || { echo "No se pudo entrar al Hub como ${HUB_USUARIO} (¿HUB_PASSWORD correcta?)"; exit 1; }
+# Segregación de funciones (spec 018): quien pide un cambio no lo aprueba; lo aprueba otra cuenta de la agencia
+HUB_USUARIO_APROBADOR="${HUB_USUARIO_APROBADOR:-camilo@forjadigital.test}"
+TOKEN_APROBADOR="$(curl -s -m 10 -H 'Content-Type: application/json' -X POST "${HUB}/api/auth/login" \
+  -d "{\"email\":\"${HUB_USUARIO_APROBADOR}\",\"password\":\"${HUB_PASSWORD}\"}" | campo access_token)"
+[ -n "$TOKEN_APROBADOR" ] || { echo "No se pudo entrar al Hub como ${HUB_USUARIO_APROBADOR}"; exit 1; }
 hub_get() { curl -s -m 10 -H "Authorization: Bearer ${TOKEN}" "$1"; }
 post()    { curl -s -m 30 -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' -X POST "$1" -d "${2:-}"; }
 codigo_post() { curl -s -m 30 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" -X POST "$1"; }
@@ -46,12 +51,12 @@ fila()    { hub_get "${HUB}/api/services/status" | tr '{' '\n' | grep "\"${NS}\"
 
 SERVICIO="$(fila | campo service_id)"
 CLIENTE="$(fila | campo client_id)"
-[ -n "$SERVICIO" ] || { echo "No se encontró el servicio de La Sazón en ${HUB}"; exit 1; }
+[ -n "$SERVICIO" ] || { echo "No se encontró el servicio ${NS} en ${HUB}"; exit 1; }
 incidente_abierto() { hub_get "${HUB}/api/incidents?status=abierto&client_id=${CLIENTE}" | campo id; }
 
 for corrida in $(seq 1 "$CORRIDAS"); do
   echo "== Corrida ${corrida} de ${CORRIDAS} =="
-  [ -z "$(incidente_abierto)" ] || { falla "La Sazón ya tiene un incidente abierto: ciérrelo o mitíguelo antes"; break; }
+  [ -z "$(incidente_abierto)" ] || { falla "${NS#cliente-} ya tiene un incidente abierto: ciérrelo o mitíguelo antes"; break; }
 
   espera=0
   while [ "$(fila | campo open_change_id)" != "null" ] && [ -n "$(fila | campo open_change_id)" ]; do
@@ -61,10 +66,10 @@ for corrida in $(seq 1 "$CORRIDAS"); do
   done
 
   # 1. La v2 rota entra por la puerta de siempre: ticket, solicitud de cambio y aprobación
-  ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Caso restaurante 009: publicar ${VERSION_ROTA}\",\"description\":\"Demo del rollback (spec 009, T14).\",\"kind\":\"cambio\"}")"
+  ticket="$(post "${HUB}/api/tickets" "{\"service_id\":${SERVICIO},\"title\":\"Demo ${NS#cliente-}: publicar ${VERSION_ROTA}\",\"description\":\"Demo del rollback (spec 009, T14).\",\"kind\":\"cambio\"}")"
   CAMBIO="$(post "${HUB}/api/change-requests" "{\"ticket_id\":$(echo "$ticket" | campo id),\"to_version\":\"${VERSION_ROTA}\"}" | campo id)"
   [ -n "$CAMBIO" ] || { falla "no se pudo registrar el cambio a ${VERSION_ROTA}"; break; }
-  aprobado="$(post "${HUB}/api/change-requests/${CAMBIO}/approve" "{}")"
+  aprobado="$(TOKEN="$TOKEN_APROBADOR" post "${HUB}/api/change-requests/${CAMBIO}/approve" "{}")"
   SHA_CAMBIO="$(echo "$aprobado" | campo gitops_commit_sha)"
   [ -n "$SHA_CAMBIO" ] && ok "cambio #${CAMBIO} a ${VERSION_ROTA} aprobado (commit ${SHA_CAMBIO:0:7})" || { falla "no se aprobó: ${aprobado}"; break; }
 

@@ -1,3 +1,4 @@
+// Lista de solicitudes de la agencia (spec 004): filtros por cliente, estado y prioridad, con el plazo de cada una.
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -11,6 +12,7 @@ import {
   type TicketStatus,
 } from "../../api";
 import { getTicketSlaState, SLA_ICONS, SLA_LABELS, type SlaState } from "./ticketSla";
+import { Select } from "../../components/Select";
 
 function findTicketClient(ticket: Ticket, clients: ClientDetail[]): ClientDetail | undefined {
   return clients.find((client) =>
@@ -77,48 +79,48 @@ export default function TicketList() {
           <div className="filters-grid">
             <label>
               <span>Cliente</span>
-              <select value={clientFilter} onChange={(event) => setClientFilter(event.target.value === "" ? "" : Number(event.target.value))}>
+              <Select value={clientFilter} onChange={(event) => setClientFilter(event.target.value === "" ? "" : Number(event.target.value))}>
                 <option value="">Todos</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>
                     {client.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label>
               <span>Prioridad</span>
-              <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as TicketPriority | "")}>
+              <Select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as TicketPriority | "")}>
                 <option value="">Todas</option>
                 <option value="P1">P1</option>
                 <option value="P2">P2</option>
                 <option value="P3">P3</option>
                 <option value="P4">P4</option>
-              </select>
+              </Select>
             </label>
 
             <label>
               <span>Estado</span>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as TicketStatus | "")}>
+              <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as TicketStatus | "")}>
                 <option value="">Todos</option>
                 <option value="abierto">Abierto</option>
                 <option value="en_progreso">En progreso</option>
                 <option value="en_espera">En espera</option>
                 <option value="resuelto">Resuelto</option>
                 <option value="cerrado">Cerrado</option>
-              </select>
+              </Select>
             </label>
 
             <label>
               <span>SLA</span>
-              <select value={slaFilter} onChange={(event) => setSlaFilter(event.target.value as SlaState | "")}>
+              <Select value={slaFilter} onChange={(event) => setSlaFilter(event.target.value as SlaState | "")}>
                 <option value="">Todos</option>
                 <option value="sin_plazo">Sin plazo</option>
                 <option value="a_tiempo">A tiempo</option>
                 <option value="en_riesgo">En riesgo</option>
                 <option value="vencido">Vencido</option>
-              </select>
+              </Select>
             </label>
           </div>
         </div>
@@ -129,7 +131,7 @@ export default function TicketList() {
           {visibleTickets.length === 0 ? (
             <p>No hay solicitudes con esos filtros.</p>
           ) : (
-            <table className="table">
+            <table className="table" aria-label="Solicitudes">
               <thead>
                 <tr>
                   <th>Cliente</th>

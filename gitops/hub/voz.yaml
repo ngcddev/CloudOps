@@ -1,0 +1,74 @@
+# Servicio de voz del asistente (spec 021, T06): voz a texto (faster-whisper) y texto a voz (Piper) en CPU. Solo la API del Hub lo llama (http://voz.hub.svc:8100): no tiene Ingress y
+# la NetworkPolicy del namespace solo deja entrar a los Pods del propio namespace. El token (Secret hub-voz, ver crear-secretos.sh) lo exigen sus dos rutas. Sin sistema de archivos
+# de escritura: los modelos van dentro de la imagen y /tmp es un emptyDir. Con Whisper `small` ocupa ~1,2 GiB; Recreate para no tener dos Pods a la vez en el nodo.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voz
+  namespace: hub
+  labels:
+    app: voz
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: voz
+  template:
+    metadata:
+      labels:
+        app: voz
+    spec:
+      automountServiceAccountToken: false   # no usa la API de Kubernetes: sin token montado (spec 017, T06)
+      serviceAccountName: voz
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - { name: tmp, emptyDir: { sizeLimit: 64Mi } }
+      containers:
+        - name: voz
+          image: gitea.hub.local/forja-digital/hub-voz:v1.2
+          ports:
+            - name: http
+              containerPort: 8100
+          env:
+            - name: VOZ_TOKEN
+              valueFrom:
+                secretKeyRef: { name: hub-voz, key: VOZ_TOKEN }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+          resources:
+            requests: { cpu: 250m, memory: 768Mi }
+            limits: { cpu: "2", memory: 1536Mi }
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voz
+  namespace: hub
+spec:
+  selector:
+    app: voz
+  ports:
+    - name: http
+      port: 8100
+      targetPort: http

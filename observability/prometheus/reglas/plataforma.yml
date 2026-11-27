@@ -1,0 +1,103 @@
+# Reglas de alerta de la plataforma (spec 022, T10; auditoría OB-01, OB-02 y OB-03): el Hub, el propio monitoreo y los contenedores.
+# Todas llevan `destino: plataforma`: Alertmanager las manda a `solo-ver` y NO al Hub (alertmanager/alertmanager.yml). El Hub abre incidentes por
+# sitio caído; estas alertas no son de un sitio, y HubCaido no puede avisar a quien está caído. Se ven en Alertmanager y en la pestaña Alerts
+# de Prometheus; no hay un canal externo que avise a una persona (el laboratorio no depende de servicios externos, principio 2).
+groups:
+  - name: plataforma
+    interval: 15s
+    rules:
+      # El API o la web del Hub no responden 2xx (el API da 503 si no hay base) durante un minuto: cuatro sondeos seguidos de 15 s.
+      - alert: HubCaido
+        expr: probe_success{job="hub"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          destino: plataforma
+        annotations:
+          summary: "El {{ $labels.componente }} del Hub no responde"
+          accion: "Ver si el Pod del Hub está listo y si la base contesta; si hubo una publicación reciente del Hub, volver a la versión anterior por Git."
+          runbook_url: "runbooks/caida-del-hub.md"
+
+      # Los sondeos mismos dejaron de funcionar: Blackbox caído (`up == 0`) o ningún objetivo (`absent`). Sin esto, SitioCaido no se dispara nunca
+      # aunque todos los sitios estén caídos, porque sus series dejan de existir.
+      - alert: MonitoreoCiego
+        expr: up{job=~"sitios|hub"} == 0 or absent(up{job="sitios"}) or absent(up{job="hub"})
+        for: 2m
+        labels:
+          severity: critical
+          destino: plataforma
+        annotations:
+          summary: "El monitoreo no está sondeando: los sitios podrían estar caídos sin que nadie lo sepa"
+          accion: "Revisar Blackbox y Prometheus en el namespace monitoring; mientras tanto, comprobar a mano el /health de los sitios."
+          runbook_url: "runbooks/monitoreo-ciego.md"
+
+      # Latido: siempre activa. Si deja de verse en Alertmanager, la cadena Prometheus → Alertmanager está rota y ninguna otra alerta puede llegar.
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+          destino: plataforma
+        annotations:
+          summary: "Latido del monitoreo: la cadena Prometheus → Alertmanager funciona"
+          accion: "Nada que hacer: esta alerta debe estar siempre activa. Si NO aparece en Alertmanager, el monitoreo está ciego."
+          runbook_url: "runbooks/monitoreo-ciego.md"
+
+      # Un contenedor del Hub, de un cliente o del monitoreo se quedó sin memoria (OOM): el límite de memoria se queda corto.
+      - alert: ContenedorSinMemoria
+        expr: increase(container_oom_events_total{namespace=~"cliente-.*|hub|monitoring", container!=""}[10m]) > 0
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "El contenedor {{ $labels.container }} de {{ $labels.namespace }} se quedó sin memoria (OOM)"
+          accion: "Comparar el uso de memoria con su límite en el tablero USE; si va al límite, subirlo por Git."
+          runbook_url: "runbooks/saturacion.md"
+
+      # Un contenedor arrancó 3 veces o más en 15 minutos (bucle de reinicios). Sin kube-state-metrics no hay contador de reinicios: cAdvisor
+      # crea una serie nueva (con otro `id`) en cada arranque, así que se cuentan los contenedores distintos que arrancaron hace menos de 15 min.
+      # Una publicación normal crea un Pod con otro nombre y cuenta 1.
+      - alert: ContenedorEnBucle
+        expr: count by (namespace, pod, container) (last_over_time(container_start_time_seconds{namespace=~"cliente-.*|hub|monitoring", container!=""}[15m]) > time() - 900) >= 3
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "El contenedor {{ $labels.container }} del Pod {{ $labels.pod }} ({{ $labels.namespace }}) lleva {{ $value }} arranques en 15 minutos"
+          accion: "Ver por qué muere: los registros del contenedor anterior y los eventos del Pod."
+          runbook_url: "runbooks/contenedor-en-bucle.md"
+
+      # La memoria en uso de todo el nodo pasa de 90 % durante 10 minutos: el nodo es único y compartido, sin memoria el kernel empieza a matar procesos.
+      - alert: NodoSinMemoria
+        expr: container_memory_working_set_bytes{id="/"} / on (instance) machine_memory_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "El nodo {{ $labels.instance }} usa {{ $value | humanizePercentage }} de su memoria"
+          accion: "Ver en el tablero USE qué contenedor crece y, si no hay fuga, bajar réplicas o límites por Git."
+          runbook_url: "runbooks/saturacion.md"
+
+      # Queda menos del 15 % libre en el disco donde viven los volúmenes (Gitea, Postgres, Loki, Prometheus, respaldos): con `local-path` todos comparten el mismo disco.
+      - alert: DiscoDelNodoLleno
+        expr: max by (instance) (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) < 0.15
+        for: 10m
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "Al disco del nodo {{ $labels.instance }} le queda {{ $value | humanizePercentage }} libre"
+          accion: "Ver qué volumen crece (Loki, Prometheus, Gitea o los respaldos del Hub) y liberar espacio o reducir su retención por Git."
+          runbook_url: "runbooks/saturacion.md"
+
+      # El respaldo diario del Hub (CronJob hub-db-backup, a las 03:00) lleva más de 36 horas sin terminar bien, o no hay ninguna ejecución exitosa registrada.
+      - alert: RespaldoDelHubSinExito
+        expr: time() - kube_cronjob_status_last_successful_time{namespace="hub", cronjob="hub-db-backup"} > 36 * 3600 or absent(kube_cronjob_status_last_successful_time{namespace="hub", cronjob="hub-db-backup"})
+        for: 15m
+        labels:
+          severity: warning
+          destino: plataforma
+        annotations:
+          summary: "El respaldo diario de la base del Hub no termina bien desde hace más de 36 horas"
+          accion: "Ver los registros del último Job de hub-db-backup y el espacio del volumen de respaldos; hacer un respaldo a mano mientras se corrige."
+          runbook_url: "runbooks/respaldo-y-restauracion.md"

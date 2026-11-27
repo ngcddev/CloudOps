@@ -14,11 +14,17 @@ Pods cliente-* ──registros──> Alloy ──> Loki ──> Grafana (Explor
 | `blackbox/` | Sondea `/health` de cada sitio (módulo `http_2xx`, 4 s de timeout) |
 | `prometheus/` | Descubre los sitios por la anotación `hub/probe` de su Service, los sondea cada 5 s y evalúa `SitioCaido`. El job `apps` recoge `/metrics` de los Services con la anotación `hub/metrics` (hoy, `consultorio-api`: `contact_forms_received_total` y `contact_forms_failed_total`, con OpenTelemetry; spec 008, T32) |
 | `alertmanager/` | Avisa al Hub en `http://api.hub.svc:8000/api/alerts/alertmanager` con el token del Secret `hub-alertmanager` |
+| `prometheus/reglas/plataforma.yml` | Alertas de la plataforma (spec 022, T10), con `destino: plataforma`: `HubCaido` (el job `hub` sondea `/health` del API y la web del Hub), `MonitoreoCiego` (`up == 0` o `absent` en los sondeos), `Watchdog` (latido: siempre activa), `ContenedorSinMemoria` (OOM nuevo) y `ContenedorEnBucle` (3 arranques en 15 minutos). Alertmanager las manda a `solo-ver` y **no al Hub**: se ven en Alertmanager y en Prometheus, pero no avisan a nadie (no hay canal externo). Cada una apunta a su runbook en `runbooks/` |
 | `loki/` | Guarda 3 días de registros de los sitios |
-| `alloy/` | Lee por la API de Kubernetes los registros de los Pods de `cliente-*` y los manda a Loki |
+| `alloy/` | Lee por la API de Kubernetes los registros de los Pods de `cliente-*` y del Hub (sin PostgreSQL ni el respaldo) y los manda a Loki |
+| `kube-state-metrics/` | Estado de los CronJob y Job como métricas (solo esos dos recursos): alimenta la alerta del respaldo del Hub |
 | `grafana/` | `http://grafana.hub.local`, con las fuentes `prometheus` y `loki` ya configuradas |
 | `traefik/` | Service `traefik-metrics` en `kube-system` para las métricas de Traefik (spec 010) |
-| `pruebas/` | `validar.sh`, pruebas de la regla, `cronometro.sh` y `publicacion-sana.sh` |
+| `tempo/` | Recibe las trazas OTLP del Hub (puerto 4318), 24 horas en un volumen efímero; Grafana lo lee con la fuente `tempo` |
+| `grafana/dashboards/` | Tablero «Servicio de los sitios · SLI y SLO»: disponibilidad frente al SLO de cada plan, presupuesto de error, latencia p95, errores 5xx, formularios y registros |
+| `grafana/dashboards/red-use.json` | Tablero «RED y USE · sitios y Pods» (spec 019): tasa, errores 5xx y duración por sitio (Traefik) y, por Pod, uso de CPU y memoria frente al límite, CPU frenada y reinicios por OOM (cAdvisor) |
+| `capacidad.sh` | Informe de capacidad: por namespace de cliente, cuota, reservado, uso real y margen; con `--estricto` falla si alguno tiene más del 90 % reservado |
+| `pruebas/` | `validar.sh`, pruebas de la regla, `tablero_test.yml`, `grafana.sh`, `trazas.sh`, `cronometro.sh` y `publicacion-sana.sh` |
 
 ## Tiempos de detección
 
@@ -37,8 +43,8 @@ El Hub fija el inicio del incidente en `startsAt − 30 s` (la hora real de la c
 
 1. Secrets (una sola vez; no se cambian si ya existen): `bash gitops/hub/crear-secretos.sh`
    (crea `hub-alertmanager` en `hub` y `monitoring`, y `grafana-admin` en `monitoring`).
-2. Subir la carpeta a `hub-gitops`: `bash gitops/platform/gitea/actualizar-hub-gitops.sh observability`
-   (lo mismo con `gitops/clients/_base` para la estrategia `Recreate` y la anotación `hub/probe`).
+2. Subir la carpeta a `hub-gitops`: `bash gitops/sincronizar-hub-gitops.sh`
+   (promueve también `clients/_base`, `hub/` y `platform/backstage`; ver «Quién escribe qué en hub-gitops» en `gitops/README.md`).
 3. Aplicar la Application: `kubectl apply -f gitops/platform/argocd/applications/monitoring.yaml`.
 4. Agregar `grafana.hub.local` a la línea de `hosts` (ver `gitops/README.md`).
 
@@ -66,12 +72,35 @@ incidentes, manuales o automáticos, no dependen de ellos.
 | Prometheus | 256Mi / 512Mi | pendiente (T29) |
 | Alertmanager | 32Mi / 64Mi | pendiente (T29) |
 | Loki | 128Mi / 256Mi | pendiente (T29) |
-| Grafana Alloy | 64Mi / 128Mi | pendiente (T29) |
-| Grafana | 128Mi / 256Mi | pendiente (T29) |
-| **Total** | **≈ 640Mi / 1280Mi** | pendiente (T29) |
+| Grafana Alloy | 128Mi / 256Mi | pendiente (T29) |
+| Grafana | 128Mi / 384Mi | pendiente (T29) |
+| Tempo | 96Mi / 256Mi | pendiente (el nodo ya estaba justo: si falta RAM, `replicas: 0` en Tempo antes que en Prometheus) |
+| **Total** | **la suma de las filas; la fuente es cada manifiesto** | pendiente (T29) |
 
 ## Versiones
 
 Imágenes fijadas en los manifiestos: `prom/prometheus:v3.5.0`, `prom/alertmanager:v0.28.1`,
-`prom/blackbox-exporter:v0.27.0`, `grafana/loki:3.5.3`, `grafana/alloy:v1.10.2` y `grafana/grafana:12.1.1`.
+`prom/blackbox-exporter:v0.27.0`, `grafana/loki:3.5.3`, `grafana/alloy:v1.10.2`, `grafana/grafana:12.1.1` y `grafana/tempo:2.8.2`.
 Cambiar una versión es un cambio deliberado en su `deployment.yaml` (y en `validar.sh` para promtool y amtool).
+
+## Tablero de Grafana y trazas
+
+El tablero `servicio-sitios` se carga solo al arrancar Grafana (ConfigMap `grafana-dashboards`, no editable desde la interfaz: el cambio va por Git).
+Sus cuentas se prueban sin Prometheus real:
+
+```bash
+bash observability/pruebas/validar.sh   # además: cuentas del SLI y del presupuesto de error (tablero_test.yml) y sintaxis de cada consulta
+bash observability/pruebas/grafana.sh   # levanta Grafana 12.1.1 con los mismos archivos y comprueba el tablero (13 paneles) y las fuentes prometheus, loki y tempo
+bash observability/pruebas/trazas.sh    # Tempo real + API de producción: llegan los spans de la API y del asistente, /health no genera trazas
+                                        # y ninguna traza lleva el texto de las preguntas
+```
+
+Las trazas del Hub se activan con `OTEL_EXPORTER_OTLP_ENDPOINT` (ya puesta en `gitops/hub/api.yaml`). Los spans llevan tiempos, estados y contadores;
+**nunca** el texto de las preguntas, de las respuestas ni de los cuerpos de las peticiones. No hay spans de SQL: la instrumentación de SQLAlchemy de
+OpenTelemetry soporta hasta la 2.0 y el Hub usa la 2.1. `validar.sh` pasa también en Windows (se corrigieron el comodín de las reglas, la variable `TMP` y la ruta de `kubectl`).
+
+## Uso de recursos (USE) y capacidad (spec 019)
+
+Prometheus lee el cAdvisor del kubelet (job `cadvisor`, con el token del Pod y el permiso `nodes/metrics` de `prometheus/rbac.yaml`) y conserva solo los namespaces
+`cliente-*`, `hub` y `monitoring`. De ahí salen las gráficas USE del tablero `red-use` y el diagnóstico con IA del Hub. `promtool check config` pide que exista el archivo del token:
+`validar.sh` monta uno falso (`pruebas/token-falso.txt`) solo para eso. Cada alerta lleva `accion` y `runbook_url` (ruta a `runbooks/`), y `backend/tests/test_alertas_accionables.py` falla si una nueva no los trae.

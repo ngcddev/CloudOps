@@ -1,0 +1,39 @@
+# Plantilla de issue para reportar un error del Hub, de un sitio de cliente o de la plataforma.
+name: Error
+description: Algo no funciona como dice la spec o el runbook
+labels: ["bug"]
+body:
+  - type: input
+    id: spec
+    attributes:
+      label: Spec relacionada
+      description: Carpeta de la spec afectada, si se sabe
+      placeholder: specs/012-nombre/
+  - type: textarea
+    id: que-pasa
+    attributes:
+      label: Qué pasa
+      description: Lo observado frente a lo esperado
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: |
+        1. Levantar con `docker compose up --build`
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: entorno
+    attributes:
+      label: Entorno
+      options: [Docker Compose local, Clúster k3d del laboratorio, GCP, Otro]
+    validations:
+      required: true
+  - type: textarea
+    id: evidencia
+    attributes:
+      label: Evidencia
+      description: Logs, capturas o salida de pruebas. Sin secretos ni datos de clientes.

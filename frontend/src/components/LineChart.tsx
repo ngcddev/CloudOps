@@ -16,7 +16,7 @@ const MARGIN = { top: 18, right: 18, bottom: 34, left: 56 };
 // Un punto cada 5 min; dos seguidos separados por más de 7,5 min son un hueco de datos
 const GAP_MS = 7.5 * 60 * 1000;
 
-function horaBogota(iso: string): string {
+function bogotaTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-CO", {
     timeZone: "America/Bogota",
     hour: "2-digit",
@@ -102,7 +102,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
                 x2={WIDTH - MARGIN.right}
                 y1={MARGIN.top + innerHeight * parte}
                 y2={MARGIN.top + innerHeight * parte}
-                stroke="#bbb"
+                stroke="var(--edge-strong)"
                 strokeWidth="1"
               />
               <text className="chart-label" x={MARGIN.left - 8} y={MARGIN.top + innerHeight * parte + 4} textAnchor="end">
@@ -132,7 +132,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
             y={MARGIN.top}
             width={Math.max(x(gap.to) - x(gap.from), 1)}
             height={innerHeight}
-            opacity="0.35"
+            opacity="0.6"
           />
         ))}
 
@@ -149,7 +149,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
               cx={x(Date.parse(segment[0].timestamp))}
               cy={y(segment[0].value)}
               r="2"
-              fill="#000"
+              fill="var(--ink)"
             />
           ),
         )}
@@ -165,7 +165,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
               y={HEIGHT - 10}
               textAnchor={parte === 0 ? "start" : parte === 1 ? "end" : "middle"}
             >
-              {horaBogota(instante)}
+              {bogotaTime(instante)}
             </text>
           );
         })}

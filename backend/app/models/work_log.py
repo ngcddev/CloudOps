@@ -2,7 +2,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -10,6 +10,7 @@ from app.db import Base
 
 class WorkLog(Base):
     __tablename__ = "work_logs"
+    __table_args__ = (Index("ix_work_logs_ticket_id", "ticket_id"), Index("ix_work_logs_user_id", "user_id"))
 
     id: Mapped[int] = mapped_column(primary_key=True)
     ticket_id: Mapped[int] = mapped_column(ForeignKey("tickets.id"), nullable=False)

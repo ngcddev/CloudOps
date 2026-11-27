@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.deps import client_scope, current_user, require_agency
-from app.models.client import Client
 from app.models.project import Project
 from app.models.service import Service
 from app.models.ticket import Ticket
@@ -25,10 +24,10 @@ from app.schemas.ticket import (
     TicketDetail,
     TicketOut,
     TicketTransition,
-    TicketEventOut,
     WorkLogCreate,
     WorkLogOut,
 )
+from app.paginacion import Page, paginate
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 CLIENT_STATUS_LABELS = {
@@ -104,6 +103,7 @@ def list_tickets(
     client_id: int | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
     priority: str | None = Query(default=None),
+    page: Page = Depends(paginate),
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
@@ -111,17 +111,17 @@ def list_tickets(
 
     La agencia puede filtrar por cliente; un cliente siempre ve solo las suyas.
     """
-    query = select(Ticket).join(Ticket.service).join(Service.project).join(Project.client)
+    query = select(Ticket).join(Ticket.service).join(Service.project)
     scope = client_scope(user)
     if scope is not None:
-        query = query.where(Client.id == scope)
+        query = query.where(Project.client_id == scope)
     elif client_id is not None:
-        query = query.where(Client.id == client_id)
+        query = query.where(Project.client_id == client_id)
     if status_filter is not None:
         query = query.where(Ticket.status == status_filter)
     if priority is not None:
         query = query.where(Ticket.priority == priority)
-    tickets = db.scalars(query.order_by(Ticket.id)).all()
+    tickets = db.scalars(query.order_by(Ticket.id).limit(page.limit).offset(page.offset)).all()
     return [_present_ticket(ticket, user, check_scope=False) for ticket in tickets]
 
 

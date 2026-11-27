@@ -1,0 +1,105 @@
+# Aislamiento de red del Hub (misma idea que la de los clientes, gitops/clients/_base/networkpolicy.yaml): se deniega toda entrada y
+# solo pasan Traefik (el Ingress de k3s, en kube-system), Alertmanager (en monitoring, que avisa por webhook) y los Pods del propio
+# namespace (la API habla con PostgreSQL y el CronJob de respaldo también). Solo restringe la entrada: la API sigue llamando hacia
+# afuera a Gitea, Argo CD, Prometheus y Ollama. El runner de la puerta de seguridad llega por el Ingress, es decir, por Traefik.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: hub
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: permitir-traefik-alertmanager-y-propio
+  namespace: hub
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  # (El nombre no cambia a propósito: la Application del Hub no borra lo que sale de Git, y una política con otro nombre dejaría viva la vieja, que lo permitía todo.)
+  # Antes entraba todo `kube-system` y todo `monitoring` a cualquier puerto (PostgreSQL 5432 y voz 8100 incluidos). Ahora cada origen llega solo a lo que usa (auditoría K8-10):
+  # Traefik a la API (8000), la web (8080) y Backstage (7007); Alertmanager y Blackbox (`monitoring`) a la API (webhook y /health) y a la web (sondeo).
+  ingress:
+    - from:
+        - podSelector: {}                                # los Pods del Hub entre sí
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - { protocol: TCP, port: 8000 }
+        - { protocol: TCP, port: 8080 }
+        - { protocol: TCP, port: 7007 }
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - { protocol: TCP, port: 8000 }
+        - { protocol: TCP, port: 8080 }
+---
+# Salida del namespace hub (spec 022, T18; auditoría K8-02). Antes salía a cualquier parte: si el Hub o Backstage se comprometían, podían llegar a MLflow,
+# a Alertmanager, a los sitios de los clientes, a la API de Kubernetes y a internet. Ahora todo sale cerrado salvo el DNS y los Pods del propio namespace,
+# y cada aplicación abre solo lo que usa (medido en los manifiestos y en el código: gitops/hub/api.yaml, backend/app/integrations/).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: hub
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: permitir-dns-y-propio
+  namespace: hub
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to: [{podSelector: {}}]
+---
+# La API: Gitea (escribe como hub-bot), Argo CD (puerto del Pod: 8080, el Service es 80), Prometheus, Loki y el receptor OTLP de Tempo, y Ollama, que corre
+# fuera del clúster en el host (host.docker.internal = 192.168.65.254 en Docker Desktop; si OLLAMA_URL cambia, se cambia aquí y en la prueba).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-salidas
+  namespace: hub
+spec:
+  podSelector: {matchLabels: {app: api}}
+  policyTypes: [Egress]
+  egress:
+    - to: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: gitea}}}]
+      ports: [{protocol: TCP, port: 3000}]
+    - to: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: argocd}}}]
+      ports: [{protocol: TCP, port: 8080}]
+    - to: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}}]
+      ports: [{protocol: TCP, port: 9090}, {protocol: TCP, port: 3100}, {protocol: TCP, port: 4318}]
+    - to: [{ipBlock: {cidr: 192.168.65.254/32}}]
+      ports: [{protocol: TCP, port: 11434}]
+---
+# Backstage: lee el catálogo y las plantillas de hub-gitops en Gitea y nada más.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backstage-salidas
+  namespace: hub
+spec:
+  podSelector: {matchLabels: {app: backstage}}
+  policyTypes: [Egress]
+  egress:
+    - to: [{namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: gitea}}}]
+      ports: [{protocol: TCP, port: 3000}]

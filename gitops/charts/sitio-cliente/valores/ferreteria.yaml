@@ -1,0 +1,8 @@
+# Ferretería El Tornillo · plan Estándar · plantilla landing (equivale a gitops/clients/ferreteria)
+cliente: ferreteria
+plan: estandar
+host: ferreteria.hub.local
+cuota: { cpu: 500m, memoria: 512Mi }
+imagen:
+  repositorio: gitea.hub.local/forja-digital/ferreteria
+  etiqueta: v1

@@ -1,0 +1,48 @@
+# ApplicationSet de los clientes nuevos (spec 016): por cada carpeta `clients/<nombre>` que el Hub escribe en
+# hub-gitops al dar de alta un sitio, crea la Application `cliente-<nombre>` (el nombre es el namespace: el Hub
+# la consulta por él). Los tres clientes sembrados tienen su Application propia y se excluyen para no duplicarla.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: clientes
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: cloudops-hub
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        revision: main
+        # Por defecto el generador mira Git cada 3 minutos; con 20 s un sitio recién dado de alta aparece en segundos
+        requeueAfterSeconds: 20
+        directories:
+          - path: clients/*
+          - path: clients/_base
+            exclude: true
+          - path: clients/restaurante
+            exclude: true
+          - path: clients/ferreteria
+            exclude: true
+          - path: clients/consultorio
+            exclude: true
+  template:
+    metadata:
+      name: "cliente-{{ .path.basename }}"
+      labels:
+        app.kubernetes.io/part-of: cloudops-hub
+        hub/client: "{{ .path.basename }}"
+    spec:
+      project: clientes
+      source:
+        repoURL: http://gitea.gitea.svc:3000/forja-digital/hub-gitops.git
+        targetRevision: main
+        path: "{{ .path.path }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "cliente-{{ .path.basename }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

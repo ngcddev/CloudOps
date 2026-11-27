@@ -37,6 +37,7 @@ def rollback_commit_message(client: str, tag: str, incident_id: int) -> str:
 
 
 class GiteaClient:
+    """Cliente mínimo de la API de Gitea para leer y escribir archivos del repositorio hub-gitops."""
     def __init__(
         self,
         base_url: str,
@@ -74,12 +75,25 @@ class GiteaClient:
             raise GiteaError(f"No hay conexión con Gitea: {error}") from error
         if status >= 400:
             raise GiteaError(f"Gitea respondió {status} en {method} {path}.", status)
-        return json.loads(raw or b"{}")
+        try:
+            return json.loads(raw or b"{}")
+        except ValueError as error:
+            # Un proxy o una página de error intermedia: se maneja como cualquier otro fallo de Gitea (502 en español), no como un 500 (auditoría BE-12)
+            raise GiteaError(f"Gitea respondió algo que no es JSON en {method} {path}.", status) from error
 
     def head_sha(self) -> str:
         """SHA del último commit de la rama configurada (el que Argo CD toma como revisión)."""
         data = self._request("GET", f"branches/{urllib.parse.quote(self.branch)}")
         return data["commit"]["id"]
+
+    def is_ancestor(self, commit: str, descendant: str, limit: int = 100) -> bool:
+        """True si `commit` está entre los últimos `limit` commits de la historia de `descendant`.
+
+        No usa la API de comparación: Gitea 1.22 responde `BaseNotExist` cuando se le dan SHAs. Basta mirar los commits recientes porque un cambio
+        solo espera su confirmación unos minutos (validación de 10 min): lo que lo separa de la revisión de Argo CD son pocos commits.
+        """
+        data = self._request("GET", f"commits?sha={urllib.parse.quote(descendant)}&limit={limit}&stat=false&verification=false&files=false")
+        return isinstance(data, list) and any(str(c.get("sha", "")).lower() == commit.lower() for c in data)
 
     def latest_commit(self, path: str) -> tuple[str, str] | None:
         """(sha, mensaje) del último commit que tocó `path` en la rama, o None si no hay ninguno."""
@@ -122,6 +136,46 @@ class GiteaClient:
             },
         )
         return data["commit"]["sha"]
+
+    def file_exists(self, path: str) -> bool:
+        """True si el archivo ya está en la rama; cualquier error que no sea 404 se propaga."""
+        try:
+            self.get_file(path)
+        except GiteaError as error:
+            if error.status == 404:
+                return False
+            raise
+        return True
+
+    def create_file(self, path: str, text: str, message: str, author_name: str, author_email: str) -> str:
+        """Crea un archivo nuevo con un único commit y devuelve el SHA del commit (la API usa POST para crear)."""
+        person = {"name": author_name, "email": author_email}
+        data = self._call(
+            "POST",
+            path,
+            {
+                "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
+                "message": message,
+                "branch": self.branch,
+                "author": person,
+                "committer": person,
+            },
+        )
+        return data["commit"]["sha"]
+
+    def image_exists(self, owner: str, name: str, tag: str) -> bool | None:
+        """¿Está `name:tag` en el registro de Gitea? None si no se puede saber (sin permiso o sin conexión)."""
+        url = f"{self.base_url}/api/v1/packages/{owner}/container/{urllib.parse.quote(name)}/{urllib.parse.quote(tag)}"
+        request = urllib.request.Request(url, method="GET")
+        request.add_header("Authorization", f"token {self.token}")
+        request.add_header("Accept", "application/json")
+        try:
+            status, _ = self.transport(request, self.timeout)
+        except (urllib.error.URLError, OSError):
+            return None
+        if status == 404:
+            return False
+        return True if status < 400 else None
 
 
 def gitea_from_settings() -> GiteaClient:
