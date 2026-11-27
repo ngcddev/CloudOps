@@ -1,5 +1,5 @@
 # Servicio de voz (spec 021): versiones fijas. faster-whisper trae ctranslate2, onnxruntime y av (decodifica webm/ogg sin ffmpeg); piper-tts trae espeak-ng.
-fastapi==0.142.2
+fastapi==0.165.0
 uvicorn==0.54.0
 faster-whisper==1.2.1
 piper-tts==1.8.0

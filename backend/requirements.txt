@@ -1,10 +1,10 @@
 # Dependencias de la API del Hub (se agregan por tarea, con versión fija).
-fastapi==0.142.2
+fastapi==0.165.0
 uvicorn[standard]==0.54.0
-sqlalchemy==2.1.1
-psycopg[binary]==3.3.6
-pydantic-settings==2.15.0
-alembic==1.20.0
+sqlalchemy==2.1.9
+psycopg[binary]==3.3.9
+pydantic-settings==2.16.3
+alembic==1.20.1
 bcrypt==5.0.0
 PyJWT==2.15.1
 # Trazas (spec 008/012): la instrumentación de FastAPI y el exportador OTLP/HTTP hacia Tempo. Solo se activan con
