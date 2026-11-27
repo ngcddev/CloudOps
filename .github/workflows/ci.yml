@@ -23,7 +23,7 @@ jobs:
     name: Lint y compilación del frontend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -47,7 +47,7 @@ jobs:
     name: Pruebas del backend y de ai/
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Backend (pytest en la imagen de desarrollo, con las mismas rutas que docker-compose.yml)
         run: |
           docker build --target dev --build-context seed=./seed -t hub-api:dev backend
@@ -69,7 +69,7 @@ jobs:
     name: Observabilidad y respaldo
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Reglas, alertas y cuentas del tablero (promtool, amtool, kustomize)
         run: bash observability/pruebas/validar.sh
       - name: Grafana carga el tablero provisionado
@@ -93,7 +93,7 @@ jobs:
     name: Análisis estático y de composición
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: bandit (SAST), trivy fs (dependencias) e imagen del frontend (spec 018)
         run: bash pipelines/pruebas/analisis-estatico.sh
       - name: Registro de hallazgos de las imágenes con su decisión y VEX (spec 018)
@@ -113,7 +113,7 @@ jobs:
     name: Seguridad de la imagen de producción
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Gitleaks revisa toda la historia
       - name: Secretos (Gitleaks, con .gitleaks.toml)
