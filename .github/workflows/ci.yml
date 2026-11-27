@@ -100,7 +100,7 @@ jobs:
         run: bash pipelines/pruebas/hallazgos.sh
       - name: Guardar el registro de hallazgos y el VEX
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: registro-de-hallazgos
           path: |
@@ -141,7 +141,7 @@ jobs:
           rm evidencias/hub-api.tar
       - name: Guardar la evidencia (reporte de Trivy y SBOM)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evidencias-seguridad-hub-api
           path: evidencias/
