@@ -122,6 +122,7 @@
 |---|---|
 | El nodo k3d reinicia en bucle tras encender (IP) | Orden de arranque y comprobar `172.30.0.3` en T-30 |
 | La IA tarda con el modelo frío | Pregunta de calentamiento en T-5. El Hub pide a Ollama mantener el modelo 30 min (`OLLAMA_KEEP_ALIVE=30m` en `gitops/hub/configurar-ia.sh`); con el valor anterior (2 min) la primera respuesta en frío venció el tiempo de espera |
+| Tempo (trazas) reinicia sin parar tras días encendido (se queda sin memoria al reproducir su WAL) | En T-30, si `monitoring` no está Healthy: `kubectl -n monitoring delete pod -l app=tempo` (arranca limpio) y `bash observability/pruebas/trazas.sh` |
 | `drift.sh` tarda minutos | Autocorrecciones repetidas sobre la misma revisión: correrlo en un sitio sin ensayar (`SITIO=consultorio`) |
 | Memoria justa con Backstage | Abrirlo solo en el minuto 0 si hace falta |
 | La red del salón | Todo corre en tu PC, IA incluida: no depende de la red. Probar navegador y micrófono en ese equipo |
