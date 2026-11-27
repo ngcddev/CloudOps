@@ -1,6 +1,0 @@
-# Primer intento de F01: NO es válido como prueba de clon limpio
-
-El script exportaba `MSYS_NO_PATHCONV=1`; con eso `git.exe` interpretó la carpeta temporal `/tmp/...` como `C:\tmp\...` y el clon quedó fuera de donde el script lo buscaba. El `cd` falló, el script siguió (faltaba `|| exit`) y los pasos siguientes corrieron **dentro del repositorio de trabajo**: `cp .env.example .env` sobrescribió el `.env` del equipo y `docker compose -p limpio` levantó (y luego apagó con `down -v`, solo ese proyecto) el entorno desde el árbol de trabajo, no desde un clon. Por eso las cifras de ese registro (1132 pruebas, etc.) son las del árbol de trabajo.
-
-Reparación: el `.env` se reconstruyó con los valores de los contenedores que seguían en marcha (las 23 variables) y se validó que `docker compose config` coincide con el contenedor de la API; se perdieron solo los comentarios del archivo original. El script ahora usa la ruta en formato `C:/...`, sale si no existe el clon y se niega a seguir si el directorio actual es el repositorio de trabajo.
-- Segundo intento (clon real, 1128 pruebas pasadas): el paso 7 envió una pregunta con tildes con curl desde Windows y el Hub no entendió el cuerpo (respuesta vacía); se repite con texto sin tildes.

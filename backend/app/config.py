@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    """Configuración de la API leída de variables de entorno."""
     database_url: str
     # Sesiones (spec 007): clave de firma del token; sin ella la API no arranca
     jwt_secret: str
@@ -88,13 +89,13 @@ class Settings(BaseSettings):
 
 JWT_SECRET_MIN_LENGTH = 32
 # Prefijo del valor de .env.example: está publicado en el repositorio, así que no sirve para firmar sesiones (auditoría CT-01)
-JWT_SECRET_EJEMPLO = "clave-de-desarrollo-cambiala"
+JWT_SECRET_EXAMPLE = "clave-de-desarrollo-cambiala"
 
 
-def validar_jwt_secret(valor: str) -> None:
+def validate_jwt_secret(valor: str) -> None:
     """Rechaza una clave de firma corta o la del ejemplo. La API la llama al arrancar; los scripts de `ai/` solo importan `settings`."""
     como_generar = 'Genera una con: python -c "import secrets; print(secrets.token_urlsafe(48))" y ponla en JWT_SECRET de tu .env.'
-    if valor.startswith(JWT_SECRET_EJEMPLO):
+    if valor.startswith(JWT_SECRET_EXAMPLE):
         raise RuntimeError(f"JWT_SECRET es el valor de ejemplo de .env.example, que está publicado en el repositorio. {como_generar}")
     if len(valor) < JWT_SECRET_MIN_LENGTH:
         raise RuntimeError(f"JWT_SECRET tiene {len(valor)} caracteres y debe tener al menos {JWT_SECRET_MIN_LENGTH}. {como_generar}")

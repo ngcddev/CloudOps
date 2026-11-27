@@ -10,29 +10,29 @@ import sys
 import urllib.request
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[1]
-FICHAS = RAIZ / "docs" / "modelos"
-CLASIFICADOR = RAIZ / "backend" / "app" / "assets" / "clasificador.json"
+ROOT = Path(__file__).resolve().parents[1]
+CARDS = ROOT / "docs" / "modelos"
+CLASSIFIER = ROOT / "backend" / "app" / "assets" / "clasificador.json"
 DIGEST = re.compile(r"\| Nombre en Ollama \| `([^`]+)` \|[\s\S]*?\| Digest \| `([0-9a-f]{64})` \|")
 
 
-ARCHIVO = re.compile(r"\| Digest \| `([0-9a-f]{64})` \|\n\| Archivo \| `([^`]+)` \|")
+FILE_PATTERN = re.compile(r"\| Digest \| `([0-9a-f]{64})` \|\n\| Archivo \| `([^`]+)` \|")
 
 
-def archivos_locales_de_las_fichas() -> list[tuple[str, Path, str]]:
+def local_files_from_cards() -> list[tuple[str, Path, str]]:
     """[(nombre de la ficha, archivo del modelo, SHA-256 declarado)] de las fichas que dicen dónde está el archivo (los modelos de voz)."""
     salida = []
-    for ficha in sorted(FICHAS.glob("*.md")):
-        m = ARCHIVO.search(ficha.read_text(encoding="utf-8"))
+    for ficha in sorted(CARDS.glob("*.md")):
+        m = FILE_PATTERN.search(ficha.read_text(encoding="utf-8"))
         if m:
-            salida.append((ficha.stem, RAIZ / m.group(2), m.group(1)))
+            salida.append((ficha.stem, ROOT / m.group(2), m.group(1)))
     return salida
 
 
-def verificar_archivos_locales() -> tuple[list[str], list[str]]:
+def check_local_files() -> tuple[list[str], list[str]]:
     """(coinciden, problemas): el SHA-256 de cada archivo de modelo que está en el equipo contra el de su ficha; el que no se descargó se omite."""
     coinciden, problemas = [], []
-    for nombre, ruta, esperado in archivos_locales_de_las_fichas():
+    for nombre, ruta, esperado in local_files_from_cards():
         if not ruta.exists():
             continue
         real = hashlib.sha256(ruta.read_bytes()).hexdigest()
@@ -40,17 +40,17 @@ def verificar_archivos_locales() -> tuple[list[str], list[str]]:
     return coinciden, problemas
 
 
-def digests_de_las_fichas() -> dict[str, str]:
+def digests_from_cards() -> dict[str, str]:
     """{nombre del modelo en Ollama: digest declarado en su ficha}."""
     salida = {}
-    for ficha in sorted(FICHAS.glob("*.md")):
+    for ficha in sorted(CARDS.glob("*.md")):
         m = DIGEST.search(ficha.read_text(encoding="utf-8"))
         if m:
             salida[m.group(1)] = m.group(2)
     return salida
 
 
-def comparar(declarados: dict[str, str], reales: dict[str, str]) -> tuple[list[str], list[str]]:
+def compare(declarados: dict[str, str], reales: dict[str, str]) -> tuple[list[str], list[str]]:
     """(coinciden, problemas). Un modelo declarado que Ollama no tiene se informa, no se da por bueno."""
     coinciden, problemas = [], []
     sin_latest = {nombre.removesuffix(":latest"): digest for nombre, digest in reales.items()}
@@ -65,7 +65,7 @@ def comparar(declarados: dict[str, str], reales: dict[str, str]) -> tuple[list[s
     return coinciden, problemas
 
 
-def verificar_clasificador(ruta: Path = CLASIFICADOR) -> str | None:
+def check_classifier(ruta: Path = CLASSIFIER) -> str | None:
     """None si coincide con su suma; el problema, si no."""
     suma = ruta.with_suffix(".sha256")
     if not suma.exists():
@@ -75,25 +75,26 @@ def verificar_clasificador(ruta: Path = CLASIFICADOR) -> str | None:
     return None
 
 
-def digests_de_ollama(url: str) -> dict[str, str]:
+def ollama_digests(url: str) -> dict[str, str]:
     # bandit B310: herramienta de desarrollo: la URL de Ollama la pone quien la corre
     with urllib.request.urlopen(f"{url}/api/tags", timeout=15) as respuesta:  # nosec B310
         return {m["name"]: m.get("digest", "") for m in json.load(respuesta).get("models", [])}
 
 
 def main() -> int:
+    """Compara los digests de Ollama y la suma de la compuerta con los de las fichas; sale con 1 si algo no coincide."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--url", default="http://localhost:11434")
     args = ap.parse_args()
     problemas = []
 
-    problema = verificar_clasificador()
+    problema = check_classifier()
     print(f"{'✓' if problema is None else '✗'} compuerta: {problema or 'el clasificador coincide con su suma SHA-256'}")
     if problema:
         problemas.append(problema)
 
     try:
-        coinciden, fallos = comparar(digests_de_las_fichas(), digests_de_ollama(args.url))
+        coinciden, fallos = compare(digests_from_cards(), ollama_digests(args.url))
     except Exception as error:  # noqa: BLE001
         print(f"- Ollama no respondió ({str(error)[:100]}): no se verificaron los modelos de lenguaje")
     else:
@@ -103,7 +104,7 @@ def main() -> int:
             print(f"✗ {fallo}")
         problemas += fallos
 
-    locales, fallos_locales = verificar_archivos_locales()
+    locales, fallos_locales = check_local_files()
     for nombre in locales:
         print(f"✓ {nombre}: el archivo del modelo coincide con el SHA-256 de su ficha")
     for fallo in fallos_locales:

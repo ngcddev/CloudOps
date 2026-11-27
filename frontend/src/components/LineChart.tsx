@@ -16,7 +16,7 @@ const MARGIN = { top: 18, right: 18, bottom: 34, left: 56 };
 // Un punto cada 5 min; dos seguidos separados por más de 7,5 min son un hueco de datos
 const GAP_MS = 7.5 * 60 * 1000;
 
-function horaBogota(iso: string): string {
+function bogotaTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-CO", {
     timeZone: "America/Bogota",
     hour: "2-digit",
@@ -165,7 +165,7 @@ export default function LineChart({ title, points, kind, target }: LineChartProp
               y={HEIGHT - 10}
               textAnchor={parte === 0 ? "start" : parte === 1 ? "end" : "middle"}
             >
-              {horaBogota(instante)}
+              {bogotaTime(instante)}
             </text>
           );
         })}

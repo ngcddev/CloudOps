@@ -8,7 +8,7 @@ from app.services.sla import BOGOTA
 
 # Plantilla de la misión (constitution/mission.md), en el lenguaje del glosario: sin «incidente»,
 # «rollback», «P1» ni nada técnico (principio 8)
-PLANTILLA = (
+TEMPLATE = (
     "Detectamos una falla temporal en su sitio a las {hora}. Activamos la recuperación y a las {hora_fin} "
     "el servicio volvió a funcionar. Tiempo total: {duracion}."
 )
@@ -18,7 +18,7 @@ def _as_utc(value: datetime) -> datetime:
     return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
 
 
-def _duracion(minutos: int) -> str:
+def _duration(minutos: int) -> str:
     if minutos < 1:
         return "menos de 1 minuto"
     return "1 minuto" if minutos == 1 else f"{minutos} minutos"
@@ -35,4 +35,4 @@ def client_message(incident: Incident) -> str:
     inicio = _as_utc(incident.started_at).astimezone(BOGOTA).replace(second=0, microsecond=0)
     fin = _as_utc(incident.mitigated_at).astimezone(BOGOTA).replace(second=0, microsecond=0)
     minutos = int((fin - inicio).total_seconds() // 60)
-    return PLANTILLA.format(hora=inicio.strftime("%H:%M"), hora_fin=fin.strftime("%H:%M"), duracion=_duracion(minutos))
+    return TEMPLATE.format(hora=inicio.strftime("%H:%M"), hora_fin=fin.strftime("%H:%M"), duracion=_duration(minutos))

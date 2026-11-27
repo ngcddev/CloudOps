@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.db import soltar_conexion
+from app.db import release_connection
 from app.integrations import loki, ollama, prometheus
 from app.models.ai_draft import AiDraft
 from app.models.incident import Incident
@@ -23,15 +23,15 @@ from app.services import redaccion
 
 PROMPT_VERSION = "v1"
 PROMPT = f"diagnostico.{PROMPT_VERSION}.md"
-ORDEN = "Propón hipótesis de diagnóstico y un borrador de runbook con la evidencia."
-MARCA = "Hipótesis sin confirmar."
-MAX_APORTADA = 8
+ORDER = "Propón hipótesis de diagnóstico y un borrador de runbook con la evidencia."
+MARK = "Hipótesis sin confirmar."
+MAX_PROVIDED = 8
 # El diagnóstico (hipótesis, comprobaciones y pasos) es más largo que una respuesta del asistente: 350 tokens lo cortaban a media frase
 MAX_TOKENS = 700
-MAX_LARGO_APORTADA = 300
-CITA = re.compile(r"\[E(\d+)\]")
+MAX_PROVIDED_LENGTH = 300
+CITATION = re.compile(r"\[E(\d+)\]")
 # Cambios a mano en el clúster, en contenedores o en la base: no se proponen nunca
-PROHIBIDOS = re.compile(
+FORBIDDEN = re.compile(
     r"\b(kubectl\s+(apply|delete|edit|patch|scale|rollout|replace|set|drain|cordon|exec)|docker\s+(rm|run|exec|stop|kill|restart)|helm\s+(install|upgrade|uninstall)|rm\s+-rf|drop\s+table|psql|escal\w+\s+(temporal|manual)\w*)\b",
     re.IGNORECASE,
 )
@@ -39,17 +39,17 @@ RUNBOOKS = {"caida": "runbooks/caida-del-sitio.md", "rollback": "runbooks/rollba
 
 
 @dataclass(frozen=True)
-class Evidencia:
+class Evidence:
     id: str  # E1, E2…
     tipo: str  # incidente | métrica | registro | aportada
     texto: str
 
 
-def _cliente(namespace: str) -> str:
+def _client(namespace: str) -> str:
     return namespace.removeprefix("cliente-")
 
 
-def _metricas(namespace: str, clave: str, transport=None) -> list[tuple[str, str]]:
+def _metrics(namespace: str, clave: str, transport=None) -> list[tuple[str, str]]:
     """(descripción, valor) de lo que Prometheus sabe del namespace ahora; lo que no tenga datos se omite."""
     pods = f'namespace="{namespace}",container!="",container!="POD"'
     consultas = [
@@ -68,7 +68,7 @@ def _metricas(namespace: str, clave: str, transport=None) -> list[tuple[str, str
     return salida
 
 
-def reunir_evidencia(incident: Incident, aportada: list[str] | None = None, transport_prometheus=None, transport_loki=None) -> list[Evidencia]:
+def gather_evidence(incident: Incident, aportada: list[str] | None = None, transport_prometheus=None, transport_loki=None) -> list[Evidence]:
     """E1 siempre es el propio incidente; después las métricas, los registros y lo que la persona aportó (p. ej. datos sintéticos de práctica)."""
     namespace = incident.service.namespace
     textos: list[tuple[str, str]] = [
@@ -76,20 +76,20 @@ def reunir_evidencia(incident: Incident, aportada: list[str] | None = None, tran
     ]
     if incident.rollback_from_version and incident.rollback_to_version:
         textos.append(("incidente", f"se hizo rollback de la versión {incident.rollback_from_version} a la {incident.rollback_to_version}"))
-    textos += [("métrica", f"{descripcion}: {valor}") for descripcion, valor in _metricas(namespace, str(incident.id), transport_prometheus)]
+    textos += [("métrica", f"{descripcion}: {valor}") for descripcion, valor in _metrics(namespace, str(incident.id), transport_prometheus)]
     inicio = incident.started_at if incident.started_at.tzinfo else incident.started_at.replace(tzinfo=timezone.utc)
     desde, hasta = int((inicio.timestamp() - 300) * 1e9), int(time.time() * 1e9)
-    textos += [("registro", linea) for linea in loki.lineas(namespace, desde, hasta, transport_loki)[-10:]]
-    textos += [("aportada", t.strip()[:MAX_LARGO_APORTADA]) for t in (aportada or [])[:MAX_APORTADA] if t.strip()]
+    textos += [("registro", linea) for linea in loki.lines(namespace, desde, hasta, transport_loki)[-10:]]
+    textos += [("aportada", t.strip()[:MAX_PROVIDED_LENGTH]) for t in (aportada or [])[:MAX_PROVIDED] if t.strip()]
     # Spec 020: un registro o una nota con una clave no viaja al modelo ni se guarda en el borrador
-    return [Evidencia(f"E{i}", tipo, redaccion.redactar(texto)[0]) for i, (tipo, texto) in enumerate(textos, start=1)]
+    return [Evidence(f"E{i}", tipo, redaccion.redact(texto)[0]) for i, (tipo, texto) in enumerate(textos, start=1)]
 
 
-def datos_para_el_modelo(evidencia: list[Evidencia]) -> str:
+def model_input(evidencia: list[Evidence]) -> str:
     return "\n".join(f"[{e.id}] ({e.tipo}) {e.texto}" for e in evidencia)
 
 
-def runbook_sugerido(incident: Incident, evidencia: list[Evidencia]) -> str:
+def suggested_runbook(incident: Incident, evidencia: list[Evidence]) -> str:
     """Runbook que corresponde según lo que se ve (determinista, sin IA): rollback si lo hubo, saturación si CPU/memoria van al límite, latencia si el sondeo tarda."""
     juntos = " ".join(e.texto for e in evidencia)
     if incident.rollback_from_version:
@@ -104,53 +104,53 @@ def runbook_sugerido(incident: Incident, evidencia: list[Evidencia]) -> str:
     return RUNBOOKS["caida"]
 
 
-def texto_base(incident: Incident, evidencia: list[Evidencia]) -> str:
-    runbook = runbook_sugerido(incident, evidencia)
+def base_text(incident: Incident, evidencia: list[Evidence]) -> str:
+    runbook = suggested_runbook(incident, evidencia)
     lineas = [f"- [{e.id}] {e.texto}" for e in evidencia]
     return (
-        f"{MARCA} La IA no propuso un diagnóstico, así que este es solo el resumen de la evidencia reunida:\n" + "\n".join(lineas)
+        f"{MARK} La IA no propuso un diagnóstico, así que este es solo el resumen de la evidencia reunida:\n" + "\n".join(lineas)
         + f"\n\nSiguiente paso: seguir el runbook {runbook} (síntoma, diagnóstico, acción y verificación) y registrar la causa raíz en el incidente."
     )
 
 
-def verificar(texto: str, evidencia: list[Evidencia]) -> dict:
+def check(texto: str, evidencia: list[Evidence]) -> dict:
     """Lo que el texto trae de más: citas a evidencia que no existe, falta de citas y propuestas de cambios a mano."""
     ids = {e.id for e in evidencia}
-    citadas = {f"E{n}" for n in CITA.findall(texto)}
+    citadas = {f"E{n}" for n in CITATION.findall(texto)}
     return {
         "citas_inexistentes": sorted(citadas - ids, key=lambda c: int(c[1:])),
         "sin_citas": len(evidencia) > 1 and not citadas,
-        "comandos_prohibidos": sorted({m.group(0).lower() for m in PROHIBIDOS.finditer(texto)}),
+        "comandos_prohibidos": sorted({m.group(0).lower() for m in FORBIDDEN.finditer(texto)}),
     }
 
 
-def _limpio(comprobacion: dict) -> bool:
+def _clean(comprobacion: dict) -> bool:
     return not comprobacion["citas_inexistentes"] and not comprobacion["sin_citas"] and not comprobacion["comandos_prohibidos"]
 
 
-def redactar(incident: Incident, evidencia: list[Evidencia], transport=None) -> dict:
+def draft_text(incident: Incident, evidencia: list[Evidence], transport=None) -> dict:
     """Texto del diagnóstico y de dónde salió: {texto, source, checks, latency_ms, model, prompt_version}."""
-    sistema = f"{(ASSETS / PROMPT).read_text(encoding='utf-8').strip()}\n\nEVIDENCIA:\n{datos_para_el_modelo(evidencia)}"
+    sistema = f"{(ASSETS / PROMPT).read_text(encoding='utf-8').strip()}\n\nEVIDENCIA:\n{model_input(evidencia)}"
     inicio = time.monotonic()
-    generado = ollama.chat(sistema, ORDEN, transport=transport, max_tokens=MAX_TOKENS)
+    generado = ollama.chat(sistema, ORDER, transport=transport, max_tokens=MAX_TOKENS)
     latencia = int((time.monotonic() - inicio) * 1000)
     evidencias = [{"id": e.id, "tipo": e.tipo, "texto": e.texto} for e in evidencia]
     vacio = {"citas_inexistentes": [], "sin_citas": False, "comandos_prohibidos": []}
-    comprobacion = verificar(generado, evidencia) if generado else vacio
-    if generado and _limpio(comprobacion):
+    comprobacion = check(generado, evidencia) if generado else vacio
+    if generado and _clean(comprobacion):
         texto = generado.strip()
-        if not texto.startswith(MARCA):
-            texto = f"{MARCA} {texto}"
+        if not texto.startswith(MARK):
+            texto = f"{MARK} {texto}"
         return {"texto": texto, "source": "llm", "checks": {**comprobacion, "evidencia": evidencias, "motivo_texto_base": None},
                 "latency_ms": latencia, "model": settings.ollama_model, "prompt_version": PROMPT_VERSION}
     motivo = "La IA no respondió a tiempo." if not generado else "El texto de la IA no pasó las verificaciones (citas que no existen, sin citas o cambios a mano)."
-    return {"texto": texto_base(incident, evidencia), "source": "plantilla",
+    return {"texto": base_text(incident, evidencia), "source": "plantilla",
             "checks": {**comprobacion, "evidencia": evidencias, "motivo_texto_base": motivo, "texto_rechazado": generado},
             "latency_ms": latencia if generado is not None else None, "model": settings.ollama_model if generado else None,
             "prompt_version": PROMPT_VERSION if generado else None}
 
 
-def diagnosticar(db: Session, incident: Incident, aportada: list[str] | None = None, transport_prometheus=None, transport_loki=None, transport=None) -> AiDraft:
+def diagnose(db: Session, incident: Incident, aportada: list[str] | None = None, transport_prometheus=None, transport_loki=None, transport=None) -> AiDraft:
     """Crea el borrador de diagnóstico (el anterior sin aprobar se descarta). Funciona con el incidente abierto. Hace commit.
 
     Las consultas a Prometheus y Loki y la llamada a Ollama tardan segundos: antes de hacerlas se copia lo que se necesita del incidente y se suelta la conexión
@@ -161,9 +161,9 @@ def diagnosticar(db: Session, incident: Incident, aportada: list[str] | None = N
         rollback_from_version=incident.rollback_from_version, rollback_to_version=incident.rollback_to_version,
         service=SimpleNamespace(name=incident.service.name, namespace=incident.service.namespace),
     )
-    soltar_conexion(db)
-    evidencia = reunir_evidencia(foto, aportada, transport_prometheus, transport_loki)
-    r = redactar(foto, evidencia, transport=transport)
+    release_connection(db)
+    evidencia = gather_evidence(foto, aportada, transport_prometheus, transport_loki)
+    r = draft_text(foto, evidencia, transport=transport)
     for anterior in db.scalars(select(AiDraft).where(AiDraft.incident_id == foto.id, AiDraft.kind == "diagnostico", AiDraft.status == "borrador_ia")):
         anterior.status = "descartado"
     borrador = AiDraft(

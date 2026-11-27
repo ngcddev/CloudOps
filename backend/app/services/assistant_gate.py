@@ -13,27 +13,27 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-EN_TEMA = "en_tema"
-FUERA_DE_TEMA = "fuera_de_tema"
-ETIQUETAS = (EN_TEMA, FUERA_DE_TEMA)
+ON_TOPIC = "en_tema"
+OFF_TOPIC = "fuera_de_tema"
+LABELS = (ON_TOPIC, OFF_TOPIC)
 
 logger = logging.getLogger(__name__)
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "assets" / "clasificador.json"
 
 
-class ModeloAlterado(RuntimeError):
+class TamperedModel(RuntimeError):
     """El archivo del modelo no coincide con su suma de verificación (spec 020): no se carga."""
 
 
-def verificar_integridad(ruta: Path) -> None:
+def verify_integrity(ruta: Path) -> None:
     """Compara el SHA-256 del modelo con `clasificador.sha256`, que escribe `ai/classifier/promover.py` al exportarlo. Sin ese archivo no se comprueba nada."""
     suma = ruta.with_suffix(".sha256")
     if not suma.exists():
         return
     esperado = suma.read_text(encoding="utf-8").split()[0]
     if hashlib.sha256(ruta.read_bytes()).hexdigest() != esperado:
-        raise ModeloAlterado(f"{ruta.name} no coincide con {suma.name}: el modelo fue modificado fuera del camino de promoción")
+        raise TamperedModel(f"{ruta.name} no coincide con {suma.name}: el modelo fue modificado fuera del camino de promoción")
 
 
 def normalize(text: str) -> str:
@@ -76,7 +76,7 @@ class GateModel:
         # Vocabulario propio de la aplicación (ticket, SLA, rollback…): si aparece, la pregunta es del tema
         self.lexicon: frozenset[str] = frozenset(normalize(t) for t in data.get("lexicon", []))
 
-    def menciona_la_app(self, text: str) -> bool:
+    def mentions_app(self, text: str) -> bool:
         """Guarda de seguridad: una pregunta con un término de la aplicación nunca se salta al LLM."""
         normal = f" {normalize(text)} "
         return any(f" {term} " in normal for term in self.lexicon)
@@ -84,7 +84,7 @@ class GateModel:
     def p_fuera_de_tema(self, text: str) -> float:
         rasgos = features(text)
         scores = {}
-        for label in ETIQUETAS:
+        for label in LABELS:
             score = math.log(self.priors[label])
             denom = self.totals[label] + self.vocab_size
             for rasgo in rasgos:
@@ -92,14 +92,14 @@ class GateModel:
             scores[label] = score
         mayor = max(scores.values())
         exp = {k: math.exp(v - mayor) for k, v in scores.items()}
-        return exp[FUERA_DE_TEMA] / sum(exp.values())
+        return exp[OFF_TOPIC] / sum(exp.values())
 
     def decide(self, text: str, threshold: float | None = None) -> Decision:
         """Solo se salta al LLM si hay alta seguridad de que es ajena al tema; ante la duda se despierta."""
         limite = self.threshold if threshold is None else threshold
         p = self.p_fuera_de_tema(text)
-        fuera = p >= limite and not self.menciona_la_app(text)
-        return Decision(FUERA_DE_TEMA if fuera else EN_TEMA, round(p, 4), not fuera, self.version)
+        fuera = p >= limite and not self.mentions_app(text)
+        return Decision(OFF_TOPIC if fuera else ON_TOPIC, round(p, 4), not fuera, self.version)
 
 
 class RemoteGate:
@@ -119,6 +119,7 @@ class RemoteGate:
         self.version = label
 
     def decide(self, text: str, threshold: float | None = None) -> Decision:
+        """Pregunta a la compuerta remota (MLflow) y, si no responde, decide con el modelo local."""
         limite = self.fallback.threshold if threshold is None else threshold
         body = json.dumps({"dataframe_split": {"columns": ["text"], "data": [[text]]}}).encode()
         request = urllib.request.Request(f"{self.url}/invocations", data=body, headers={"Content-Type": "application/json"})
@@ -131,8 +132,8 @@ class RemoteGate:
             logger.warning("Compuerta remota no disponible (%s): decide el modelo local.", error)
             return self.fallback.decide(text, threshold)
         # El umbral y la guarda de vocabulario se aplican aquí con los mismos valores que el modelo local
-        fuera = p >= limite and not self.fallback.menciona_la_app(text)
-        return Decision(FUERA_DE_TEMA if fuera else EN_TEMA, round(p, 4), not fuera, self.version)
+        fuera = p >= limite and not self.fallback.mentions_app(text)
+        return Decision(OFF_TOPIC if fuera else ON_TOPIC, round(p, 4), not fuera, self.version)
 
 
 _cached: GateModel | None = None
@@ -144,7 +145,7 @@ def load_model(path: Path | None = None) -> GateModel | RemoteGate:
     if path is not None:
         return GateModel(json.loads(path.read_text(encoding="utf-8")))
     if _cached is None:
-        verificar_integridad(MODEL_PATH)
+        verify_integrity(MODEL_PATH)
         _cached = GateModel(json.loads(MODEL_PATH.read_text(encoding="utf-8")))
     from app.config import settings  # import tardío: el módulo se usa también fuera del Hub (ai/classifier)
 

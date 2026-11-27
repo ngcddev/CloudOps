@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 
 import Logo from "./Logo";
 import MockDataNotice from "./MockDataNotice";
-import OutletSeguro from "./OutletSeguro";
+import SafeOutlet from "./SafeOutlet";
 import SessionBar from "./SessionBar";
 
 // Secciones de la consola. Las que aún no existen se muestran deshabilitadas con la spec que las trae.
@@ -50,7 +50,7 @@ export default function AgencyLayout() {
       </aside>
       <main className="content">
         <MockDataNotice />
-        <OutletSeguro />
+        <SafeOutlet />
       </main>
     </div>
   );

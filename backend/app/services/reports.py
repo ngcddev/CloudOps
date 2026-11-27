@@ -16,38 +16,38 @@ from app.models.user import User
 from app.services import ai_drafts, kpi
 from app.services.sla import BOGOTA
 
-MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 # Un reporte ejecutivo cabe en una página (CA-2): se listan hasta este número de fallas y el resto se resume en una línea
-MAX_INCIDENTES_LISTADOS = 5
+MAX_LISTED_INCIDENTS = 5
 
 # Frases para el cliente, del glosario (docs/glosario.md): ningún término técnico
-TEXTO_DISPONIBLE = "Su sitio se mantuvo disponible dentro del objetivo acordado."
-TEXTO_POR_DEBAJO = "Este mes su sitio estuvo disponible menos de lo acordado; le explicamos qué pasó y qué mejoramos."
-TEXTO_SIN_DATOS = "Todavía no tenemos datos de su sitio este mes."
-TEXTO_SIN_FALLAS = "No tuvimos fallas que afectaran su sitio este mes."
-TEXTO_FALLA_GENERICO = "Se detectó una falla temporal y se activó el proceso de recuperación."
-TEXTO_SIN_SOLICITUDES = "Este mes no abrió solicitudes."
+TEXT_AVAILABLE = "Su sitio se mantuvo disponible dentro del objetivo acordado."
+TEXT_BELOW = "Este mes su sitio estuvo disponible menos de lo acordado; le explicamos qué pasó y qué mejoramos."
+TEXT_NO_DATA = "Todavía no tenemos datos de su sitio este mes."
+TEXT_NO_FAILURES = "No tuvimos fallas que afectaran su sitio este mes."
+TEXT_GENERIC_FAILURE = "Se detectó una falla temporal y se activó el proceso de recuperación."
+TEXT_NO_REQUESTS = "Este mes no abrió solicitudes."
 
 
-def sin_nan(valor):
+def without_nan(valor):
     """Convierte NaN e infinitos en None, recursivamente. Prometheus devuelve NaN (p. ej. la latencia p95 de un sitio sin tráfico) y NaN no
     es JSON válido: SQLite lo guarda, PostgreSQL lo rechaza («invalid input syntax for type json»). «Sin datos» es lo honesto."""
     if isinstance(valor, float) and not math.isfinite(valor):
         return None
     if isinstance(valor, dict):
-        return {k: sin_nan(v) for k, v in valor.items()}
+        return {k: without_nan(v) for k, v in valor.items()}
     if isinstance(valor, (list, tuple)):
-        return [sin_nan(v) for v in valor]
+        return [without_nan(v) for v in valor]
     return valor
 
 
-def etiqueta_mes(month: str) -> str:
+def month_label(month: str) -> str:
     """«2026-10» → «octubre de 2026»."""
     anio, mes = month.split("-")
-    return f"{MESES[int(mes) - 1]} de {anio}"
+    return f"{MONTHS[int(mes) - 1]} de {anio}"
 
 
-def mes_anterior(month: str) -> str:
+def previous_month(month: str) -> str:
     anio, mes = (int(p) for p in month.split("-"))
     return f"{anio - 1}-12" if mes == 1 else f"{anio}-{mes - 1:02d}"
 
@@ -56,33 +56,33 @@ def _utc(valor: datetime) -> datetime:
     return valor.replace(tzinfo=timezone.utc) if valor.tzinfo is None else valor
 
 
-def _kpi_del_cliente(db: Session, client: Client, month: str) -> dict:
+def _client_kpi(db: Session, client: Client, month: str) -> dict:
     """Los KPI de un cliente en un mes: exactamente las funciones que usa el tablero de la agencia (spec 010)."""
-    disponibilidad = sin_nan(kpi.disponibilidad_del_mes(db, client.id, month))
+    disponibilidad = without_nan(kpi.monthly_availability(db, client.id, month))
     return {
         "disponibilidad": disponibilidad,
         # Sin dato de disponibilidad no se dice que cumple ni que incumple el objetivo
-        "cumple_objetivo": None if disponibilidad is None else kpi.cumple_objetivo(db, client.id, month, disponibilidad=disponibilidad),
-        "latencia_p95": kpi.latencia_p95_del_mes(db, client.id, month),
-        "sla": kpi.cumplimiento_sla(db, client.id, month),
-        "mttr": kpi.mttr_del_mes(db, client.id, month),
-        "solicitudes_abiertas": kpi.solicitudes_abiertas(db, client.id, month),
-        "solicitudes_cerradas": kpi.solicitudes_cerradas(db, client.id, month),
-        "horas": kpi.horas_por_cliente(db, client.id, month),
-        "costo": kpi.costo_por_cliente(db, client.id, month),
+        "cumple_objetivo": None if disponibilidad is None else kpi.meets_target(db, client.id, month, disponibilidad=disponibilidad),
+        "latencia_p95": kpi.monthly_latency_p95(db, client.id, month),
+        "sla": kpi.sla_compliance(db, client.id, month),
+        "mttr": kpi.monthly_mttr(db, client.id, month),
+        "solicitudes_abiertas": kpi.open_requests(db, client.id, month),
+        "solicitudes_cerradas": kpi.closed_requests(db, client.id, month),
+        "horas": kpi.hours_by_client(db, client.id, month),
+        "costo": kpi.cost_by_client(db, client.id, month),
     }
 
 
-def _clientes(db: Session) -> list[Client]:
+def _clients(db: Session) -> list[Client]:
     return list(db.scalars(select(Client).options(selectinload(Client.projects).selectinload(Project.services)).order_by(Client.id)).all())
 
 
-def _promedio(valores: list[float | None]) -> float | None:
+def _average(valores: list[float | None]) -> float | None:
     presentes = [v for v in valores if v is not None]
     return round(sum(presentes) / len(presentes), 2) if presentes else None
 
 
-def _incidentes_del_mes(db: Session, client_id: int, month: str) -> list[Incident]:
+def _month_incidents(db: Session, client_id: int, month: str) -> list[Incident]:
     inicio, fin = kpi.month_bounds(month)
     return list(
         db.scalars(
@@ -95,11 +95,11 @@ def _incidentes_del_mes(db: Session, client_id: int, month: str) -> list[Inciden
     )
 
 
-def operativo(db: Session, month: str) -> dict:
+def operational(db: Session, month: str) -> dict:
     """Reporte operativo: KPI de cada cliente en el mes y en el anterior (para comparar), totales y carga de los técnicos."""
-    previo = mes_anterior(month)
+    previo = previous_month(month)
     filas = []
-    for client in _clientes(db):
+    for client in _clients(db):
         service = client.main_service
         plan = service.plan if service is not None else None
         filas.append(
@@ -108,21 +108,21 @@ def operativo(db: Session, month: str) -> dict:
                 "cliente": client.name,
                 "plan": plan.name if plan is not None else None,
                 "slo": float(plan.slo_availability) if plan is not None else None,
-                "incidentes": len(_incidentes_del_mes(db, client.id, month)),
-                **_kpi_del_cliente(db, client, month),
-                "mes_anterior": _kpi_del_cliente(db, client, previo),
+                "incidentes": len(_month_incidents(db, client.id, month)),
+                **_client_kpi(db, client, month),
+                "mes_anterior": _client_kpi(db, client, previo),
             }
         )
     tecnicos = [
-        {"nombre": u.name, "horas": kpi.horas_del_tecnico(db, u.id, month), "carga": kpi.carga_tecnico(db, u.id, month)}
+        {"nombre": u.name, "horas": kpi.technician_hours(db, u.id, month), "carga": kpi.technician_load(db, u.id, month)}
         for u in db.scalars(select(User).where(User.role == "agencia").order_by(User.id)).all()
     ]
-    return sin_nan({
+    return without_nan({
         "kind": "operativo",
         "month": month,
-        "etiqueta_mes": etiqueta_mes(month),
+        "etiqueta_mes": month_label(month),
         "mes_anterior": previo,
-        "etiqueta_mes_anterior": etiqueta_mes(previo),
+        "etiqueta_mes_anterior": month_label(previo),
         "clientes": filas,
         "totales": {
             "solicitudes_abiertas": sum(f["solicitudes_abiertas"] for f in filas),
@@ -131,45 +131,45 @@ def operativo(db: Session, month: str) -> dict:
             "costo": round(sum(f["costo"] for f in filas), 2),
             "incidentes": sum(f["incidentes"] for f in filas),
             # Promedio simple de los clientes que tienen dato: un cliente sin tickets cerrados no cuenta como 0 %
-            "sla_promedio": _promedio([f["sla"] for f in filas]),
-            "mttr_promedio": _promedio([f["mttr"] for f in filas]),
+            "sla_promedio": _average([f["sla"] for f in filas]),
+            "mttr_promedio": _average([f["mttr"] for f in filas]),
         },
         "tecnicos": tecnicos,
         "generado": datetime.now(timezone.utc).isoformat(),
     })
 
 
-def _texto_duracion(incidente: Incident) -> str:
+def _duration_text(incidente: Incident) -> str:
     fin = incidente.mitigated_at or incidente.closed_at
     if fin is None:
         return "en atención"
     minutos = int((_utc(fin) - _utc(incidente.started_at)).total_seconds() // 60)
-    return ai_drafts.duracion_texto(minutos)
+    return ai_drafts.duration_text(minutos)
 
 
-def ejecutivo(db: Session, client_id: int, month: str) -> dict:
+def executive(db: Session, client_id: int, month: str) -> dict:
     """Reporte ejecutivo del cliente: una página, sin jerga. Lee de los mismos KPI que su portal y usa solo textos aprobados por una persona."""
     client = db.scalar(select(Client).options(selectinload(Client.projects).selectinload(Project.services)).where(Client.id == client_id))
     if client is None:
         raise LookupError("El cliente no existe.")
     service = client.main_service
     plan = service.plan if service is not None else None
-    disponibilidad = sin_nan(kpi.disponibilidad_del_mes(db, client.id, month))
-    cumple = None if disponibilidad is None else kpi.cumple_objetivo(db, client.id, month)
+    disponibilidad = without_nan(kpi.monthly_availability(db, client.id, month))
+    cumple = None if disponibilidad is None else kpi.meets_target(db, client.id, month)
     if disponibilidad is None or cumple is None:
-        texto_disponibilidad = TEXTO_SIN_DATOS
+        texto_disponibilidad = TEXT_NO_DATA
     else:
-        texto_disponibilidad = TEXTO_DISPONIBLE if cumple else TEXTO_POR_DEBAJO
+        texto_disponibilidad = TEXT_AVAILABLE if cumple else TEXT_BELOW
 
-    incidentes = _incidentes_del_mes(db, client.id, month)
+    incidentes = _month_incidents(db, client.id, month)
     listados = []
-    for incidente in incidentes[:MAX_INCIDENTES_LISTADOS]:
+    for incidente in incidentes[:MAX_LISTED_INCIDENTS]:
         listados.append(
             {
                 "cuando": _utc(incidente.started_at).astimezone(BOGOTA).strftime("%d/%m %H:%M"),
-                "duracion": _texto_duracion(incidente),
+                "duracion": _duration_text(incidente),
                 # Solo el mensaje que una persona aprobó (spec 012); si no hay, la frase genérica del glosario
-                "texto": ai_drafts.mensaje_aprobado(db, incidente.id) or TEXTO_FALLA_GENERICO,
+                "texto": ai_drafts.approved_message(db, incidente.id) or TEXT_GENERIC_FAILURE,
             }
         )
     inicio, fin = kpi.month_bounds(month)
@@ -182,12 +182,12 @@ def ejecutivo(db: Session, client_id: int, month: str) -> dict:
             .where(Project.client_id == client.id, Deployment.source == "cambio", Deployment.created_at >= inicio, Deployment.created_at < fin)
         ).all()
     )
-    abiertas, cerradas = kpi.solicitudes_abiertas(db, client.id, month), kpi.solicitudes_cerradas(db, client.id, month)
-    mttr = kpi.mttr_del_mes(db, client.id, month)
-    return sin_nan({
+    abiertas, cerradas = kpi.open_requests(db, client.id, month), kpi.closed_requests(db, client.id, month)
+    mttr = kpi.monthly_mttr(db, client.id, month)
+    return without_nan({
         "kind": "ejecutivo",
         "month": month,
-        "etiqueta_mes": etiqueta_mes(month),
+        "etiqueta_mes": month_label(month),
         "cliente": {"id": client.id, "nombre": client.name},
         "sitio": service.name if service is not None else None,
         "plan": plan.name if plan is not None else None,
@@ -200,10 +200,10 @@ def ejecutivo(db: Session, client_id: int, month: str) -> dict:
         "fallas": {
             "total": len(incidentes),
             "listadas": listados,
-            "sin_listar": max(0, len(incidentes) - MAX_INCIDENTES_LISTADOS),
-            "texto": TEXTO_SIN_FALLAS if not incidentes else None,
+            "sin_listar": max(0, len(incidentes) - MAX_LISTED_INCIDENTS),
+            "texto": TEXT_NO_FAILURES if not incidentes else None,
             # Con una sola falla el promedio repite (y redondeado, contradice) la duración de esa falla: solo se muestra con varias
-            "tiempo_de_recuperacion_promedio": ai_drafts.duracion_texto(int(round(mttr))) if mttr is not None and len(incidentes) > 1 else None,
+            "tiempo_de_recuperacion_promedio": ai_drafts.duration_text(int(round(mttr))) if mttr is not None and len(incidentes) > 1 else None,
         },
         "actualizaciones": {
             "publicadas": n_publicadas,
@@ -212,7 +212,7 @@ def ejecutivo(db: Session, client_id: int, month: str) -> dict:
         "solicitudes": {
             "abiertas": abiertas,
             "atendidas": cerradas,
-            "texto": TEXTO_SIN_SOLICITUDES if (abiertas + cerradas) == 0 else f"Recibimos {abiertas + cerradas} {'solicitud' if abiertas + cerradas == 1 else 'solicitudes'} y atendimos {cerradas}.",
+            "texto": TEXT_NO_REQUESTS if (abiertas + cerradas) == 0 else f"Recibimos {abiertas + cerradas} {'solicitud' if abiertas + cerradas == 1 else 'solicitudes'} y atendimos {cerradas}.",
         },
         "generado": datetime.now(timezone.utc).isoformat(),
     })

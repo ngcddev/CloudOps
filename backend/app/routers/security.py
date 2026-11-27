@@ -13,7 +13,7 @@ from app.models.change_request import ChangeRequest
 from app.models.security_check import SecurityCheck
 from app.models.security_run import SecurityRun
 from app.models.service import Service
-from app.paginacion import Pagina, pagina
+from app.paginacion import Page, paginate
 from app.schemas.security import GateOut, SecurityRunOut
 from app.services import security_gate as gate
 
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api", tags=["puerta de seguridad"], dependencies=[De
 
 
 @router.get("/services/{service_id}/security-runs", response_model=list[SecurityRunOut])
-def service_security_runs(service_id: int, page: Pagina = Depends(pagina), db: Session = Depends(get_db)):
+def service_security_runs(service_id: int, page: Page = Depends(paginate), db: Session = Depends(get_db)):
     """Corridas de la puerta del servicio, de la más reciente a la más antigua, con sus controles."""
     if db.get(Service, service_id) is None:
         raise HTTPException(status_code=404, detail="El servicio no existe.")

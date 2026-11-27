@@ -5,9 +5,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getVoiceStatus, transcribeAudio, type VoiceStatus } from "../api";
 
-const MAX_SEGUNDOS = 30;
+const MAX_SECONDS = 30;
 
-type Fase = "inicio" | "grabando" | "transcribiendo";
+type Phase = "inicio" | "grabando" | "transcribiendo";
 
 interface Props {
   // Lo que se entendió; `enviar` es true si la persona pidió mandarlo sin revisar
@@ -19,7 +19,7 @@ interface Props {
 
 export default function VoiceInput({ onTranscript, onStart, disabled = false }: Props) {
   const [estado, setEstado] = useState<VoiceStatus | null>(null);
-  const [fase, setFase] = useState<Fase>("inicio");
+  const [fase, setFase] = useState<Phase>("inicio");
   const [segundos, setSegundos] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [enviarSinRevisar, setEnviarSinRevisar] = useState(false);
@@ -94,7 +94,7 @@ export default function VoiceInput({ onTranscript, onStart, disabled = false }: 
       temporizador.current = window.setInterval(() => {
         const transcurridos = Math.floor((Date.now() - inicio) / 1000);
         setSegundos(transcurridos);
-        if (transcurridos >= MAX_SEGUNDOS && g.state === "recording") g.stop();
+        if (transcurridos >= MAX_SECONDS && g.state === "recording") g.stop();
       }, 500);
     } catch (e) {
       liberar();
@@ -141,7 +141,7 @@ export default function VoiceInput({ onTranscript, onStart, disabled = false }: 
         <input type="checkbox" checked={enviarSinRevisar} onChange={(evento) => { enviarRef.current = evento.target.checked; setEnviarSinRevisar(evento.target.checked); }} /> Enviar al terminar de hablar, sin revisar
       </label>
       <p className="muted" role="status" aria-live="polite">
-        {fase === "grabando" ? `Habla; se detiene sola a los ${MAX_SEGUNDOS} s.` : fase === "transcribiendo" ? "Convirtiendo tu voz en texto…" : ""}
+        {fase === "grabando" ? `Habla; se detiene sola a los ${MAX_SECONDS} s.` : fase === "transcribiendo" ? "Convirtiendo tu voz en texto…" : ""}
       </p>
       {error && (
         <p role="alert" className="form-error">

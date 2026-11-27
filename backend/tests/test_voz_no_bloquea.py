@@ -70,7 +70,7 @@ def test_la_api_responde_mientras_el_servicio_de_voz_transcribe(as_agency, monke
         time.sleep(PAUSA)   # el servicio de voz real tarda segundos; la llamada es síncrona
         return {"texto": "hola", "duracion_s": 1.0, "tiempo_ms": 600, "modelo": "simulado"}
 
-    monkeypatch.setattr(voz, "transcribir", lenta)
+    monkeypatch.setattr(voz, "transcribe", lenta)
     sesion = {"Authorization": as_agency.headers["authorization"], "Content-Type": "audio/webm"}
 
     horas = _durante_una_transcripcion(app, ("POST", "/api/assistant/voice/transcribe", sesion, b"audio"), ("GET", "/health"))
@@ -85,14 +85,14 @@ def test_el_servicio_de_voz_responde_mientras_transcribe(monkeypatch, tmp_path):
     modulo = importlib.util.module_from_spec(especificacion)
     especificacion.loader.exec_module(modulo)
     monkeypatch.setattr(modulo, "TOKEN", "")
-    monkeypatch.setattr(modulo, "VOCABULARIO", tmp_path / "no-existe.txt")
+    monkeypatch.setattr(modulo, "VOCABULARY", tmp_path / "no-existe.txt")
 
     class Lento:
         def transcribe(self, audio, **opciones):
             time.sleep(PAUSA)
             return [SimpleNamespace(text="hola")], SimpleNamespace(duration=1.0)
 
-    monkeypatch.setattr(modulo, "_modelo_whisper", lambda: Lento())
+    monkeypatch.setattr(modulo, "_whisper_model", lambda: Lento())
 
     horas = _durante_una_transcripcion(modulo.app, ("POST", "/stt", {}, b"audio"), ("GET", "/health"))
 

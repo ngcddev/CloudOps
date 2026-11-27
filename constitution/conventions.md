@@ -71,4 +71,4 @@ cloudops/
 - Commits y PR sin atribución al asistente: el autor es la persona que hace el commit (lo aplica `.claude/settings.json`).
 - Secretos: jamás en el código ni en el repo (RNF-06). Se usan `.env` (ignorado) y `.env.example` con valores de desarrollo.
 - Cada PR usa la [plantilla](../.github/pull_request_template.md) y marca su tarea en `tasks.md`.
-- **Ninguna cifra de estado se escribe a mano** en la documentación (número de pruebas, versiones desplegadas, porcentajes de acierto, MTTR): se cita el paquete de evidencias (`entrega/evidencias/<corrida>/RESUMEN.md`) o el comando que la produce. Así la documentación no vuelve a quedar desactualizada.
+- **Ninguna cifra de estado se escribe a mano** en la documentación (número de pruebas, versiones desplegadas, porcentajes de acierto, MTTR): se cita el comando que la produce o la monografía final. Así la documentación no vuelve a quedar desactualizada.

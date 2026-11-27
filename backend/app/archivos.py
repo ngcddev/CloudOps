@@ -8,7 +8,7 @@ T = TypeVar("T")
 _cache: dict[tuple[str, Callable], tuple[tuple[int, int], object]] = {}
 
 
-def leer_con_cache(ruta: Path, transformar: Callable[[str], T]) -> T:
+def read_cached(ruta: Path, transformar: Callable[[str], T]) -> T:
     """`transformar(texto)` del archivo, calculado una vez por versión del archivo (fecha y tamaño). Si el archivo no existe, lanza OSError como `read_text`."""
     estado = ruta.stat()
     version = (estado.st_mtime_ns, estado.st_size)

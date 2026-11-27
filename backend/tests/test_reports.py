@@ -88,8 +88,8 @@ def test_el_ejecutivo_no_trae_jerga_en_ningun_texto(client, datos, prometheus, s
 
     textos = [d["disponibilidad"]["texto"], d["actualizaciones"]["texto"], d["solicitudes"]["texto"], *(f["texto"] for f in d["fallas"]["listadas"])]
     for texto in textos:
-        assert ai_drafts.terminos_prohibidos_en(texto) == [], texto
-    assert ai_drafts.terminos_prohibidos_en(texto_pdf(report_pdf.ejecutivo_pdf(d))) == []
+        assert ai_drafts.forbidden_terms_in(texto) == [], texto
+    assert ai_drafts.forbidden_terms_in(texto_pdf(report_pdf.executive_pdf(d))) == []
     assert "dependencia" not in str(d)  # el resumen técnico aprobado no entra al reporte del cliente
 
 
@@ -123,11 +123,11 @@ def test_un_nan_de_prometheus_se_guarda_como_sin_datos_y_el_json_es_estricto(cli
         json.dumps(datos, allow_nan=False)  # lanza ValueError si queda algún NaN o infinito
     assert all(f["latencia_p95"] is None and f["disponibilidad"] is None for f in operativo["clientes"])
     assert ejecutivo["disponibilidad"]["valor"] is None and ejecutivo["disponibilidad"]["texto"] == "Todavía no tenemos datos de su sitio este mes."
-    assert report_pdf.operativo_pdf(operativo).startswith(b"%PDF") and report_pdf.ejecutivo_pdf(ejecutivo).startswith(b"%PDF")
+    assert report_pdf.operational_pdf(operativo).startswith(b"%PDF") and report_pdf.executive_pdf(ejecutivo).startswith(b"%PDF")
 
 
 def test_sin_nan_limpia_estructuras_anidadas():
-    assert reports.sin_nan({"a": float("nan"), "b": [1.0, float("inf"), {"c": float("-inf")}], "d": 2}) == {"a": None, "b": [1.0, None, {"c": None}], "d": 2}
+    assert reports.without_nan({"a": float("nan"), "b": [1.0, float("inf"), {"c": float("-inf")}], "d": 2}) == {"a": None, "b": [1.0, None, {"c": None}], "d": 2}
 
 
 def test_el_texto_de_solicitudes_respeta_el_singular(client, seeded, sazon, prometheus):
@@ -162,10 +162,10 @@ def test_el_ejecutivo_cabe_en_una_pagina_incluso_con_muchas_fallas_y_mensajes_la
         seeded.add(AiDraft(incident_id=incidente.id, kind="mensaje_cliente", status="aprobado", source="llm", generated_text=largo, final_text=largo,
                            approved_at=T0 + timedelta(days=1)))
     seeded.commit()
-    d = reports.ejecutivo(seeded, sazon.project.client_id, MES)
+    d = reports.executive(seeded, sazon.project.client_id, MES)
 
-    assert d["fallas"]["total"] == 9 and len(d["fallas"]["listadas"]) == reports.MAX_INCIDENTES_LISTADOS and d["fallas"]["sin_listar"] == 4
-    assert len(PdfReader(io.BytesIO(report_pdf.ejecutivo_pdf(d))).pages) == 1
+    assert d["fallas"]["total"] == 9 and len(d["fallas"]["listadas"]) == reports.MAX_LISTED_INCIDENTS and d["fallas"]["sin_listar"] == 4
+    assert len(PdfReader(io.BytesIO(report_pdf.executive_pdf(d))).pages) == 1
 
 
 def test_el_pdf_ejecutivo_dice_lo_que_dice_el_reporte(client, datos, prometheus, sazon):
@@ -211,7 +211,7 @@ def test_el_operativo_trae_el_mes_anterior_los_totales_y_la_carga_de_los_tecnico
 
 
 def test_el_mes_anterior_de_enero_es_diciembre_del_ano_anterior():
-    assert reports.mes_anterior("2026-01") == "2025-12" and reports.mes_anterior("2026-10") == "2026-09"
+    assert reports.previous_month("2026-01") == "2025-12" and reports.previous_month("2026-10") == "2026-09"
 
 
 def test_el_pdf_operativo_lista_los_clientes_y_el_mes_anterior(client, datos, prometheus):
@@ -239,7 +239,7 @@ def test_se_genera_para_cualquier_mes_y_cliente_y_queda_en_la_bitacora(client, s
 
 
 def test_sin_mes_se_usa_el_mes_actual(client, seeded, prometheus):
-    assert generar(client, kind="operativo").json()["month"] == kpi.mes_actual()
+    assert generar(client, kind="operativo").json()["month"] == kpi.current_month()
 
 
 def test_los_datos_quedan_congelados_al_generar(client, datos, prometheus, sazon, seeded):
@@ -255,7 +255,7 @@ def test_los_datos_quedan_congelados_al_generar(client, datos, prometheus, sazon
 
     assert leido["solicitudes"]["abiertas"] == 1 and leido["disponibilidad"]["valor"] == 99.95
     assert texto_pdf(client.get(f"/api/reports/{reporte['id']}/pdf").content) == texto_antes
-    assert reports.ejecutivo(seeded, sazon.project.client_id, MES)["solicitudes"]["abiertas"] == 2  # un reporte nuevo sí ve el cambio
+    assert reports.executive(seeded, sazon.project.client_id, MES)["solicitudes"]["abiertas"] == 2  # un reporte nuevo sí ve el cambio
 
 
 @pytest.mark.parametrize("cuerpo,estado", [

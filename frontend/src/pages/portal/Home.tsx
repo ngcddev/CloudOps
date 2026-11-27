@@ -7,7 +7,7 @@ import {
   getClientDashboard,
   listClientIncidents,
   listTickets,
-  mesActual,
+  currentMonthKey,
   type ClientDashboardKpi,
   type ClientIncident,
   type Ticket,
@@ -15,26 +15,26 @@ import {
 import { useAuth } from "../../auth";
 import { formatDateTime, formatPercent } from "../../format";
 import {
-  estadosIncidente,
-  estadosSolicitud,
-  textoDisponibilidad,
-  textoEstado,
-  textosCliente,
+  incidentStatuses,
+  ticketStatuses,
+  availabilityText,
+  statusText,
+  clientTexts,
 } from "../../texts/cliente";
 
 // Un solo formateador para todos los elementos (antes se creaba uno por elemento filtrado; auditoría FE-10)
-const MES_EN_BOGOTA = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" });
+const MONTH_IN_BOGOTA = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" });
 
-function enElMes(iso: string, month: string): boolean {
-  return MES_EN_BOGOTA.format(new Date(iso)).slice(0, 7) === month;
+function inMonth(iso: string, month: string): boolean {
+  return MONTH_IN_BOGOTA.format(new Date(iso)).slice(0, 7) === month;
 }
 
-const ESTADO_ICONO = { operativo: "✓", degradado: "!", caido: "✕" } as const;
+const STATUS_ICON = { operativo: "✓", degradado: "!", caido: "✕" } as const;
 
 export default function PortalHome() {
   const { user } = useAuth();
   const clientId = user?.client_id ?? null;
-  const month = mesActual();
+  const month = currentMonthKey();
   const [dashboard, setDashboard] = useState<ClientDashboardKpi | null>(null);
   const [incidents, setIncidents] = useState<ClientIncident[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -54,8 +54,8 @@ export default function PortalHome() {
       .then(([dashboardData, incidentData, ticketData]) => {
         if (cancelled) return;
         setDashboard(dashboardData);
-        setIncidents(incidentData.filter((incident) => enElMes(incident.started_at, month)));
-        setTickets(ticketData.filter((ticket) => enElMes(ticket.created_at, month)));
+        setIncidents(incidentData.filter((incident) => inMonth(incident.started_at, month)));
+        setTickets(ticketData.filter((ticket) => inMonth(ticket.created_at, month)));
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -87,8 +87,8 @@ export default function PortalHome() {
             <div className="card kpi">
               <span className="kpi-label">Estado actual</span>
               <strong className="kpi-value">
-                <span aria-hidden="true">{ESTADO_ICONO[dashboard.service_status]}</span>{" "}
-                {textoEstado(dashboard.service_status)}
+                <span aria-hidden="true">{STATUS_ICON[dashboard.service_status]}</span>{" "}
+                {statusText(dashboard.service_status)}
               </strong>
               {dashboard.service_name && <span className="muted">{dashboard.service_name}</span>}
             </div>
@@ -105,7 +105,7 @@ export default function PortalHome() {
           </section>
 
           <section className="card">
-            <h2>{textoDisponibilidad(dashboard.availability, dashboard.cumple_objetivo)}</h2>
+            <h2>{availabilityText(dashboard.availability, dashboard.cumple_objetivo)}</h2>
           </section>
 
           <section className="card">
@@ -114,14 +114,14 @@ export default function PortalHome() {
               <span className="muted">{incidents.length}</span>
             </div>
             {incidents.length === 0 ? (
-              <p>{textosCliente.sinIncidentes}</p>
+              <p>{clientTexts.sinIncidentes}</p>
             ) : (
               <ul className="portal-list">
                 {incidents.map((incident) => (
                   <li key={incident.id}>
                     <strong>{incident.title}</strong>
                     <div className="muted">
-                      {formatDateTime(incident.started_at)} · {estadosIncidente[incident.status]}
+                      {formatDateTime(incident.started_at)} · {incidentStatuses[incident.status]}
                     </div>
                     {incident.message && <p>{incident.message}</p>}
                   </li>
@@ -136,14 +136,14 @@ export default function PortalHome() {
               <Link to="/portal/solicitudes">Ver todas →</Link>
             </div>
             {tickets.length === 0 ? (
-              <p>{textosCliente.sinSolicitudes}</p>
+              <p>{clientTexts.sinSolicitudes}</p>
             ) : (
               <ul className="portal-list">
                 {tickets.map((ticket) => (
                   <li key={ticket.id}>
                     <strong>{ticket.title}</strong>
                     <div className="muted">
-                      {formatDateTime(ticket.created_at)} · {estadosSolicitud[ticket.status]}
+                      {formatDateTime(ticket.created_at)} · {ticketStatuses[ticket.status]}
                     </div>
                   </li>
                 ))}

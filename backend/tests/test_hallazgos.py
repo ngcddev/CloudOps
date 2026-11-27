@@ -28,7 +28,7 @@ def _regla(**cambios):
 
 
 def test_el_registro_real_esta_bien_escrito_y_vigente():
-    assert hallazgos.validar_reglas(REGISTRO, HOY) == []
+    assert hallazgos.validate_rules(REGISTRO, HOY) == []
     assert len(REGISTRO["reglas"]) >= 5
 
 
@@ -36,7 +36,7 @@ def test_lo_que_tiene_arreglo_se_corrige_no_se_acepta():
     registro = {"reglas": [_regla()]}
     lista = [_h(corregida="1.2")]
 
-    hallazgos.clasificar(lista, registro, HOY)
+    hallazgos.classify(lista, registro, HOY)
 
     assert lista[0]["tratamiento"] == "corregir"  # aunque una regla lo cubriría, con arreglo publicado no se acepta
 
@@ -45,7 +45,7 @@ def test_sin_arreglo_y_con_regla_se_acepta_y_sin_regla_frena():
     registro = {"reglas": [_regla()]}
     lista = [_h(), _h(cve="CVE-2026-1", paquete="otro")]
 
-    hallazgos.clasificar(lista, registro, HOY)
+    hallazgos.classify(lista, registro, HOY)
 
     assert [h["tratamiento"] for h in lista] == ["aceptar", "sin decisión"]
     assert lista[0]["regla"] == "r"
@@ -55,7 +55,7 @@ def test_la_regla_exige_que_coincidan_el_paquete_y_el_cve():
     registro = {"reglas": [_regla()]}
     lista = [_h(paquete="mount", cve="CVE-OTRO"), _h(paquete="otro-paquete", cve="CVE-2026-76642")]
 
-    hallazgos.clasificar(lista, registro, HOY)
+    hallazgos.classify(lista, registro, HOY)
 
     assert [h["tratamiento"] for h in lista] == ["sin decisión", "sin decisión"]
 
@@ -64,7 +64,7 @@ def test_una_decision_vencida_vuelve_a_frenar():
     registro = {"reglas": [_regla(revisar_en="2026-11-01")]}
     lista = [_h()]
 
-    hallazgos.clasificar(lista, registro, HOY)
+    hallazgos.classify(lista, registro, HOY)
 
     assert lista[0]["tratamiento"] == "vencida"
 
@@ -78,7 +78,7 @@ def test_una_decision_vencida_vuelve_a_frenar():
     ({"paquetes": [], "cves": []}, "aplicaría a todo"),
 ])
 def test_una_regla_mal_escrita_se_reporta(cambios, fragmento):
-    problemas = hallazgos.validar_reglas({"reglas": [_regla(**cambios)]}, HOY)
+    problemas = hallazgos.validate_rules({"reglas": [_regla(**cambios)]}, HOY)
 
     assert any(fragmento in p for p in problemas), problemas
 
@@ -86,7 +86,7 @@ def test_una_regla_mal_escrita_se_reporta(cambios, fragmento):
 def test_el_vex_es_openvex_y_distingue_not_affected_de_affected():
     registro = {"reglas": [_regla(), _regla(id="s", paquetes=["libsqlite3-0"], cves=["CVE-2026-9"], estado="affected", tratamiento="mitigar", justificacion=None)]}
     lista = [_h(), _h(), _h(imagen="colegio-api"), _h(cve="CVE-2026-9", paquete="libsqlite3-0")]
-    hallazgos.clasificar(lista, registro, HOY)
+    hallazgos.classify(lista, registro, HOY)
 
     vex = hallazgos.openvex(lista, registro, datetime(2026, 11, 15, tzinfo=timezone.utc))
 
@@ -106,6 +106,6 @@ def test_solo_las_altas_y_criticas_entran_al_registro(tmp_path):
         {"Severity": "CRITICAL", "VulnerabilityID": "CVE-3", "PkgName": "c"},
     ]}]}), encoding="utf-8")
 
-    lista = hallazgos.hallazgos_de([reporte])
+    lista = hallazgos.findings_from([reporte])
 
     assert [(h["cve"], h["imagen"]) for h in lista] == [("CVE-2", "imagen"), ("CVE-3", "imagen")]

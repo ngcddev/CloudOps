@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import select
 
 from app.models import SecurityRun, Service
-from app.services.security_gate import EN_CURSO, FALLO, OK, SIN_CORRIDA, gate_status
+from app.services.security_gate import IN_PROGRESS, FAILED, OK, NO_RUN, gate_status
 
 
 @pytest.fixture
@@ -26,23 +26,23 @@ def _run(db, service, version, status, failed_step=None, started=None) -> Securi
 def test_sin_corrida_si_la_version_nunca_paso_por_la_puerta(seeded, ferreteria):
     gate = gate_status(seeded, ferreteria.id, "v1.1")
 
-    assert gate.status == SIN_CORRIDA
+    assert gate.status == NO_RUN
     assert gate.run is None and gate.failed_step is None
 
 
-@pytest.mark.parametrize("status", [EN_CURSO, OK, FALLO])
+@pytest.mark.parametrize("status", [IN_PROGRESS, OK, FAILED])
 def test_devuelve_el_estado_de_la_corrida(seeded, ferreteria, status):
-    _run(seeded, ferreteria, "v1.1", status, failed_step="secretos" if status == FALLO else None)
+    _run(seeded, ferreteria, "v1.1", status, failed_step="secretos" if status == FAILED else None)
 
     gate = gate_status(seeded, ferreteria.id, "v1.1")
 
     assert gate.status == status
-    assert gate.failed_step == ("secretos" if status == FALLO else None)
+    assert gate.failed_step == ("secretos" if status == FAILED else None)
 
 
 def test_vale_la_ultima_corrida_de_la_version(seeded, ferreteria):
     hoy = datetime.now(timezone.utc)
-    _run(seeded, ferreteria, "v1.1", FALLO, "vulnerabilidades", hoy - timedelta(hours=2))
+    _run(seeded, ferreteria, "v1.1", FAILED, "vulnerabilidades", hoy - timedelta(hours=2))
     ultima = _run(seeded, ferreteria, "v1.1", OK, started=hoy - timedelta(hours=1))
 
     assert gate_status(seeded, ferreteria.id, "v1.1").run.id == ultima.id
@@ -53,5 +53,5 @@ def test_cada_version_y_cada_servicio_tiene_su_propia_puerta(seeded, ferreteria)
     restaurante = seeded.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
     _run(seeded, ferreteria, "v1.1", OK)
 
-    assert gate_status(seeded, ferreteria.id, "v1.2").status == SIN_CORRIDA
-    assert gate_status(seeded, restaurante.id, "v1.1").status == SIN_CORRIDA
+    assert gate_status(seeded, ferreteria.id, "v1.2").status == NO_RUN
+    assert gate_status(seeded, restaurante.id, "v1.1").status == NO_RUN

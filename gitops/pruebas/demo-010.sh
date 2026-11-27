@@ -19,7 +19,7 @@
 #
 # Requiere: clúster con las specs 003–009 aplicadas (Hub, 3 sitios, Prometheus, Blackbox, Traefik y
 # Alertmanager), entradas *.hub.local en hosts, curl y kubectl, La Sazón en v1 y la versión v2 con su puerta de seguridad en «ok»
-# (bash entrega/evidencias/dejar-demo-lista.sh la deja así). Variables opcionales:
+# (bash demo/dejar-demo-lista.sh la deja así). Variables opcionales:
 #   HUB (http://hub.local), MES (mes actual), LIMITE (420 s), CLIENTE_ID (1), NAMESPACE (cliente-restaurante),
 #   SITIO (http://restaurante.hub.local), USUARIO_APROBADOR (camilo@forjadigital.test), VERSION_ROTA (v2).
 #

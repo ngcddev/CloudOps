@@ -3,37 +3,37 @@ import { Children, Fragment, isValidElement, useCallback, useEffect, useId, useM
 import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { usePopover } from "../hooks/usePopover";
-import { CheckIcono, FlechaIcono } from "./IconosCampo";
+import { CheckIcon, ArrowIcon } from "./FieldIcons";
 
-interface Opcion {
+interface Option {
   value: string;
   label: string;
   disabled: boolean;
 }
 
 // Evento mínimo que reciben los manejadores: lo único que las pantallas leen es target.value (y name)
-export function eventoDeCambio<T extends HTMLElement>(value: string, name = ""): ChangeEvent<T> {
+export function changeEvent<T extends HTMLElement>(value: string, name = ""): ChangeEvent<T> {
   const destino = { value, name };
   return { target: destino, currentTarget: destino, type: "change" } as unknown as ChangeEvent<T>;
 }
 
-function textoDe(nodo: ReactNode): string {
+function textOf(nodo: ReactNode): string {
   if (nodo === null || nodo === undefined || typeof nodo === "boolean") return "";
   if (typeof nodo === "string" || typeof nodo === "number") return String(nodo);
-  if (Array.isArray(nodo)) return nodo.map(textoDe).join("");
-  if (isValidElement(nodo)) return textoDe((nodo.props as { children?: ReactNode }).children);
+  if (Array.isArray(nodo)) return nodo.map(textOf).join("");
+  if (isValidElement(nodo)) return textOf((nodo.props as { children?: ReactNode }).children);
   return "";
 }
 
-function opcionesDe(hijos: ReactNode): Opcion[] {
-  const lista: Opcion[] = [];
+function optionsOf(hijos: ReactNode): Option[] {
+  const lista: Option[] = [];
   Children.forEach(hijos, (hijo) => {
     if (!isValidElement(hijo)) return;
     const props = hijo.props as { value?: string | number; children?: ReactNode; disabled?: boolean };
     if (hijo.type === Fragment) {
-      lista.push(...opcionesDe(props.children));
+      lista.push(...optionsOf(props.children));
     } else if (hijo.type === "option") {
-      const label = textoDe(props.children).trim();
+      const label = textOf(props.children).trim();
       lista.push({ value: props.value === undefined ? label : String(props.value), label, disabled: Boolean(props.disabled) });
     }
   });
@@ -41,7 +41,7 @@ function opcionesDe(hijos: ReactNode): Opcion[] {
 }
 
 // Sin tildes ni mayúsculas, para buscar con la primera letra
-const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const normalize = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 export interface SelectProps {
   value: string | number;
@@ -60,7 +60,7 @@ export interface SelectProps {
 }
 
 export function Select({ value, onChange, children, id, name, disabled, required, className, placeholder = "Seleccionar", ...aria }: SelectProps) {
-  const opciones = useMemo(() => opcionesDe(children), [children]);
+  const opciones = useMemo(() => optionsOf(children), [children]);
   const actual = String(value);
   const indiceActual = opciones.findIndex((opcion) => opcion.value === actual);
   const [abierto, setAbierto] = useState(false);
@@ -80,7 +80,7 @@ export function Select({ value, onChange, children, id, name, disabled, required
 
   const cambiarA = (i: number) => {
     const opcion = opciones[i];
-    if (opcion && !opcion.disabled && opcion.value !== actual) onChange(eventoDeCambio<HTMLSelectElement>(opcion.value, name));
+    if (opcion && !opcion.disabled && opcion.value !== actual) onChange(changeEvent<HTMLSelectElement>(opcion.value, name));
   };
 
   const elegir = (i: number) => {
@@ -135,11 +135,11 @@ export function Select({ value, onChange, children, id, name, disabled, required
     // Primera letra (o varias seguidas): salta a la opción que empieza así, como el selector nativo
     if (evento.key.length === 1 && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
       const ahora = Date.now();
-      const texto = (ahora - busqueda.current.cuando < 700 ? busqueda.current.texto : "") + normalizar(evento.key);
+      const texto = (ahora - busqueda.current.cuando < 700 ? busqueda.current.texto : "") + normalize(evento.key);
       busqueda.current = { texto, cuando: ahora };
       const referencia = habilitadas.indexOf(abierto ? activo : indiceActual);
       const orden = [...habilitadas.slice(referencia + 1), ...habilitadas.slice(0, referencia + 1)];
-      const hallada = orden.find((i) => normalizar(opciones[i].label).startsWith(texto));
+      const hallada = orden.find((i) => normalize(opciones[i].label).startsWith(texto));
       if (hallada === undefined) return;
       evento.preventDefault();
       if (abierto) setActivo(hallada);
@@ -167,7 +167,7 @@ export function Select({ value, onChange, children, id, name, disabled, required
           {...aria}
         >
           <span className={`campo-valor${indiceActual < 0 ? " campo-vacio" : ""}`}>{indiceActual >= 0 ? opciones[indiceActual].label : placeholder}</span>
-          <FlechaIcono />
+          <ArrowIcon />
         </button>
         {/* Un botón no se valida solo: este campo oculto hace que "obligatorio" siga frenando el envío del formulario, con el aviso del navegador junto al selector */}
         {required && <input className="campo-validador" tabIndex={-1} aria-hidden="true" required value={indiceActual >= 0 && actual !== "" ? actual : ""} onChange={() => undefined} />}
@@ -196,7 +196,7 @@ export function Select({ value, onChange, children, id, name, disabled, required
                 onClick={() => !opcion.disabled && elegir(i)}
               >
                 <span>{opcion.label}</span>
-                {i === indiceActual && <CheckIcono />}
+                {i === indiceActual && <CheckIcon />}
               </div>
             ))}
           </div>,

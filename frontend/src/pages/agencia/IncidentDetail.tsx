@@ -12,7 +12,7 @@ import {
   type IncidentDetail as IncidentDetailData,
   type IncidentEventType,
 } from "../../api";
-import { useSondeo } from "../../hooks/useSondeo";
+import { usePolling } from "../../hooks/usePolling";
 import AiDraftsPanel from "../../components/AiDraftsPanel";
 import DiagnosisPanel from "../../components/DiagnosisPanel";
 import RecoveryPanel from "../../components/RecoveryPanel";
@@ -60,7 +60,7 @@ export default function IncidentDetail() {
   useEffect(() => {
     load();
   }, [load]);
-  useSondeo(load, rollbackRunning ? ROLLBACK_REFRESH_MS : REFRESH_MS);
+  usePolling(load, rollbackRunning ? ROLLBACK_REFRESH_MS : REFRESH_MS);
 
   // Corre una acción y pinta el detalle que devuelve la API, sin recargar la página
   async function run(action: () => Promise<IncidentDetailData>, after?: () => void) {

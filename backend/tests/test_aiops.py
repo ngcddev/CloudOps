@@ -120,9 +120,9 @@ def test_si_la_ia_no_responde_queda_el_texto_base_con_el_runbook_que_corresponde
 
 
 def test_sin_senales_el_runbook_sugerido_es_el_de_la_caida(incidente, db):
-    evidencia = aiops.reunir_evidencia(incidente)
+    evidencia = aiops.gather_evidence(incidente)
 
-    assert aiops.runbook_sugerido(incidente, evidencia) == "runbooks/caida-del-sitio.md"
+    assert aiops.suggested_runbook(incidente, evidencia) == "runbooks/caida-del-sitio.md"
 
 
 def test_regenerar_descarta_el_anterior_sin_aprobar(client, incidente, ia, db):
@@ -146,7 +146,7 @@ def test_el_diagnostico_nunca_llega_al_portal_del_cliente(client, incidente, ia,
 
     diagnosticar(client, incidente, APORTADA)
 
-    assert ai_drafts.mensaje_aprobado(db, incidente.id) is None
+    assert ai_drafts.approved_message(db, incidente.id) is None
 
 
 def test_un_incidente_inexistente_es_404(client, ia):

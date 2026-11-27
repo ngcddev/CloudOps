@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from app.services.assistant_gate import EN_TEMA, FUERA_DE_TEMA, RemoteGate, load_model
+from app.services.assistant_gate import ON_TOPIC, OFF_TOPIC, RemoteGate, load_model
 
 
 class _Endpoint:
@@ -47,7 +47,7 @@ def test_decide_el_endpoint_cuando_responde(local):
         decision = RemoteGate(endpoint.url, local).decide("¿Cuál es la capital de Francia?")
     finally:
         endpoint.cerrar()
-    assert decision.label == FUERA_DE_TEMA and decision.despertar_llm is False
+    assert decision.label == OFF_TOPIC and decision.despertar_llm is False
     assert decision.model_version == "mlflow:compuerta@production"
     assert len(decision.model_version) <= 30  # ai_queries.gate_version es varchar(30): PostgreSQL rechaza lo más largo (SQLite no lo nota)
     assert endpoint.recibido == [{"dataframe_split": {"columns": ["text"], "data": [["¿Cuál es la capital de Francia?"]]}}]
@@ -59,7 +59,7 @@ def test_una_pregunta_con_vocabulario_de_la_app_nunca_se_salta_al_llm(local):
         decision = RemoteGate(endpoint.url, local).decide("¿Cómo hago un rollback?")
     finally:
         endpoint.cerrar()
-    assert decision.label == EN_TEMA and decision.despertar_llm is True
+    assert decision.label == ON_TOPIC and decision.despertar_llm is True
 
 
 def test_si_el_endpoint_no_esta_decide_el_modelo_local(local):

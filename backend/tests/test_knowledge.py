@@ -65,8 +65,8 @@ def agency(as_agency):
 
 
 def test_dividir_da_un_trozo_por_seccion_de_la_ayuda():
-    trozos = knowledge.dividir(assistant_context.HELP_PATH.read_text(encoding="utf-8"))
-    titulos = [s.titulo for s in assistant_context.todas()]
+    trozos = knowledge.split_text(assistant_context.HELP_PATH.read_text(encoding="utf-8"))
+    titulos = [s.titulo for s in assistant_context.all_sections()]
 
     assert [t.seccion for t in trozos] == titulos
     assert all(t.texto for t in trozos)
@@ -75,7 +75,7 @@ def test_dividir_da_un_trozo_por_seccion_de_la_ayuda():
 
 def test_dividir_parte_las_secciones_largas_por_parrafos():
     parrafos = "\n\n".join(f"Párrafo {i} " + "palabra " * 30 for i in range(6))
-    trozos = knowledge.dividir(f"## Sección larga\n{parrafos}\n\n## Corta\nHola", max_chars=500)
+    trozos = knowledge.split_text(f"## Sección larga\n{parrafos}\n\n## Corta\nHola", max_chars=500)
 
     larga = [t for t in trozos if t.seccion == "Sección larga"]
     assert len(larga) > 1 and all(len(t.texto) <= 500 for t in larga)
@@ -84,19 +84,19 @@ def test_dividir_parte_las_secciones_largas_por_parrafos():
 
 
 def test_coseno_y_orden():
-    assert knowledge.coseno([1, 0], [1, 0]) == pytest.approx(1)
-    assert knowledge.coseno([1, 0], [0, 1]) == pytest.approx(0)
-    assert knowledge.coseno([0, 0], [1, 1]) == 0
+    assert knowledge.cosine([1, 0], [1, 0]) == pytest.approx(1)
+    assert knowledge.cosine([1, 0], [0, 1]) == pytest.approx(0)
+    assert knowledge.cosine([0, 0], [1, 1]) == 0
 
-    a, b, c = knowledge.Trozo("A", 0, "a"), knowledge.Trozo("B", 0, "b"), knowledge.Trozo("C", 0, "c")
-    orden = knowledge.ordenar([1, 0], [(a, [0, 1]), (b, [1, 0.1]), (c, [1, 1])], k=2)
+    a, b, c = knowledge.Chunk("A", 0, "a"), knowledge.Chunk("B", 0, "b"), knowledge.Chunk("C", 0, "c")
+    orden = knowledge.rank([1, 0], [(a, [0, 1]), (b, [1, 0.1]), (c, [1, 1])], k=2)
     assert [t.seccion for _, t in orden] == ["B", "C"]
 
 
 def test_agrupar_une_los_trozos_de_la_misma_seccion_en_orden_de_relevancia():
-    t = [(0.9, knowledge.Trozo("X", 0, "uno")), (0.8, knowledge.Trozo("Y", 0, "dos")), (0.7, knowledge.Trozo("X", 1, "tres"))]
+    t = [(0.9, knowledge.Chunk("X", 0, "uno")), (0.8, knowledge.Chunk("Y", 0, "dos")), (0.7, knowledge.Chunk("X", 1, "tres"))]
 
-    secciones = knowledge.agrupar(t)
+    secciones = knowledge.group(t)
 
     assert [s.titulo for s in secciones] == ["X", "Y"]
     assert secciones[0].texto == "uno\n\ntres"
@@ -139,43 +139,43 @@ def test_embed_nunca_lanza_si_el_transporte_falla(monkeypatch):
 
 
 def test_indexar_guarda_documento_y_trozos_con_su_embedding(db, falso):
-    resultado = knowledge.indexar(db, transport=falso)
+    resultado = knowledge.build_index(db, transport=falso)
 
     doc = db.scalar(select(KbDocument))
     trozos = db.scalars(select(KbChunk)).all()
     assert resultado["trozos"] == len(trozos) == doc.chunk_count and resultado["modelo"] == settings.ollama_embed_model
     assert doc.source == "ayuda_hub.md" and len(doc.content_hash) == 64
     assert all(len(t.embedding) == DIMENSIONES and t.content_hash for t in trozos)
-    assert knowledge.indice_vigente(db) is True
+    assert knowledge.current_index(db) is True
 
 
 def test_reindexar_reemplaza_el_indice_sin_duplicar(db, falso):
-    knowledge.indexar(db, transport=falso)
+    knowledge.build_index(db, transport=falso)
     primeros = len(db.scalars(select(KbChunk)).all())
 
-    knowledge.indexar(db, transport=falso)
+    knowledge.build_index(db, transport=falso)
 
     assert len(db.scalars(select(KbChunk)).all()) == primeros
     assert len(db.scalars(select(KbDocument)).all()) == 1
 
 
 def test_el_indice_se_vence_si_cambia_la_ayuda_o_el_modelo(db, falso, monkeypatch):
-    knowledge.indexar(db, transport=falso)
-    assert knowledge.indice_vigente(db) is True
+    knowledge.build_index(db, transport=falso)
+    assert knowledge.current_index(db) is True
 
     monkeypatch.setattr(settings, "ollama_embed_model", "otro-modelo")
-    assert knowledge.indice_vigente(db) is False
+    assert knowledge.current_index(db) is False
 
     monkeypatch.setattr(settings, "ollama_embed_model", "nomic-embed-text")
     db.scalar(select(KbDocument)).content_hash = "viejo"
-    assert knowledge.indice_vigente(db) is False
+    assert knowledge.current_index(db) is False
 
 
 def test_si_ollama_falla_al_indexar_el_indice_anterior_queda_intacto(db, falso):
-    knowledge.indexar(db, transport=falso)
+    knowledge.build_index(db, transport=falso)
     antes = [(c.id, c.text) for c in db.scalars(select(KbChunk))]
 
-    assert knowledge.indexar(db, transport=OllamaFalso(embed_status=500)) is None
+    assert knowledge.build_index(db, transport=OllamaFalso(embed_status=500)) is None
 
     assert [(c.id, c.text) for c in db.scalars(select(KbChunk))] == antes
 
@@ -186,7 +186,7 @@ def test_si_ollama_falla_al_indexar_el_indice_anterior_queda_intacto(db, falso):
 def test_recuperar_encuentra_la_seccion_correcta_y_la_cita(db, falso, monkeypatch):
     monkeypatch.setattr(settings, "rag_min_score", 0.2)  # los embeddings de prueba puntúan más bajo que los reales
 
-    encontrado = knowledge.recuperar(db, "¿cómo hago un rollback de un incidente?", transport=falso)
+    encontrado = knowledge.retrieve(db, "¿cómo hago un rollback de un incidente?", transport=falso)
 
     assert encontrado is not None and encontrado.secciones
     assert "Rollback" in [s.titulo for s in encontrado.secciones]
@@ -197,15 +197,15 @@ def test_recuperar_encuentra_la_seccion_correcta_y_la_cita(db, falso, monkeypatc
 def test_recuperar_deja_vacio_si_nada_se_parece_lo_bastante(db, falso, monkeypatch):
     monkeypatch.setattr(settings, "rag_min_score", 0.9)
 
-    encontrado = knowledge.recuperar(db, "receta de arepas con queso", transport=falso)
+    encontrado = knowledge.retrieve(db, "receta de arepas con queso", transport=falso)
 
     assert encontrado is not None and encontrado.secciones == []  # el LLM no se llama: sin información
 
 
 def test_recuperar_indexa_solo_si_el_indice_esta_vencido(db, falso):
-    knowledge.recuperar(db, "¿qué es el SLA?", transport=falso)
+    knowledge.retrieve(db, "¿qué es el SLA?", transport=falso)
     primera = len(falso.embeds)  # una llamada para indexar y otra para la pregunta
-    knowledge.recuperar(db, "¿qué es el SLA?", transport=falso)
+    knowledge.retrieve(db, "¿qué es el SLA?", transport=falso)
 
     assert primera == 2 and len(falso.embeds) == 3
 
@@ -213,7 +213,7 @@ def test_recuperar_indexa_solo_si_el_indice_esta_vencido(db, falso):
 def test_recuperar_devuelve_none_si_ollama_no_da_embeddings(db, monkeypatch):
     monkeypatch.setattr(settings, "ollama_url", "http://ollama.test:11434")
 
-    assert knowledge.recuperar(db, "¿qué es el SLA?", transport=OllamaFalso(embed_status=500)) is None
+    assert knowledge.retrieve(db, "¿qué es el SLA?", transport=OllamaFalso(embed_status=500)) is None
 
 
 # ---------- El asistente en modo RAG ----------
@@ -243,7 +243,7 @@ def test_en_modo_rag_lo_que_la_ayuda_no_trata_no_llama_al_llm(agency, falso, mod
     body = agency.post("/api/assistant/ask", json={"question": "¿Cómo cambio mi contraseña del Hub?"}).json()
 
     assert body["answered_by"] == "ayuda" and body["llm_woken"] is False
-    assert body["answer"] == assistant_context.SIN_INFORMACION and falso.chats == []
+    assert body["answer"] == assistant_context.NO_INFORMATION and falso.chats == []
     assert body["context_mode"] == "rag" and body["context_sections"] == []
 
 
@@ -292,11 +292,11 @@ def test_reindexar_sin_ollama_responde_503(agency, monkeypatch):
 
 
 def test_si_el_indice_ya_esta_vigente_recuperar_no_lo_reescribe(db, falso):
-    knowledge.indexar(db, transport=falso)
+    knowledge.build_index(db, transport=falso)
     ids = sorted(c.id for c in db.scalars(select(KbChunk)))
 
     # Con `solo_si_vencido` (lo que usa `recuperar` en medio de una pregunta) un índice vigente no se vuelve a escribir: quien esperaba el candado de otro no lo repite
-    knowledge.indexar(db, transport=falso, solo_si_vencido=True)
+    knowledge.build_index(db, transport=falso, solo_si_vencido=True)
 
     assert sorted(c.id for c in db.scalars(select(KbChunk))) == ids
 
@@ -304,7 +304,7 @@ def test_si_el_indice_ya_esta_vigente_recuperar_no_lo_reescribe(db, falso):
 def test_una_carrera_de_unicos_deja_el_indice_intacto_y_cae_a_la_lexica(db, falso, monkeypatch):
     from sqlalchemy.exc import IntegrityError
 
-    knowledge.indexar(db, transport=falso)
+    knowledge.build_index(db, transport=falso)
     antes = [(c.id, c.text) for c in db.scalars(select(KbChunk))]
     db.scalar(select(KbDocument)).content_hash = "viejo"   # índice vencido
     db.commit()
@@ -312,8 +312,8 @@ def test_una_carrera_de_unicos_deja_el_indice_intacto_y_cae_a_la_lexica(db, fals
     def choque(*args, **kwargs):
         raise IntegrityError("INSERT", {}, Exception("uq_kb_chunks_document_position"))
 
-    monkeypatch.setattr(knowledge, "_reemplazar_indice", choque)
+    monkeypatch.setattr(knowledge, "_replace_index", choque)
 
-    assert knowledge.indexar(db, transport=falso, solo_si_vencido=True) is None
-    assert knowledge.recuperar(db, "¿cómo apruebo un cambio?", transport=falso) is None   # el asistente responde con la recuperación léxica, no con un 500
+    assert knowledge.build_index(db, transport=falso, solo_si_vencido=True) is None
+    assert knowledge.retrieve(db, "¿cómo apruebo un cambio?", transport=falso) is None   # el asistente responde con la recuperación léxica, no con un 500
     assert [(c.id, c.text) for c in db.scalars(select(KbChunk))] == antes

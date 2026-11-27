@@ -1,3 +1,4 @@
+// Solicitudes del portal del cliente (spec 004): lista de las de su empresa y formulario para crear una nueva (spec 007).
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../../auth";

@@ -7,7 +7,7 @@ from pathlib import Path
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.archivos import leer_con_cache
+from app.archivos import read_cached
 from app.integrations import prometheus
 from app.integrations.prometheus import Transport
 from app.models.client import Client
@@ -34,13 +34,13 @@ KPI_DEFAULTS = {
 def kpi_params() -> dict:
     """Lee los parámetros de KPI de `seed/kpi_params.json`; si no existe usa los de trabajo."""
     try:
-        data = leer_con_cache(SEED_DIR / "kpi_params.json", json.loads)
+        data = read_cached(SEED_DIR / "kpi_params.json", json.loads)
         return {**KPI_DEFAULTS, **data}
     except (OSError, ValueError):
         return dict(KPI_DEFAULTS)
 
 # Estados con solución: la solicitud respondió y resolvió (o cerró) su caso; ya no sigue abierta.
-ESTADOS_TERMINADOS = {"resuelto", "cerrado"}
+FINISHED_STATUSES = {"resuelto", "cerrado"}
 
 
 def _as_utc(value: datetime | None) -> datetime | None:
@@ -64,7 +64,7 @@ def month_bounds(month: str) -> tuple[datetime, datetime]:
     return inicio_local.astimezone(timezone.utc), fin_local.astimezone(timezone.utc)
 
 
-def tickets_del_cliente(db: Session, client_id: int, month: str) -> list[Ticket]:
+def client_tickets(db: Session, client_id: int, month: str) -> list[Ticket]:
     """Solicitudes del cliente creado en el mes, del más viejo al más reciente."""
     inicio, fin = month_bounds(month)
     return list(
@@ -78,7 +78,7 @@ def tickets_del_cliente(db: Session, client_id: int, month: str) -> list[Ticket]
     )
 
 
-def _contar_tickets(db: Session, client_id: int, month: str, condicion) -> int:
+def _count_tickets(db: Session, client_id: int, month: str, condicion) -> int:
     """Cuenta en la base las solicitudes del cliente creadas en el mes que cumplen la condición (sin traer los tickets)."""
     inicio, fin = month_bounds(month)
     return db.scalar(
@@ -89,20 +89,20 @@ def _contar_tickets(db: Session, client_id: int, month: str, condicion) -> int:
     ) or 0
 
 
-def solicitudes_abiertas(db: Session, client_id: int, month: str | None = None) -> int:
+def open_requests(db: Session, client_id: int, month: str | None = None) -> int:
     """Solicitudes del mes que siguen abiertas (no cerraron su caso)."""
-    return _contar_tickets(db, client_id, month or mes_actual(), Ticket.status.not_in(ESTADOS_TERMINADOS))
+    return _count_tickets(db, client_id, month or current_month(), Ticket.status.not_in(FINISHED_STATUSES))
 
 
-def solicitudes_cerradas(db: Session, client_id: int, month: str | None = None) -> int:
+def closed_requests(db: Session, client_id: int, month: str | None = None) -> int:
     """Solicitudes del mes que cerraron su caso (tuvieron solución registrada)."""
-    return _contar_tickets(db, client_id, month or mes_actual(), Ticket.status.in_(ESTADOS_TERMINADOS))
+    return _count_tickets(db, client_id, month or current_month(), Ticket.status.in_(FINISHED_STATUSES))
 
 
-def horas_por_cliente(db: Session, client_id: int, month: str | None = None) -> float:
+def hours_by_client(db: Session, client_id: int, month: str | None = None) -> float:
     """Horas registradas (Σ `work_logs.hours`) de las solicitudes del cliente en el mes."""
     # Una sola suma en la base, no una carga perezosa de work_logs por cada ticket (auditoría BE-03)
-    inicio, fin = month_bounds(month or mes_actual())
+    inicio, fin = month_bounds(month or current_month())
     total = db.scalar(
         select(func.sum(WorkLog.hours))
         .join(Ticket, WorkLog.ticket_id == Ticket.id)
@@ -113,12 +113,12 @@ def horas_por_cliente(db: Session, client_id: int, month: str | None = None) -> 
     return float(total or 0)
 
 
-def costo_por_cliente(db: Session, client_id: int, month: str | None = None) -> float:
+def cost_by_client(db: Session, client_id: int, month: str | None = None) -> float:
     """Costo del mes del cliente: horas registradas × `hourly_cost` (docs/kpi.md, T01)."""
-    return horas_por_cliente(db, client_id, month) * float(kpi_params()["hourly_cost"])
+    return hours_by_client(db, client_id, month) * float(kpi_params()["hourly_cost"])
 
 
-def _servicio_de_cliente(db: Session, client_id: int) -> Service | None:
+def _client_service(db: Session, client_id: int) -> Service | None:
     """Servicio principal del cliente, para armar las consultas de Prometheus con su namespace."""
     return db.scalar(
         select(Service)
@@ -129,7 +129,7 @@ def _servicio_de_cliente(db: Session, client_id: int) -> Service | None:
     )
 
 
-def nombre_cliente(namespace: str | None) -> str:
+def client_name(namespace: str | None) -> str:
     """Etiqueta `client` de Prometheus: el namespace sin el prefijo `cliente-` (008, T22).
 
     El job `sitios` fija `client` a partir del namespace (`cliente-restaurante` → `restaurante`);
@@ -138,7 +138,7 @@ def nombre_cliente(namespace: str | None) -> str:
     return (namespace or "").removeprefix("cliente-")
 
 
-def _ventana_del_mes(month: str) -> tuple[int, int] | None:
+def _month_window(month: str) -> tuple[int, int] | None:
     """Duración y `offset` en segundos del mes, para `avg_over_time` sobre el rango correcto.
 
     Devuelve `None` si el mes todavía no empezó (no hay nada que promediar).
@@ -153,7 +153,7 @@ def _ventana_del_mes(month: str) -> tuple[int, int] | None:
     return segundos, offset
 
 
-def disponibilidad_del_mes(
+def monthly_availability(
     db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
 ) -> float | None:
     """Disponibilidad del mes del cliente: `avg_over_time(probe_success{client="<c>"}[<mes>]) × 100`.
@@ -162,15 +162,15 @@ def disponibilidad_del_mes(
     desplaza con `offset` cuando el mes es anterior. Con Prometheus caído o sin serie devuelve `None`
     («sin datos»): nunca un 100 % inventado (CA-8).
     """
-    service = _servicio_de_cliente(db, client_id)
+    service = _client_service(db, client_id)
     if service is None:
         return None
-    mes = month or mes_actual()
-    ventana = _ventana_del_mes(mes)
+    mes = month or current_month()
+    ventana = _month_window(mes)
     if ventana is None:
         return None
     segundos, offset = ventana
-    promql = f'avg_over_time(probe_success{{client="{nombre_cliente(service.namespace)}"}}[{segundos}s]'
+    promql = f'avg_over_time(probe_success{{client="{client_name(service.namespace)}"}}[{segundos}s]'
     if offset:
         promql += f" offset {offset}s"
     promql += ")"
@@ -180,7 +180,7 @@ def disponibilidad_del_mes(
     return round(valor * 100, 2)
 
 
-def objetivo_disponibilidad(db: Session, client_id: int) -> float | None:
+def availability_target(db: Session, client_id: int) -> float | None:
     """SLO de disponibilidad del plan del cliente; `None` si el cliente no tiene plan."""
     return db.scalar(
         select(Plan.slo_availability)
@@ -191,57 +191,57 @@ def objetivo_disponibilidad(db: Session, client_id: int) -> float | None:
     )
 
 
-_SIN_CALCULAR = object()
+_NOT_COMPUTED = object()
 
 
-def cumple_objetivo(
-    db: Session, client_id: int, month: str | None = None, transport: Transport | None = None, disponibilidad: object = _SIN_CALCULAR
+def meets_target(
+    db: Session, client_id: int, month: str | None = None, transport: Transport | None = None, disponibilidad: object = _NOT_COMPUTED
 ) -> bool | None:
     """La disponibilidad del mes cumplió el SLO del plan del cliente? `None` si no hay datos.
 
     Quien ya calculó la disponibilidad del mes la pasa en `disponibilidad` y se evita repetir la consulta a Prometheus (auditoría BE-03).
     """
-    if disponibilidad is _SIN_CALCULAR:
-        disponibilidad = disponibilidad_del_mes(db, client_id, month, transport=transport)
+    if disponibilidad is _NOT_COMPUTED:
+        disponibilidad = monthly_availability(db, client_id, month, transport=transport)
     if disponibilidad is None:
         return None
-    slo = objetivo_disponibilidad(db, client_id)
+    slo = availability_target(db, client_id)
     if slo is None:
         return None
     return disponibilidad >= float(slo)
 
 
-def latencia_p95_del_mes(
+def monthly_latency_p95(
     db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
 ) -> float | None:
     """Latencia p95 del mes con las métricas de Traefik que expone la spec 008."""
-    service = _servicio_de_cliente(db, client_id)
+    service = _client_service(db, client_id)
     if service is None:
         return None
     promql = (
         "histogram_quantile(0.95, sum by (le) (rate("
         f'traefik_service_request_duration_seconds_bucket{{service=~"{service.namespace}-.*"}}[5m])))'
     )
-    return prometheus.query(promql, month or mes_actual(), transport=transport)
+    return prometheus.query(promql, month or current_month(), transport=transport)
 
 
 # Paso de las series de las gráficas: un punto cada 5 min (spec 010, T11 y plan.md).
 SERIES_STEP_SECONDS = 300
 
 
-def serie_disponibilidad(
+def availability_series(
     db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
 ) -> list[tuple[datetime, float]] | None:
     """Puntos de disponibilidad del sitio del cliente cada 5 min, en porcentaje (100 = arriba).
 
     `None` si Prometheus falla; lista vacía si no hay serie (CA-8).
     """
-    service = _servicio_de_cliente(db, client_id)
+    service = _client_service(db, client_id)
     if service is None:
         return None
-    inicio, fin = month_bounds(month or mes_actual())
+    inicio, fin = month_bounds(month or current_month())
     puntos = prometheus.query_range(
-        f'probe_success{{client="{nombre_cliente(service.namespace)}"}}',
+        f'probe_success{{client="{client_name(service.namespace)}"}}',
         inicio,
         fin,
         step_seconds=SERIES_STEP_SECONDS,
@@ -252,14 +252,14 @@ def serie_disponibilidad(
     return [(marca, round(valor * 100, 2)) for marca, valor in puntos]
 
 
-def serie_latencia_p95(
+def latency_p95_series(
     db: Session, client_id: int, month: str | None = None, transport: Transport | None = None
 ) -> list[tuple[datetime, float]] | None:
     """Puntos de latencia p95 del mes cada 5 min, en segundos; `None` si Prometheus falla."""
-    service = _servicio_de_cliente(db, client_id)
+    service = _client_service(db, client_id)
     if service is None:
         return None
-    inicio, fin = month_bounds(month or mes_actual())
+    inicio, fin = month_bounds(month or current_month())
     promql = (
         "histogram_quantile(0.95, sum by (le) (rate("
         f'traefik_service_request_duration_seconds_bucket{{service=~"{service.namespace}-.*"}}[5m])))'
@@ -269,9 +269,9 @@ def serie_latencia_p95(
     )
 
 
-def horas_del_tecnico(db: Session, user_id: int, month: str | None = None) -> float:
+def technician_hours(db: Session, user_id: int, month: str | None = None) -> float:
     """Horas registradas por un técnico en el mes: Σ `work_logs.hours` de sus tickets creados en el mes."""
-    inicio, fin = month_bounds(month or mes_actual())
+    inicio, fin = month_bounds(month or current_month())
     total = db.scalar(
         select(func.sum(WorkLog.hours))
         .join(Ticket, WorkLog.ticket_id == Ticket.id)
@@ -280,17 +280,17 @@ def horas_del_tecnico(db: Session, user_id: int, month: str | None = None) -> fl
     return float(total or 0)
 
 
-def carga_tecnico(db: Session, user_id: int, month: str | None = None) -> float:
+def technician_load(db: Session, user_id: int, month: str | None = None) -> float:
     """Carga del técnico del mes: horas registradas ÷ horas disponibles del mes (`technician_monthly_hours`)."""
-    return horas_del_tecnico(db, user_id, month) / float(kpi_params()["technician_monthly_hours"])
+    return technician_hours(db, user_id, month) / float(kpi_params()["technician_monthly_hours"])
 
 
-def mttr_del_mes(db: Session, client_id: int, month: str | None = None) -> float | None:
+def monthly_mttr(db: Session, client_id: int, month: str | None = None) -> float | None:
     """MTTR del mes: promedio (solución − inicio) en minutos de los incidentes mitigados/cerrados.
 
     Sin incidentes mitigados en el mes devuelve `None` (CA-9): no se reporta un MTTR de 0 inventado.
     """
-    inicio, fin = month_bounds(month or mes_actual())
+    inicio, fin = month_bounds(month or current_month())
     incidents = db.scalars(
         select(Incident)
         .join(Incident.service)
@@ -317,16 +317,16 @@ def mttr_del_mes(db: Session, client_id: int, month: str | None = None) -> float
     return round(sum(minutos) / len(minutos), 2)
 
 
-def cumplimiento_sla(db: Session, client_id: int, month: str | None = None) -> float | None:
+def sla_compliance(db: Session, client_id: int, month: str | None = None) -> float | None:
     """Porcentaje de las solicitudes cerradas dentro de su plazo de solución: (dentro / terminados) × 100.
 
     Con ninguna solicitud terminada en el mes devuelve `None` («sin datos»): no se reporta un 100 % inventado.
     """
-    tickets = tickets_del_cliente(db, client_id, month or mes_actual())
+    tickets = client_tickets(db, client_id, month or current_month())
     terminados = [
         ticket
         for ticket in tickets
-        if ticket.status in ESTADOS_TERMINADOS and (ticket.resolved_at is not None or ticket.closed_at is not None)
+        if ticket.status in FINISHED_STATUSES and (ticket.resolved_at is not None or ticket.closed_at is not None)
     ]
     if not terminados:
         return None
@@ -340,6 +340,6 @@ def cumplimiento_sla(db: Session, client_id: int, month: str | None = None) -> f
     return round((dentro / len(terminados)) * 100, 2)
 
 
-def mes_actual() -> str:
+def current_month() -> str:
     """Mes actual en America/Bogota, con el formato `YYYY-MM` que reciben las consultas."""
     return datetime.now(BOGOTA).strftime("%Y-%m")

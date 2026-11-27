@@ -10,7 +10,7 @@ set -uo pipefail
 SITIO="${SITIO:-restaurante}"
 NS="cliente-${SITIO}"
 APP="$NS"
-LIMITE="${LIMITE:-90}"
+LIMITE="${LIMITE:-180}"   # Argo CD revisa cada 30 s, pero recrear un recurso borrado ha tardado entre 55 y ~100 s
 fallos=0
 ok()    { echo "   OK   $1"; }
 falla() { echo "   FALLA $1"; fallos=$((fallos+1)); }

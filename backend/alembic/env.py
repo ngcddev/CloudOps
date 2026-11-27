@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.config import settings
 from app.db import Base
-from app.services.bloqueos import CLAVE_ARRANQUE, esperar_turno
+from app.services.bloqueos import STARTUP_KEY, wait_turn
 
 target_metadata = Base.metadata
 
@@ -21,7 +21,7 @@ def run_migrations_online() -> None:
         return
     engine = create_engine(settings.database_url)
     # Varias réplicas arrancan a la vez (HPA, actualización continua): migran de a una; la que llega después ya no encuentra nada que hacer (auditoría K8-04)
-    with esperar_turno(engine, CLAVE_ARRANQUE), engine.connect() as connection:
+    with wait_turn(engine, STARTUP_KEY), engine.connect() as connection:
         # compare_type: `--autogenerate` también ve los cambios de tipo (auditoría BD-06). Los valores por defecto del servidor no se comparan: PostgreSQL los reescribe y daría diferencias falsas
         context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():

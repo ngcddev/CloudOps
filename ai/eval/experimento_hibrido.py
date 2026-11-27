@@ -26,38 +26,39 @@ from app.services.assistant_gate import normalize
 settings.ollama_url = "http://host.docker.internal:11434"
 K = int(os.environ.get("K", "4"))
 N = 10  # candidatos por método antes de fusionar
-trozos = knowledge.dividir(assistant_context.HELP_PATH.read_text(encoding="utf-8"))
-vectores = ollama.embed([t.para_embedding for t in trozos])
-assert vectores and len(vectores) == len(trozos)
+chunks = knowledge.split_text(assistant_context.HELP_PATH.read_text(encoding="utf-8"))
+vectors = ollama.embed([t.for_embedding for t in chunks])
+assert vectors and len(vectors) == len(chunks)
 
-con = psycopg.connect("postgresql://postgres:x@pgv:5432/postgres", autocommit=True)
-con.execute("CREATE EXTENSION IF NOT EXISTS vector")
-con.execute("DROP TABLE IF EXISTS kb")
-con.execute("CREATE TABLE kb (id serial primary key, seccion text, texto text, embedding vector(768), tsv tsvector)")
-for t, v in zip(trozos, vectores, strict=True):
-    con.execute(
+conn = psycopg.connect("postgresql://postgres:x@pgv:5432/postgres", autocommit=True)
+conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+conn.execute("DROP TABLE IF EXISTS kb")
+conn.execute("CREATE TABLE kb (id serial primary key, seccion text, texto text, embedding vector(768), tsv tsvector)")
+for t, v in zip(chunks, vectors, strict=True):
+    conn.execute(
         "INSERT INTO kb (seccion, texto, embedding, tsv) VALUES (%s, %s, %s::vector, to_tsvector('spanish', %s))",
         (t.seccion, t.texto, "[" + ",".join(str(x) for x in v) + "]", t.seccion + " " + t.seccion + " " + t.texto),
     )
-con.execute("CREATE INDEX ON kb USING gin (tsv)")
+conn.execute("CREATE INDEX ON kb USING gin (tsv)")
 
 
-def consulta_texto(q: str) -> str:
+def text_query(q: str) -> str:
     palabras = [p for p in normalize(q).split() if len(p) > 2 and p not in assistant_context._STOPWORDS]
     palabras = [re.sub(r"[^a-z0-9]", "", p) for p in palabras]
     return " | ".join(p for p in palabras if p)
 
 
-def vectorial(q_vec, n):
-    cur = con.execute("SELECT seccion, 1 - (embedding <=> %s::vector) AS s FROM kb ORDER BY embedding <=> %s::vector LIMIT %s", (q_vec, q_vec, n))
+def vector_search(q_vec, n):
+    cur = conn.execute("SELECT seccion, 1 - (embedding <=> %s::vector) AS s FROM kb ORDER BY embedding <=> %s::vector LIMIT %s", (q_vec, q_vec, n))
     return [(f, s) for f, s in cur.fetchall()]
 
 
-def texto(q, n):
-    tq = consulta_texto(q)
+def text(q, n):
+    """Búsqueda léxica (tsvector) de las n secciones más parecidas a la pregunta."""
+    tq = text_query(q)
     if not tq:
         return []
-    cur = con.execute("SELECT seccion, ts_rank_cd(tsv, to_tsquery('spanish', %s)) AS s FROM kb WHERE tsv @@ to_tsquery('spanish', %s) ORDER BY s DESC LIMIT %s", (tq, tq, n))
+    cur = conn.execute("SELECT seccion, ts_rank_cd(tsv, to_tsquery('spanish', %s)) AS s FROM kb WHERE tsv @@ to_tsquery('spanish', %s) ORDER BY s DESC LIMIT %s", (tq, tq, n))
     return [(f, s) for f, s in cur.fetchall()]
 
 
@@ -69,22 +70,22 @@ def rrf(*listas, k_rrf=60):
     return sorted(puntos.items(), key=lambda t: t[1], reverse=True)
 
 
-preguntas = []
+questions = []
 for archivo in ("preguntas_ayuda.jsonl", "preguntas_ayuda_ciegas.jsonl"):
     for linea in open(f"/repo/ai/eval/{archivo}", encoding="utf-8"):
         item = json.loads(linea)
         if item["tipo"] == "respondible":
-            preguntas.append((archivo, item))
+            questions.append((archivo, item))
 
-resultado = {m: {"ajuste": [0, 0], "ciegas": [0, 0]} for m in ("vectorial", "texto", "hibrida", "hibrida_py")}
-fallos = {m: [] for m in resultado}
-for archivo, item in preguntas:
+result = {m: {"ajuste": [0, 0], "ciegas": [0, 0]} for m in ("vectorial", "texto", "hibrida", "hibrida_py")}
+failures = {m: [] for m in result}
+for archivo, item in questions:
     conjunto = "ajuste" if archivo == "preguntas_ayuda.jsonl" else "ciegas"
     q = item["q"]
-    qv = ollama.embed([knowledge.PREFIJO_CONSULTA + q])[0]
+    qv = ollama.embed([knowledge.QUERY_PREFIX + q])[0]
     qv = "[" + ",".join(str(x) for x in qv) + "]"
-    v, t = vectorial(qv, N), texto(q, N)
-    lex = [(sec.titulo, p) for p, _, sec in assistant_context.buscar(q, top=N)]
+    v, t = vector_search(qv, N), text(q, N)
+    lex = [(sec.titulo, p) for p, _, sec in assistant_context.search(q, top=N)]
     for metodo, ranking in (("vectorial", v), ("texto", t), ("hibrida", rrf(v, t)), ("hibrida_py", rrf(v, lex))):
         # Secciones únicas en orden, top-K
         vistas = []
@@ -92,15 +93,15 @@ for archivo, item in preguntas:
             if seccion not in vistas:
                 vistas.append(seccion)
         acierto = item["seccion"] in vistas[:K]
-        resultado[metodo][conjunto][0] += acierto
-        resultado[metodo][conjunto][1] += 1
+        result[metodo][conjunto][0] += acierto
+        result[metodo][conjunto][1] += 1
         if not acierto:
-            fallos[metodo].append(q)
+            failures[metodo].append(q)
 
 print(f"recall@{K} por método (secciones esperadas dentro de los {K} primeros):")
-for metodo, r in resultado.items():
+for metodo, r in result.items():
     a, c = r["ajuste"], r["ciegas"]
     total = (a[0] + c[0], a[1] + c[1])
     print(f"  {metodo:10} ajuste {a[0]}/{a[1]}  ciegas {c[0]}/{c[1]}  total {total[0]}/{total[1]} = {100 * total[0] / total[1]:.1f} %")
 for metodo in ("vectorial", "hibrida", "hibrida_py"):
-    print(f"fallos {metodo}:", fallos[metodo])
+    print(f"fallos {metodo}:", failures[metodo])

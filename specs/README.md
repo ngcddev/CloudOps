@@ -38,7 +38,7 @@
 
 **Estados posibles:** Spec y plan → Tareas listas → En curso → Terminada (criterios pasan en la demo). «Pospuesta» indica que se reemplazó por otra spec.
 
-La verificación de lo construido (pruebas, demos de punta a punta y evaluación de IA) está en el paquete de evidencias: [`entrega/evidencias/`](../entrega/evidencias/).
+La verificación de lo construido (pruebas, demos de punta a punta y evaluación de IA) está en las pruebas de cada carpeta (`gitops/pruebas/`, `backend/tests/`, `ai/eval/`) y en la monografía final.
 
 ## Abrir una spec nueva
 

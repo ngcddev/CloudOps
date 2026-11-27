@@ -65,6 +65,7 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Respaldo y restauración de PostgreSQL | `bash gitops/pruebas/respaldo.sh` |
 | Reiniciar la demo | `bash demo/reiniciar.sh` (borra la base del entorno) |
 | Reiniciar la demo del colegio en el clúster | `GITEA_USER=... GITEA_PASSWORD=... bash demo/reiniciar-cluster.sh` |
+| Dejar la demo del clúster lista tras las pruebas con efecto | `KUBECONFIG=... bash demo/dejar-demo-lista.sh` |
 | Puerta de seguridad del colegio (v1 y v2) | `bash demo/preparar-colegio.sh` |
 | Simulaciones de falla en el clúster | `bash gitops/pruebas/simulaciones.sh` · `admision.sh` |
 | Respaldo de la plataforma (Gitea, Argo CD) fuera del nodo | `bash gitops/pruebas/respaldo-plataforma.sh` |

@@ -26,7 +26,7 @@ from app.schemas.client import (
 )
 from app.schemas.sla_policy import SlaPolicyOut
 from app.services import audit
-from app.paginacion import Pagina, pagina
+from app.paginacion import Page, paginate
 
 router = APIRouter(prefix="/api/clients", tags=["clientes"])
 projects_router = APIRouter(prefix="/api", tags=["proyectos"])
@@ -48,7 +48,7 @@ def _get_visible_or_404(db: Session, client_id: int, user: User) -> Client:
 
 
 @router.get("", response_model=list[ClientSummary])
-def list_clients(page: Pagina = Depends(pagina), db: Session = Depends(get_db), user: User = Depends(current_user)):
+def list_clients(page: Page = Depends(paginate), db: Session = Depends(get_db), user: User = Depends(current_user)):
     """Lista los clientes, del más antiguo al más reciente (un cliente solo ve el suyo)."""
     query = select(Client).options(
         selectinload(Client.projects).selectinload(Project.services).selectinload(Service.plan)

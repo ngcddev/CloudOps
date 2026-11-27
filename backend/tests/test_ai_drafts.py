@@ -200,10 +200,10 @@ def test_sin_ollama_configurado_tambien_deja_el_texto_base(client, mitigado, mon
 
 
 def test_el_texto_base_del_mensaje_cumple_sus_propias_verificaciones(mitigado, sazon, db):
-    h = ai_drafts.hechos_de(db.get(Incident, mitigado.id))
+    h = ai_drafts.facts_for(db.get(Incident, mitigado.id))
 
     for kind in ai_drafts.KINDS:
-        assert ai_drafts.verificar(ai_drafts.texto_base(h, kind), h, kind) == {"terminos_prohibidos": [], "horas_que_no_coinciden": []}
+        assert ai_drafts.check(ai_drafts.base_text(h, kind), h, kind) == {"terminos_prohibidos": [], "horas_que_no_coinciden": []}
 
 
 @pytest.mark.parametrize("texto,esperado", [
@@ -213,7 +213,7 @@ def test_el_texto_base_del_mensaje_cumple_sus_propias_verificaciones(mitigado, s
     ("Tuvimos una falla temporal y la recuperación fue rápida", []),
 ])
 def test_los_terminos_prohibidos_salen_del_glosario(texto, esperado):
-    assert ai_drafts.terminos_prohibidos_en(texto) == esperado
+    assert ai_drafts.forbidden_terms_in(texto) == esperado
 
 
 # ---------- Aprobar y descartar ----------
@@ -285,7 +285,7 @@ def test_descartar_deja_la_bitacora_y_el_cliente_no_recibe_nada(client, mitigado
 
     assert respuesta.status_code == 200 and respuesta.json()["status"] == "descartado"
     assert db.scalar(select(AuditLog).where(AuditLog.action == "ai_draft.descartar")).entity_id == borrador["id"]
-    assert ai_drafts.mensaje_aprobado(db, mitigado.id) is None
+    assert ai_drafts.approved_message(db, mitigado.id) is None
 
 
 def test_un_borrador_inexistente_es_404(client):

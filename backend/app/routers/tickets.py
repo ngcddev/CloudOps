@@ -27,7 +27,7 @@ from app.schemas.ticket import (
     WorkLogCreate,
     WorkLogOut,
 )
-from app.paginacion import Pagina, pagina
+from app.paginacion import Page, paginate
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 CLIENT_STATUS_LABELS = {
@@ -103,7 +103,7 @@ def list_tickets(
     client_id: int | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),
     priority: str | None = Query(default=None),
-    page: Pagina = Depends(pagina),
+    page: Page = Depends(paginate),
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):

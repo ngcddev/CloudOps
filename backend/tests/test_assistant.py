@@ -159,16 +159,16 @@ def test_en_modo_recuperacion_solo_se_pasan_las_secciones_parecidas(client, olla
 def test_la_busqueda_encuentra_la_seccion_correcta():
     from app.services import assistant_context as ctx
 
-    assert ctx.contexto_para("¿Cuánto cuesta el plan Premium?")[0].titulo == "Planes"
-    assert ctx.contexto_para("¿Cómo hago un rollback?")[0].titulo == "Rollback"
-    assert ctx.contexto_para("¿Cómo elimino un cliente?") == []  # la ayuda no lo dice
+    assert ctx.context_for("¿Cuánto cuesta el plan Premium?")[0].titulo == "Planes"
+    assert ctx.context_for("¿Cómo hago un rollback?")[0].titulo == "Rollback"
+    assert ctx.context_for("¿Cómo elimino un cliente?") == []  # la ayuda no lo dice
 
 
 def test_la_ayuda_cabe_en_el_contexto_del_modelo():
     from app.services import assistant_context as ctx
 
-    assert ctx.contexto_completo_cabe()
-    assert len(ctx.todas()) >= 25
+    assert ctx.full_context_fits()
+    assert len(ctx.all_sections()) >= 25
 
 
 def test_cada_dato_de_la_ayuda_sobre_los_planes_coincide_con_la_semilla():
@@ -179,7 +179,7 @@ def test_cada_dato_de_la_ayuda_sobre_los_planes_coincide_con_la_semilla():
     from app.services import assistant_context as ctx
 
     planes = json.loads((Path(__file__).resolve().parents[2] / "seed" / "plans.json").read_text(encoding="utf-8"))
-    texto = next(s.texto for s in ctx.todas() if s.titulo == "Planes")
+    texto = next(s.texto for s in ctx.all_sections() if s.titulo == "Planes")
     for plan in planes:
         assert f"{plan['monthly_price']:,}".replace(",", ".") in texto, plan["name"]
         assert f"{plan['included_hours']} horas" in texto, plan["name"]

@@ -9,13 +9,13 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
-from app.config import settings, validar_jwt_secret
+from app.config import settings, validate_jwt_secret
 from app import telemetry
 from app.db import SessionLocal, engine, get_db
 from app.integrations.argocd import argocd_from_settings
 from app.integrations.gitea import gitea_from_settings
-from app.limite_cuerpo import LimiteDeCuerpo
-from app.registros import IdDePeticion, configurar_registros
+from app.limite_cuerpo import BodySizeLimit
+from app.registros import RequestIdMiddleware, configure_logging
 from app.routers import (
     ai_drafts,
     assistant,
@@ -34,18 +34,19 @@ from app.routers import (
     tickets,
 )
 from app.seed import seed_if_empty, seed_passwords
-from app.services.bloqueos import CLAVE_ARRANQUE, esperar_turno
+from app.services.bloqueos import STARTUP_KEY, wait_turn
 from app.services.deploy_watch import watch_forever
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    """Arranque de la API: valida la clave JWT, carga la semilla si la base está vacía y, si está configurado, arranca el vigilante de despliegues."""
     # Sin una clave de firma válida la API no arranca (auditoría CT-01): con la del ejemplo cualquiera podría firmar sesiones
-    validar_jwt_secret(settings.jwt_secret)
+    validate_jwt_secret(settings.jwt_secret)
     # Las tablas las crea Alembic (alembic upgrade head) al arrancar el contenedor;
     # aquí solo se cargan los datos semilla si la base está vacía.
     # Con varias réplicas arrancando a la vez sobre una base vacía, la semilla la carga una y las demás esperan su turno (auditoría K8-04)
-    with esperar_turno(engine, CLAVE_ARRANQUE), SessionLocal() as db:
+    with wait_turn(engine, STARTUP_KEY), SessionLocal() as db:
         seed_if_empty(db)
         seed_passwords(db)
     # Seguimiento de las publicaciones (spec 005): solo si hay conexión configurada con Argo CD
@@ -62,17 +63,17 @@ async def lifespan(_: FastAPI):
 
 
 # Registros JSON con id de petición y trace_id, para que Loki y Tempo se puedan seguir uno desde el otro (auditoría OB-04)
-configurar_registros(settings.log_level)
+configure_logging(settings.log_level)
 
 app = FastAPI(title="CloudOps Client Hub", lifespan=lifespan)
 # Tope del cuerpo de las peticiones (auditoría BE-05): lo general, el informe del pipeline y el audio de voz tienen su propio tamaño
 app.add_middleware(
-    LimiteDeCuerpo,
+    BodySizeLimit,
     por_defecto=settings.body_limit_bytes,
     rutas={"/api/pipeline-events": settings.pipeline_body_limit_bytes, "/api/assistant/voice/transcribe": settings.voice_body_limit_bytes},
 )
 # Va después del tope de cuerpo para quedar por fuera de él: hasta un 413 sale con su id de petición
-app.add_middleware(IdDePeticion)
+app.add_middleware(RequestIdMiddleware)
 app.include_router(auth.router)
 app.include_router(audit_logs.router)
 app.include_router(catalog.router)
@@ -91,10 +92,10 @@ app.include_router(ai_drafts.router)
 app.include_router(reports.router)
 
 # Trazas hacia Tempo si OTEL_EXPORTER_OTLP_ENDPOINT está definido; sin él no hace nada (spec 008)
-telemetry.configurar(app)
+telemetry.configure(app)
 
 # Nombre de cada campo tal como se le muestra a la persona usuaria
-_CAMPOS = {
+_FIELDS = {
     "name": "nombre",
     "contact_name": "contacto",
     "email": "correo",
@@ -121,11 +122,11 @@ _CAMPOS = {
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_error_es(_: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_error_in_spanish(_: Request, exc: RequestValidationError) -> JSONResponse:
     """Devuelve los errores 422 con mensajes en español (plan 001#api)."""
     detail = []
     for error in exc.errors():
-        campo = _CAMPOS.get(str(error["loc"][-1]), str(error["loc"][-1]))
+        campo = _FIELDS.get(str(error["loc"][-1]), str(error["loc"][-1]))
         if error["type"] == "missing":
             msg = f"El campo «{campo}» es obligatorio."
         elif error["type"] == "string_too_long":

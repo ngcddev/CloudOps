@@ -13,24 +13,24 @@ from pathlib import Path
 
 import yaml
 
-RAIZ = Path(__file__).resolve().parents[1]
-JUSTIFICACIONES = {
+ROOT = Path(__file__).resolve().parents[1]
+JUSTIFICATIONS = {
     "component_not_present",
     "vulnerable_code_not_present",
     "vulnerable_code_not_in_execute_path",
     "vulnerable_code_cannot_be_controlled_by_adversary",
     "inline_mitigations_already_exist",
 }
-MAX_DIAS_DE_DECISION = 183
-CAMPOS = ("id", "estado", "explotabilidad", "tratamiento", "detalle", "revisar_en")
+MAX_DECISION_DAYS = 183
+FIELDS = ("id", "estado", "explotabilidad", "tratamiento", "detalle", "revisar_en")
 
 
-def validar_reglas(registro: dict, hoy: date) -> list[str]:
+def validate_rules(registro: dict, hoy: date) -> list[str]:
     """Problemas de las reglas del registro; una decisión sin razón o sin fecha de revisión no cuenta como decisión."""
     problemas, vistos = [], set()
     for regla in registro.get("reglas", []):
         nombre = regla.get("id", "(sin id)")
-        faltan = [c for c in CAMPOS if not regla.get(c)]
+        faltan = [c for c in FIELDS if not regla.get(c)]
         if faltan:
             problemas.append(f"regla {nombre}: faltan {', '.join(faltan)}")
         if nombre in vistos:
@@ -40,19 +40,19 @@ def validar_reglas(registro: dict, hoy: date) -> list[str]:
             problemas.append(f"regla {nombre}: sin paquetes ni cves, aplicaría a todo")
         if regla.get("estado") not in ("not_affected", "affected"):
             problemas.append(f"regla {nombre}: estado debe ser not_affected o affected")
-        if regla.get("estado") == "not_affected" and regla.get("justificacion") not in JUSTIFICACIONES:
-            problemas.append(f"regla {nombre}: not_affected necesita una justificación de OpenVEX ({', '.join(sorted(JUSTIFICACIONES))})")
+        if regla.get("estado") == "not_affected" and regla.get("justificacion") not in JUSTIFICATIONS:
+            problemas.append(f"regla {nombre}: not_affected necesita una justificación de OpenVEX ({', '.join(sorted(JUSTIFICATIONS))})")
         try:
             revisar = date.fromisoformat(str(regla.get("revisar_en")))
         except ValueError:
             problemas.append(f"regla {nombre}: revisar_en no es una fecha AAAA-MM-DD")
             continue
-        if (revisar - hoy).days > MAX_DIAS_DE_DECISION:
+        if (revisar - hoy).days > MAX_DECISION_DAYS:
             problemas.append(f"regla {nombre}: revisar_en está a más de 6 meses ({revisar})")
     return problemas
 
 
-def regla_de(hallazgo: dict, reglas: list[dict]) -> dict | None:
+def rule_for(hallazgo: dict, reglas: list[dict]) -> dict | None:
     """La regla que cubre el hallazgo: coincide el paquete (si la regla los lista) y el CVE (si la regla los lista)."""
     for regla in reglas:
         paquetes, cves = regla.get("paquetes") or [], regla.get("cves") or []
@@ -64,7 +64,7 @@ def regla_de(hallazgo: dict, reglas: list[dict]) -> dict | None:
     return None
 
 
-def hallazgos_de(reportes: list[Path]) -> list[dict]:
+def findings_from(reportes: list[Path]) -> list[dict]:
     salida = []
     for ruta in reportes:
         reporte = json.loads(ruta.read_text(encoding="utf-8"))
@@ -77,14 +77,14 @@ def hallazgos_de(reportes: list[Path]) -> list[dict]:
     return salida
 
 
-def clasificar(hallazgos: list[dict], registro: dict, hoy: date) -> None:
+def classify(hallazgos: list[dict], registro: dict, hoy: date) -> None:
     reglas = registro.get("reglas", [])
     for h in hallazgos:
         if h["corregida"]:
             h["tratamiento"], h["regla"] = "corregir", ""
             h["motivo"] = f"corregible: actualizar {h['paquete']} a {h['corregida']}"
             continue
-        regla = regla_de(h, reglas)
+        regla = rule_for(h, reglas)
         if regla is None:
             h["tratamiento"], h["regla"], h["motivo"] = "sin decisión", "", "sin arreglo y sin regla en pipelines/hallazgos.yaml"
         elif date.fromisoformat(str(regla["revisar_en"])) < hoy:
@@ -115,7 +115,8 @@ def openvex(hallazgos: list[dict], registro: dict, ahora: datetime) -> dict:
             "timestamp": ahora.isoformat(), "version": 1, "statements": declaraciones}
 
 
-def tabla(hallazgos: list[dict], registro: dict) -> str:
+def table(hallazgos: list[dict], registro: dict) -> str:
+    """Tabla en Markdown de los hallazgos agrupados por regla, con su tratamiento y fecha de revisión."""
     reglas = {r["id"]: r for r in registro.get("reglas", [])}
     filas = ["| Regla | Severidad | CVE | Paquetes | Imágenes | Explotabilidad | Tratamiento | Revisar en |", "|---|---|---:|---|---|---|---|---|"]
     grupos: dict[str, list[dict]] = {}
@@ -131,24 +132,25 @@ def tabla(hallazgos: list[dict], registro: dict) -> str:
 
 
 def main() -> int:
+    """Clasifica los hallazgos de Trivy contra el registro de decisiones y escribe la tabla, el JSON y el VEX."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("reportes", nargs="+", type=Path, help="reportes JSON de Trivy (con --severity HIGH,CRITICAL y sin --ignore-unfixed)")
-    ap.add_argument("--registro", type=Path, default=RAIZ / "pipelines" / "hallazgos.yaml")
-    ap.add_argument("--salida", type=Path, default=RAIZ / "evidencias")
+    ap.add_argument("--registro", type=Path, default=ROOT / "pipelines" / "hallazgos.yaml")
+    ap.add_argument("--salida", type=Path, default=ROOT / "evidencias")
     ap.add_argument("--hoy", default=None, help="fecha AAAA-MM-DD (para las pruebas); por defecto, hoy")
     args = ap.parse_args()
     hoy = date.fromisoformat(args.hoy) if args.hoy else date.today()
     registro = yaml.safe_load(args.registro.read_text(encoding="utf-8"))
 
-    problemas = validar_reglas(registro, hoy)
-    hallazgos = hallazgos_de(args.reportes)
-    clasificar(hallazgos, registro, hoy)
+    problemas = validate_rules(registro, hoy)
+    hallazgos = findings_from(args.reportes)
+    classify(hallazgos, registro, hoy)
     args.salida.mkdir(parents=True, exist_ok=True)
     (args.salida / "hallazgos.json").write_text(json.dumps(hallazgos, ensure_ascii=False, indent=2), encoding="utf-8")
-    (args.salida / "hallazgos.md").write_text(tabla(hallazgos, registro) + "\n", encoding="utf-8")
+    (args.salida / "hallazgos.md").write_text(table(hallazgos, registro) + "\n", encoding="utf-8")
     (args.salida / "vex.openvex.json").write_text(json.dumps(openvex(hallazgos, registro, datetime.now(timezone.utc)), ensure_ascii=False, indent=2), encoding="utf-8")
 
-    print(tabla(hallazgos, registro))
+    print(table(hallazgos, registro))
     cuentas = {t: sum(1 for h in hallazgos if h["tratamiento"] == t) for t in sorted({h["tratamiento"] for h in hallazgos})}
     print(f"\n{len(hallazgos)} hallazgos altos o críticos: {cuentas or 'ninguno'}")
     frenan = [h for h in hallazgos if h["tratamiento"] in ("corregir", "sin decisión", "vencida")]

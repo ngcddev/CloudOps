@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Conecta el Hub del clúster con Ollama del PC B y elige cómo arma el asistente su contexto (spec 012, T27): crea el ConfigMap
 # hub-ia (que la API lee como variables de entorno, opcional) y reinicia la API. La IP del PC B no va en el repositorio.
+# OLLAMA_KEEP_ALIVE=30m deja el modelo cargado media hora: con el valor por defecto (2m) se descarga entre preguntas y la siguiente
+# respuesta paga la carga completa o vence el tiempo de espera.
 # Antes, en el PC B: ollama pull qwen2.5:7b-instruct  y  ollama pull nomic-embed-text  (este último solo para el modo rag).
 # Uso:  bash gitops/hub/configurar-ia.sh <url-de-ollama> [completo|recuperacion|rag] [--solo-mostrar]
 #   bash gitops/hub/configurar-ia.sh http://192.168.1.50:11434 rag
@@ -24,6 +26,7 @@ configmap() {
     --from-literal=ASSISTANT_CONTEXT_MODE="$MODO" \
     --from-literal=RAG_TOP_K=4 \
     --from-literal=RAG_MIN_SCORE=0.60 \
+    --from-literal=OLLAMA_KEEP_ALIVE=30m \
     --dry-run=client -o yaml
 }
 

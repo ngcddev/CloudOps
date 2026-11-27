@@ -8,10 +8,10 @@ import subprocess
 import urllib.request
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
-def mlflow_disponible() -> bool:
+def mlflow_available() -> bool:
     """True si MLflow está instalado. No dice si el servidor responde: eso lo descubre `iniciar`."""
     try:
         import mlflow  # noqa: F401
@@ -20,7 +20,7 @@ def mlflow_disponible() -> bool:
     return True
 
 
-def iniciar(experimento: str):
+def start_run(experimento: str):
     """Fija el experimento y devuelve el módulo `mlflow`, o None (con el motivo en pantalla) si no se puede usar."""
     try:
         import mlflow
@@ -37,7 +37,7 @@ def iniciar(experimento: str):
     return mlflow
 
 
-def huella(rutas: list[Path]) -> str:
+def fingerprint(rutas: list[Path]) -> str:
     """SHA-256 corto del contenido de los archivos, en orden: identifica la versión exacta de unos datos."""
     h = hashlib.sha256()
     for ruta in sorted(rutas):
@@ -46,7 +46,7 @@ def huella(rutas: list[Path]) -> str:
     return h.hexdigest()[:16]
 
 
-def commit_git() -> str:
+def git_commit() -> str:
     """Commit actual del repositorio (con `+` si hay cambios sin guardar), o «desconocido» fuera de Git.
 
     Dentro de un contenedor sin git se puede pasar el commit en la variable GIT_COMMIT.
@@ -55,17 +55,17 @@ def commit_git() -> str:
         return os.environ["GIT_COMMIT"]
     try:
         sha = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"], cwd=RAIZ, capture_output=True, text=True, timeout=10, check=True
+            ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True, timeout=10, check=True
         ).stdout.strip()
         sucio = subprocess.run(
-            ["git", "status", "--porcelain"], cwd=RAIZ, capture_output=True, text=True, timeout=10, check=True
+            ["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, timeout=10, check=True
         ).stdout.strip()
         return sha + ("+" if sucio else "")
     except (OSError, subprocess.SubprocessError):
         return "desconocido"
 
 
-def digest_modelo(url: str, nombre: str) -> str:
+def model_digest(url: str, nombre: str) -> str:
     """Digest del modelo en Ollama (`/api/tags`): fija con qué pesos exactos se midió. «desconocido» si no responde."""
     try:
         # bandit B310: herramienta de desarrollo: la URL de Ollama la pone quien la corre
@@ -78,6 +78,6 @@ def digest_modelo(url: str, nombre: str) -> str:
     return "desconocido"
 
 
-def uri_de_seguimiento() -> str:
+def tracking_uri() -> str:
     """Dirección del servidor MLflow que se usa (MLFLOW_TRACKING_URI) o `local` si se guarda en ./mlruns."""
     return os.environ.get("MLFLOW_TRACKING_URI", "local")

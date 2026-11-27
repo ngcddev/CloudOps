@@ -4,13 +4,13 @@
 import re
 from collections.abc import Iterable
 
-MARCA = "[SECRETO]"
+MARK = "[SECRETO]"
 
 # (nombre, patrón). Los de «clave = valor» conservan el nombre y tapan solo el valor.
-_ASIGNACION = re.compile(
+_ASSIGNMENT = re.compile(
     r"(?i)\b((?:api[_-]?key|apikey|account[_-]?key|access[_-]?key|secret[_-]?key|private[_-]?key|shared[_-]?access[_-]?signature|sas[_-]?token|client[_-]?secret|secret|token|passwd|password|contraseña|clave|credencial|authorization)\w*)(\s*[:=]\s*)(['\"]?)((?=[^\s'\",;]*\d)[^\s'\",;]{6,})\3"
 )
-_PATRONES = [
+_PATTERNS = [
     ("clave privada", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)")),
     ("clave de AWS", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
     ("token de GitHub", re.compile(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}\b|\bgithub_pat_[A-Za-z0-9_]{40,}\b")),
@@ -22,39 +22,39 @@ _PATRONES = [
 ]
 # Una palabra de secreto seguida, en la misma frase, de una cadena larga mezclada (token de 40 hexadecimales, clave base64…): «token de gitea 5f2a…». Solo se tapa la cadena;
 # sin la palabra clave cerca no se toca (un SHA de commit o un identificador largo en un texto normal no se confunde con un secreto).
-_PALABRA_Y_CADENA = re.compile(
+_WORD_AND_STRING = re.compile(
     r"(?i)\b(?:token|clave|key|secret|secreto|contraseña|password|credencial)\b[^\n]{0,40}?\b((?=[A-Za-z0-9_-]*\d)(?=[A-Za-z0-9_-]*[A-Za-z])[A-Za-z0-9_-]{32,})\b"
 )
 
 
-def redactar(texto: str) -> tuple[str, list[str]]:
+def redact(texto: str) -> tuple[str, list[str]]:
     """El texto con los secretos tapados y los tipos que se encontraron (vacío si no había nada)."""
     if not texto:
         return texto, []
     encontrados: list[str] = []
 
-    def tapar_asignacion(m: re.Match) -> str:
+    def mask_assignment(m: re.Match) -> str:
         encontrados.append("asignación de secreto")
-        return f"{m.group(1)}{m.group(2)}{m.group(3)}{MARCA}{m.group(3)}"
+        return f"{m.group(1)}{m.group(2)}{m.group(3)}{MARK}{m.group(3)}"
 
-    def tapar_cadena(m: re.Match) -> str:
+    def mask_string(m: re.Match) -> str:
         encontrados.append("cadena larga junto a una palabra de secreto")
-        return m.group(0).replace(m.group(1), MARCA)
+        return m.group(0).replace(m.group(1), MARK)
 
-    resultado = _ASIGNACION.sub(tapar_asignacion, texto)
-    resultado = _PALABRA_Y_CADENA.sub(tapar_cadena, resultado)
-    for nombre, patron in _PATRONES:
-        resultado, cuantos = patron.subn(MARCA, resultado)
+    resultado = _ASSIGNMENT.sub(mask_assignment, texto)
+    resultado = _WORD_AND_STRING.sub(mask_string, resultado)
+    for nombre, patron in _PATTERNS:
+        resultado, cuantos = patron.subn(MARK, resultado)
         if cuantos:
             encontrados.append(nombre)
     return resultado, sorted(set(encontrados))
 
 
-def redactar_todo(textos: Iterable[str]) -> tuple[list[str], list[str]]:
+def redact_all(textos: Iterable[str]) -> tuple[list[str], list[str]]:
     """Redacta varios textos; devuelve los textos y la unión de los tipos encontrados."""
     salida, tipos = [], set()
     for texto in textos:
-        limpio, encontrados = redactar(texto)
+        limpio, encontrados = redact(texto)
         salida.append(limpio)
         tipos.update(encontrados)
     return salida, sorted(tipos)

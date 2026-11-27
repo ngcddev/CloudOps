@@ -6,7 +6,7 @@ CloudOps Client Hub **no es otro Vercel**. Ayuda a una agencia digital a gestion
 
 Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep – 30 nov 2026. Equipo de 5: 4 ingenieros de sistemas y 1 ingeniero industrial.
 
-**Documentos de referencia:** [constitución](constitution/README.md) ([misión](constitution/mission.md) · [principios](constitution/principles.md) · [roadmap](constitution/roadmap.md) · [tech stack](constitution/tech-stack.md) · [convenciones](constitution/conventions.md) · [nombres canónicos](constitution/canonical-names.md)) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [glosario](docs/glosario.md) · [documento del diplomado](docs/diplomado-cloudforge-ai-5.0.md) · [cumplimiento del diplomado](docs/historico/cumplimiento-diplomado.md)
+**Documentos de referencia:** [constitución](constitution/README.md) ([misión](constitution/mission.md) · [principios](constitution/principles.md) · [roadmap](constitution/roadmap.md) · [tech stack](constitution/tech-stack.md) · [convenciones](constitution/conventions.md) · [nombres canónicos](constitution/canonical-names.md)) · [cómo trabajamos (SDD)](docs/sdd.md) · [mapa de specs](specs/README.md) · [requerimientos](docs/requerimientos.md) · [glosario](docs/glosario.md) · [documento del diplomado](docs/diplomado-cloudforge-ai-5.0.md)
 
 ## Tabla de contenidos
 
@@ -39,10 +39,8 @@ Proyecto integrador del diplomado **CloudForge AI 5.0** (Unicomfacauca), 28 sep 
 - [Conclusión](#conclusión)
 
 ## Estado actual
-El estado verificado del proyecto **no se escribe a mano en este README**: sale de la última corrida del paquete de evidencias, que ejecuta las pruebas, las demos de punta a punta y las evaluaciones de IA y guarda cada salida con fecha y commit.
+El estado verificado del proyecto **no se escribe a mano en este README**: las cifras salen de la monografía final y de los comandos que las producen (tabla de comandos en [CLAUDE.md](CLAUDE.md#comandos)).
 
-- Resumen de la corrida: [`entrega/evidencias/2026-11-16_bb5a284/RESUMEN.md`](entrega/evidencias/2026-11-16_bb5a284/RESUMEN.md) (resultados por nivel, cifras y hallazgos).
-- Reproducirla: `bash entrega/evidencias/correr.sh A B C1 D E F` (los niveles `C2`/`C3` provocan fallas en el clúster; al final, `bash entrega/evidencias/correr.sh Z` deja la demo lista).
 - Estado por spec y tareas abiertas: [mapa de specs](specs/README.md).
 
 ## Cómo levantarlo
@@ -216,7 +214,7 @@ Cada herramienta de plataforma se instala cuando el diplomado cubre su módulo. 
 | Capa | Herramienta | Módulo | Notas |
 |---|---|---|---|
 | LLM | **Ollama** | 5 | Qwen2.5 7B-Instruct (Q4) en el Hub; Qwen2.5 3B solo para comparar (licencia de investigación) |
-| RAG | **RAG propio** en el Hub: `nomic-embed-text` (Ollama) + índice en PostgreSQL (`kb_documents`, `kb_chunks`) | 5 | Similitud coseno en Python, sin extensiones; cae a búsqueda léxica si Ollama no responde. Reemplaza a AnythingLLM (ver [bitácora](docs/historico/bitacora.md)) |
+| RAG | **RAG propio** en el Hub: `nomic-embed-text` (Ollama) + índice en PostgreSQL (`kb_documents`, `kb_chunks`) | 5 | Similitud coseno en Python, sin extensiones; cae a búsqueda léxica si Ollama no responde. Reemplaza a AnythingLLM |
 | MLOps | **MLflow** (namespace `mlops` del clúster; `ai/servidor-mlflow/` para desarrollo) | 5 | Experimentos, Model Registry (`compuerta-asistente` con alias `production`) y evaluaciones del asistente |
 | Compuerta del asistente | **Clasificador Naive Bayes** (Python puro, JSON de ~40 KB) | 5 | Decide si la pregunta trata del Hub antes de despertar al LLM; se entrena con `ai/classifier/train.py` y se registra en MLflow |
 | Multimodal | **Voz**: faster-whisper `small` (voz a texto) y Piper (texto a voz), en CPU | 6 | Servicio aparte (`voz/`); el audio no se guarda. Generación de imagen (ComfyUI) fuera de alcance por cómputo |
@@ -344,7 +342,7 @@ Los requerimientos originales (RF y RNF con prioridad MoSCoW) están en [docs/re
 Detalle en [constitution/roadmap.md](constitution/roadmap.md).
 
 ## Alcance de la demo
-Meta para la sustentación final (30 nov). Cada punto tiene su verificación en el paquete de evidencias ([RESUMEN.md](entrega/evidencias/2026-11-16_bb5a284/RESUMEN.md)):
+Meta para la sustentación final (30 nov). Cada punto tiene su verificación en la monografía final y en las pruebas de `gitops/pruebas/`:
 
 | Punto | Specs | Verificación |
 |---|---|---|
@@ -359,7 +357,7 @@ Meta para la sustentación final (30 nov). Cada punto tiene su verificación en 
 | Asistente local que resume el incidente, con verificación humana | [012](specs/012-asistente-ia/spec.md) | D02–D05 |
 | Componente multimodal | [021](specs/021-voz-del-asistente/spec.md) | D11, D12 (voz) |
 
-La demo arranca desde datos semilla; `bash entrega/evidencias/dejar-demo-lista.sh` deja el clúster listo ([spec 015](specs/015-demo-integrada/spec.md)).
+La demo arranca desde datos semilla; `bash demo/dejar-demo-lista.sh` deja el clúster listo ([spec 015](specs/015-demo-integrada/spec.md)).
 
 ## Equipo y roles
 
@@ -408,7 +406,6 @@ cloudops/
 ├── runbooks/           # procedimientos de operación
 ├── demo/               # reinicio y preparación de la demo
 ├── seed/               # datos semilla en JSON
-├── entrega/            # informe final y paquete de evidencias
 ├── .github/            # CI y plantilla de PR
 └── docker-compose.yml  # entorno de desarrollo
 ```

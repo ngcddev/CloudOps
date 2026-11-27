@@ -15,9 +15,9 @@ def urllib_transport(url: str, body: bytes, timeout: float) -> tuple[int, bytes]
     import urllib.error
     import urllib.request
 
-    from app.integrations.http import validar_esquema
+    from app.integrations.http import validate_scheme
 
-    request = urllib.request.Request(validar_esquema(url), data=body, headers={"Content-Type": "application/json"}, method="POST")
+    request = urllib.request.Request(validate_scheme(url), data=body, headers={"Content-Type": "application/json"}, method="POST")
     try:
         # bandit B310: esquema validado en la línea anterior
         with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
@@ -27,7 +27,7 @@ def urllib_transport(url: str, body: bytes, timeout: float) -> tuple[int, bytes]
 
 
 # Respuestas deterministas y cortas: es un asistente de ayuda, no un generador creativo (menos margen de error)
-OPCIONES = {"temperature": 0, "top_p": 0.1, "seed": 7, "num_ctx": 8192, "num_predict": 350}
+OPTIONS = {"temperature": 0, "top_p": 0.1, "seed": 7, "num_ctx": 8192, "num_predict": 350}
 
 
 def build_payload(system: str, question: str, model: str, keep_alive: str, max_tokens: int | None = None) -> dict:
@@ -37,7 +37,7 @@ def build_payload(system: str, question: str, model: str, keep_alive: str, max_t
         "stream": False,
         # Libera la VRAM pronto: el PC B comparte GPU con ComfyUI (spec 014)
         "keep_alive": keep_alive,
-        "options": {**OPCIONES, "num_predict": max_tokens} if max_tokens else OPCIONES,
+        "options": {**OPTIONS, "num_predict": max_tokens} if max_tokens else OPTIONS,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": question}],
     }
 

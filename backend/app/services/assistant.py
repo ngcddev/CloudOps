@@ -8,27 +8,27 @@ from sqlalchemy.orm import Session
 
 from app import telemetry
 from app.config import settings
-from app.db import soltar_conexion
+from app.db import release_connection
 from app.integrations import ollama
 from app.models.ai_query import AiQuery
 from app.models.user import User
 from app.services import assistant_context, knowledge
 from app.services.assistant_gate import GateModel, load_model
-from app.services.redaccion import redactar
+from app.services.redaccion import redact
 
 PROMPT_VERSION = assistant_context.PROMPT_VERSION
 
-RESPUESTA_FUERA_DE_TEMA = (
+OFF_TOPIC_ANSWER = (
     "Solo puedo ayudarte con el uso del Hub: clientes, planes, tickets, prioridades, SLA, solicitudes de cambio, "
     "incidentes, rollback, dashboards y reportes. Reformula tu pregunta sobre alguno de esos temas."
 )
-RESPUESTA_IA_NO_DISPONIBLE = (
+AI_UNAVAILABLE_ANSWER = (
     "El asistente de IA local no respondió a tiempo. El resto del Hub funciona con normalidad: puedes consultar "
     "la pantalla correspondiente o intentarlo de nuevo en unos minutos."
 )
 
 
-def _contexto(db: Session, question: str, transport=None) -> tuple[list[assistant_context.Seccion], str, float | None]:
+def _context(db: Session, question: str, transport=None) -> tuple[list[assistant_context.Section], str, float | None]:
     """Contexto para el LLM según el modo configurado: (secciones, modo realmente usado, similitud del mejor trozo).
 
     En modo `rag`, si Ollama no puede dar embeddings o el índice no existe, se cae a la recuperación léxica y el modo
@@ -36,12 +36,12 @@ def _contexto(db: Session, question: str, transport=None) -> tuple[list[assistan
     """
     modo = settings.assistant_context_mode
     if modo == "rag":
-        encontrado = knowledge.recuperar(db, question, transport=transport)
+        encontrado = knowledge.retrieve(db, question, transport=transport)
         if encontrado is not None:
             return encontrado.secciones, "rag", encontrado.mejor
         modo = "recuperacion"
-    contexto = assistant_context.elegir_contexto(question, modo)
-    if modo == "completo" and not assistant_context.contexto_completo_cabe():
+    contexto = assistant_context.choose_context(question, modo)
+    if modo == "completo" and not assistant_context.full_context_fits():
         modo = "recuperacion"  # lo mismo que hace elegir_contexto cuando la ayuda ya no cabe entera
     return contexto, modo, None
 
@@ -49,7 +49,7 @@ def _contexto(db: Session, question: str, transport=None) -> tuple[list[assistan
 def ask(db: Session, user: User, question: str, gate: GateModel | None = None, transport=None) -> AiQuery:
     """Procesa la pregunta y devuelve la fila registrada (hace commit)."""
     # Spec 020: una clave pegada en la pregunta no se guarda ni viaja al modelo; se tapa antes de cualquier otra cosa
-    question, secretos = redactar(question)
+    question, secretos = redact(question)
     user_id = user.id   # antes de soltar la conexión: ese paso caduca los objetos cargados
     gate = gate or load_model()
     umbral = settings.assistant_gate_threshold or None
@@ -63,30 +63,30 @@ def ask(db: Session, user: User, question: str, gate: GateModel | None = None, t
     secciones: list[str] = []
     despierta = False
     if not decision.despertar_llm:
-        respuesta = RESPUESTA_FUERA_DE_TEMA
+        respuesta = OFF_TOPIC_ANSWER
     else:
         with tracer.start_as_current_span("assistant.contexto") as span:
-            contexto, modo_contexto, puntaje = _contexto(db, question, transport)
+            contexto, modo_contexto, puntaje = _context(db, question, transport)
             span.set_attributes({"context.mode": modo_contexto, "context.secciones": len(contexto)})
             if puntaje is not None:
                 span.set_attribute("retrieval.score", puntaje)
         if not contexto:
             # Modo por secciones: del tema, pero la ayuda no dice nada parecido; no se llama al LLM para que no invente
-            respuesta = assistant_context.SIN_INFORMACION
+            respuesta = assistant_context.NO_INFORMATION
         else:
             despierta = True
             secciones = [sec.titulo for sec in contexto]
             # Ollama puede tardar hasta un minuto: sin una conexión del pool tomada mientras se espera (auditoría BE-02)
-            soltar_conexion(db)
+            release_connection(db)
             inicio = time.monotonic()
             with tracer.start_as_current_span("assistant.llm") as span:
-                texto = ollama.chat(assistant_context.mensaje_de_sistema(contexto), question, transport=transport)
+                texto = ollama.chat(assistant_context.system_message(contexto), question, transport=transport)
                 span.set_attributes({"llm.model": settings.ollama_model, "llm.ok": texto is not None, "llm.prompt_version": PROMPT_VERSION})
             latencia = int((time.monotonic() - inicio) * 1000)
             modelo, prompt, llm_ok = settings.ollama_model, PROMPT_VERSION, texto is not None
-            respuesta = texto or RESPUESTA_IA_NO_DISPONIBLE
+            respuesta = texto or AI_UNAVAILABLE_ANSWER
             # H-IA-01: lo que responde el modelo también puede traer un secreto (de la ayuda o inventado); se tapa antes de guardarlo y mostrarlo
-            respuesta, _ = redactar(respuesta)
+            respuesta, _ = redact(respuesta)
 
     registro = AiQuery(
         user_id=user_id,

@@ -6,7 +6,7 @@ import {
   isUsingMockData,
   listClients,
   login as apiLogin,
-  MOCK_PERMITIDO,
+  MOCK_ALLOWED,
   setAuthToken,
   setUnauthorizedHandler,
   type SessionUser,
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function start() {
       // Los datos de prueba solo existen en desarrollo o con VITE_MOCK=1; en producción este bloque no se compila (auditoría FE-01 y FE-02)
-      if (MOCK_PERMITIDO && (await isUsingMockData())) {
+      if (MOCK_ALLOWED && (await isUsingMockData())) {
         // Sin API: una técnica de ejemplo, ligada al primer cliente de los datos de prueba
         const clients = await listClients();
         if (cancelled) return;

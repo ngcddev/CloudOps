@@ -191,11 +191,11 @@ def test_un_servicio_guardado_con_un_host_malo_no_se_escribe_en_gitops(client, s
 def test_el_generador_no_acepta_un_host_ni_un_nombre_peligrosos(seeded):
     service = seeded.scalar(select(Service).where(Service.namespace == "cliente-restaurante"))
     service.host = INYECCION
-    with pytest.raises(provisioning.EntradaInvalida):
+    with pytest.raises(provisioning.InvalidInput):
         provisioning.render_kustomization(service, service.plan)
     seeded.rollback()
     service.project.client.name = "Cliente\nvalue: privileged"
-    with pytest.raises(provisioning.EntradaInvalida):
+    with pytest.raises(provisioning.InvalidInput):
         provisioning.render_kustomization(service, service.plan)
     seeded.rollback()
 

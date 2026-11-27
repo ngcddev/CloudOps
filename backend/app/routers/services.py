@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db import get_db, soltar_conexion
+from app.db import get_db, release_connection
 from app.deps import require_agency
 from app.integrations.gitea import GiteaClient, GiteaError
 from app.models.change_request import ChangeRequest
@@ -117,14 +117,14 @@ def provision_service(
     # así las llamadas a Gitea (hasta 10 s cada una) no sostienen una conexión del pool (auditoría BE-02)
     try:
         files = list(provisioning.render_files(service, service.plan))
-    except provisioning.EntradaInvalida as error:
+    except provisioning.InvalidInput as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     ficha = {"id": service.id, "namespace": service.namespace, "host": service.host}
     user_name, user_email = user.name, user.email
     # Se sueltan todos los objetos, no solo el servicio: al deshacer la transacción la sesión caduca los que conserva (proyecto, cliente, usuario) y leerlos
     # de nuevo durante las llamadas a Gitea volvería a tomar una conexión. Lo ya cargado se sigue leyendo, ahora sin base.
     db.expunge_all()
-    soltar_conexion(db)
+    release_connection(db)
     try:
         missing = provisioning.missing_images(gitea, service)
         if missing:
@@ -135,7 +135,7 @@ def provision_service(
         commits = provisioning.provision(gitea, service, service.plan, user_name, user_email)
     except provisioning.AlreadyProvisioned as error:
         raise HTTPException(status_code=409, detail="El sitio ya está dado de alta en GitOps.") from error
-    except provisioning.EntradaInvalida as error:
+    except provisioning.InvalidInput as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except GiteaError as error:
         raise HTTPException(status_code=502, detail=f"No se pudo escribir en Gitea: {error}") from error

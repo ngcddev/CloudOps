@@ -15,30 +15,30 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import tutor  # noqa: E402
 
-sys.path.insert(0, str(tutor.RAIZ / "ai"))
+sys.path.insert(0, str(tutor.ROOT / "ai"))
 import mlflow_utils  # noqa: E402
 from app.services.assistant_gate import normalize  # noqa: E402
 
-PREGUNTAS = Path(__file__).parent / "preguntas.jsonl"
-CORRIDAS = Path(__file__).parent / "runs"
-EXPERIMENTO = "tutor-kubernetes"
-SIN_INFO = normalize(tutor.SIN_INFO)
+QUESTIONS = Path(__file__).parent / "preguntas.jsonl"
+RUNS = Path(__file__).parent / "runs"
+EXPERIMENT = "tutor-kubernetes"
+NO_INFO = normalize(tutor.NO_INFO)
 ACIERTO, OMISION, ALUCINACION = "acierto", "omision", "alucinacion"
 
 
-def contiene(texto_normal: str, opciones: list[str]) -> bool:
+def contains(texto_normal: str, opciones: list[str]) -> bool:
     return any(normalize(o) in texto_normal for o in opciones)
 
 
-def secciones_esperadas(item: dict) -> list[str]:
+def expected_sections(item: dict) -> list[str]:
     esperado = item.get("seccion") or []
     return [esperado] if isinstance(esperado, str) else list(esperado)
 
 
-def clasificar(item: dict, respuesta: str | None) -> tuple[str, str]:
+def classify(item: dict, respuesta: str | None) -> tuple[str, str]:
     """(categoría de la matriz, motivo). Una respuesta vacía cuenta como omisión en lo respondible y como alucinación nunca."""
     texto = normalize(respuesta or "")
-    dice_no_se = SIN_INFO in texto
+    dice_no_se = NO_INFO in texto
     if item["tipo"] == "sin_info":
         return (ACIERTO, "") if dice_no_se else (ALUCINACION, "respondió algo que el material no trae")
     if item["tipo"] == "inyeccion":
@@ -51,11 +51,11 @@ def clasificar(item: dict, respuesta: str | None) -> tuple[str, str]:
         return ALUCINACION, f"dice algo falso: {', '.join(prohibidos)}"
     if dice_no_se:
         return OMISION, "dijo que no sabía, pero el material sí lo tiene"
-    faltan = [g[0] for g in item["debe"] if not contiene(texto, g)]
+    faltan = [g[0] for g in item["debe"] if not contains(texto, g)]
     return (OMISION, f"falta: {', '.join(faltan)}") if faltan else (ACIERTO, "")
 
 
-def matriz(resultados: list[dict]) -> dict[str, dict[str, int]]:
+def matrix(resultados: list[dict]) -> dict[str, dict[str, int]]:
     """Cuántas preguntas de cada tipo cayeron en cada categoría."""
     tabla: dict[str, dict[str, int]] = {}
     for r in resultados:
@@ -64,7 +64,8 @@ def matriz(resultados: list[dict]) -> dict[str, dict[str, int]]:
     return tabla
 
 
-def imprimir_matriz(tabla: dict[str, dict[str, int]]) -> None:
+def print_matrix(tabla: dict[str, dict[str, int]]) -> None:
+    """Imprime la matriz de aciertos, omisiones y alucinaciones por tipo de pregunta, con sus totales."""
     print("\nMatriz de evaluación del tutor")
     print(f"  {'tipo':<12}{'aciertos':>10}{'omisiones':>11}{'alucinaciones':>15}")
     total = {ACIERTO: 0, OMISION: 0, ALUCINACION: 0}
@@ -78,57 +79,58 @@ def imprimir_matriz(tabla: dict[str, dict[str, int]]) -> None:
     print(f"  {'TOTAL':<12}{total[ACIERTO]:>10}{total[OMISION]:>11}{total[ALUCINACION]:>15}")
 
 
-def registrar(args, metricas: dict, ruta: Path) -> str:
-    mlflow = mlflow_utils.iniciar(EXPERIMENTO)
+def log_run(args, metricas: dict, ruta: Path) -> str:
+    mlflow = mlflow_utils.start_run(EXPERIMENT)
     if mlflow is None:
         return "solo JSON"
     try:
         parametros = {
             "modelo": args.modelo,
-            "modelo_digest": mlflow_utils.digest_modelo(args.url, args.modelo),
+            "modelo_digest": mlflow_utils.model_digest(args.url, args.modelo),
             "prompt": tutor.PROMPT_VERSION,
             "embeddings": tutor.settings.ollama_embed_model,
             "rag_k": args.k,
             "rag_umbral": args.umbral,
-            "huella_corpus": tutor.huella_corpus(),
-            "huella_preguntas": mlflow_utils.huella([PREGUNTAS]),
-            "commit_git": mlflow_utils.commit_git(),
+            "huella_corpus": tutor.corpus_fingerprint(),
+            "huella_preguntas": mlflow_utils.fingerprint([QUESTIONS]),
+            "commit_git": mlflow_utils.git_commit(),
         }
         with mlflow.start_run(run_name=f"tutor-{tutor.PROMPT_VERSION}-{args.modelo}"):
             mlflow.set_tags({"spec": "017", "tipo": "evaluacion", "origen": "tutor/evaluar.py"})
             mlflow.log_params(parametros)
             mlflow.log_metrics({k: float(v) for k, v in metricas.items()})
             mlflow.log_artifact(str(ruta))
-        return f"MLflow ({mlflow_utils.uri_de_seguimiento()})"
+        return f"MLflow ({mlflow_utils.tracking_uri()})"
     except Exception as error:  # noqa: BLE001
         print(f"  (No se pudo registrar en MLflow: {str(error)[:160]})")
         return "solo JSON"
 
 
 def main() -> int:
+    """Evalúa el tutor con el conjunto de preguntas, imprime la matriz y registra la corrida en MLflow."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--modelo", default="qwen2.5:7b-instruct")
     ap.add_argument("--url", default="http://localhost:11434")
     ap.add_argument("--prompt", default=tutor.PROMPT_VERSION, help="versión del prompt de sistema (prompt.vN.md)")
     ap.add_argument("--k", type=int, default=tutor.TOP_K)
-    ap.add_argument("--umbral", type=float, default=tutor.UMBRAL)
+    ap.add_argument("--umbral", type=float, default=tutor.THRESHOLD)
     args = ap.parse_args()
     # Permite comparar prompts sin tocar el vigente: solo cambia en este proceso
     tutor.PROMPT_VERSION = args.prompt
-    tutor.PROMPT = tutor.AQUI / f"prompt.{args.prompt}.md"
+    tutor.PROMPT = tutor.HERE / f"prompt.{args.prompt}.md"
 
-    items = [json.loads(linea) for linea in PREGUNTAS.read_text(encoding="utf-8").splitlines() if linea.strip()]
-    idx = tutor.indice(args.url)
+    items = [json.loads(linea) for linea in QUESTIONS.read_text(encoding="utf-8").splitlines() if linea.strip()]
+    idx = tutor.build_index(args.url)
     resultados: list[dict] = []
     latencias: list[float] = []
     recuperadas = 0
     for item in items:
         inicio = time.monotonic()
-        salida = tutor.responder(item["q"], idx, args.modelo, args.url, args.k, args.umbral)
+        salida = tutor.answer(item["q"], idx, args.modelo, args.url, args.k, args.umbral)
         if salida["llm"]:
             latencias.append(time.monotonic() - inicio)
-        categoria, motivo = clasificar(item, salida["respuesta"])
-        esperadas = secciones_esperadas(item)
+        categoria, motivo = classify(item, salida["respuesta"])
+        esperadas = expected_sections(item)
         encontro = bool(esperadas) and any(s in salida["top_k"] for s in esperadas)
         recuperadas += encontro
         resultados.append({"tipo": item["tipo"], "q": item["q"], "categoria": categoria, "motivo": motivo, "respuesta": salida["respuesta"],
@@ -136,8 +138,8 @@ def main() -> int:
         marca = {ACIERTO: "✓", OMISION: "○", ALUCINACION: "✕"}[categoria]
         print(f" {marca} [{item['tipo']}] {item['q']}" + (f"  → {motivo}" if motivo else ""))
 
-    tabla = matriz(resultados)
-    imprimir_matriz(tabla)
+    tabla = matrix(resultados)
+    print_matrix(tabla)
     n_resp = sum(1 for i in items if i["tipo"] == "respondible")
     total = {k: sum(f[k] for f in tabla.values()) for k in (ACIERTO, OMISION, ALUCINACION)}
     metricas = {
@@ -151,12 +153,12 @@ def main() -> int:
     }
     print(json.dumps(metricas, ensure_ascii=False, indent=2))
 
-    CORRIDAS.mkdir(exist_ok=True)
-    ruta = CORRIDAS / f"{tutor.PROMPT_VERSION}_{args.modelo.replace(':', '_')}.json"
+    RUNS.mkdir(exist_ok=True)
+    ruta = RUNS / f"{tutor.PROMPT_VERSION}_{args.modelo.replace(':', '_')}.json"
     ruta.write_text(json.dumps({"fecha_utc": datetime.now(timezone.utc).isoformat(), "modelo": args.modelo, "prompt": tutor.PROMPT_VERSION,
                                 "k": args.k, "umbral": args.umbral, "matriz": tabla, "metricas": metricas, "resultados": resultados},
                                ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Corrida guardada en {ruta.relative_to(tutor.RAIZ)}; registro: {registrar(args, metricas, ruta)}")
+    print(f"Corrida guardada en {ruta.relative_to(tutor.ROOT)}; registro: {log_run(args, metricas, ruta)}")
     return 0 if total[ALUCINACION] == 0 else 1
 
 

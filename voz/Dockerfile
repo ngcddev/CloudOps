@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # ---------- Imagen final ----------
 FROM python:3.12-slim
 # Paquetes del sistema con arreglo ya publicado (mismo criterio que las demás imágenes de Python, spec 018)
-RUN apt-get update && apt-get install -y --no-install-recommends --only-upgrade zlib1g && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends --only-upgrade zlib1g libzstd1 && rm -rf /var/lib/apt/lists/*
 ARG WHISPER=small
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 VOZ_MODELOS=/modelos WHISPER_MODELO=${WHISPER} VOZ_VOCABULARIO=/app/vocabulario.txt
 RUN useradd --system --uid 10001 --no-create-home voz

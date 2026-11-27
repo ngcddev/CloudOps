@@ -58,7 +58,7 @@ Una herramienta de plataforma entra solo cuando el diplomado ya la cubrió ([pri
 | MLOps | **MLflow** 3.18 | Registro de la compuerta (alias `production`) y de las evaluaciones; corre en el namespace `mlops` del clúster (`ai/servidor-mlflow/` para desarrollo) |
 | LLM local | **Ollama** | Qwen2.5 7B-Instruct (Q4, Apache 2.0) en el Hub; Qwen2.5 3B solo para comparar (licencia de investigación) |
 | Compuerta del asistente | **Clasificador Naive Bayes** (Python puro) | Corre en el Hub, entrenado y registrado en MLflow; el LLM solo se despierta si la pregunta trata del Hub (spec 012) |
-| RAG | **RAG propio en el Hub** (decisión 14 nov 2026, ver `docs/historico/bitacora.md`) | Embeddings `nomic-embed-text` servidos por Ollama; índice en PostgreSQL (`kb_documents`, `kb_chunks`) con similitud coseno en Python. AnythingLLM queda como alternativa opcional, no se despliega |
+| RAG | **RAG propio en el Hub** (decisión 14 nov 2026) | Embeddings `nomic-embed-text` servidos por Ollama; índice en PostgreSQL (`kb_documents`, `kb_chunks`) con similitud coseno en Python. AnythingLLM queda como alternativa opcional, no se despliega |
 | Multimodal obligatorio | **Voz del asistente: faster-whisper `small` + Piper** (decisión 15 nov 2026) | Voz a texto y texto a voz en CPU, sin VRAM ni PyTorch: no compite con el 7B de Ollama. Reemplaza a Stability Matrix + ComfyUI (SD 1.5), que pedían ~5 GB y turnos de GPU; la infografía de la spec 014 queda como mejora |
 
 ## Distribución del hardware

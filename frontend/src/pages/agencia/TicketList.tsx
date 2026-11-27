@@ -1,3 +1,4 @@
+// Lista de solicitudes de la agencia (spec 004): filtros por cliente, estado y prioridad, con el plazo de cada una.
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 

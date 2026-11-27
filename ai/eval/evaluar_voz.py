@@ -19,15 +19,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import mlflow_utils  # noqa: E402
 
-RAIZ = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[2]
 EVAL = Path(__file__).parent
-FICHAS = RAIZ / "docs" / "modelos"
-CORRIDAS = EVAL / "runs"
-VOCABULARIO = RAIZ / "ai" / "classifier" / "data" / "vocabulario_app.txt"
-EXPERIMENTO = "voz"
+CARDS = ROOT / "docs" / "modelos"
+RUNS = EVAL / "runs"
+VOCABULARY = ROOT / "ai" / "classifier" / "data" / "vocabulario_app.txt"
+EXPERIMENT = "voz"
 
 
-def normalizar(texto: str) -> list[str]:
+def normalize(texto: str) -> list[str]:
     """Palabras en minúsculas, sin tildes ni signos: la voz no distingue mayúsculas ni puntuación."""
     sin_tildes = "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if unicodedata.category(c) != "Mn")
     return re.sub(r"[^a-z0-9ñ ]", " ", sin_tildes).split()
@@ -44,14 +44,14 @@ def wer(referencia: list[str], hipotesis: list[str]) -> tuple[int, int]:
     return previa[-1], len(referencia)
 
 
-def terminos_del_hub(referencia: str) -> list[str]:
+def hub_terms(referencia: str) -> list[str]:
     """Términos del vocabulario del Hub (ticket, rollback, SLA…) que aparecen en la pregunta."""
-    texto = " " + " ".join(normalizar(referencia)) + " "
-    terminos = [" ".join(normalizar(t)) for t in VOCABULARIO.read_text(encoding="utf-8").splitlines() if t.strip()]
+    texto = " " + " ".join(normalize(referencia)) + " "
+    terminos = [" ".join(normalize(t)) for t in VOCABULARY.read_text(encoding="utf-8").splitlines() if t.strip()]
     return [t for t in terminos if t and f" {t} " in texto]
 
 
-def preguntas() -> list[str]:
+def questions() -> list[str]:
     salida = []
     for archivo in ("preguntas_ayuda.jsonl", "preguntas_ayuda_ciegas.jsonl"):
         salida += [json.loads(linea)["q"] for linea in (EVAL / archivo).read_text(encoding="utf-8").splitlines() if linea.strip()]
@@ -65,7 +65,7 @@ def _post(url: str, cuerpo: bytes, tipo: str, timeout: float = 120) -> tuple[byt
         return respuesta.read(), dict(respuesta.headers)
 
 
-def memoria_mib(contenedor: str | None) -> int | None:
+def memory_mib(contenedor: str | None) -> int | None:
     """Memoria del contenedor del servicio (`docker stats`), en MiB; None si no se indicó o no responde."""
     if not contenedor:
         return None
@@ -77,17 +77,18 @@ def memoria_mib(contenedor: str | None) -> int | None:
         return None
 
 
-def evaluar(url: str, contenedor: str | None, memoria_fija: int | None = None) -> dict:
+def evaluate(url: str, contenedor: str | None, memoria_fija: int | None = None) -> dict:
+    """Sintetiza cada pregunta, la vuelve a transcribir y mide error de palabras, latencias y memoria del servicio de voz."""
     muestras = []
-    for i, pregunta in enumerate(preguntas()):
+    for i, pregunta in enumerate(questions()):
         inicio = time.monotonic()
         audio, cabeceras = _post(f"{url}/tts", json.dumps({"texto": pregunta}).encode("utf-8"), "application/json")
         tts_ms = int(cabeceras.get("X-Tiempo-Ms") or cabeceras.get("x-tiempo-ms") or 0)
         cuerpo, _ = _post(f"{url}/stt", audio, "audio/wav")
         r = json.loads(cuerpo)
-        errores, total = wer(normalizar(pregunta), normalizar(r["texto"]))
-        terminos = terminos_del_hub(pregunta)
-        hipotesis = " " + " ".join(normalizar(r["texto"])) + " "
+        errores, total = wer(normalize(pregunta), normalize(r["texto"]))
+        terminos = hub_terms(pregunta)
+        hipotesis = " " + " ".join(normalize(r["texto"])) + " "
         muestras.append({
             "pregunta": pregunta, "transcripcion": r["texto"], "errores": errores, "palabras": total, "terminos": len(terminos),
             "terminos_bien": sum(f" {t} " in hipotesis for t in terminos), "tts_ms": tts_ms, "stt_ms": r["tiempo_ms"], "audio_s": r["duracion_s"],
@@ -104,12 +105,12 @@ def evaluar(url: str, contenedor: str | None, memoria_fija: int | None = None) -
         "tts_ms_medio": round(statistics.mean(m["tts_ms"] for m in calientes)),
         "audio_s_medio": round(statistics.mean(m["audio_s"] for m in muestras), 1),
         "tiempo_real_x": round(statistics.mean(m["audio_s"] * 1000 / max(1, m["stt_ms"]) for m in calientes), 1),
-        "primera_peticion_ms": muestras[0]["total_ms"], "memoria_mib": memoria_fija or memoria_mib(contenedor),
+        "primera_peticion_ms": muestras[0]["total_ms"], "memoria_mib": memoria_fija or memory_mib(contenedor),
         "peores": sorted(muestras, key=lambda m: m["errores"] / max(1, m["palabras"]), reverse=True)[:3],
     }
 
 
-def bloque_ficha(r: dict, parte: str) -> str:
+def card_block(r: dict, parte: str) -> str:
     """La tabla de medición de la ficha de Whisper (`stt`) o de Piper (`tts`)."""
     if parte == "stt":
         filas = [
@@ -127,8 +128,9 @@ def bloque_ficha(r: dict, parte: str) -> str:
     return f"{tabla}\n\nMedido el {datetime.now(timezone.utc):%Y-%m-%d} con `ai/eval/evaluar_voz.py` (CPU, voz sintetizada con Piper: es el mejor caso, sin ruido ni acento distinto)."
 
 
-def actualizar_ficha(nombre: str, bloque: str) -> bool:
-    ficha = FICHAS / f"{nombre}.md"
+def update_card(nombre: str, bloque: str) -> bool:
+    """Reemplaza el bloque de medición de la ficha del modelo; devuelve False si la ficha no tiene el marcador."""
+    ficha = CARDS / f"{nombre}.md"
     inicio, fin = f"<!-- medicion:{nombre} -->", "<!-- /medicion -->"
     if not ficha.exists() or inicio not in (texto := ficha.read_text(encoding="utf-8")):
         return False
@@ -138,6 +140,7 @@ def actualizar_ficha(nombre: str, bloque: str) -> bool:
 
 
 def main() -> int:
+    """Evalúa el servicio de voz, guarda la corrida en JSON y en MLflow y, si se pide, actualiza las fichas."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--url", default="http://localhost:8100")
     ap.add_argument("--contenedor", help="nombre del contenedor del servicio, para medir su memoria con docker stats")
@@ -146,7 +149,7 @@ def main() -> int:
     args = ap.parse_args()
 
     try:
-        r = evaluar(args.url, args.contenedor, args.memoria_mib)
+        r = evaluate(args.url, args.contenedor, args.memoria_mib)
     except Exception as error:  # noqa: BLE001
         print(f"No se pudo evaluar el servicio de voz en {args.url}: {str(error)[:160]}", file=sys.stderr)
         return 1
@@ -154,25 +157,25 @@ def main() -> int:
     for m in r["peores"]:
         print(f"  peor: {m['pregunta']!r} → {m['transcripcion']!r}")
 
-    CORRIDAS.mkdir(exist_ok=True)
-    ruta = CORRIDAS / f"voz_{r['modelo']}_{datetime.now(timezone.utc):%Y%m%dT%H%M%S}.json"
-    ruta.write_text(json.dumps({"commit_git": mlflow_utils.commit_git(), **r}, ensure_ascii=False, indent=2), encoding="utf-8")
-    destino = str(ruta.relative_to(RAIZ))
-    mlflow = mlflow_utils.iniciar(EXPERIMENTO)
+    RUNS.mkdir(exist_ok=True)
+    ruta = RUNS / f"voz_{r['modelo']}_{datetime.now(timezone.utc):%Y%m%dT%H%M%S}.json"
+    ruta.write_text(json.dumps({"commit_git": mlflow_utils.git_commit(), **r}, ensure_ascii=False, indent=2), encoding="utf-8")
+    destino = str(ruta.relative_to(ROOT))
+    mlflow = mlflow_utils.start_run(EXPERIMENT)
     if mlflow is not None:
         try:
             with mlflow.start_run(run_name=r["modelo"]):
                 mlflow.set_tags({"spec": "021", "tipo": "voz", "origen": "evaluar_voz.py"})
-                mlflow.log_params({"modelo": r["modelo"], "preguntas": r["preguntas"], "commit_git": mlflow_utils.commit_git(), "huella_preguntas": mlflow_utils.huella([EVAL / "preguntas_ayuda.jsonl", EVAL / "preguntas_ayuda_ciegas.jsonl"])})
+                mlflow.log_params({"modelo": r["modelo"], "preguntas": r["preguntas"], "commit_git": mlflow_utils.git_commit(), "huella_preguntas": mlflow_utils.fingerprint([EVAL / "preguntas_ayuda.jsonl", EVAL / "preguntas_ayuda_ciegas.jsonl"])})
                 mlflow.log_metrics({k: float(v) for k, v in r.items() if isinstance(v, (int, float)) and not isinstance(v, bool) and v is not None and k != "preguntas"})
                 mlflow.log_artifact(str(ruta))
-            destino = f"MLflow ({mlflow_utils.uri_de_seguimiento()}) y {destino}"
+            destino = f"MLflow ({mlflow_utils.tracking_uri()}) y {destino}"
         except Exception as error:  # noqa: BLE001
             print(f"  (No se pudo registrar en MLflow: {str(error)[:160]})")
     print(f"Corrida guardada en {destino}")
     if args.actualizar_fichas:
-        print(f"  ficha de {r['modelo']}: {'actualizada' if actualizar_ficha(r['modelo'], bloque_ficha(r, 'stt')) else 'sin bloque de medición'}")
-        print(f"  ficha de Piper: {'actualizada' if actualizar_ficha('piper-es-mx-claude-high', bloque_ficha(r, 'tts')) else 'sin bloque de medición'}")
+        print(f"  ficha de {r['modelo']}: {'actualizada' if update_card(r['modelo'], card_block(r, 'stt')) else 'sin bloque de medición'}")
+        print(f"  ficha de Piper: {'actualizada' if update_card('piper-es-mx-claude-high', card_block(r, 'tts')) else 'sin bloque de medición'}")
     return 0
 
 

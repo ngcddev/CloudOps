@@ -1,6 +1,6 @@
 // Componente raíz: define las rutas de la aplicación.
 // Cada pantalla se carga en su propio archivo cuando se visita (auditoría FE-03): quien entra al portal del cliente no descarga la consola de agencia.
-// Los marcos (layouts) y la entrada (Login) van con la aplicación porque se ven siempre; el «Cargando…» y el ErrorBoundary están en OutletSeguro.
+// Los marcos (layouts) y la entrada (Login) van con la aplicación porque se ven siempre; el «Cargando…» y el ErrorBoundary están en SafeOutlet.
 import { lazy } from "react";
 import { Route, Routes } from "react-router-dom";
 

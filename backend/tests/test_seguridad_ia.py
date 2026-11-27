@@ -23,14 +23,14 @@ SECRETOS = [
 
 @pytest.mark.parametrize("texto,secreto", SECRETOS)
 def test_los_secretos_conocidos_se_tapan(texto, secreto):
-    limpio, tipos = redaccion.redactar(texto)
+    limpio, tipos = redaccion.redact(texto)
 
-    assert secreto not in limpio and redaccion.MARCA in limpio and tipos
+    assert secreto not in limpio and redaccion.MARK in limpio and tipos
 
 
 @pytest.mark.parametrize("texto", ["¿Cómo apruebo un cambio de versión?", "La clave es importante para entrar", "El token es válido por una hora", "commit 3f2a9c1 del sitio", "contraseña: olvidada"])
 def test_el_texto_normal_no_se_toca(texto):
-    assert redaccion.redactar(texto) == (texto, [])
+    assert redaccion.redact(texto) == (texto, [])
 
 
 def test_la_pregunta_con_un_secreto_no_se_guarda_ni_llega_al_modelo(as_agency, db, monkeypatch):
@@ -49,7 +49,7 @@ def test_la_pregunta_con_un_secreto_no_se_guarda_ni_llega_al_modelo(as_agency, d
     assert respuesta.json()["secrets_redacted"]
     assert recibido and all("ghp_abcdef" not in cuerpo for cuerpo in recibido)
     guardada = db.scalars(select(AiQuery).order_by(AiQuery.id.desc())).first()
-    assert "ghp_abcdef" not in guardada.question and redaccion.MARCA in guardada.question
+    assert "ghp_abcdef" not in guardada.question and redaccion.MARK in guardada.question
 
 
 def test_una_pregunta_sin_secretos_no_avisa(as_agency, monkeypatch):
@@ -62,31 +62,31 @@ def test_una_pregunta_sin_secretos_no_avisa(as_agency, monkeypatch):
 
 
 def test_el_clasificador_del_repositorio_coincide_con_su_suma():
-    assistant_gate.verificar_integridad(assistant_gate.MODEL_PATH)  # no lanza
+    assistant_gate.verify_integrity(assistant_gate.MODEL_PATH)  # no lanza
 
 
 def test_un_clasificador_alterado_no_se_carga(tmp_path):
     modelo = tmp_path / "clasificador.json"
     modelo.write_text('{"version":"v1"}\n', encoding="utf-8")
     modelo.with_suffix(".sha256").write_text(f"{hashlib.sha256(modelo.read_bytes()).hexdigest()}  clasificador.json\n", encoding="utf-8")
-    assistant_gate.verificar_integridad(modelo)  # coincide
+    assistant_gate.verify_integrity(modelo)  # coincide
 
     modelo.write_text('{"version":"v1","manipulado":true}\n', encoding="utf-8")
 
-    with pytest.raises(assistant_gate.ModeloAlterado):
-        assistant_gate.verificar_integridad(modelo)
+    with pytest.raises(assistant_gate.TamperedModel):
+        assistant_gate.verify_integrity(modelo)
 
 
 def test_sin_archivo_de_suma_no_se_comprueba_nada(tmp_path):
     modelo = tmp_path / "otro.json"
     modelo.write_text("{}", encoding="utf-8")
 
-    assistant_gate.verificar_integridad(modelo)
+    assistant_gate.verify_integrity(modelo)
 
 
 def test_un_modelo_alterado_hace_responder_503_al_asistente(as_agency, monkeypatch):
     def alterado(*a, **k):
-        raise assistant_gate.ModeloAlterado("alterado")
+        raise assistant_gate.TamperedModel("alterado")
 
     monkeypatch.setattr("app.services.assistant.load_model", alterado)
 
@@ -108,20 +108,20 @@ ENVENENADAS = [
 
 @pytest.mark.parametrize("veneno", ENVENENADAS)
 def test_una_orden_escondida_en_una_seccion_la_saca_del_prompt(veneno):
-    seccion = assistant_context.Seccion("Aprobar un cambio", f"Se aprueba con el botón Aprobar.\n\n{veneno}", frozenset(), frozenset())
+    seccion = assistant_context.Section("Aprobar un cambio", f"Se aprueba con el botón Aprobar.\n\n{veneno}", frozenset(), frozenset())
 
-    assert assistant_context.sospechosa(f"{seccion.titulo}\n{seccion.texto}")
-    assert "Se aprueba con el botón Aprobar" not in assistant_context.mensaje_de_sistema([seccion])
+    assert assistant_context.is_suspicious(f"{seccion.titulo}\n{seccion.texto}")
+    assert "Se aprueba con el botón Aprobar" not in assistant_context.system_message([seccion])
 
 
 def test_una_seccion_limpia_si_entra_al_prompt():
-    seccion = assistant_context.Seccion("Aprobar un cambio", "Se aprueba con el botón Aprobar.", frozenset(), frozenset())
+    seccion = assistant_context.Section("Aprobar un cambio", "Se aprueba con el botón Aprobar.", frozenset(), frozenset())
 
-    assert "Se aprueba con el botón Aprobar" in assistant_context.mensaje_de_sistema([seccion])
+    assert "Se aprueba con el botón Aprobar" in assistant_context.system_message([seccion])
 
 
 def test_la_ayuda_real_no_dispara_la_guarda():
-    sospechosas = {s.titulo: assistant_context.sospechosa(f"{s.titulo}\n{s.texto}") for s in assistant_context.todas()}
+    sospechosas = {s.titulo: assistant_context.is_suspicious(f"{s.titulo}\n{s.texto}") for s in assistant_context.all_sections()}
 
     assert not {t: h for t, h in sospechosas.items() if h}, "una sección de ayuda_hub.md parece una orden al asistente"
 
@@ -138,14 +138,14 @@ OTROS_SECRETOS = [
 
 @pytest.mark.parametrize("texto,secreto", OTROS_SECRETOS)
 def test_otros_formatos_de_secreto_se_tapan(texto, secreto):
-    limpio, tipos = redaccion.redactar(texto)
+    limpio, tipos = redaccion.redact(texto)
 
     assert secreto not in limpio and tipos
 
 
 @pytest.mark.parametrize("texto", ["el commit 5f2a9c1b7d3e4a6f8b0c1d2e3f4a5b6c7d8e9f0a rompió el sitio", "la imagen sha256:5f2a9c1b7d3e4a6f8b0c1d2e3f4a5b6c7d8e9f0a es la vigente"])
 def test_un_hash_sin_palabra_de_secreto_cerca_no_se_toca(texto):
-    assert redaccion.redactar(texto) == (texto, [])
+    assert redaccion.redact(texto) == (texto, [])
 
 
 VARIANTES = [
@@ -164,4 +164,4 @@ VARIANTES = [
 
 @pytest.mark.parametrize("veneno", VARIANTES)
 def test_las_variantes_de_ordenes_escondidas_se_detectan(veneno):
-    assert assistant_context.sospechosa(veneno)
+    assert assistant_context.is_suspicious(veneno)

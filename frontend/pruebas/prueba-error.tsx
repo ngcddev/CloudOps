@@ -1,11 +1,11 @@
-// Prueba en un DOM real (jsdom) del ErrorBoundary y de OutletSeguro (spec 022, T11): un error de render no deja la pantalla en blanco ni se lleva el marco,
+// Prueba en un DOM real (jsdom) del ErrorBoundary y de SafeOutlet (spec 022, T11): un error de render no deja la pantalla en blanco ni se lleva el marco,
 // y una pantalla que se carga bajo demanda muestra «Cargando…». La corre frontend/pruebas/error-boundary.sh; no forma parte de `npm run build`.
 import { StrictMode, act, lazy, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 
 import ErrorBoundary from "../src/components/ErrorBoundary";
-import OutletSeguro from "../src/components/OutletSeguro";
+import SafeOutlet from "../src/components/SafeOutlet";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -60,7 +60,7 @@ async function main() {
         </Link>
       </nav>
       <Routes>
-        <Route element={<OutletSeguro />}>
+        <Route element={<SafeOutlet />}>
           <Route path="/a" element={<Condicional />} />
           <Route path="/b" element={<p id="b">pantalla b</p>} />
         </Route>
@@ -79,7 +79,7 @@ async function main() {
   const c = montar(
     <MemoryRouter initialEntries={["/p"]}>
       <Routes>
-        <Route element={<OutletSeguro />}>
+        <Route element={<SafeOutlet />}>
           <Route path="/p" element={<Perezosa />} />
         </Route>
       </Routes>
