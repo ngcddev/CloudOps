@@ -2,7 +2,7 @@
 # Construir desde esta carpeta: docker build --build-arg APP_VERSION=v1 -t hub/restaurante:v1 .
 # Al arrancar, la imagen reemplaza ${APP_VERSION} en la plantilla de nginx.conf.
 
-FROM nginxinc/nginx-unprivileged:1.30-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 # Parche de seguridad: la imagen base trae paquetes de Alpine con vulnerabilidades que ya tienen arreglo (brotli-libs crítica; curl, expat, libxslt, musl y zlib altas).
 # La puerta de seguridad (Trivy) bloquea la imagen mientras haya críticas corregibles; se actualizan todos los paquetes (spec 018, T02).
 USER root
