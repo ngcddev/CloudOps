@@ -20,9 +20,9 @@
 ## Antes de empezar (T-30 min)
 
 1. Encender en orden: Docker Desktop → `k3d-hub-serverlb` → `k3d-hub-server-0` → `estado-remoto` → `runner-runner-1` (3 s entre cada uno; `runbooks/reinicio-del-cluster.md`) y confirmar el nodo en `172.30.0.3`. Ollama abierto con `qwen2.5:7b-instruct` y `nomic-embed-text`.
-2. **Reiniciar a un estado conocido:** `bash demo/reiniciar-cluster.sh` y `bash demo/preparar-colegio.sh`.
+2. **Reiniciar a un estado conocido:** `KUBECONFIG=... bash demo/dejar-demo-lista.sh` (≈ 9 min; base con datos semilla, puerta en «ok» y sitios en v1). `demo/preparar-colegio.sh` **no** va aquí: se lanza justo después de dar de alta el colegio (punto 1), porque el Hub solo guarda la puerta de un servicio que ya existe.
 3. Comprobar: `kubectl get app -n argocd` (todas `Synced/Healthy`); los tres sitios dan 200; `http://hub.local/health`; Grafana con los dos tableros.
-4. Archivo `hosts` con todos los nombres: `127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local grafana.hub.local mlflow.hub.local backstage.hub.local ferreteria-staging.hub.local`.
+4. Archivo `hosts` con todos los nombres: `127.0.0.1 hub.local restaurante.hub.local ferreteria.hub.local consultorio.hub.local gitea.hub.local argocd.hub.local grafana.hub.local mlflow.hub.local backstage.hub.local ferreteria-staging.hub.local colegio.hub.local` (sin `colegio.hub.local` el sitio nuevo no abre en el navegador).
 5. Contraseña de los usuarios: `kubectl -n hub get secret hub-auth -o jsonpath='{.data.SEED_USER_PASSWORD}' | base64 -d`.
 6. **Calentar la IA** (T-5 min): una pregunta al asistente, para que el modelo no esté frío.
 7. **Micrófono:** permitir el micrófono para `hub.local` y probar una pregunta hablada (la primera vez con una voz real).
@@ -50,7 +50,7 @@
 - **Si falla:** corrida grabada del pipeline.
 
 ### 4:00–4:30 · Vuelta al colegio (filler útil)
-- **Hacer:** terminal: `kubectl get ns,pods,quota -n cliente-colegio`.
+- **Hacer:** terminal: `kubectl get pods,quota -n cliente-colegio` y `kubectl get ns cliente-colegio --show-labels` (la política `restricted`).
 - **Ver:** namespace nuevo, Pod sin root, cuota del plan. «Nadie tocó el clúster a mano.»
 
 ### 4:30–6:30 · Puntos 4, 5 y 6 · La falla (módulo 4)
@@ -60,13 +60,13 @@
 - **Si falla:** video del minuto de detección o `bash gitops/pruebas/demo-caso-restaurante.sh`.
 
 ### 6:30–8:00 · Puntos 6 y 7 · Rollback
-- **Hacer:** en el incidente, **Rollback** → **Confirmar rollback**. Espera a que pase a mitigado.
+- **Hacer:** en el incidente, **Rollback** → **Confirmar rollback**. Mientras pasa a mitigado (≈ 3 min: Argo CD aplica el `revert` y el monitoreo confirma), muestra el commit `revert` en Gitea y la línea de tiempo.
 - **Decir:** «El rollback es un `revert` en Git; Argo CD lo reconcilia. El tiempo de recuperación no se estima: se mide.»
 - **Ver:** commit `revert`, sitio en 200, MTTR, línea de tiempo y bitácora.
 - **Si falla:** incidente ya mitigado: muestra MTTR y línea de tiempo.
 
 ### 8:00–9:30 · Punto 9 · IA con verificación humana (módulo 5)
-- **Hacer:** **Pedir hipótesis a la IA** → **Generar borradores** → edita una frase y **Aprobar** el mensaje al cliente. En la ventana de Marta, recarga: llega el mensaje. En *Asistente*, una pregunta del tema y una ajena («¿quién ganó el mundial de 1998?»). Abre `mlflow.hub.local` (`compuerta-asistente@production`).
+- **Hacer:** **Pedir hipótesis a la IA** (sale más clara si se pide con el incidente aún abierto, antes del rollback; después del rollback el sitio ya está sano y el modelo duda) → **Generar borradores** → edita una frase y **Aprobar** el mensaje al cliente. En la ventana de Marta, recarga: llega el mensaje. En *Asistente*, una pregunta del tema y una ajena («¿quién ganó el mundial de 1998?»). Abre `mlflow.hub.local` (`compuerta-asistente@production`).
 - **Decir:** «La IA propone, una persona aprueba. Corre en esta máquina con Ollama, no sale ningún dato. Una compuerta entrenada y registrada en MLflow decide si la pregunta es del Hub antes de despertar al modelo; el contexto sale de la ayuda del Hub con búsqueda por embeddings.»
 - **Ver:** borrador marcado «de la IA», aprobación que llega al portal, la ajena descartada por la compuerta, el modelo registrado.
 - **Si falla:** borrador semilla aprobado.
@@ -83,7 +83,7 @@
 - **Si falla:** PDF ya generado.
 
 ### 12:30–14:00 · IaC y operación (módulos 2 y 4)
-- **Hacer:** `infra/client-new.sh` (o el módulo `client-env` con `tofu`) crea un cliente desde código; Argo CD lo sincroniza. Después `bash gitops/pruebas/drift.sh` (un cambio a mano se corrige solo) y abre `runbooks/`.
+- **Hacer:** `infra/client-new.sh` (o el módulo `client-env` con `tofu`) crea un cliente desde código; Argo CD lo sincroniza. Después `SITIO=consultorio bash gitops/pruebas/drift.sh` (un cambio a mano se corrige solo; usar un sitio que no se haya tocado en los ensayos: Argo CD espera cada vez más entre autocorrecciones repetidas sobre la misma revisión, de segundos a minutos) y abre `runbooks/`.
 - **Decir:** «Todo lo anterior se reconstruye desde código: OpenTofu crea el cliente, Git es la verdad, y si alguien cambia algo a mano Argo CD lo devuelve. Hay runbooks y un respaldo probado de la base.»
 - **Si falla:** salida grabada de `infra/pruebas/crear-cliente.sh`.
 
@@ -121,7 +121,8 @@
 | Riesgo | Respuesta |
 |---|---|
 | El nodo k3d reinicia en bucle tras encender (IP) | Orden de arranque y comprobar `172.30.0.3` en T-30 |
-| La IA tarda con el modelo frío | Pregunta de calentamiento en T-5 |
+| La IA tarda con el modelo frío | Pregunta de calentamiento en T-5. El Hub pide a Ollama mantener el modelo 30 min (`OLLAMA_KEEP_ALIVE=30m` en `gitops/hub/configurar-ia.sh`); con el valor anterior (2 min) la primera respuesta en frío venció el tiempo de espera |
+| `drift.sh` tarda minutos | Autocorrecciones repetidas sobre la misma revisión: correrlo en un sitio sin ensayar (`SITIO=consultorio`) |
 | Memoria justa con Backstage | Abrirlo solo en el minuto 0 si hace falta |
 | La red del salón | Todo corre en tu PC, IA incluida: no depende de la red. Probar navegador y micrófono en ese equipo |
 | Pasarse de tiempo | Cronómetro visible, puntos de control y recortes |

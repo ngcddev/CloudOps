@@ -17,8 +17,19 @@ if docker ps --format '{{.Names}}' | grep -q '^runner-runner-1$' && [ -n "${GITE
   git_gitea() { git -c "http.extraheader=${autorizacion}" -c user.name="Forja Digital" -c user.email="hub@forjadigital.test" "$@"; }
   tmp="$(mktemp -d)"
   git_gitea clone -q "${GITEA_URL%/}/forja-digital/colegio.git" "$tmp/colegio" || { echo "No se pudo clonar forja-digital/colegio" >&2; exit 1; }
+  # Los scripts de la puerta viajan dentro del repositorio del sitio (.gitea/puerta/): se actualizan con los de pipelines/ para que lleguen las
+  # excepciones con vencimiento de trivy-excepciones.yaml (T14); sin ellas la puerta frena por las CVE de nginx (T20). Si no cambió nada no hay commit.
+  mkdir -p "$tmp/colegio/.gitea/puerta" "$tmp/colegio/.gitea/workflows"
+  cp pipelines/puerta.sh pipelines/reportar.sh pipelines/lib.sh pipelines/cosign.pub pipelines/trivy-excepciones.yaml "$tmp/colegio/.gitea/puerta/"
+  cp pipelines/puerta.yaml "$tmp/colegio/.gitea/workflows/puerta.yaml"
+  git_gitea -C "$tmp/colegio" add -A .gitea
+  git_gitea -C "$tmp/colegio" update-index --chmod=+x .gitea/puerta/puerta.sh .gitea/puerta/reportar.sh
+  if ! git_gitea -C "$tmp/colegio" diff --cached --quiet; then
+    git_gitea -C "$tmp/colegio" commit -q -m "chore: scripts de la puerta actualizados (excepciones de laboratorio con vencimiento)"       && git_gitea -C "$tmp/colegio" push -q origin HEAD:main && echo "   scripts de la puerta actualizados en el repositorio"
+  fi
   for version in v1 v2; do
     git_gitea -C "$tmp/colegio" push -q origin ":refs/tags/${version}" 2>/dev/null   # borrar la etiqueta remota; si no existe no pasa nada
+    git_gitea -C "$tmp/colegio" tag -f "${version}" HEAD >/dev/null                 # v1 y v2 son el mismo código: la versión llega como APP_VERSION
     git_gitea -C "$tmp/colegio" push -q origin "refs/tags/${version}" 2>&1 | tail -1
     echo "   etiqueta ${version} subida: la puerta corre en el runner"
     sleep 90   # una corrida a la vez (capacidad 1 del runner)
