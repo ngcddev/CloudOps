@@ -41,6 +41,10 @@
   - Límite de la prueba: **no se pudo provocar con el modelo real que la respuesta traiga un secreto**, así que la redacción de la salida se verifica con la prueba unitaria y con el código desplegado, no de punta a punta.
   - Los documentos que dicen «hub-api v1.17» (informe 00, complementario 06 y Apéndice D con su SBOM) quedan por actualizar.
 
+## MLflow del clúster (propuesta el 27 nov 2026)
+
+- [ ] T22 · La pantalla *Runs* de `mlflow.hub.local` muestra `INTERNAL_ERROR`: MLflow responde 403 («Blocked cross-origin request») a los POST de su propia interfaz porque no tiene permitido ese origen — **Verifica:** un `POST` a `/ajax-api/2.0/mlflow/runs/search` con `Origin: http://mlflow.hub.local` responde 200, con un origen ajeno sigue respondiendo 403 y la pantalla *Runs* lista la corrida.
+
 ## Pulido del frontend (propuestas el 20 nov 2026)
 
 - [x] T16 · Selector propio con estilo (`Select`) en lugar del `<select>` nativo, con lista desplegable del mismo diseño que la página (tema claro y oscuro, teclado, lectores de pantalla y celular) — **Verifica:** los 22 selectores de las pantallas de agencia y portal usan el componente, la lista abierta usa los tokens de diseño, se maneja con flechas, Inicio, Fin, Enter, Esc y la primera letra, y `tsc` y `npm run build` pasan.
