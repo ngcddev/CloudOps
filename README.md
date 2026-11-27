@@ -45,21 +45,45 @@ El estado verificado del proyecto **no se escribe a mano en este README**: las c
 
 ## Cómo levantarlo
 
+Hay dos formas. La primera es la rápida, para ver y desarrollar el Hub; la segunda instala la plataforma completa.
+
+| Forma | Qué incluye | Dónde queda |
+|---|---|---|
+| Desarrollo con Docker Compose | API, consola y portal, PostgreSQL y los tres sitios; la IA es opcional | http://localhost:5173 |
+| Plataforma completa en k3d | El Hub y los sitios en Kubernetes, con Argo CD, Gitea, puerta de seguridad, observabilidad, MLflow y Backstage | http://hub.local |
+
+### Desarrollo con Docker Compose
+
 Requisitos: Docker (Docker Desktop en Windows o Docker Engine en Linux) y Git. Para el asistente de IA, [Ollama](https://ollama.com) con `qwen2.5:7b-instruct` y `nomic-embed-text` (sin Ollama el Hub funciona y el asistente avisa que no está disponible).
 
 ```bash
-git clone --branch dev https://github.com/ngcddev/CloudOps.git
+git clone https://github.com/ngcddev/CloudOps.git
 cd CloudOps
 cp .env.example .env          # cambiar JWT_SECRET por un valor propio (la API no arranca con el de ejemplo)
 docker compose up --build
 ```
+
+Para conectar la IA con Docker Desktop, en `.env` quita el comentario de `OLLAMA_URL` y usa `http://host.docker.internal:11434`.
 
 - Consola de la agencia y portal del cliente: http://localhost:5173 · API: http://localhost:8000 (`/health`).
 - Usuarios sembrados: `sofia@forjadigital.test` (técnica de la agencia) y `contacto@lasazon.test` (cliente), con la contraseña `SEED_USER_PASSWORD` de tu `.env`.
 - Sitios de los clientes: http://localhost:8081 (restaurante), :8082 (ferretería) y :8083 (consultorio).
 - Pruebas del backend: `docker compose exec api pytest`.
 
-El laboratorio completo en Kubernetes (k3d, Argo CD, Gitea, observabilidad, MLflow y Backstage) se crea con `gitops/platform/k3s/crear-cluster.sh` y se describe en [gitops/README.md](gitops/README.md). En Windows con Git Bash, exporta `KUBECONFIG` con barras normales (`C:/Users/...`).
+### Plataforma completa en k3d
+
+Para Windows con Docker Desktop, en Git Bash. Necesita Git, Python 3 y Ollama, y los puertos 80 y 443 libres.
+
+```bash
+git clone https://github.com/ngcddev/CloudOps.git
+cd CloudOps
+bash infra/instalar.sh --comprobar   # solo revisa los requisitos
+bash infra/instalar.sh               # instala hasta http://hub.local
+```
+
+Las claves que no definas se generan solas. El instalador todavía **no se ha validado de principio a fin en un equipo limpio**.
+
+Requisitos, claves, el procedimiento paso a paso y la solución de fallas están en la **[guía de instalación](docs/instalacion.md)**. Los manifiestos y su operación se describen en [gitops/README.md](gitops/README.md).
 
 ## El problema
 

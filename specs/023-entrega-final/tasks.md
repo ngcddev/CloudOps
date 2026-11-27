@@ -59,3 +59,9 @@
   - Quedan en español, a propósito: los nombres de archivo de los scripts que se llaman desde la terminal (`evaluar_voz.py`, `medir_modelos.py`…), los módulos del backend (`registros.py`, `redaccion.py`, `bloqueos.py`…) y las variables locales.
 - [x] T20 · La puerta del colegio falla en «vulnerabilidades» con las 4 CVE críticas de nginx que ya tienen excepción (T14): `demo/preparar-colegio.sh` vuelve a subir las etiquetas sin llevar al repositorio del colegio los scripts de la puerta ni `trivy-excepciones.yaml` (solo lo hace `resembrar-puerta.sh`, y solo para los tres sitios) — **Verifica:** tras dar de alta el colegio y correr `preparar-colegio.sh` con el runner encendido, el Hub muestra v1 y v2 del colegio con la puerta en «ok».
   - Resultado (26 nov): con el colegio dado de alta por la API y el runner encendido, `preparar-colegio.sh` actualizó los scripts del repositorio del colegio y el Hub mostró v1 y v2 en «ok» con 11 controles cada una.
+
+## Instalación desde cero (propuesta el 27 nov 2026)
+
+- [ ] T21 · Instalador de la plataforma (`infra/instalar.sh`) y guía (`docs/instalacion.md`), enlazados desde el README: un comando lleva de un clon limpio a `http://hub.local`, genera las claves que falten en `.env.cluster` y no toca un clúster que no haya creado — **Verifica:** en un Windows sin clúster previo, `bash infra/instalar.sh` termina con todas las Applications Synced y Healthy y se puede iniciar sesión en `http://hub.local`.
+  - Avance (27 nov): escritos a partir de los scripts del repositorio. Comprobados `bash -n` y la lógica de nombres del archivo `hosts`. **La casilla sigue sin marcar:** no hay un segundo equipo y la instalación completa no se ha ejecutado.
+

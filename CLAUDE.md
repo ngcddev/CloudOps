@@ -63,6 +63,7 @@ Resumen: modelos en `backend/app/models/`, endpoints en `backend/app/routers/`, 
 | Probar documentos maliciosos en el contexto del asistente | `python ai/eval/probar_documento_malicioso.py` |
 | Runbooks de operación (caída, rollback, respaldo, reinicio, saturación, latencia) | [`runbooks/`](runbooks/README.md) |
 | Respaldo y restauración de PostgreSQL | `bash gitops/pruebas/respaldo.sh` |
+| Instalar la plataforma completa desde cero ([guía](docs/instalacion.md)) | `bash infra/instalar.sh --comprobar` · `bash infra/instalar.sh` |
 | Reiniciar la demo | `bash demo/reiniciar.sh` (borra la base del entorno) |
 | Reiniciar la demo del colegio en el clúster | `GITEA_USER=... GITEA_PASSWORD=... bash demo/reiniciar-cluster.sh` |
 | Dejar la demo del clúster lista tras las pruebas con efecto | `KUBECONFIG=... bash demo/dejar-demo-lista.sh` |
