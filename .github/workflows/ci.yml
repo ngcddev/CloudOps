@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Lint de Python (ruff.toml)
@@ -54,7 +54,7 @@ jobs:
           docker run --rm -e SEED_DIR=/app/seed \
             -v "$PWD/seed:/app/seed:ro" -v "$PWD/seed:/seed:ro" -v "$PWD/gitops:/gitops:ro" -v "$PWD/pipelines:/pipelines:ro" -v "$PWD:/repo:ro" \
             hub-api:dev pytest -q
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Registro en MLflow y evaluación (ai/)
